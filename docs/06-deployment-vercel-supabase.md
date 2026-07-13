@@ -1,0 +1,180 @@
+# 06 — Deploy: Vercel + Supabase
+
+> **Trạng thái hiện tại: chưa deploy.** Chưa có credential Supabase cloud và Vercel (xem `BLOCKERS` trong [`WORKLOG.md`](../WORKLOG.md)).
+> Cho tới khi có credential, trạng thái đúng là **"ready to deploy, blocked by credentials"** — **không được gọi là "đã deploy"**.
+
+---
+
+## 1. Môi trường
+
+| Môi trường | Supabase | Vercel | Dùng khi nào |
+|---|---|---|---|
+| **Local** | `npx supabase start` (Docker) | `npm run dev` | Phát triển hằng ngày — **đang dùng** |
+| **Preview** | Supabase staging | Vercel Preview (mỗi PR) | Review PR |
+| **Production** | Supabase production | Vercel Production (từ `main`) | Khách hàng dùng thật |
+
+Tách Supabase dev / staging / production khi có điều kiện. Tách env Vercel Preview / Production — **không dùng chung key**.
+
+---
+
+## 2. Chạy local (không cần credential cloud)
+
+```bash
+# 1. Bật Supabase local — cần Docker daemon đang chạy
+npx supabase start
+#    → in ra API URL, anon/publishable key, service_role key
+
+# 2. Tạo .env.local từ .env.example, điền các giá trị vừa in ra
+cp .env.example .env.local
+
+# 3. Áp migration + seed
+npx supabase db reset
+
+# 4. Generate types
+npx supabase gen types typescript --local > src/types/database.ts
+
+# 5. Chạy app
+npm run dev     # http://localhost:3000
+```
+
+Dừng: `npx supabase stop`. Supabase Studio local: http://localhost:54323
+
+---
+
+## 3. Deploy Supabase (khi có credential)
+
+**Cần từ user:** Project ref · Database password · Project URL · Publishable (anon) key · Service role key.
+
+```bash
+npx supabase login
+npx supabase link --project-ref <project-ref>
+
+# Đẩy migration lên cloud — KHÔNG chạy migration lúc app startup
+npx supabase db push
+
+# Seed dữ liệu nghiệp vụ (KHÔNG chạy seed.dev.sql lên production)
+psql "$DATABASE_URL" -f supabase/seed.sql
+```
+
+**Bắt buộc kiểm sau khi push:**
+- [ ] Mọi bảng đã `ENABLE ROW LEVEL SECURITY` (Dashboard → Database → Tables, cột RLS)
+- [ ] 5 bucket Storage đều **private**
+- [ ] Auth: **tắt public sign-up** (Dashboard → Authentication → Providers → Email → Enable signup = **off**)
+- [ ] Auth: cấu hình Site URL + Redirect URLs trỏ về domain Vercel
+- [ ] Email invite/reset hoạt động (Supabase SMTP mặc định có rate limit thấp — production nên gắn SMTP riêng)
+- [ ] **Không có user demo, không có mật khẩu mặc định**
+
+---
+
+## 4. Deploy Vercel (khi có credential)
+
+1. Import repo vào Vercel.
+2. Framework preset: **Next.js**. Build: `npm run build`.
+3. **Region:** đặt gần Supabase region — ưu tiên **Singapore (`sin1`)** cho user Việt Nam. Function region xa DB → mỗi query cộng thêm hàng trăm ms.
+4. Env vars (đặt riêng cho **Preview** và **Production**):
+
+| Biến | Preview | Production | Ghi chú |
+|---|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | URL preview | URL production | |
+| `NEXT_PUBLIC_SUPABASE_URL` | staging | production | |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | staging | production | |
+| `SUPABASE_SERVICE_ROLE_KEY` | staging | production | 🔴 **KHÔNG** `NEXT_PUBLIC_`. Chỉ server. |
+| `CRON_SECRET` | random | random khác | |
+
+5. Cron (`vercel.json`):
+
+```json
+{
+  "crons": [
+    { "path": "/api/cron/session-reminders", "schedule": "0 1 * * *" },
+    { "path": "/api/cron/assignment-due",    "schedule": "30 1 * * *" },
+    { "path": "/api/cron/invoice-overdue",   "schedule": "0 2 * * *" }
+  ]
+}
+```
+*(Giờ UTC. `0 1 * * *` UTC = 08:00 giờ Việt Nam.)*
+
+Route cron xác thực bằng `Authorization: Bearer ${CRON_SECRET}` — thiếu/sai → **401**.
+
+---
+
+## 5. Thứ tự deploy (bắt buộc)
+
+```text
+1. Migration lên Supabase   (npx supabase db push)
+2. Kiểm RLS + bucket + auth settings
+3. MỚI deploy app lên Vercel
+4. Smoke test trên URL thật
+```
+
+**Migration luôn đi trước app.** Deploy app trước khi có schema → app gọi bảng chưa tồn tại → lỗi hàng loạt.
+
+---
+
+## 6. Smoke test sau deploy
+
+- [ ] `/api/health` → 200
+- [ ] Trang login hiển thị đúng
+- [ ] Anonymous vào `/admin` → redirect `/login`
+- [ ] Đăng nhập 3 role → về đúng khu vực
+- [ ] Teacher gõ URL lớp không thuộc scope → bị chặn
+- [ ] Upload + download file qua signed URL
+- [ ] Cron route không có secret → **401**
+
+---
+
+## 7. Backup & restore
+
+> ⚠️ **Backup Database và backup Storage là HAI phạm vi RIÊNG BIỆT.**
+> `pg_dump` **không** sao lưu file trong Storage. Có bản backup DB mà mất file bài nộp thì vẫn là mất dữ liệu.
+
+| Phạm vi | Cách backup | Cách restore |
+|---|---|---|
+| **Database** | Supabase PITR (bản trả phí) hoặc `pg_dump` định kỳ | `psql < dump.sql` hoặc PITR restore |
+| **Storage** | Script định kỳ liệt kê + tải object từng bucket (Supabase **không** tự backup Storage ở bản free) | Upload lại object theo đúng `object_path` |
+
+Restore đủ nghĩa = **DB + Storage khớp nhau**. Restore DB về mốc T mà Storage ở mốc T+1 → metadata trỏ tới object không tồn tại.
+
+---
+
+## 8. Rollback
+
+| Sự cố | Xử lý |
+|---|---|
+| App deploy hỏng | **Vercel Instant Rollback** về deployment trước — vài giây, không cần build lại |
+| Migration hỏng ở production | **Forward-fix:** viết migration mới sửa lại. **KHÔNG sửa migration đã chạy** (Supabase đã ghi nhận nó vào bảng lịch sử; sửa file cũ làm lệch trạng thái) |
+| Migration làm mất dữ liệu | Restore từ PITR/dump. Đây là lý do phải **rehearsal migration trên staging trước** |
+| Rò secret | Rotate key ở Supabase Dashboard → cập nhật env Vercel → redeploy |
+
+**Migration rehearsal (bắt buộc trước production):**
+```bash
+npx supabase db reset          # local: chạy sạch từ migration đầu tiên
+npx supabase db push --dry-run # xem SQL sẽ chạy lên cloud
+# → chạy trên staging trước → kiểm → mới lên production
+```
+
+---
+
+## 9. Bảo mật vận hành
+
+- **Không commit** `.env.local`, token, service role key, database password.
+- **Không log** PII, token, mật khẩu, signed URL đầy đủ, nội dung bài nộp.
+- Dùng **Vercel logs + Supabase logs**. Không ghi rolling file trong production.
+- `/api/health` tối giản — **không lộ** version, schema, biến môi trường.
+- **Production không có user demo, không có mật khẩu mặc định.**
+- Rate limit ở Supabase Auth (chống brute force login).
+
+---
+
+## 10. Credential cần user cung cấp (đang thiếu)
+
+| # | Cần gì | Lấy ở đâu | Gỡ blocker nào |
+|---|---|---|---|
+| 1 | Supabase Project URL | Dashboard → Settings → API | BLK-1 |
+| 2 | Publishable (anon) key | Dashboard → Settings → API | BLK-1 |
+| 3 | Service role key | Dashboard → Settings → API (🔴 giữ bí mật) | BLK-1 |
+| 4 | Database password | Lúc tạo project | BLK-1 |
+| 5 | Project ref | Trong URL dashboard | BLK-1 |
+| 6 | Tài khoản Vercel + quyền link repo | vercel.com | BLK-2 |
+
+Có đủ 6 mục này → chạy được `P7-T7`.
