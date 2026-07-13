@@ -50,7 +50,7 @@ Quan hệ: `Level ← Course → Module → Lesson` và `Course → Class → Se
 Hệ quả thiết kế bắt buộc:
 
 - Một Course có thể mở **nhiều** Class (khóa "Tiếng Trung ngân hàng" mở cả `LOP-02` lẫn `LOP-03`).
-- Điểm danh gắn vào **Session + Enrollment**, không gắn thẳng vào Student — vì một học viên có thể học nhiều lớp cùng lúc.
+- Điểm danh, bài nộp, điểm số đều gắn vào **Enrollment**, không gắn thẳng vào Student — vì một học viên qua nhiều lớp theo thời gian (HSK 1 → HSK 2 → …), và mỗi lớp có dữ liệu học tập riêng.
 - Số buổi ở Course chỉ là **mặc định gợi ý** (`default_session_count`, có thể null). Số buổi thật chốt ở Class (`planned_session_count`) và phải có giá trị trước khi kích hoạt lớp.
 
 Các thuật ngữ khác:
@@ -173,7 +173,11 @@ Nguyên tắc bất di bất dịch:
 
 ### BR-4 — Ghi danh
 
-- Một học viên **học được nhiều lớp cùng lúc**. UNIQUE là `(student_id, class_id)`, không phải `student_id`.
+- **Một học viên chỉ học MỘT lớp tại một thời điểm** *(user chốt 2026-07-13 — đảo ngược yêu cầu ban đầu trong đặc tả gốc §4.13)*.
+  - "Một thời điểm" = tối đa **một** enrollment đang mở (`pending` / `active` / `paused`).
+  - Enrollment đã đóng (`completed` / `withdrawn` / `transferred`) **không tính** → học xong HSK 1 vẫn đăng ký được HSK 2, và lịch sử lớp cũ giữ nguyên.
+  - Chuyển lớp vẫn hoạt động: lớp cũ thành `transferred` (đã đóng), lớp mới `active` → vẫn chỉ một lớp đang mở.
+  - Cưỡng chế bằng **partial unique index** ở DB (`ux_enrollments_one_open_per_student`), không phải bằng `if` ở tầng app — hai admin ghi danh đồng thời sẽ cùng đọc thấy "học viên chưa có lớp" rồi cùng insert.
 - Vòng đời: `pending → active → (paused) → completed | withdrawn | transferred`.
 - **Không bao giờ xóa enrollment.** Chuyển lớp = đánh dấu enrollment cũ `transferred` + tạo enrollment mới, **trong cùng một transaction**, ghi `enrollment_status_history` + audit.
 - Chuyển lớp **không** tự động mang điểm/điểm danh sang lớp mới. Nếu cần quy đổi thì đó là một thao tác riêng, có audit.

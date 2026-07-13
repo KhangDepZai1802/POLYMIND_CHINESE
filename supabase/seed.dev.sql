@@ -138,8 +138,11 @@ join public.teachers t on t.teacher_code = v.teacher_code
 on conflict (class_id, teacher_id) do nothing;
 
 -- --- Ghi danh -----------------------------------------------------------------
--- HV001 học ĐỒNG THỜI LOP-02 và LOP-03 — chứng minh "một học viên nhiều lớp"
--- (D-10) hoạt động thật, không phải chỉ trên giấy.
+-- MỖI HỌC VIÊN CHỈ MỘT LỚP đang mở (user chốt 2026-07-13).
+--
+-- Phân bổ cố tình tạo ranh giới để kiểm RLS:
+--   GV A dạy LOP-01 + LOP-02 → thấy HV001, HV002, HV004
+--                             → KHÔNG thấy HV003, HV005 (chỉ học LOP-03)
 
 insert into public.enrollments
   (student_id, class_id, status, enrolled_on, started_on, created_by)
@@ -148,9 +151,8 @@ select s.id, c.id, v.status::public.enrollment_status,
        '11111111-1111-1111-1111-111111111111'
 from (values
   ('HV001', 'LOP-02', 'active'),
-  ('HV001', 'LOP-03', 'active'),
   ('HV002', 'LOP-02', 'active'),
-  ('HV003', 'LOP-02', 'active'),
+  ('HV003', 'LOP-03', 'active'),
   ('HV004', 'LOP-01', 'active'),
   ('HV005', 'LOP-03', 'active')
 ) as v(student_code, class_code, status)

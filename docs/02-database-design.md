@@ -247,6 +247,18 @@ Index: `class_id`, `starts_at`, `(class_id, starts_at)`, `status`.
 #### `enrollments`
 `id` uuid PK · `student_id` FK → `students` ON DELETE RESTRICT · `class_id` FK → `classes` ON DELETE RESTRICT · **UNIQUE `(student_id, class_id)`** · `status` `enrollment_status` NOT NULL DEFAULT `'pending'` · `enrolled_on` date NOT NULL DEFAULT current_date · `started_on` / `ended_on` date · `reason` text · `tuition_override_amount` numeric(14,2) CHECK ≥ 0 nullable · `created_by` uuid FK · timestamps.
 
+```sql
+-- MỘT HỌC VIÊN CHỈ MỘT LỚP TẠI MỘT THỜI ĐIỂM (user chốt 2026-07-13,
+-- đảo ngược yêu cầu ban đầu của đặc tả gốc).
+--
+-- Partial index: lớp đã ĐÓNG (completed/withdrawn/transferred) KHÔNG tính
+--   → học xong HSK 1 vẫn đăng ký được HSK 2 (lịch sử lớp cũ giữ nguyên)
+--   → chuyển lớp vẫn chạy (lớp cũ thành `transferred` = đã đóng)
+CREATE UNIQUE INDEX ux_enrollments_one_open_per_student
+  ON enrollments (student_id)
+  WHERE status IN ('pending', 'active', 'paused');
+```
+
 Index: `student_id`, `class_id`, `status`, `(class_id, status)`.
 
 #### `enrollment_status_history`
