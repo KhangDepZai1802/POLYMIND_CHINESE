@@ -18,7 +18,9 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "db:types": "supabase gen types typescript --local > src/types/database.ts"
+    "db:types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:seed:dev": "docker cp supabase/seed.dev.sql supabase_db_Polymind_Chinese:/tmp/seed.dev.sql && docker exec supabase_db_Polymind_Chinese psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/seed.dev.sql",
+    "db:refresh": "npm run db:reset && npm run db:seed:dev && npm run db:types"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -34,6 +36,7 @@
     "next-themes": "^0.4.6",
     "radix-ui": "^1.6.2",
     "react": "19.2.4",
+    "react-day-picker": "^10.0.1",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.65.0",
     "recharts": "^3.2.1",

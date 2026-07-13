@@ -1481,6 +1481,7 @@ export type Database = {
         Row: {
           avatar_path: string | null
           created_at: string
+          email: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -1491,6 +1492,7 @@ export type Database = {
         Insert: {
           avatar_path?: string | null
           created_at?: string
+          email?: string | null
           full_name: string
           id: string
           is_active?: boolean
@@ -1501,6 +1503,7 @@ export type Database = {
         Update: {
           avatar_path?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -1640,6 +1643,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_students_profile"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "students_current_level_id_fkey"
             columns: ["current_level_id"]
@@ -1812,7 +1822,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_teachers_profile"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tuition_invoice_items: {
         Row: {
@@ -2308,6 +2326,16 @@ export type Database = {
         Returns: string
       }
       generate_class_sessions: { Args: { p_class_id: string }; Returns: number }
+      log_audit: {
+        Args: {
+          p_action: string
+          p_after?: Json
+          p_before?: Json
+          p_resource_id?: string
+          p_resource_type: string
+        }
+        Returns: undefined
+      }
       publish_assessment_results: {
         Args: { p_assessment_id: string }
         Returns: number

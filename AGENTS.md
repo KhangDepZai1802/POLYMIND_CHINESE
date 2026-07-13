@@ -61,16 +61,33 @@ Toàn bộ repo này là **tiếng Việt có dấu**. Windows PowerShell 5.1 đ
 
 Làm vậy sẽ biến `KHÔNG` → `KHÃ”NG`, `—` → `â€"` và phải sửa đi sửa lại.
 
+Cái bẫy này có **hai mặt** — cả hai đều đã làm hỏng dữ liệu thật ở dự án này:
+
+**(a) Đọc–ghi FILE.** `Get-Content` đọc UTF-8 bằng ANSI → ghi lại thành mojibake.
+
+**(b) PIPE sang process.** Đây là mặt nguy hiểm hơn vì nó làm hỏng **dữ liệu trong DB**, không chỉ file:
+```powershell
+# ❌ SAI — PowerShell re-encode luồng pipe theo ANSI.
+#    Kết quả: "Quản trị viên" nằm trong Postgres thành "Qu?n tr? vi?n".
+Get-Content seed.dev.sql -Raw | docker exec -i <container> psql ...
+```
+
 ✅ **Cách đúng:**
 - Sửa file → dùng tool **Edit / Write**. Mặc định, không ngoại lệ.
-- Bắt buộc phải dùng PowerShell (thay thế hàng loạt) → chỉ dùng .NET API với encoding tường minh:
+- Nạp file SQL vào Postgres → **`npm run db:seed:dev`** (dùng `docker cp` để truyền **byte thô**, không qua pipe của PowerShell).
+- Bắt buộc phải dùng PowerShell để sửa file hàng loạt → chỉ dùng .NET API với encoding tường minh:
   ```powershell
   $utf8 = New-Object System.Text.UTF8Encoding($false)   # $false = không BOM
   $lines = [System.IO.File]::ReadAllLines($f, $utf8)
   [System.IO.File]::WriteAllLines($f, $lines, $utf8)
   ```
 - Trong chuỗi double-quote của PowerShell, **backtick là ký tự escape** — `` `true` `` biến thành TAB. Dùng single-quote cho chuỗi literal.
-- Sau khi đụng file có tiếng Việt, **grep kiểm mojibake**: `Ã` · `Â` · `â€` · `áº` · `á»`. Có kết quả = đã hỏng, phải sửa ngay.
+- **Luôn kiểm chứng bằng mắt sau khi seed:**
+  ```powershell
+  docker exec supabase_db_Polymind_Chinese psql -U postgres -d postgres -A -t -c "select full_name from public.profiles limit 3;"
+  ```
+  Ra `Qu?n tr? vi?n` hay `Quản trị viên`? Ra dấu `?` là đã hỏng.
+- Grep kiểm mojibake trong file: `Ã` · `Â` · `â€` · `áº` · `á»`.
 
 ### Repo
 - **KHÔNG BAO GIỜ sửa repo XKLĐ** (`C:\Users\khang\OneDrive\Documents\POLYMIND APP`). Chỉ đọc. Không sửa, không format, không ghi WORKLOG của nó.
