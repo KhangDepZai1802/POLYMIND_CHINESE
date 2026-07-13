@@ -53,6 +53,25 @@ P2-T11 — đang làm — Codex — 2026-07-15
 - **Idempotency cưỡng chế ở DB** (unique index + `ON CONFLICT`), không phải app-level check.
 - **Attribution = actor thật** (`auth.uid()`), không bao giờ là "user đầu tiên tìm thấy".
 
+### 🔤 UTF-8 — LUẬT CỨNG (đã làm hỏng file 1 lần, user đã phàn nàn)
+
+Toàn bộ repo này là **tiếng Việt có dấu**. Windows PowerShell 5.1 đọc file bằng encoding **ANSI** mặc định, nên:
+
+> ❌ **TUYỆT ĐỐI KHÔNG** dùng `Get-Content` / `Set-Content` / `Out-File` để đọc-sửa-ghi bất kỳ file nào chứa ký tự non-ASCII (tiếng Việt, em-dash `—`, chữ Hán, emoji).
+
+Làm vậy sẽ biến `KHÔNG` → `KHÃ”NG`, `—` → `â€"` và phải sửa đi sửa lại.
+
+✅ **Cách đúng:**
+- Sửa file → dùng tool **Edit / Write**. Mặc định, không ngoại lệ.
+- Bắt buộc phải dùng PowerShell (thay thế hàng loạt) → chỉ dùng .NET API với encoding tường minh:
+  ```powershell
+  $utf8 = New-Object System.Text.UTF8Encoding($false)   # $false = không BOM
+  $lines = [System.IO.File]::ReadAllLines($f, $utf8)
+  [System.IO.File]::WriteAllLines($f, $lines, $utf8)
+  ```
+- Trong chuỗi double-quote của PowerShell, **backtick là ký tự escape** — `` `true` `` biến thành TAB. Dùng single-quote cho chuỗi literal.
+- Sau khi đụng file có tiếng Việt, **grep kiểm mojibake**: `Ã` · `Â` · `â€` · `áº` · `á»`. Có kết quả = đã hỏng, phải sửa ngay.
+
 ### Repo
 - **KHÔNG BAO GIỜ sửa repo XKLĐ** (`C:\Users\khang\OneDrive\Documents\POLYMIND APP`). Chỉ đọc. Không sửa, không format, không ghi WORKLOG của nó.
 - **Không ghi đè thay đổi ngoài scope task của mình.** Agent kia có thể đang làm ở đó.
@@ -110,4 +129,12 @@ Bảng QA: [`docs/testing/MODULE_QA_BOARD.md`](docs/testing/MODULE_QA_BOARD.md).
 - **Reset DB + seed:** `npx supabase db reset`
 - **Generate types:** `npx supabase gen types typescript --local > src/types/database.ts`
 - **3 role:** `super_admin` · `teacher` · `student`
-- **Bẫy quan trọng:** DB lưu **UTC**; hiển thị và sinh recurrence theo `Asia/Ho_Chi_Minh`. Trang authenticated **không** cache/ISR.
+
+### Bẫy đã gặp — đừng mất thời gian lại
+
+| Bẫy | Xử lý |
+|---|---|
+| **Encoding** | Xem luật UTF-8 phía trên. Đây là bẫy dễ sập nhất trên máy này. |
+| **Port Supabase** | Port mặc định 543xx nằm trong dải Windows/Hyper-V reserve (`54289–54388`) → `supabase start` chết với *"ports are not available"*. Đã dời sang **553xx** trong `config.toml`: API `55321`, DB `55322`, Studio `55323`, Mailpit (xem email invite/reset) `55324`. Kiểm dải bị chiếm: `netsh interface ipv4 show excludedportrange protocol=tcp` |
+| **Thời gian** | DB lưu **UTC**. Hiển thị + sinh recurrence theo `Asia/Ho_Chi_Minh`. |
+| **Cache** | Trang authenticated **không** ISR/`force-static` — rò session giữa user. |

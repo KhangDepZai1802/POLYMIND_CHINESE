@@ -7,7 +7,7 @@ project_id = "Polymind_Chinese"
 [api]
 enabled = true
 # Port to use for the API URL.
-port = 54321
+port = 55321
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
 schemas = ["public", "graphql_public"]
@@ -32,9 +32,9 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-port = 54322
+port = 55322
 # Port used by db diff command to initialize the shadow database.
-shadow_port = 54320
+shadow_port = 55320
 # Maximum amount of time to wait for health check when starting the local database.
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
@@ -44,7 +44,7 @@ major_version = 17
 [db.pooler]
 enabled = false
 # Port to use for the local connection pooler.
-port = 54329
+port = 55329
 # Specifies when a server connection can be reused by other clients.
 # Configure one of the supported pooler modes: `transaction`, `session`.
 pool_mode = "transaction"
@@ -94,7 +94,7 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 54323
+port = 55323
 # External URL of the API server that frontend connects to.
 api_url = "http://127.0.0.1"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
@@ -105,7 +105,7 @@ openai_api_key = "env(OPENAI_API_KEY)"
 [local_smtp]
 enabled = true
 # Port to use for the email testing server web interface.
-port = 54324
+port = 55324
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
@@ -178,9 +178,9 @@ enable_refresh_token_rotation = true
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
-# POLYMIND CHINESE (D-4): KHÔNG có public sign-up. Tài khoản chỉ được tạo qua
-# invite của super admin (admin API + service role). Đặt `true` ở đây là mở cửa
-# cho người lạ tự tạo tài khoản.
+# POLYMIND CHINESE (D-4): KHONG co public sign-up. Tai khoan chi duoc tao qua
+# invite cua super admin (admin API + service role). Dat true o day la mo cua
+# cho nguoi la tu tao tai khoan.
 enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
@@ -225,9 +225,14 @@ web3 = 30
 # secret = ""
 
 [auth.email]
-# Allow/disallow new user signups via email to your project.
-# D-4: không public sign-up — xem ghi chú ở [auth].enable_signup phía trên.
-enable_signup = false
+# ⚠️ BẪY: tên là `enable_signup` nhưng Supabase CLI map cờ này sang
+# GOTRUE_EXTERNAL_EMAIL_ENABLED — tức là công tắc BẬT/TẮT CẢ PROVIDER EMAIL,
+# không phải chỉ chặn đăng ký. Đặt `false` ở đây thì ĐĂNG NHẬP cũng chết
+# ("email_provider_disabled" khi gọi /auth/v1/token).
+#
+# Muốn chặn public sign-up (D-4) → dùng `[auth].enable_signup = false` phía trên.
+# Ở đây PHẢI để `true` thì đăng nhập bằng email/mật khẩu mới hoạt động.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
@@ -396,7 +401,7 @@ deno_version = 2
 
 [analytics]
 enabled = true
-port = 54327
+port = 55327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 

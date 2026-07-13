@@ -1,5 +1,6 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Logo } from "@/components/shared/logo";
 import { Toaster } from "@/components/ui/sonner";
@@ -40,8 +41,10 @@ export default async function DashboardLayout({
           />
         </header>
 
+        <main className="flex-1 p-4 md:p-6">{children}</main>
+
         {/* pb-20 chừa chỗ cho bottom nav trên mobile */}
-        <main className="flex-1 p-4 pb-20 md:p-6 md:pb-6">{children}</main>
+        <SiteFooter className="border-t pb-20 md:pb-6" />
       </div>
 
       <BottomNav role={user.role} />

@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/layout/site-footer";
 import { Logo } from "@/components/shared/logo";
 
 export default function AuthLayout({
@@ -16,6 +17,8 @@ export default function AuthLayout({
       </div>
 
       <div className="w-full max-w-md">{children}</div>
+
+      <SiteFooter variant="onDark" className="mt-8" />
     </div>
   );
 }
