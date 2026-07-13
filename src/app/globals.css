@@ -1,0 +1,186 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+ * POLYMIND CHINESE — design tokens
+ *
+ * Light-first. Xanh POLYMIND (#1A5FA8) là primary.
+ * Đỏ Trung Hoa là ACCENT THƯƠNG HIỆU (--brand-red) — KHÔNG phải shadcn --accent.
+ * (shadcn dùng --accent cho nền hover của menu/item; nhuộm đỏ chỗ đó sẽ làm
+ *  toàn bộ hover state hóa đỏ — sai hoàn toàn với "đỏ chỉ là điểm nhấn".)
+ * ------------------------------------------------------------------------- */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: #ffffff;
+  --foreground: #10243f; /* navy gần đen — đọc rõ trên nền trắng */
+
+  --card: #ffffff;
+  --card-foreground: #10243f;
+  --popover: #ffffff;
+  --popover-foreground: #10243f;
+
+  --primary: #1a5fa8; /* xanh thương hiệu POLYMIND */
+  --primary-foreground: #ffffff;
+
+  --secondary: #eef4fb;
+  --secondary-foreground: #0d3f78;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #5b6b80;
+
+  /* shadcn --accent = nền hover trung tính, KHÔNG phải màu nhấn thương hiệu */
+  --accent: #eef4fb;
+  --accent-foreground: #0d3f78;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #dde5ee;
+  --input: #dde5ee;
+  --ring: #1a5fa8;
+
+  /* Màu nhấn thương hiệu — dùng TIẾT CHẾ (badge HSK, highlight chữ Hán) */
+  --brand-red: #c8102e;
+  --brand-red-foreground: #ffffff;
+  --brand-navy: #0d3f78;
+
+  /* Màu trạng thái — luôn đi kèm icon/chữ, KHÔNG dùng màu làm tín hiệu duy nhất */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --info: #0284c7;
+  --info-foreground: #ffffff;
+
+  --chart-1: #1a5fa8;
+  --chart-2: #0284c7;
+  --chart-3: #16a34a;
+  --chart-4: #d97706;
+  --chart-5: #c8102e;
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+
+  --card: #111827;
+  --card-foreground: #e5e7eb;
+  --popover: #111827;
+  --popover-foreground: #e5e7eb;
+
+  --primary: #3b82f6;
+  --primary-foreground: #0b1220;
+
+  --secondary: #1e293b;
+  --secondary-foreground: #e5e7eb;
+
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+
+  --accent: #1e293b;
+  --accent-foreground: #e5e7eb;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #263449;
+  --input: #263449;
+  --ring: #3b82f6;
+
+  --brand-red: #ef4444;
+  --brand-red-foreground: #ffffff;
+  --brand-navy: #1e3a8a;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --info: #38bdf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-foreground: var(--brand-red-foreground);
+  --color-brand-navy: var(--brand-navy);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: var(--font-be-vietnam-pro), "Segoe UI", system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* Fallback CJK: chữ Hán/pinyin hiển thị đúng mà không phải tải font CJK nặng */
+    font-family:
+      var(--font-be-vietnam-pro), "Segoe UI", system-ui, "Microsoft YaHei",
+      "PingFang SC", "Noto Sans SC", "Hiragino Sans GB", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Touch target tối thiểu 44px trên mobile (WCAG / dùng được giữa buổi dạy) */
+  @media (pointer: coarse) {
+    button,
+    [role="button"],
+    a[href],
+    input[type="checkbox"],
+    input[type="radio"] {
+      min-height: 44px;
+    }
+  }
+}
+
+/* Chữ Hán — ưu tiên font CJK, cỡ chữ lớn hơn một chút cho dễ đọc */
+.font-hanzi {
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC",
+    "Hiragino Sans GB", sans-serif;
+  font-size: 1.08em;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
