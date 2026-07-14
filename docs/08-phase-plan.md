@@ -94,7 +94,7 @@
 | P3-T4 | CRUD Teacher + invite | Hồ sơ + gửi invite (admin client, server-only) | ☑ |
 | P3-T5 | CRUD Student + invite | Hồ sơ (tạo trước, invite sau), guardian là **field**, không phải role | ☑ |
 | P3-T6 | CRUD Class + phân công GV | Sĩ số, hình thức, địa điểm tự do, GV chính/trợ giảng | ☑ |
-| P3-T7 | Schedule + sinh buổi học | UI lịch lặp + nút sinh buổi (idempotent) + hỗ trợ **lớp linh hoạt không lịch** | ☐ |
+| P3-T7 | Schedule + sinh buổi học | UI lịch lặp + nút sinh buổi (idempotent) + hỗ trợ **lớp linh hoạt không lịch** | ☑ |
 | P3-T8 | Enrollment lifecycle | Ghi danh / tạm dừng / chuyển lớp / rút / hoàn thành — qua RPC, giữ history | ☐ |
 | P3-T9 | Admin dashboard | KPI thật từ view (§15) | ☐ |
 | P3-T10 | Unit test domain | Recurrence 35 buổi · capacity · enrollment transitions | ☐ |

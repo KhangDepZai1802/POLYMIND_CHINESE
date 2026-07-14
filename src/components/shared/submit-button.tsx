@@ -18,19 +18,22 @@ export function SubmitButton({
   className,
   variant,
   size,
+  disabled,
 }: {
   children: React.ReactNode;
   pendingText?: string;
   className?: string;
   variant?: React.ComponentProps<typeof Button>["variant"];
   size?: React.ComponentProps<typeof Button>["size"];
+  /** Khóa nút vì lý do nghiệp vụ (vd chưa có lịch lặp để sinh buổi). */
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
 
   return (
     <Button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className={className}
       variant={variant}
       size={size}

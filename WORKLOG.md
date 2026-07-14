@@ -39,9 +39,11 @@
 > Cập nhật: **2026-07-14** — Claude — P3-T3
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
-- **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Thêm migration 21 chốt attribution ở DB.
+- **P3-T7 — xong — Claude — 2026-07-14.** Lịch lặp + sinh buổi học (idempotent) + lớp linh hoạt không lịch. Trang `/admin/schedule` đã thật (bỏ ComingSoon). Migration 22 chốt attribution + chặn xóa buổi đã có lịch sử.
+- **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Migration 21 chốt attribution ở DB.
 - **P3-T6 — xong — Codex — 2026-07-13.** CRUD lớp + phân công GV, có chốt chặn DB giữ điều kiện lớp `active`.
-- **DB: 21 migration.** pgTAP 10/10 pass (2 file). Unit test 20/20 pass.
+- **DB: 22 migration.** pgTAP **16/16 pass** (3 file). Unit test **20/20 pass**.
+- **Phase 3 còn: P3-T8 (Enrollment lifecycle) · P3-T9 (Admin dashboard) · P3-T10 (unit test domain).**
 - **GitHub:** https://github.com/KhangDepZai1802/POLYMIND_CHINESE
 - App chạy được: Next.js 16 + TS strict + Tailwind v4 + shadcn/ui. Auth SSR (login/forgot/reset/invite), app shell 3 role, logo PolyMind, footer bản quyền.
 - **DB: 20 migration + seed chạy sạch.** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view, 7 RPC, 5 private bucket.
@@ -53,9 +55,9 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P3-T7` — Schedule + sinh buổi học**: UI lịch lặp + nút sinh buổi (dùng RPC `generate_class_sessions`, đã idempotent) + hỗ trợ **lớp linh hoạt không có lịch lặp** (LOP-01 cố tình không có recurrence — đúng nghiệp vụ, không phải thiếu dữ liệu).
+**`P3-T8` — Enrollment lifecycle**: ghi danh / tạm dừng / chuyển lớp / rút / hoàn thành — **bắt buộc đi qua RPC** (`enroll_student` khóa hàng chống vượt sĩ số · `change_enrollment_status` · `transfer_enrollment`), giữ `enrollment_status_history`. Nhớ **D-18**: một học viên chỉ có **tối đa một** enrollment đang mở (`pending`/`active`/`paused`) — đã cưỡng chế bằng partial unique index `ux_enrollments_one_open_per_student` (migration 19), UI phải báo lỗi tử tế khi vi phạm chứ không được ném lỗi DB thô.
 
-Sau P3-T7: **P3-T8** (Enrollment lifecycle, qua RPC) → **P3-T9** (Admin dashboard KPI từ view) → **P3-T10** (unit test domain).
+Sau P3-T8: **P3-T9** (Admin dashboard KPI từ 5 view) → **P3-T10** (unit test domain: recurrence · capacity · enrollment transitions).
 
 Mục tiêu Phase 3: super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
 
@@ -110,6 +112,17 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 4 — Claude — P3-T7 (Schedule + sinh buổi học)
+- **Làm được:** `/admin/schedule` thành trang thật (trước là ComingSoon): chọn lớp qua URL (`?class=`), CRUD lịch lặp (thứ + khung giờ + khoảng áp dụng), nút **Sinh buổi học** gọi RPC `generate_class_sessions`, danh sách buổi học (giờ VN), thêm buổi thủ công, hủy buổi, xóa buổi sinh nhầm. Link "Quản lý lịch" mà Codex đặt sẵn ở trang chi tiết lớp giờ đã trỏ tới trang có thật.
+- **Lớp linh hoạt (D-11):** lớp không có lịch lặp hiện thông báo rõ "đây là trạng thái hợp lệ, không phải thiếu dữ liệu", khóa nút sinh buổi và chỉ đường sang "Thêm buổi" thủ công. RPC trả 0 buổi — UI **không** coi đó là lỗi.
+- **File thay đổi:** `src/features/schedules/*` (mới: schema, queries, actions, `schedule-manager.tsx`, `class-picker.tsx`), `src/app/(dashboard)/admin/schedule/page.tsx`, `src/components/shared/submit-button.tsx` (thêm prop `disabled`, thuần cộng thêm), `supabase/migrations/20260713000022_session_integrity.sql` (mới), `supabase/tests/database/session_integrity.test.sql` (mới), `docs/02-database-design.md`, `docs/08-phase-plan.md`.
+- **Migration/data impact:** migration 22 — (a) `class_sessions.created_by` = `auth.uid()` khi INSERT (chỉ ghi đè khi có JWT, để seed chạy bằng `postgres` giữ nguyên giá trị), bất biến khi UPDATE; (b) trigger chặn **xóa** buổi đã dạy hoặc đã có điểm danh. Không đụng dữ liệu cũ. `db reset` 22/22 sạch.
+- **Đã test (THẬT, có số):** `lint` sạch · `typecheck` sạch · `npm test` **20/20** · `npx supabase test db` **16/16** (3 file) · `build` xanh, `/admin/schedule` là `ƒ`. **Smoke Chrome headless qua UI thật: 9/9 PASS** — thêm lịch lặp → sinh đúng **5/5 buổi** → **bấm sinh lần 2 vẫn 5 buổi** (idempotent, báo "đã đủ" chứ không phải lỗi) → mọi buổi rơi đúng Thứ Ba → **18:00 giờ VN lưu thành 11:00 UTC** → LOP-01 linh hoạt khóa nút sinh + thêm buổi tay được → xóa được buổi chưa điểm danh.
+- **Quyết định mới:** không có.
+- **1 LỖ HỔNG ĐÃ TỰ BẮT VÀ VÁ:** `attendance_records.session_id` là **ON DELETE CASCADE** → xóa một buổi học sẽ **âm thầm xóa sạch điểm danh** của buổi đó. Đúng thứ luật cứng "không hard delete dữ liệu lịch sử" cấm, mà lại nằm sẵn trong schema từ migration 05. Không sửa FK cũ (forward-fix) → migration 22 chặn ở trigger: buổi đã dạy / đã điểm danh thì **không xóa được**, phải **hủy** (`cancelled`) để giữ vết. Có pgTAP xác nhận điểm danh còn nguyên sau khi lệnh xóa bị từ chối.
+- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Sửa lịch lặp **không** tự dời các buổi đã sinh — đây là chủ ý (nếu tự dời thì mọi thay đổi lịch sẽ âm thầm dời cả buổi giáo viên đã dạy xong); muốn áp lịch mới thì xóa buổi chưa dạy rồi sinh lại.
+- **Next action:** **P3-T8** — Enrollment lifecycle qua RPC, tôn trọng D-18 (một HV chỉ một enrollment đang mở).
 
 ### [2026-07-14] Phiên 3 — Claude — P3-T3 (Course materials)
 - **Làm được:** Tab "Tài liệu" ở trang chi tiết khóa học: tải lên (gắn vào cả khóa / một chương / một bài học), đổi tên + `visibility`, tải xuống qua signed URL, xóa. Nhãn/định dạng file dùng chung ở `lib/domain/files.ts` (allowlist đuôi file, 50 MB, TTL 120s).
