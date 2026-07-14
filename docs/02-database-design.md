@@ -249,7 +249,7 @@ Index: `class_id`, `starts_at`, `(class_id, starts_at)`, `status`.
 > **Idempotency khi sinh buổi:** UNIQUE `(class_id, session_number)` là chốt chặn ở DB. RPC `generate_class_sessions` phải `INSERT ... ON CONFLICT DO NOTHING` và dừng đúng `planned_session_count`.
 
 #### `enrollments`
-`id` uuid PK · `student_id` FK → `students` ON DELETE RESTRICT · `class_id` FK → `classes` ON DELETE RESTRICT · **UNIQUE `(student_id, class_id)`** · `status` `enrollment_status` NOT NULL DEFAULT `'pending'` · `enrolled_on` date NOT NULL DEFAULT current_date · `started_on` / `ended_on` date · `reason` text · `tuition_override_amount` numeric(14,2) CHECK ≥ 0 nullable · `created_by` uuid FK · timestamps.
+`id` uuid PK · `student_id` FK → `students` ON DELETE RESTRICT · `class_id` FK → `classes` ON DELETE RESTRICT · ~~UNIQUE `(student_id, class_id)`~~ **(đã gỡ ở migration 23 — xem D-19 bên dưới)** · `status` `enrollment_status` NOT NULL DEFAULT `'pending'` · `enrolled_on` date NOT NULL DEFAULT current_date · `started_on` / `ended_on` date · `reason` text · `tuition_override_amount` numeric(14,2) CHECK ≥ 0 nullable · `created_by` uuid FK · timestamps.
 
 ```sql
 -- MỘT HỌC VIÊN CHỈ MỘT LỚP TẠI MỘT THỜI ĐIỂM (user chốt 2026-07-13,
@@ -258,6 +258,11 @@ Index: `class_id`, `starts_at`, `(class_id, starts_at)`, `status`.
 -- Partial index: lớp đã ĐÓNG (completed/withdrawn/transferred) KHÔNG tính
 --   → học xong HSK 1 vẫn đăng ký được HSK 2 (lịch sử lớp cũ giữ nguyên)
 --   → chuyển lớp vẫn chạy (lớp cũ thành `transferred` = đã đóng)
+--   → D-19: học viên RỚT được HỌC LẠI chính lớp đó (migration 23 gỡ
+--     `uq_enrollments_student_class`). Index này vẫn chặn hai ghi danh cùng mở,
+--     kể cả trong cùng một lớp — nên D-18 không bị phá.
+--     Mỗi lần học là MỘT enrollment riêng; điểm danh/điểm/bài nộp treo vào
+--     `enrollment_id` nên lịch sử lần trước không trộn với lần học lại.
 CREATE UNIQUE INDEX ux_enrollments_one_open_per_student
   ON enrollments (student_id)
   WHERE status IN ('pending', 'active', 'paused');

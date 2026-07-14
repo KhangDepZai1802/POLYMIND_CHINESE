@@ -34,25 +34,18 @@ import { createClient } from "@/lib/supabase/server";
  * Lỗi DB → câu tiếng Việt người dùng hiểu.
  *
  * `dbErrorToMessage` dịch 23505 thành "mã bị trùng" — đúng cho `code` của khóa
- * học, nhưng vô nghĩa ở đây. Enrollment có HAI unique khác nhau và người dùng
- * cần biết chính xác mình vướng cái nào:
- *   • `uq_enrollments_student_class` — đã từng ghi danh vào ĐÚNG lớp này
- *   • `ux_enrollments_one_open_per_student` — đang có lớp khác đang mở (D-18)
+ * học, nhưng vô nghĩa ở đây. Ràng buộc duy nhất còn lại trên `enrollments` là
+ * `ux_enrollments_one_open_per_student` (D-18): tối đa MỘT ghi danh đang mở.
+ *
+ * Ghi danh LẠI vào chính lớp cũ thì KHÔNG còn bị chặn (D-19 — học viên rớt được
+ * học lại; migration 23 đã gỡ `uq_enrollments_student_class`).
  */
 function enrollmentError(error: {
   code?: string;
   message?: string;
 }): string {
   if (error.code === "23505") {
-    const message = error.message ?? "";
-
-    if (message.includes("ux_enrollments_one_open_per_student")) {
-      return "Học viên đang có một lớp mở. Mỗi học viên chỉ học một lớp tại một thời điểm — hãy hoàn thành, rút học, hoặc chuyển lớp trước.";
-    }
-
-    if (message.includes("uq_enrollments_student_class")) {
-      return "Học viên này đã từng ghi danh vào chính lớp đó. Không thể ghi danh lại vào cùng một lớp.";
-    }
+    return "Học viên đang có một lớp mở. Mỗi học viên chỉ học một lớp tại một thời điểm — hãy hoàn thành, rút học, hoặc chuyển lớp trước.";
   }
 
   // P0001 = exception do chính RPC của ta raise → thông điệp đã là tiếng Việt,

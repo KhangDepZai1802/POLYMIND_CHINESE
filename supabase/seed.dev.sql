@@ -158,7 +158,12 @@ from (values
 ) as v(student_code, class_code, status)
 join public.students s on s.student_code = v.student_code
 join public.classes c on c.code = v.class_code
-on conflict (student_id, class_id) do nothing;
+-- Idempotent bằng NOT EXISTS, KHÔNG bằng ON CONFLICT: từ migration 23 (D-19 —
+-- học viên rớt được học lại) không còn unique (student_id, class_id) để bám vào.
+where not exists (
+  select 1 from public.enrollments e
+  where e.student_id = s.id and e.class_id = c.id
+);
 
 -- Lịch sử trạng thái cho các enrollment vừa tạo
 insert into public.enrollment_status_history

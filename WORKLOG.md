@@ -36,16 +36,18 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-14** — Claude — P3-T9
+> Cập nhật: **2026-07-14** — Claude — P3-T10 (đóng Phase 3)
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- 🎉 **PHASE 3 XONG** (P3-T1 → P3-T10). Super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
+- **P3-T10 — xong — Claude — 2026-07-14.** Test domain: recurrence 35 buổi + capacity (pgTAP, gọi đúng RPC production) + enrollment transitions (Vitest).
+- **D-19 — xong — Claude — 2026-07-14.** Học viên rớt **được học lại** chính lớp đó (migration 23). D-18 không bị phá.
 - **P3-T9 — xong — Claude — 2026-07-14.** Admin dashboard KPI thật, đọc từ view (bỏ ComingSoon).
 - **P3-T8 — xong — Claude — 2026-07-14.** Vòng đời ghi danh qua RPC (ghi danh / tạm dừng / học lại / hoàn thành / rút / chuyển lớp), giữ history, tôn trọng D-18.
 - **P3-T7 — xong — Claude — 2026-07-14.** Lịch lặp + sinh buổi học (idempotent) + lớp linh hoạt không lịch. Trang `/admin/schedule` đã thật (bỏ ComingSoon). Migration 22 chốt attribution + chặn xóa buổi đã có lịch sử.
 - **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Migration 21 chốt attribution ở DB.
 - **P3-T6 — xong — Codex — 2026-07-13.** CRUD lớp + phân công GV, có chốt chặn DB giữ điều kiện lớp `active`.
-- **DB: 22 migration.** pgTAP **16/16 pass** (3 file). Unit test **28/28 pass**.
-- **Phase 3 còn ĐÚNG 1 task: P3-T10** (unit test domain — phần enrollment transitions đã làm ở P3-T8, còn recurrence + capacity).
+- **DB: 23 migration.** pgTAP **31/31 pass** (5 file). Unit test **28/28 pass**.
 - **GitHub:** https://github.com/KhangDepZai1802/POLYMIND_CHINESE
 - App chạy được: Next.js 16 + TS strict + Tailwind v4 + shadcn/ui. Auth SSR (login/forgot/reset/invite), app shell 3 role, logo PolyMind, footer bản quyền.
 - **Schema:** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view (`security_invoker`), 7 RPC, 5 private bucket. `db reset` + seed chạy sạch.
@@ -57,16 +59,13 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P3-T10` — Unit test domain** (task cuối của Phase 3): recurrence **35 buổi** · capacity · enrollment transitions.
-- Phần **enrollment transitions ĐÃ XONG** ở P3-T8: `tests/unit/domain/enrollment.test.ts` (8 test, có ca fail-closed).
-- Còn thiếu: **recurrence** (sinh 35 buổi từ lịch lặp — hiện logic nằm trong RPC `generate_class_sessions`, đã có smoke thật nhưng **chưa có test tự động**) và **capacity** (chặn vượt sĩ số — đã có smoke, chưa có test tự động).
-- Gợi ý: hai thứ này là logic **SQL**, không phải TS → nên viết **pgTAP** (`supabase/tests/database/`) chứ đừng port công thức sang TS rồi test bản sao — test bản sao thì nó xanh cả khi RPC thật sai.
+**PHASE 3 ĐÃ XONG.** Bắt đầu **Phase 4 — Teacher operations**.
 
-Xong P3-T10 là **đóng Phase 3** → sang **Phase 4 (Teacher operations)**, bắt đầu từ `P4-T1` (Dashboard "Hôm nay") hoặc `P4-T4` (Attendance roster — việc giáo viên dùng nhiều nhất).
+**`P4-T1` — Dashboard "Hôm nay" của giáo viên**: lịch dạy hôm nay, buổi chưa điểm danh, bài chờ chấm, HV cần chú ý. DoD: vào được lớp/buổi trong **1–2 thao tác**.
 
-⚠️ **Câu hỏi nghiệp vụ cần user chốt (không tự quyết):** `uq_enrollments_student_class` (migration 04) cấm một học viên ghi danh **lại vào chính lớp cũ** — kể cả sau khi đã rút hoặc hoàn thành. Nghĩa là **học lại đúng lớp đó (retake) là không thể**; phải mở lớp mới. Nếu trung tâm có nghiệp vụ học lại thì cần forward-fix ràng buộc này. Hiện app báo lỗi rõ ràng chứ không ném lỗi DB thô.
+Sau đó ưu tiên **`P4-T4` — Attendance roster** (việc giáo viên dùng nhiều nhất): một màn hình, nút lớn, chọn hàng loạt, nút Lưu **sticky**. Dùng RPC `bulk_mark_attendance` (đã upsert theo `(session_id, enrollment_id)` → bấm Lưu 2 lần vẫn 1 bản ghi/HV).
 
-Mục tiêu Phase 3: super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
+⚠️ **Gate của Phase 4 (đọc kỹ trước khi code):** giáo viên **không** được truy cập lớp ngoài phạm vi qua UI, direct URL, server action **và** Supabase client gọi thẳng. Mọi query giáo viên đều quy về bảng `class_teachers` — RLS đã lo, đừng tự viết `if role ===` ở app.
 
 Nền đã sẵn sàng để dùng ngay:
 - 7 RPC: `enroll_student` (khóa hàng chống vượt sĩ số) · `transfer_enrollment` · `change_enrollment_status` · `generate_class_sessions` (idempotent) · `bulk_mark_attendance` (upsert) · `publish_assessment_results` · `record_tuition_payment` (sinh đúng 1 phiếu thu).
@@ -114,11 +113,25 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 | D-15 | **Local-first.** Chưa có credential cloud → build + test đầy đủ ở local, deploy sau *(user chốt 2026-07-13)*. |
 | D-16 | **Hoãn viết test suite** (pgTAP/E2E/unit) — ưu tiên build web hoàn chỉnh trước *(user chốt 2026-07-13)*. **RLS và bảo mật VẪN phải làm đầy đủ** — đó là tính năng, không phải test. Test suite quay lại ở Phase 7. |
 | D-17 | Footer bản quyền dưới **mọi** trang: `© <năm> Bản quyền thuộc về POLYMIND` + `POLYMIND — Đồng Hành Cùng Bạn Vươn Xa` *(user chốt 2026-07-13)*. |
+| D-19 | **HỌC VIÊN RỚT ĐƯỢC HỌC LẠI CHÍNH LỚP ĐÓ** *(user chốt 2026-07-14)*. Gỡ `uq_enrollments_student_class` (migration 23) — ràng buộc cũ cấm ghi danh lại vào một lớp đã từng học, kể cả sau khi rút/hoàn thành. **Không phá D-18:** `ux_enrollments_one_open_per_student` vẫn bảo đảm tối đa MỘT ghi danh đang mở trên toàn hệ thống → không thể có hai ghi danh mở trong cùng lớp. Mỗi lần học là **một enrollment riêng**; điểm danh/điểm/bài nộp treo vào `enrollment_id` nên lịch sử lần trước **không bị trộn** với lần học lại. |
 | D-18 | **MỘT HỌC VIÊN CHỈ HỌC MỘT LỚP TẠI MỘT THỜI ĐIỂM** *(user chốt 2026-07-13 — **đảo ngược D-10** và §4.13 của đặc tả gốc)*. "Một thời điểm" = tối đa **một** enrollment đang mở (`pending`/`active`/`paused`). Enrollment đã đóng (`completed`/`withdrawn`/`transferred`) **không tính** → học xong HSK 1 vẫn đăng ký được HSK 2, và chuyển lớp vẫn chạy. Cưỡng chế bằng partial unique index `ux_enrollments_one_open_per_student` (migration 19) — **không** chỉ kiểm ở app. |
 
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 7 — Claude — D-19 (học lại) + P3-T10 → **ĐÓNG PHASE 3**
+- **Làm được:**
+  - **D-19 (thay đổi nghiệp vụ, user chốt):** học viên **rớt được học lại chính lớp đó**. Migration 23 gỡ `uq_enrollments_student_class` (ràng buộc cũ cấm ghi danh lại vào một lớp đã từng học, kể cả sau khi rút/hoàn thành).
+  - **P3-T10 (task cuối Phase 3):** test domain cho recurrence + capacity.
+- **Vì sao gỡ ràng buộc đó KHÔNG phá D-18:** `ux_enrollments_one_open_per_student` vẫn bảo đảm tối đa **một** ghi danh đang mở trên toàn hệ thống → đương nhiên không thể có hai ghi danh mở trong cùng một lớp. Cái bị gỡ chỉ chặn thêm các ghi danh **đã đóng** — tức đúng phần lịch sử ta muốn giữ. Mỗi lần học là **một enrollment riêng**, và vì điểm danh/điểm/bài nộp treo vào `enrollment_id` chứ không phải `student_id`, lịch sử lần trước **không bị trộn** với lần học lại.
+- **P3-T10 viết bằng pgTAP, KHÔNG phải Vitest** — có chủ ý: logic thật nằm **trong RPC** (`generate_class_sessions`, `enroll_student`). Port công thức sang TS rồi test bản sao thì test xanh cả khi RPC thật sai; nó chỉ chứng minh bản sao đúng với chính nó. pgTAP gọi **đúng hàm mà production gọi**.
+- **File thay đổi:** `supabase/migrations/20260713000023_allow_retake_same_class.sql` (mới), `supabase/tests/database/retake_same_class.test.sql` (mới), `supabase/tests/database/generate_sessions_and_capacity.test.sql` (mới), `supabase/seed.dev.sql`, `src/features/enrollments/server/actions.ts`, `docs/02-database-design.md`, `docs/08-phase-plan.md`.
+- **Migration/data impact:** migration 23 chỉ **DROP CONSTRAINT** — không đụng một dòng dữ liệu nào, không mất lịch sử. **Đã làm hỏng `seed.dev.sql` và đã sửa:** seed dùng `ON CONFLICT (student_id, class_id)` — chính ràng buộc vừa gỡ → seed chết ngay. Đổi sang `WHERE NOT EXISTS`. Đã chạy seed **hai lần** kiểm idempotent (lần 2: `INSERT 0 0`) và kiểm mắt tiếng Việt không mojibake.
+- **Đã test (THẬT, có số):** `lint` · `typecheck` sạch · `npm test` **28/28** · `npx supabase test db` **31/31** (5 file) · `build` xanh. **Retake qua RPC thật: 6/6 PASS** — ghi danh LOP-02 → rút học (rớt) → **ghi danh LẠI LOP-02 thành công** → hai enrollment riêng biệt → D-18 vẫn chặn ghi danh lớp khác → vẫn đúng 1 ghi danh mở. **pgTAP P3-T10:** sinh **đúng 35 buổi**, gọi lại sinh **0** (idempotent), buổi chỉ rơi Thứ Ba + Thứ Năm, buổi 1 = 18:00 giờ VN **lưu thành 11:00 UTC**, lớp linh hoạt → 0 buổi không lỗi, capacity chặn HV thứ 3 với đúng thông điệp "Lớp đã đủ sĩ số (2 / 2)".
+- **Quyết định mới:** **D-19** (học viên rớt được học lại).
+- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Không còn câu hỏi nghiệp vụ nào treo.
+- **Next action:** **P4-T1** — Dashboard "Hôm nay" của giáo viên. Đọc kỹ **gate của Phase 4** ở mục VIỆC TIẾP THEO.
 
 ### [2026-07-14] Phiên 6 — Claude — P3-T9 (Admin dashboard)
 - **Làm được:** `/admin` thành dashboard thật (bỏ ComingSoon): 4 thẻ KPI (học viên đang học · lớp đang hoạt động · buổi học hôm nay · giáo viên) bấm được sang từng mục; bảng **tiến độ các lớp** (sĩ số / chuyên cần / tiến độ); **học viên cần chú ý** kèm lý do rủi ro; **buổi học hôm nay** theo giờ VN; thẻ **học phí** (còn phải thu / số hóa đơn / quá hạn).
@@ -173,19 +186,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không có.
 - **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud; cảnh báo Next.js về convention `middleware` deprecated chưa chặn build.
 - **Next action:** **P3-T3** — Course materials: upload private bucket, signed URL, `visibility`; sau đó P3-T7.
-
-### [2026-07-13] Phiên 1 — Claude — P1 + P2 (Scaffold + Schema/RLS/Seed)
-- **Làm được:** Hoàn tất Phase 1 và Phase 2.
-  - **P1:** scaffold Next.js 16 (App Router, TS strict + `noUncheckedIndexedAccess`), Tailwind v4 + shadcn/ui (13 component), theme POLYMIND (primary `#1A5FA8` lấy từ repo cũ; đỏ Trung Hoa tách riêng thành `--brand-red`, **không** ghi đè `--accent` của shadcn — nếu ghi đè thì mọi hover menu sẽ hóa đỏ). Logo PolyMind bo góc. Footer bản quyền mọi trang. 3 Supabase client tách bạch (browser/server/**admin có `server-only`**). Auth SSR + middleware fail-closed. App shell 3 role (sidebar desktop + bottom nav mobile ≥44px). CI GitHub Actions.
-  - **P2:** 15 migration + seed. 33 bảng, 98 RLS policy, 5 view (`security_invoker`), 7 RPC transaction, 5 private bucket, 9 helper `app.*` fail-closed. Seed: HSK 1–6, 9 khóa cốt lõi, 2 chương trình VCB, 3 lớp (**LOP-01 cố tình KHÔNG có lịch lặp** — lịch linh hoạt theo Ban Giám đốc).
-- **File thay đổi:** `supabase/migrations/*` (15 file), `supabase/seed.sql`, `supabase/seed.dev.sql`, `supabase/config.toml`, `src/lib/{env,supabase,auth,permissions}/*`, `src/features/auth/*`, `src/app/(auth)|(dashboard)|api|auth/*`, `src/components/{layout,shared,ui}/*`, `src/types/{database,roles}.ts`, `.github/workflows/ci.yml`, configs.
-- **Migration/data impact:** Schema mới hoàn toàn (chưa có production → không có rủi ro dữ liệu). `supabase db reset` chạy sạch từ migration đầu, seed idempotent.
-- **Đã test (THẬT, có số):** `npx tsc --noEmit` → sạch. `npx eslint` → 0 lỗi. `npx vitest run` → **10/10 pass**. `npx next build` → xanh, 27 route, mọi trang authenticated đều `ƒ` (dynamic, không cache session). `npx supabase db reset` → 15/15 migration + seed OK. **RLS kiểm chứng qua HTTP API thật** (login → JWT → PostgREST): GV A thấy đúng LOP-01/02 + HV001–004, **không** thấy HV005, tuition **0 dòng**, audit **0 dòng**; HV5 chỉ thấy LOP-03 + chính mình; anonymous `permission denied`. Smoke: `/api/health` 200, anonymous vào `/admin` → 307 `/login`.
-- **Quyết định mới:** D-16 — **hoãn viết test suite** (user chốt 2026-07-13), ưu tiên build web hoàn chỉnh; RLS/bảo mật vẫn làm đủ.
-- **Blocker/rủi ro:** BLK-1/BLK-2 (chưa có credential cloud) — không chặn Phase 3–6.
-- **3 BẪY ĐÃ SẬP VÀ CÁCH TRÁNH (quan trọng cho phiên sau):**
-  1. **Port Supabase:** 543xx nằm trong dải Windows/Hyper-V reserve `54289–54388` → `supabase start` chết. Đã dời sang **553xx** trong `config.toml`.
-  2. **`[auth.email].enable_signup`:** tên nghe như "chặn đăng ký" nhưng CLI map nó sang `EXTERNAL_EMAIL_ENABLED` — đặt `false` là **tắt luôn ĐĂNG NHẬP** (`email_provider_disabled`). Chặn sign-up đúng cách là `[auth].enable_signup = false`.
-  3. **Supabase bản mới KHÔNG tự GRANT** quyền bảng cho `anon`/`authenticated` → RLS policy viết đủ nhưng mọi role vẫn nhận `permission denied`. Phải có migration `..._grants.sql` tường minh.
-  4. **Seed `auth.users`:** các cột `confirmation_token`, `recovery_token`, … phải là `''` chứ **không** được NULL, nếu không GoTrue crash khi login (`converting NULL to string`).
-- **Next action:** **`P3-T1`** — layout admin + dashboard skeleton, rồi P3-T2 (CRUD Level/Course/Module/Lesson).
