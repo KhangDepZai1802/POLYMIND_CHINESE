@@ -99,11 +99,16 @@ export const lessonSchema = z.object({
 
 const MATERIAL_VISIBILITIES = ["staff_only", "enrolled_students"] as const;
 
-/** Select rỗng / "none" → null. Gắn tài liệu ở cấp khóa học là hợp lệ. */
+/**
+ * Select rỗng / "none" / field không được gửi → null.
+ *
+ * Khi gắn tài liệu ở cấp khóa học, form không có module/lesson để gửi. Đây là
+ * trạng thái hợp lệ, không phải lỗi validation.
+ */
 const optionalUuid = z
   .union([z.literal(""), z.literal("none"), z.uuid()])
-  .transform((v) => (v === "" || v === "none" ? null : v))
-  .nullable();
+  .nullish()
+  .transform((v) => (v === undefined || v === null || v === "" || v === "none" ? null : v));
 
 const materialTitle = z
   .string()

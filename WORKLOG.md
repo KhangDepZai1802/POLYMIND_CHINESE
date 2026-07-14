@@ -36,37 +36,22 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-14** — Claude — P4-T4
+> Cập nhật: **2026-07-14** — Codex — P4-T2
 
-- **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG** · 🎉 **Phase 3 XONG**.
+- **P4-T2 — xong — Codex — 2026-07-14.** `/teacher/classes` + chi tiết 8 tab; direct URL lớp ngoài scope trả 404; attendance/materials dùng lại code hiện có.
 - **P4-T4 — xong — Claude — 2026-07-14.** Attendance roster: nút lớn 44px, chọn hàng loạt, thanh Lưu sticky. **Bấm Lưu 2 lần không sinh trùng** (upsert ở DB). IDOR đã kiểm: đoán URL buổi lớp khác → 404.
 - **P4-T1 — xong — Claude — 2026-07-14.** Dashboard "Hôm nay" của giáo viên (bỏ ComingSoon). **Gate Phase 4 đã kiểm chứng thật:** GV A không lấy được dữ liệu LOP-03 kể cả khi gọi thẳng Supabase.
-- 🎉 **PHASE 3 XONG** (P3-T1 → P3-T10). Super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
-- **P3-T10 — xong — Claude — 2026-07-14.** Test domain: recurrence 35 buổi + capacity (pgTAP, gọi đúng RPC production) + enrollment transitions (Vitest).
-- **D-19 — xong — Claude — 2026-07-14.** Học viên rớt **được học lại** chính lớp đó (migration 23). D-18 không bị phá.
-- **P3-T9 — xong — Claude — 2026-07-14.** Admin dashboard KPI thật, đọc từ view (bỏ ComingSoon).
-- **P3-T8 — xong — Claude — 2026-07-14.** Vòng đời ghi danh qua RPC (ghi danh / tạm dừng / học lại / hoàn thành / rút / chuyển lớp), giữ history, tôn trọng D-18.
-- **P3-T7 — xong — Claude — 2026-07-14.** Lịch lặp + sinh buổi học (idempotent) + lớp linh hoạt không lịch. Trang `/admin/schedule` đã thật (bỏ ComingSoon). Migration 22 chốt attribution + chặn xóa buổi đã có lịch sử.
-- **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Migration 21 chốt attribution ở DB.
-- **P3-T6 — xong — Codex — 2026-07-13.** CRUD lớp + phân công GV, có chốt chặn DB giữ điều kiện lớp `active`.
-- **DB: 23 migration.** pgTAP **31/31 pass** (5 file). Unit test **28/28 pass**.
-- **GitHub:** https://github.com/KhangDepZai1802/POLYMIND_CHINESE
-- App chạy được: Next.js 16 + TS strict + Tailwind v4 + shadcn/ui. Auth SSR (login/forgot/reset/invite), app shell 3 role, logo PolyMind, footer bản quyền.
-- **Schema:** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view (`security_invoker`), 7 RPC, 5 private bucket. `db reset` + seed chạy sạch.
-- **RLS đã kiểm chứng THẬT qua HTTP API** (Supabase Auth → JWT → PostgREST): GV A chỉ thấy LOP-01/02 + HV001–004 (không thấy HV005), học phí 0 dòng, audit 0 dòng; HV5 chỉ thấy LOP-03 + chính mình; anonymous bị chặn ở tầng GRANT.
-- ⚠️ **Test suite đang HOÃN theo yêu cầu user** (2026-07-13): ưu tiên build web hoàn chỉnh trước. RLS/bảo mật vẫn làm đầy đủ — đó là tính năng, không phải test.
-- Môi trường: Node 22.20 · npm 10.9 · Docker 28.4 · Supabase local **port 553xx** (543xx bị Windows reserve).
+- **DB:** 23 migration · 33 bảng · 0 bảng thiếu RLS · 98 policy · 5 view `security_invoker` · 7 RPC · 5 private bucket.
+- **Kiểm tra gần nhất:** lint/typecheck sạch · Vitest **28/28** · build xanh · smoke P4-T2 **19/19**. pgTAP gần nhất **31/31** (không có migration mới trong P4-T2).
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P4-T2` — Class detail của giáo viên** (8 tab: Tổng quan · Lịch/Buổi · Học viên · Điểm danh · Bài tập · Kiểm tra · Tiến độ · Tài liệu).
-- **Dashboard P4-T1 đã trỏ sẵn `/teacher/classes/<id>` — trang đó CHƯA CÓ** (hiện `/teacher/classes` là ComingSoon). Đây là link đang chờ được cắm vào.
-- Tab Điểm danh và tab Tài liệu **dùng lại code đã có**: `features/attendance/*` (P4-T4) và `features/courses` (P3-T3, tài liệu theo `visibility`) — đừng viết lại.
-- Tab Bài tập / Kiểm tra sẽ rỗng cho tới P4-T5/T7; để empty state tử tế, đừng để trang vỡ.
+**`P4-T3` — Session log:** giáo viên mở/hoàn tất buổi, ghi nội dung thực dạy (`lesson_log`) và cập nhật lesson progress. Không hard delete lịch sử; thời gian hiển thị theo `Asia/Ho_Chi_Minh`.
 
-Sau P4-T2: **P4-T3** (Session log — mở/hoàn tất buổi, nội dung thực dạy) → **P4-T5** (Assignment) → P4-T6…T10.
+Sau P4-T3: **P4-T5** (Assignment) → P4-T6…T10.
 
 ⚠️ **Gate của Phase 4 (đọc kỹ trước khi code):** giáo viên **không** được truy cập lớp ngoài phạm vi qua UI, direct URL, server action **và** Supabase client gọi thẳng. Mọi query giáo viên đều quy về bảng `class_teachers` — RLS đã lo, đừng tự viết `if role ===` ở app.
 
@@ -122,6 +107,17 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 10 — Codex — P4-T2 (Class detail giáo viên)
+- **Làm được:** `/teacher/classes` thành danh sách lớp thật; thêm `/teacher/classes/[id]` với đủ **8 tab** Tổng quan · Lịch/Buổi · Học viên · Điểm danh · Bài tập · Kiểm tra · Tiến độ · Tài liệu. Tab Điểm danh nối thẳng roster P4-T4; tab Tài liệu dùng lại `MaterialsManager`; Bài tập/Kiểm tra có empty state tử tế tới P4-T5/P4-T7.
+- **🔒 Phân quyền:** page/query dùng client của giáo viên và để RLS quy về `class_teachers`; không thêm nguồn quyền thứ hai ở app. GV A thấy LOP-01/02, không thấy LOP-03; gõ thẳng UUID LOP-03 → **404**, không lộ mã/tên lớp.
+- **Bug bắt được và sửa:** `BUG-M06-001` — upload tài liệu ở cấp **Cả khóa học** không gửi `module_id`/`lesson_id`, nhưng schema cũ không nhận `undefined`, nên metadata bị từ chối sau khi object đã lên Storage. `optionalUuid` giờ map field thiếu/rỗng/`none` → `null`; server action tài liệu cho phép `super_admin | teacher`, RLS vẫn khoanh đúng course. Đã ghi Verification Queue, **chờ Claude xác minh độc lập**, Codex không tự ghi Verified.
+- **File thay đổi:** `src/app/(dashboard)/teacher/classes/{page.tsx,[id]/page.tsx}`, `src/features/classes/server/queries.ts`, `src/features/courses/{schema.ts,server/actions.ts}`, `docs/08-phase-plan.md`, `docs/testing/MODULE_QA_BOARD.md`, `WORKLOG.md`.
+- **Migration/data impact:** không có migration. Smoke upload/xóa file local đã dọn sạch: `course_materials` smoke = **0**, Storage orphan gần đây = **0**.
+- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **28/28** · `npm run build` xanh, `/teacher/classes/[id]` là `ƒ`. Smoke Chrome headless trên `next start` **19/19 PASS**: đủ 8 tab, upload/xóa tài liệu bằng GV A, direct URL lớp ngoài scope 404, không có runtime error.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. `BUG-M06-001` cần Claude xác minh độc lập.
+- **Next action:** **P4-T3** — Session log: mở/hoàn tất buổi, nội dung thực dạy, lesson progress.
 
 ### [2026-07-14] Phiên 9 — Claude — P4-T4 (Attendance roster)
 - **Làm được:** `/teacher/attendance` thành trang thật (bỏ ComingSoon). Không có `?session=` → cho chọn buổi cần điểm danh. Có `?session=<id>` → mở roster: **4 nút lớn** (Có mặt / Muộn / Vắng / Có phép, cao 44px — bấm được bằng ngón tay giữa giờ dạy, không dùng dropdown vì dropdown là 2 thao tác), **chọn hàng loạt** ("Tất cả có mặt" rồi sửa vài người), ghi chú từng người, **thanh Lưu sticky** ở đáy màn hình kèm bộ đếm "đã chọn x/y · còn n người chưa điểm danh".
@@ -181,14 +177,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Bài học khi test (ghi lại cho phiên sau):** seed **đã ghi danh sẵn** HV001–HV005 vào LOP-01/02/03. Script smoke ban đầu dùng `.first()` để bấm nút nên **bấm nhầm vào hàng HV004 của seed** và làm hỏng dữ liệu seed (phải `db reset` khôi phục). Khi viết smoke: **luôn neo thao tác vào đúng hàng của học viên thử** (dùng `aria-label` "Lịch sử của <tên>"), đừng dùng `.first()`.
 - **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. **Câu hỏi nghiệp vụ cần user chốt:** `uq_enrollments_student_class` cấm ghi danh lại vào **chính lớp cũ** → không hỗ trợ "học lại đúng lớp đó" (xem mục VIỆC TIẾP THEO).
 - **Next action:** **P3-T9** — Admin dashboard KPI từ 5 view.
-
-### [2026-07-14] Phiên 4 — Claude — P3-T7 (Schedule + sinh buổi học)
-- **Làm được:** `/admin/schedule` thành trang thật (trước là ComingSoon): chọn lớp qua URL (`?class=`), CRUD lịch lặp (thứ + khung giờ + khoảng áp dụng), nút **Sinh buổi học** gọi RPC `generate_class_sessions`, danh sách buổi học (giờ VN), thêm buổi thủ công, hủy buổi, xóa buổi sinh nhầm. Link "Quản lý lịch" mà Codex đặt sẵn ở trang chi tiết lớp giờ đã trỏ tới trang có thật.
-- **Lớp linh hoạt (D-11):** lớp không có lịch lặp hiện thông báo rõ "đây là trạng thái hợp lệ, không phải thiếu dữ liệu", khóa nút sinh buổi và chỉ đường sang "Thêm buổi" thủ công. RPC trả 0 buổi — UI **không** coi đó là lỗi.
-- **File thay đổi:** `src/features/schedules/*` (mới: schema, queries, actions, `schedule-manager.tsx`, `class-picker.tsx`), `src/app/(dashboard)/admin/schedule/page.tsx`, `src/components/shared/submit-button.tsx` (thêm prop `disabled`, thuần cộng thêm), `supabase/migrations/20260713000022_session_integrity.sql` (mới), `supabase/tests/database/session_integrity.test.sql` (mới), `docs/02-database-design.md`, `docs/08-phase-plan.md`.
-- **Migration/data impact:** migration 22 — (a) `class_sessions.created_by` = `auth.uid()` khi INSERT (chỉ ghi đè khi có JWT, để seed chạy bằng `postgres` giữ nguyên giá trị), bất biến khi UPDATE; (b) trigger chặn **xóa** buổi đã dạy hoặc đã có điểm danh. Không đụng dữ liệu cũ. `db reset` 22/22 sạch.
-- **Đã test (THẬT, có số):** `lint` sạch · `typecheck` sạch · `npm test` **20/20** · `npx supabase test db` **16/16** (3 file) · `build` xanh, `/admin/schedule` là `ƒ`. **Smoke Chrome headless qua UI thật: 9/9 PASS** — thêm lịch lặp → sinh đúng **5/5 buổi** → **bấm sinh lần 2 vẫn 5 buổi** (idempotent, báo "đã đủ" chứ không phải lỗi) → mọi buổi rơi đúng Thứ Ba → **18:00 giờ VN lưu thành 11:00 UTC** → LOP-01 linh hoạt khóa nút sinh + thêm buổi tay được → xóa được buổi chưa điểm danh.
-- **Quyết định mới:** không có.
-- **1 LỖ HỔNG ĐÃ TỰ BẮT VÀ VÁ:** `attendance_records.session_id` là **ON DELETE CASCADE** → xóa một buổi học sẽ **âm thầm xóa sạch điểm danh** của buổi đó. Đúng thứ luật cứng "không hard delete dữ liệu lịch sử" cấm, mà lại nằm sẵn trong schema từ migration 05. Không sửa FK cũ (forward-fix) → migration 22 chặn ở trigger: buổi đã dạy / đã điểm danh thì **không xóa được**, phải **hủy** (`cancelled`) để giữ vết. Có pgTAP xác nhận điểm danh còn nguyên sau khi lệnh xóa bị từ chối.
-- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Sửa lịch lặp **không** tự dời các buổi đã sinh — đây là chủ ý (nếu tự dời thì mọi thay đổi lịch sẽ âm thầm dời cả buổi giáo viên đã dạy xong); muốn áp lịch mới thì xóa buổi chưa dạy rồi sinh lại.
-- **Next action:** **P3-T8** — Enrollment lifecycle qua RPC, tôn trọng D-18 (một HV chỉ một enrollment đang mở).

@@ -108,7 +108,7 @@
 | ID | Task | Definition of Done | Trạng thái |
 |---|---|---|---|
 | P4-T1 | Dashboard "Hôm nay" | Lịch dạy, buổi chưa điểm danh, bài chờ chấm, HV cần chú ý. Vào lớp/buổi trong **1–2 thao tác** | ☑ |
-| P4-T2 | Class detail (tabs) | Tổng quan · Lịch/Buổi · Học viên · Điểm danh · Bài tập · Kiểm tra · Tiến độ · Tài liệu | ☐ |
+| P4-T2 | Class detail (tabs) | Tổng quan · Lịch/Buổi · Học viên · Điểm danh · Bài tập · Kiểm tra · Tiến độ · Tài liệu | ☑ |
 | P4-T3 | Session log | Mở/hoàn tất buổi, nội dung thực dạy, lesson progress | ☐ |
 | P4-T4 | **Attendance roster** | Một màn hình, nút lớn, chọn hàng loạt, nút Lưu **sticky**. Bấm 2 lần không sinh trùng | ☑ |
 | P4-T5 | Assignment | CRUD + attachment + publish (draft ≠ publish) | ☐ |

@@ -30,7 +30,9 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Mutation của khóa học.
  *
- * Mỗi action kiểm quyền ở dòng đầu bằng `requireRole("super_admin")`.
+ * Mỗi action kiểm quyền ở dòng đầu. Mutation cấu trúc khóa học chỉ dành cho
+ * super admin; riêng tài liệu cho phép cả teacher, rồi RLS tiếp tục khoanh đúng
+ * course của lớp họ được phân công.
  * Đây KHÔNG phải sự thừa thãi vì đã có middleware: middleware chỉ chặn điều
  * hướng trang. Server action là một HTTP endpoint — gọi thẳng được, không đi
  * qua middleware. Và kể cả action này có lỗ, RLS vẫn chặn ở DB.
@@ -270,7 +272,7 @@ export async function createMaterialUploadUrlAction(input: {
   fileName: string;
   sizeBytes: number;
 }): Promise<{ error: string } | UploadTicket> {
-  await requireRole("super_admin");
+  await requireRole("super_admin", "teacher");
 
   if (!z.uuid().safeParse(input.courseId).success) {
     return { error: "Khóa học không hợp lệ." };
@@ -315,7 +317,7 @@ export async function registerMaterialAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireRole("super_admin");
+  const user = await requireRole("super_admin", "teacher");
 
   const parsed = materialRegisterSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -377,6 +379,7 @@ export async function registerMaterialAction(
   });
 
   revalidatePath(`/admin/courses/${course_id}`);
+  revalidatePath("/teacher/classes");
   return { success: `Đã tải lên "${data.title}".` };
 }
 
@@ -384,7 +387,7 @@ export async function updateMaterialAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireRole("super_admin", "teacher");
 
   const id = formData.get("id");
   const courseId = formData.get("course_id");
@@ -423,6 +426,7 @@ export async function updateMaterialAction(
   });
 
   revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath("/teacher/classes");
   return { success: "Đã lưu thay đổi." };
 }
 
@@ -430,7 +434,7 @@ export async function deleteMaterialAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireRole("super_admin", "teacher");
 
   const id = formData.get("id");
   const courseId = formData.get("course_id");
@@ -474,6 +478,7 @@ export async function deleteMaterialAction(
   });
 
   revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath("/teacher/classes");
   return { success: `Đã xóa "${material.title}".` };
 }
 

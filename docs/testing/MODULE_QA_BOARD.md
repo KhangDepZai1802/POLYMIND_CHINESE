@@ -28,7 +28,7 @@
 | 3 | M03 | User & Account Management | Invite (service role, server-only), khóa/mở tài khoản, đổi role, `profiles` | P1, P3 | **High** | Pending | Not Required | Not Started |
 | 4 | M04 | Students | CRUD hồ sơ, guardian (field, **không phải role**), link tài khoản | P3 | High | Pending | Not Required | Not Started |
 | 5 | M05 | Teachers | CRUD hồ sơ, `teacher_code`, phân công lớp | P3 | Medium | Pending | Not Required | Not Started |
-| 6 | M06 | Courses & Curriculum | Level, Course, Module, Lesson, Materials | P3 | Medium | Pending | Not Required | Not Started |
+| 6 | M06 | Courses & Curriculum | Level, Course, Module, Lesson, Materials | P3 | Medium | **Bugs Found** | **Fixed** | Not Started |
 | 7 | M07 | Classes | Lớp triển khai, sĩ số, hình thức, địa điểm, GV chính/trợ giảng | P3 | High | Pending | Not Required | Not Started |
 | 8 | M08 | Schedules & Sessions | Lịch lặp, **sinh buổi idempotent**, đổi lịch/học bù, lớp linh hoạt | P3, P4 | **High** | Pending | Not Required | Not Started |
 | 9 | M09 | Enrollments | Ghi danh (**capacity race**), tạm dừng, **chuyển lớp giữ lịch sử**, rút, hoàn thành | P3 | **High** | Pending | Not Required | Not Started |
@@ -40,11 +40,11 @@
 | 15 | M15 | Notifications & Announcements | In-app một chiều, **dedupe cron**, link có authorization | P6 | Medium | Pending | Not Required | Not Started |
 | 16 | M16 | Reports & Export | Báo cáo theo scope, **export giữ đúng filter đang chọn** | P6 | Medium | Pending | Not Required | Not Started |
 | 17 | M17 | Dashboards | 3 dashboard theo role, KPI từ view | P3–P5 | Low | Pending | Not Required | Not Started |
-| 18 | M18 | Storage & Files | 5 private bucket, **object_path do server sinh**, signed URL ngắn hạn, IDOR file | P2, P4, P5 | **High** | Pending | Not Required | Not Started |
+| 18 | M18 | Storage & Files | 5 private bucket, **object_path do server sinh**, signed URL ngắn hạn, IDOR file | P2, P4, P5 | **High** | **Bugs Found** | **Fixed** | Not Started |
 | 19 | M19 | Audit Log | Append-only, **chỉ super admin đọc**, actor thật | P6 | Medium | Pending | Not Required | Not Started |
 | 20 | M20 | Security & Deployment | Headers, rate limit, upload abuse, env/secret, production seed, RLS trên cloud | P7 | **High** | Pending | Not Required | Not Started |
 
-**Trạng thái: chưa module nào bắt đầu** — Phase 0 vừa xong, chưa có code.
+**Trạng thái:** chưa bắt đầu đợt QA module toàn diện. Bug phát hiện trong lúc build được ghi ngay vào Verification Queue để không mất dấu.
 
 ---
 
@@ -60,7 +60,9 @@
 
 ## Verification Queue (fix đang chờ xác minh độc lập)
 
-*(trống)*
+| Bug ID | Module | Fix của Codex | Trạng thái |
+|---|---|---|---|
+| BUG-M06-001 | M06, M18 | Upload tài liệu ở cấp khóa học chấp nhận `module_id`/`lesson_id` không được gửi; mở server action tài liệu cho teacher rồi để RLS khoanh course được phân công. Smoke production đã upload/xóa sạch, nhưng **Codex không tự đánh dấu Verified**. | Chờ Claude xác minh độc lập |
 
 ---
 
