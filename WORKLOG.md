@@ -36,18 +36,19 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-14** — Claude — P3-T3
+> Cập nhật: **2026-07-14** — Claude — P3-T9
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- **P3-T9 — xong — Claude — 2026-07-14.** Admin dashboard KPI thật, đọc từ view (bỏ ComingSoon).
 - **P3-T8 — xong — Claude — 2026-07-14.** Vòng đời ghi danh qua RPC (ghi danh / tạm dừng / học lại / hoàn thành / rút / chuyển lớp), giữ history, tôn trọng D-18.
 - **P3-T7 — xong — Claude — 2026-07-14.** Lịch lặp + sinh buổi học (idempotent) + lớp linh hoạt không lịch. Trang `/admin/schedule` đã thật (bỏ ComingSoon). Migration 22 chốt attribution + chặn xóa buổi đã có lịch sử.
 - **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Migration 21 chốt attribution ở DB.
 - **P3-T6 — xong — Codex — 2026-07-13.** CRUD lớp + phân công GV, có chốt chặn DB giữ điều kiện lớp `active`.
 - **DB: 22 migration.** pgTAP **16/16 pass** (3 file). Unit test **28/28 pass**.
-- **Phase 3 còn: P3-T9 (Admin dashboard KPI) · P3-T10 (unit test domain — phần enrollment transitions đã làm ở P3-T8).**
+- **Phase 3 còn ĐÚNG 1 task: P3-T10** (unit test domain — phần enrollment transitions đã làm ở P3-T8, còn recurrence + capacity).
 - **GitHub:** https://github.com/KhangDepZai1802/POLYMIND_CHINESE
 - App chạy được: Next.js 16 + TS strict + Tailwind v4 + shadcn/ui. Auth SSR (login/forgot/reset/invite), app shell 3 role, logo PolyMind, footer bản quyền.
-- **DB: 20 migration + seed chạy sạch.** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view, 7 RPC, 5 private bucket.
+- **Schema:** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view (`security_invoker`), 7 RPC, 5 private bucket. `db reset` + seed chạy sạch.
 - **RLS đã kiểm chứng THẬT qua HTTP API** (Supabase Auth → JWT → PostgREST): GV A chỉ thấy LOP-01/02 + HV001–004 (không thấy HV005), học phí 0 dòng, audit 0 dòng; HV5 chỉ thấy LOP-03 + chính mình; anonymous bị chặn ở tầng GRANT.
 - ⚠️ **Test suite đang HOÃN theo yêu cầu user** (2026-07-13): ưu tiên build web hoàn chỉnh trước. RLS/bảo mật vẫn làm đầy đủ — đó là tính năng, không phải test.
 - Môi trường: Node 22.20 · npm 10.9 · Docker 28.4 · Supabase local **port 553xx** (543xx bị Windows reserve).
@@ -56,9 +57,12 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P3-T9` — Admin dashboard**: KPI thật lấy từ 5 view có sẵn (`v_enrollment_progress` · `v_class_progress` · `v_student_attendance_summary` · `v_at_risk_students` · `v_tuition_balance`) — **không tự viết lại phép tính** ở tầng app, view đã là nguồn sự thật. Xem `docs/01` §15 để biết KPI nào phải hiện.
+**`P3-T10` — Unit test domain** (task cuối của Phase 3): recurrence **35 buổi** · capacity · enrollment transitions.
+- Phần **enrollment transitions ĐÃ XONG** ở P3-T8: `tests/unit/domain/enrollment.test.ts` (8 test, có ca fail-closed).
+- Còn thiếu: **recurrence** (sinh 35 buổi từ lịch lặp — hiện logic nằm trong RPC `generate_class_sessions`, đã có smoke thật nhưng **chưa có test tự động**) và **capacity** (chặn vượt sĩ số — đã có smoke, chưa có test tự động).
+- Gợi ý: hai thứ này là logic **SQL**, không phải TS → nên viết **pgTAP** (`supabase/tests/database/`) chứ đừng port công thức sang TS rồi test bản sao — test bản sao thì nó xanh cả khi RPC thật sai.
 
-Sau P3-T9: **P3-T10** (unit test domain còn thiếu: recurrence 35 buổi · capacity. Phần **enrollment transitions đã có** `tests/unit/domain/enrollment.test.ts` từ P3-T8).
+Xong P3-T10 là **đóng Phase 3** → sang **Phase 4 (Teacher operations)**, bắt đầu từ `P4-T1` (Dashboard "Hôm nay") hoặc `P4-T4` (Attendance roster — việc giáo viên dùng nhiều nhất).
 
 ⚠️ **Câu hỏi nghiệp vụ cần user chốt (không tự quyết):** `uq_enrollments_student_class` (migration 04) cấm một học viên ghi danh **lại vào chính lớp cũ** — kể cả sau khi đã rút hoặc hoàn thành. Nghĩa là **học lại đúng lớp đó (retake) là không thể**; phải mở lớp mới. Nếu trung tâm có nghiệp vụ học lại thì cần forward-fix ràng buộc này. Hiện app báo lỗi rõ ràng chứ không ném lỗi DB thô.
 
@@ -115,6 +119,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 6 — Claude — P3-T9 (Admin dashboard)
+- **Làm được:** `/admin` thành dashboard thật (bỏ ComingSoon): 4 thẻ KPI (học viên đang học · lớp đang hoạt động · buổi học hôm nay · giáo viên) bấm được sang từng mục; bảng **tiến độ các lớp** (sĩ số / chuyên cần / tiến độ); **học viên cần chú ý** kèm lý do rủi ro; **buổi học hôm nay** theo giờ VN; thẻ **học phí** (còn phải thu / số hóa đơn / quá hạn).
+- **Nguyên tắc:** mọi con số **đọc từ view** (`v_class_progress`, `v_at_risk_students`, `v_tuition_balance`), **không tự tính lại** ở tầng app. View đã là nguồn sự thật của công thức; viết lại phép tính ở app là tạo nguồn sự thật thứ hai, sớm muộn hai chỗ lệch nhau. Toàn bộ view đều `security_invoker` → RLS của người gọi vẫn áp dụng.
+- **File thay đổi:** `src/features/dashboard/server/queries.ts` (mới), `src/app/(dashboard)/admin/page.tsx`, `docs/08-phase-plan.md`.
+- **Migration/data impact:** không có.
+- **Đã test (THẬT, có số):** `lint` · `typecheck` sạch · `npm test` **28/28** · `build` xanh, `/admin` vẫn `ƒ` (dynamic — không cache session giữa user). **Smoke Chrome headless: 9/9 PASS** — từng KPI được **đối chiếu với truy vấn DB thật**: học viên đang học **5**, lớp đang hoạt động **3**, giáo viên **2**, khóa học đang mở **11**, buổi học hôm nay **0**, cần chú ý **0**; bảng tiến độ liệt kê đủ LOP-01/02/03.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** Dashboard hiện nhiều **empty state** — đúng thực tế, không phải lỗi: seed chưa có điểm danh, chưa có hóa đơn (Phase 6), và buổi học đầu tiên rơi vào 20/07 (hôm nay 14/07) nên "buổi học hôm nay = 0". Khi Phase 4/6 có dữ liệu thật thì các thẻ này tự có số.
+- **Next action:** **P3-T10** — unit test domain (recurrence + capacity nên viết bằng **pgTAP**, xem VIỆC TIẾP THEO).
 
 ### [2026-07-14] Phiên 5 — Claude — P3-T8 (Enrollment lifecycle)
 - **Làm được:** Thẻ "Học viên" ở trang chi tiết lớp thành `EnrollmentPanel` thật: ghi danh, tạm dừng, cho học lại, xác nhận hoàn thành, rút học, **chuyển lớp**, xem **lịch sử** đổi trạng thái. Mọi thao tác **đi qua RPC**, không có đường `update()` thẳng nào. Mỗi lần đổi trạng thái đều hỏi **lý do** → ghi vào `enrollment_status_history` (append-only) trong cùng transaction.
@@ -175,13 +189,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
   3. **Supabase bản mới KHÔNG tự GRANT** quyền bảng cho `anon`/`authenticated` → RLS policy viết đủ nhưng mọi role vẫn nhận `permission denied`. Phải có migration `..._grants.sql` tường minh.
   4. **Seed `auth.users`:** các cột `confirmation_token`, `recovery_token`, … phải là `''` chứ **không** được NULL, nếu không GoTrue crash khi login (`converting NULL to string`).
 - **Next action:** **`P3-T1`** — layout admin + dashboard skeleton, rồi P3-T2 (CRUD Level/Course/Module/Lesson).
-
-### [2026-07-13] Phiên 1 — Claude — P0-T1 → P0-T6 (Phase 0)
-- **Làm được:** Hoàn tất Phase 0. Khảo sát read-only repo XKLĐ (source, 20 module QA board, docs 01–04, WORKLOG, AI/AGENTS.md). Dời folder `Polymind Chinese` ra khỏi repo cũ → sibling. `git init` repo mới trên `main`. Viết toàn bộ docs nền + bộ phối hợp AI.
-- **File thay đổi:** `docs/01-business-analysis.md`, `docs/02-database-design.md`, `docs/03-workflow.md`, `docs/04-system-architecture.md`, `docs/05-testing-strategy.md`, `docs/06-deployment-vercel-supabase.md`, `docs/07-product-backlog.md`, `docs/08-phase-plan.md`, `docs/testing/MODULE_QA_BOARD.md`, `WORKLOG.md`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `.env.example`, `.gitignore`.
-- **Migration/data impact:** Không có (chưa có schema).
-- **Đã test:** Không có test để chạy (chưa có code). Đã xác minh môi trường: `node -v` → v22.20.0 · `npm -v` → 10.9.3 · `docker info` → daemon 28.4.0 chạy được · Supabase CLI và Vercel CLI **chưa cài** (sẽ dùng `npx`).
-- **Quyết định mới:** D-14 (vị trí repo — sibling, user chốt), D-15 (local-first, user chốt).
-- **Blocker/rủi ro:** BLK-1 (chưa có Supabase cloud), BLK-2 (chưa có Vercel). **Không chặn Phase 1–6.**
-- **Bài học đã port từ repo XKLĐ (áp vào thiết kế mới):** (a) attribution phải là **actor thật**, không phải "user đầu tiên" — hệ cũ dính `BUG_M06_01`/`BUG_M12_01`; (b) idempotency phải cưỡng chế bằng **unique index ở DB**, app-level check thua race — hệ cũ trả hoa hồng 2 lần (`BUG_M09_01`); (c) một hành động = **một đường ghi** — hệ cũ có 3 đường set `Payment→Paid` lệch nhau (`BUG_M10_01`); (d) **không có nhánh `return true` mặc định** trong hàm phân quyền — hệ cũ dính `MessagingPolicy.CanMessage` fallback `true` (`CR-M14-3`); (e) export phải **giữ filter đang chọn** (`BUG_M16_01`); (f) không tạo trang monolith > 2.000 dòng như `CandidateDetail.razor`.
-- **Next action:** **`P1-T1`** — scaffold Next.js (App Router + TS strict + npm), bật script lint/typecheck/test/build. DoD: `npm run build` + `npm run typecheck` xanh.
