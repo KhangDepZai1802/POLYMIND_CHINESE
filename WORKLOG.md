@@ -36,9 +36,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-14** — Claude — P4-T1
+> Cập nhật: **2026-07-14** — Claude — P4-T4
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- **P4-T4 — xong — Claude — 2026-07-14.** Attendance roster: nút lớn 44px, chọn hàng loạt, thanh Lưu sticky. **Bấm Lưu 2 lần không sinh trùng** (upsert ở DB). IDOR đã kiểm: đoán URL buổi lớp khác → 404.
 - **P4-T1 — xong — Claude — 2026-07-14.** Dashboard "Hôm nay" của giáo viên (bỏ ComingSoon). **Gate Phase 4 đã kiểm chứng thật:** GV A không lấy được dữ liệu LOP-03 kể cả khi gọi thẳng Supabase.
 - 🎉 **PHASE 3 XONG** (P3-T1 → P3-T10). Super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
 - **P3-T10 — xong — Claude — 2026-07-14.** Test domain: recurrence 35 buổi + capacity (pgTAP, gọi đúng RPC production) + enrollment transitions (Vitest).
@@ -60,12 +61,12 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P4-T4` — Attendance roster** (việc giáo viên dùng nhiều nhất, làm trước P4-T2/T3):
-- Một màn hình, nút lớn, chọn hàng loạt, nút Lưu **sticky**. Vào bằng `/teacher/attendance?session=<id>` — **dashboard P4-T1 đã trỏ sẵn link này**, hiện là trang ComingSoon.
-- Dùng RPC **`bulk_mark_attendance`** (upsert theo `(session_id, enrollment_id)`) → bấm Lưu 2 lần vẫn **1 bản ghi/HV**. Đã kiểm chứng RPC chạy được với JWT giáo viên ở P4-T1.
-- Chỉ điểm danh **enrollment đang mở** (`pending`/`active`/`paused`) — học viên đã rút thì không điểm danh.
+**`P4-T2` — Class detail của giáo viên** (8 tab: Tổng quan · Lịch/Buổi · Học viên · Điểm danh · Bài tập · Kiểm tra · Tiến độ · Tài liệu).
+- **Dashboard P4-T1 đã trỏ sẵn `/teacher/classes/<id>` — trang đó CHƯA CÓ** (hiện `/teacher/classes` là ComingSoon). Đây là link đang chờ được cắm vào.
+- Tab Điểm danh và tab Tài liệu **dùng lại code đã có**: `features/attendance/*` (P4-T4) và `features/courses` (P3-T3, tài liệu theo `visibility`) — đừng viết lại.
+- Tab Bài tập / Kiểm tra sẽ rỗng cho tới P4-T5/T7; để empty state tử tế, đừng để trang vỡ.
 
-Sau P4-T4: **P4-T2** (Class detail 8 tab — dashboard đã trỏ sẵn `/teacher/classes/<id>`, chưa có trang) → **P4-T3** (Session log) → P4-T5…T10.
+Sau P4-T2: **P4-T3** (Session log — mở/hoàn tất buổi, nội dung thực dạy) → **P4-T5** (Assignment) → P4-T6…T10.
 
 ⚠️ **Gate của Phase 4 (đọc kỹ trước khi code):** giáo viên **không** được truy cập lớp ngoài phạm vi qua UI, direct URL, server action **và** Supabase client gọi thẳng. Mọi query giáo viên đều quy về bảng `class_teachers` — RLS đã lo, đừng tự viết `if role ===` ở app.
 
@@ -121,6 +122,19 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 9 — Claude — P4-T4 (Attendance roster)
+- **Làm được:** `/teacher/attendance` thành trang thật (bỏ ComingSoon). Không có `?session=` → cho chọn buổi cần điểm danh. Có `?session=<id>` → mở roster: **4 nút lớn** (Có mặt / Muộn / Vắng / Có phép, cao 44px — bấm được bằng ngón tay giữa giờ dạy, không dùng dropdown vì dropdown là 2 thao tác), **chọn hàng loạt** ("Tất cả có mặt" rồi sửa vài người), ghi chú từng người, **thanh Lưu sticky** ở đáy màn hình kèm bộ đếm "đã chọn x/y · còn n người chưa điểm danh".
+- **Hai chỗ dễ sai đã xử lý có chủ ý:**
+  1. **Chưa chọn ≠ vắng.** Học viên chưa được chọn trạng thái thì form **không gửi field** đó lên → server bỏ qua → họ vẫn là "chưa điểm danh". Nếu mặc định thành `absent` thì giáo viên chỉ cần bấm Lưu là cả lớp bị đánh vắng oan.
+  2. **Chỉ điểm danh enrollment ĐANG MỞ.** Học viên đã rút không còn thuộc lớp — điểm danh họ là ghi dữ liệu sai vào lịch sử, và làm mẫu số chuyên cần sai vĩnh viễn.
+- **File thay đổi:** `src/features/attendance/*` (mới: queries, actions, `attendance-roster.tsx`), `src/app/(dashboard)/teacher/attendance/page.tsx`.
+- **Migration/data impact:** không có. Dùng đúng RPC `bulk_mark_attendance` có sẵn (upsert theo `(session_id, enrollment_id)`, `marked_by` lấy từ `auth.uid()`).
+- **Đã test (THẬT, có số):** `lint` · `typecheck` sạch · `npm test` **28/28** · `build` xanh, `/teacher/attendance` là `ƒ`. **Smoke Chrome headless: 10/10 PASS** (dựng buổi thật rồi dọn) — chọn hàng loạt → sửa 1 người thành Vắng + ghi chú → lưu đúng `absent,present`, ghi chú vào DB, `marked_by` = GV đang đăng nhập.
+- **🔒 Bảo mật đã kiểm chứng thật:** (a) **BẤM LƯU 2 LẦN → vẫn đúng 2 bản ghi**, không sinh trùng (chống trùng bằng unique index + `ON CONFLICT` ở DB, **không** bằng disable nút — nút disable không cứu được khi request thứ hai đã bay đi). (b) **IDOR:** GV A đoán URL `?session=<buổi của LOP-03>` → **404**, không lộ một dòng dữ liệu nào. (c) GV A gọi **thẳng RPC** để điểm danh buổi lớp khác → *"Không có quyền điểm danh buổi học này"*, buổi đó vẫn 0 bản ghi.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** không có.
+- **Next action:** **P4-T2** — Class detail 8 tab của giáo viên (xem VIỆC TIẾP THEO).
 
 ### [2026-07-14] Phiên 8 — Claude — P4-T1 (Dashboard "Hôm nay" của giáo viên)
 - **Làm được:** `/teacher` thành dashboard thật (bỏ ComingSoon): lịch dạy hôm nay (giờ VN) kèm **tiến độ điểm danh từng buổi** và nút Điểm danh; buổi **đã diễn ra mà còn thiếu điểm danh**; bài chờ chấm; lớp của tôi; học viên cần chú ý. Vào buổi/lớp trong **1 thao tác** (đúng DoD).
@@ -178,16 +192,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **1 LỖ HỔNG ĐÃ TỰ BẮT VÀ VÁ:** `attendance_records.session_id` là **ON DELETE CASCADE** → xóa một buổi học sẽ **âm thầm xóa sạch điểm danh** của buổi đó. Đúng thứ luật cứng "không hard delete dữ liệu lịch sử" cấm, mà lại nằm sẵn trong schema từ migration 05. Không sửa FK cũ (forward-fix) → migration 22 chặn ở trigger: buổi đã dạy / đã điểm danh thì **không xóa được**, phải **hủy** (`cancelled`) để giữ vết. Có pgTAP xác nhận điểm danh còn nguyên sau khi lệnh xóa bị từ chối.
 - **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Sửa lịch lặp **không** tự dời các buổi đã sinh — đây là chủ ý (nếu tự dời thì mọi thay đổi lịch sẽ âm thầm dời cả buổi giáo viên đã dạy xong); muốn áp lịch mới thì xóa buổi chưa dạy rồi sinh lại.
 - **Next action:** **P3-T8** — Enrollment lifecycle qua RPC, tôn trọng D-18 (một HV chỉ một enrollment đang mở).
-
-### [2026-07-14] Phiên 3 — Claude — P3-T3 (Course materials)
-- **Làm được:** Tab "Tài liệu" ở trang chi tiết khóa học: tải lên (gắn vào cả khóa / một chương / một bài học), đổi tên + `visibility`, tải xuống qua signed URL, xóa. Nhãn/định dạng file dùng chung ở `lib/domain/files.ts` (allowlist đuôi file, 50 MB, TTL 120s).
-- **Kiến trúc — upload đi THẲNG trình duyệt → Storage, không qua Next server:** 3 bước (server ký `createSignedUploadUrl` → browser `uploadToSignedUrl` → server ghi metadata sau khi `info()` xác minh file có thật). Lý do: server action mặc định chặn body > 1 MB và **Vercel giới hạn cứng 4,5 MB** cho serverless function, trong khi bucket cho phép 50 MB → nếu nhận `File` trong server action thì PDF 20 MB chạy ngon ở local rồi **chết ở production**.
-- **File thay đổi:** `src/lib/domain/files.ts` (mới), `src/features/courses/{schema.ts,server/actions.ts,server/queries.ts}`, `src/features/courses/components/materials-manager.tsx` (mới), `src/app/(dashboard)/admin/courses/[id]/page.tsx`, `supabase/migrations/20260713000021_material_uploader_attribution.sql` (mới), `supabase/tests/database/material_uploader_attribution.test.sql` (mới), `tests/unit/domain/files.test.ts` (mới), `docs/02-database-design.md`, `docs/08-phase-plan.md`.
-- **Migration/data impact:** migration 21 — trigger `force_material_uploader`: `uploaded_by` **luôn** = `auth.uid()` khi INSERT, **bất biến** khi UPDATE. Không đụng dữ liệu cũ (seed không chèn `course_materials`). `db reset` 21/21 migration sạch.
-- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **20/20 pass** (thêm 10 test mới cho `files.ts`) · `npx supabase test db` **10/10 pass** (2 file) · `npm run build` xanh, `/admin/courses/[id]` vẫn `ƒ` (dynamic). **Kiểm chứng RLS qua HTTP API thật: 17/17 PASS** (login → JWT → PostgREST/Storage) — HV **không** xin được vé upload (`new row violates row-level security policy`), **không** ký được URL tài liệu `staff_only` dù biết đúng path, `staff_only` vô hình trong metadata; GV chỉ thao tác được trong course mình dạy; bucket private (URL không ký → 400); mạo danh `uploaded_by` qua PostgREST bị DB ghi đè. **Smoke Chrome headless qua UI thật: 8/8 PASS** (đăng nhập → tab Tài liệu → upload → DB nhận đúng `lesson_id` + `module_id` cha → tải xuống → xóa).
-- **Quyết định mới:** không có (không đổi quyết định đã chốt nào).
-- **2 BUG ĐÃ TỰ BẮT VÀ SỬA TRONG PHIÊN:**
-  1. **Attribution không được cưỡng chế ở DB.** `uploaded_by` chỉ trông chờ app nhớ gán, mà RLS lại cho admin/GV INSERT thẳng qua PostgREST → client khai `uploaded_by` là ai cũng được, hoặc bỏ trống (kiểm chứng: NULL). Đúng lớp bug `BUG_M06_01`/`BUG_M12_01` của hệ XKLĐ cũ mà CLAUDE.md đã dặn. → migration 21 + pgTAP.
-  2. **Tên file tải về bị mojibake.** Supabase Storage percent-encode **hai lần** phần non-ASCII của `Content-Disposition` → người dùng nhận file tên `Gi%C3%A1o tr%C3%ACnh.pdf`. → `sanitizeDownloadName()` ASCII hóa (bỏ dấu tiếng Việt, bỏ chữ Hán); tiêu đề hiển thị trên web vẫn giữ nguyên tiếng Việt/chữ Hán. Có unit test.
-- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Upload cho **giáo viên** chưa có UI (server action đang giới hạn `super_admin`) — RLS đã cho phép GV dạy course đó, UI sẽ mở ở **P4-T2**; không phải lỗ hổng, chỉ là chưa lộ giao diện.
-- **Next action:** **P3-T7** — Schedule + sinh buổi học (RPC `generate_class_sessions`, hỗ trợ lớp linh hoạt không recurrence).
