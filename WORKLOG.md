@@ -36,12 +36,15 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-13** — Claude — Phiên 1
+> Cập nhật: **2026-07-14** — Claude — P3-T3
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Thêm migration 21 chốt attribution ở DB.
+- **P3-T6 — xong — Codex — 2026-07-13.** CRUD lớp + phân công GV, có chốt chặn DB giữ điều kiện lớp `active`.
+- **DB: 21 migration.** pgTAP 10/10 pass (2 file). Unit test 20/20 pass.
 - **GitHub:** https://github.com/KhangDepZai1802/POLYMIND_CHINESE
 - App chạy được: Next.js 16 + TS strict + Tailwind v4 + shadcn/ui. Auth SSR (login/forgot/reset/invite), app shell 3 role, logo PolyMind, footer bản quyền.
-- **DB: 15 migration + seed chạy sạch.** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view, 7 RPC, 5 private bucket.
+- **DB: 20 migration + seed chạy sạch.** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view, 7 RPC, 5 private bucket.
 - **RLS đã kiểm chứng THẬT qua HTTP API** (Supabase Auth → JWT → PostgREST): GV A chỉ thấy LOP-01/02 + HV001–004 (không thấy HV005), học phí 0 dòng, audit 0 dòng; HV5 chỉ thấy LOP-03 + chính mình; anonymous bị chặn ở tầng GRANT.
 - ⚠️ **Test suite đang HOÃN theo yêu cầu user** (2026-07-13): ưu tiên build web hoàn chỉnh trước. RLS/bảo mật vẫn làm đầy đủ — đó là tính năng, không phải test.
 - Môi trường: Node 22.20 · npm 10.9 · Docker 28.4 · Supabase local **port 553xx** (543xx bị Windows reserve).
@@ -50,7 +53,9 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P3-T1` — Layout admin + dashboard skeleton**, rồi đi tiếp P3-T2 → P3-T10 (Academic admin core).
+**`P3-T7` — Schedule + sinh buổi học**: UI lịch lặp + nút sinh buổi (dùng RPC `generate_class_sessions`, đã idempotent) + hỗ trợ **lớp linh hoạt không có lịch lặp** (LOP-01 cố tình không có recurrence — đúng nghiệp vụ, không phải thiếu dữ liệu).
+
+Sau P3-T7: **P3-T8** (Enrollment lifecycle, qua RPC) → **P3-T9** (Admin dashboard KPI từ view) → **P3-T10** (unit test domain).
 
 Mục tiêu Phase 3: super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
 
@@ -105,6 +110,28 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 3 — Claude — P3-T3 (Course materials)
+- **Làm được:** Tab "Tài liệu" ở trang chi tiết khóa học: tải lên (gắn vào cả khóa / một chương / một bài học), đổi tên + `visibility`, tải xuống qua signed URL, xóa. Nhãn/định dạng file dùng chung ở `lib/domain/files.ts` (allowlist đuôi file, 50 MB, TTL 120s).
+- **Kiến trúc — upload đi THẲNG trình duyệt → Storage, không qua Next server:** 3 bước (server ký `createSignedUploadUrl` → browser `uploadToSignedUrl` → server ghi metadata sau khi `info()` xác minh file có thật). Lý do: server action mặc định chặn body > 1 MB và **Vercel giới hạn cứng 4,5 MB** cho serverless function, trong khi bucket cho phép 50 MB → nếu nhận `File` trong server action thì PDF 20 MB chạy ngon ở local rồi **chết ở production**.
+- **File thay đổi:** `src/lib/domain/files.ts` (mới), `src/features/courses/{schema.ts,server/actions.ts,server/queries.ts}`, `src/features/courses/components/materials-manager.tsx` (mới), `src/app/(dashboard)/admin/courses/[id]/page.tsx`, `supabase/migrations/20260713000021_material_uploader_attribution.sql` (mới), `supabase/tests/database/material_uploader_attribution.test.sql` (mới), `tests/unit/domain/files.test.ts` (mới), `docs/02-database-design.md`, `docs/08-phase-plan.md`.
+- **Migration/data impact:** migration 21 — trigger `force_material_uploader`: `uploaded_by` **luôn** = `auth.uid()` khi INSERT, **bất biến** khi UPDATE. Không đụng dữ liệu cũ (seed không chèn `course_materials`). `db reset` 21/21 migration sạch.
+- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **20/20 pass** (thêm 10 test mới cho `files.ts`) · `npx supabase test db` **10/10 pass** (2 file) · `npm run build` xanh, `/admin/courses/[id]` vẫn `ƒ` (dynamic). **Kiểm chứng RLS qua HTTP API thật: 17/17 PASS** (login → JWT → PostgREST/Storage) — HV **không** xin được vé upload (`new row violates row-level security policy`), **không** ký được URL tài liệu `staff_only` dù biết đúng path, `staff_only` vô hình trong metadata; GV chỉ thao tác được trong course mình dạy; bucket private (URL không ký → 400); mạo danh `uploaded_by` qua PostgREST bị DB ghi đè. **Smoke Chrome headless qua UI thật: 8/8 PASS** (đăng nhập → tab Tài liệu → upload → DB nhận đúng `lesson_id` + `module_id` cha → tải xuống → xóa).
+- **Quyết định mới:** không có (không đổi quyết định đã chốt nào).
+- **2 BUG ĐÃ TỰ BẮT VÀ SỬA TRONG PHIÊN:**
+  1. **Attribution không được cưỡng chế ở DB.** `uploaded_by` chỉ trông chờ app nhớ gán, mà RLS lại cho admin/GV INSERT thẳng qua PostgREST → client khai `uploaded_by` là ai cũng được, hoặc bỏ trống (kiểm chứng: NULL). Đúng lớp bug `BUG_M06_01`/`BUG_M12_01` của hệ XKLĐ cũ mà CLAUDE.md đã dặn. → migration 21 + pgTAP.
+  2. **Tên file tải về bị mojibake.** Supabase Storage percent-encode **hai lần** phần non-ASCII của `Content-Disposition` → người dùng nhận file tên `Gi%C3%A1o tr%C3%ACnh.pdf`. → `sanitizeDownloadName()` ASCII hóa (bỏ dấu tiếng Việt, bỏ chữ Hán); tiêu đề hiển thị trên web vẫn giữ nguyên tiếng Việt/chữ Hán. Có unit test.
+- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Upload cho **giáo viên** chưa có UI (server action đang giới hạn `super_admin`) — RLS đã cho phép GV dạy course đó, UI sẽ mở ở **P4-T2**; không phải lỗ hổng, chỉ là chưa lộ giao diện.
+- **Next action:** **P3-T7** — Schedule + sinh buổi học (RPC `generate_class_sessions`, hỗ trợ lớp linh hoạt không recurrence).
+
+### [2026-07-13] Phiên 2 — Codex — P3-T6
+- **Làm được:** Hoàn tất CRUD lớp: danh sách responsive, tạo/sửa, trang chi tiết, sĩ số mở, hình thức và địa điểm tự do; phân công/gỡ GV chính và trợ giảng. Chặn hạ/gỡ GV chính khi lớp đang hoạt động ở server và DB; chỉ hiện giáo viên có cả hồ sơ lẫn tài khoản đang hoạt động.
+- **File thay đổi:** `src/app/(dashboard)/admin/classes/*`, `src/features/classes/*`, `src/features/teachers/server/queries.ts`, migration 20, pgTAP `active_class_integrity.test.sql`, `docs/03-workflow.md`, phase plan và WORKLOG.
+- **Migration/data impact:** migration `20260713000020_active_class_integrity.sql` thêm 2 trigger fail-closed cho điều kiện lớp `active`; không xóa/chuyển đổi dữ liệu. `supabase db reset` áp dụng sạch 20/20 migration; seed dev nạp lại đúng UTF-8.
+- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **10/10 pass** · `npm run db:test` **6/6 pass** (lần đầu fixture dùng sai enum nên 0 assertion, đã sửa fixture và chạy lại xanh) · `npm run build` xanh, route `/admin/classes/[id]` dynamic · Chrome headless smoke: login admin → list lớp → chi tiết `LOP-01` → dialog sửa lớp đều OK.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud; cảnh báo Next.js về convention `middleware` deprecated chưa chặn build.
+- **Next action:** **P3-T3** — Course materials: upload private bucket, signed URL, `visibility`; sau đó P3-T7.
 
 ### [2026-07-13] Phiên 1 — Claude — P1 + P2 (Scaffold + Schema/RLS/Seed)
 - **Làm được:** Hoàn tất Phase 1 và Phase 2.

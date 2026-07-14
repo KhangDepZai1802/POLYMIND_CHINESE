@@ -95,6 +95,46 @@ export const lessonSchema = z.object({
   order_index: z.coerce.number().int().min(1, { message: "Thứ tự từ 1 trở lên" }),
 });
 
+// --- Tài liệu khóa học -------------------------------------------------------
+
+const MATERIAL_VISIBILITIES = ["staff_only", "enrolled_students"] as const;
+
+/** Select rỗng / "none" → null. Gắn tài liệu ở cấp khóa học là hợp lệ. */
+const optionalUuid = z
+  .union([z.literal(""), z.literal("none"), z.uuid()])
+  .transform((v) => (v === "" || v === "none" ? null : v))
+  .nullable();
+
+const materialTitle = z
+  .string()
+  .trim()
+  .min(2, { message: "Tên tài liệu tối thiểu 2 ký tự" })
+  .max(200, { message: "Tên tài liệu tối đa 200 ký tự" });
+
+/**
+ * Ghi nhận metadata SAU khi file đã lên storage.
+ *
+ * `object_path` KHÔNG lấy từ đây một cách mù quáng: action phải kiểm nó nằm
+ * đúng thư mục `course_id` và file có thật trên storage. Client gửi path trỏ
+ * sang course khác là bị từ chối.
+ */
+export const materialRegisterSchema = z.object({
+  course_id: z.uuid(),
+  object_path: z.string().trim().min(1),
+  title: materialTitle,
+  module_id: optionalUuid,
+  lesson_id: optionalUuid,
+  visibility: z.enum(MATERIAL_VISIBILITIES, { message: "Chọn phạm vi hiển thị" }),
+});
+
+export const materialUpdateSchema = z.object({
+  title: materialTitle,
+  visibility: z.enum(MATERIAL_VISIBILITIES, { message: "Chọn phạm vi hiển thị" }),
+});
+
+export type MaterialRegisterInput = z.infer<typeof materialRegisterSchema>;
+export type MaterialUpdateInput = z.infer<typeof materialUpdateSchema>;
+
 export type CourseInput = z.infer<typeof courseSchema>;
 export type LevelInput = z.infer<typeof levelSchema>;
 export type ModuleInput = z.infer<typeof moduleSchema>;

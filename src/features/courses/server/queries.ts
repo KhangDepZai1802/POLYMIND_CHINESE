@@ -93,6 +93,31 @@ export async function getCourseCurriculum(courseId: string) {
   }));
 }
 
+/**
+ * Tài liệu của khóa học.
+ *
+ * Không lọc `visibility` ở đây: RLS đã lo. Admin và giáo viên dạy khóa này thấy
+ * cả tài liệu `staff_only`; học viên chỉ thấy `enrolled_students`. Nếu tự thêm
+ * `.eq("visibility", ...)` theo role ở tầng app thì lại có hai nguồn sự thật về
+ * quyền — sớm muộn cũng lệch nhau.
+ */
+export async function getCourseMaterials(courseId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("course_materials")
+    .select(
+      `id, title, object_path, mime_type, size_bytes, visibility, created_at,
+       module:course_modules (id, title),
+       lesson:lessons (id, title)`,
+    )
+    .eq("course_id", courseId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Không tải được tài liệu: ${error.message}`);
+  return data;
+}
+
 /** Các lớp đã mở từ khóa học này. */
 export async function getCourseClasses(courseId: string) {
   const supabase = await createClient();

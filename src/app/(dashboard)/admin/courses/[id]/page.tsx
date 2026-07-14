@@ -5,10 +5,12 @@ import { ArrowLeft, School } from "lucide-react";
 
 import { CourseFormDialog } from "@/features/courses/components/course-form-dialog";
 import { CurriculumEditor } from "@/features/courses/components/curriculum-editor";
+import { MaterialsManager } from "@/features/courses/components/materials-manager";
 import {
   getCourseById,
   getCourseClasses,
   getCourseCurriculum,
+  getCourseMaterials,
   getLevels,
 } from "@/features/courses/server/queries";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -41,10 +43,11 @@ export default async function CourseDetailPage({
   const course = await getCourseById(id);
   if (!course) notFound();
 
-  const [curriculum, classes, levels] = await Promise.all([
+  const [curriculum, classes, levels, materials] = await Promise.all([
     getCourseCurriculum(id),
     getCourseClasses(id),
     getLevels(),
+    getCourseMaterials(id),
   ]);
 
   const lessonCount = curriculum.reduce((n, m) => n + m.lessons.length, 0);
@@ -90,6 +93,9 @@ export default async function CourseDetailPage({
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="curriculum">
             Giáo trình ({lessonCount})
+          </TabsTrigger>
+          <TabsTrigger value="materials">
+            Tài liệu ({materials.length})
           </TabsTrigger>
           <TabsTrigger value="classes">Lớp đã mở ({classes.length})</TabsTrigger>
         </TabsList>
@@ -164,6 +170,14 @@ export default async function CourseDetailPage({
 
         <TabsContent value="curriculum" className="mt-4">
           <CurriculumEditor courseId={id} modules={curriculum} />
+        </TabsContent>
+
+        <TabsContent value="materials" className="mt-4">
+          <MaterialsManager
+            courseId={id}
+            materials={materials}
+            modules={curriculum}
+          />
         </TabsContent>
 
         <TabsContent value="classes" className="mt-4">

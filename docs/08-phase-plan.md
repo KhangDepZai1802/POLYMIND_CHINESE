@@ -88,12 +88,12 @@
 
 | ID | Task | Definition of Done | Trạng thái |
 |---|---|---|---|
-| P3-T1 | Layout admin + dashboard skeleton | 10 mục menu §16 | ☐ |
-| P3-T2 | CRUD Level + Course + Module + Lesson | List/detail/form, validate Zod | ☐ |
-| P3-T3 | Course materials | Upload private bucket, signed URL, `visibility` | ☐ |
-| P3-T4 | CRUD Teacher + invite | Hồ sơ + gửi invite (admin client, server-only) | ☐ |
-| P3-T5 | CRUD Student + invite | Hồ sơ (tạo trước, invite sau), guardian là **field**, không phải role | ☐ |
-| P3-T6 | CRUD Class + phân công GV | Sĩ số, hình thức, địa điểm tự do, GV chính/trợ giảng | ☐ |
+| P3-T1 | Layout admin + dashboard skeleton | 10 mục menu §16 | ☑ |
+| P3-T2 | CRUD Level + Course + Module + Lesson | List/detail/form, validate Zod | ☑ |
+| P3-T3 | Course materials | Upload private bucket, signed URL, `visibility` | ☑ |
+| P3-T4 | CRUD Teacher + invite | Hồ sơ + gửi invite (admin client, server-only) | ☑ |
+| P3-T5 | CRUD Student + invite | Hồ sơ (tạo trước, invite sau), guardian là **field**, không phải role | ☑ |
+| P3-T6 | CRUD Class + phân công GV | Sĩ số, hình thức, địa điểm tự do, GV chính/trợ giảng | ☑ |
 | P3-T7 | Schedule + sinh buổi học | UI lịch lặp + nút sinh buổi (idempotent) + hỗ trợ **lớp linh hoạt không lịch** | ☐ |
 | P3-T8 | Enrollment lifecycle | Ghi danh / tạm dừng / chuyển lớp / rút / hoàn thành — qua RPC, giữ history | ☐ |
 | P3-T9 | Admin dashboard | KPI thật từ view (§15) | ☐ |
