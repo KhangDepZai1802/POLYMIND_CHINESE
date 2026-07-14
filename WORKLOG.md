@@ -36,9 +36,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-14** — Claude — P3-T10 (đóng Phase 3)
+> Cập nhật: **2026-07-14** — Claude — P4-T1
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- **P4-T1 — xong — Claude — 2026-07-14.** Dashboard "Hôm nay" của giáo viên (bỏ ComingSoon). **Gate Phase 4 đã kiểm chứng thật:** GV A không lấy được dữ liệu LOP-03 kể cả khi gọi thẳng Supabase.
 - 🎉 **PHASE 3 XONG** (P3-T1 → P3-T10). Super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
 - **P3-T10 — xong — Claude — 2026-07-14.** Test domain: recurrence 35 buổi + capacity (pgTAP, gọi đúng RPC production) + enrollment transitions (Vitest).
 - **D-19 — xong — Claude — 2026-07-14.** Học viên rớt **được học lại** chính lớp đó (migration 23). D-18 không bị phá.
@@ -59,11 +60,12 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**PHASE 3 ĐÃ XONG.** Bắt đầu **Phase 4 — Teacher operations**.
+**`P4-T4` — Attendance roster** (việc giáo viên dùng nhiều nhất, làm trước P4-T2/T3):
+- Một màn hình, nút lớn, chọn hàng loạt, nút Lưu **sticky**. Vào bằng `/teacher/attendance?session=<id>` — **dashboard P4-T1 đã trỏ sẵn link này**, hiện là trang ComingSoon.
+- Dùng RPC **`bulk_mark_attendance`** (upsert theo `(session_id, enrollment_id)`) → bấm Lưu 2 lần vẫn **1 bản ghi/HV**. Đã kiểm chứng RPC chạy được với JWT giáo viên ở P4-T1.
+- Chỉ điểm danh **enrollment đang mở** (`pending`/`active`/`paused`) — học viên đã rút thì không điểm danh.
 
-**`P4-T1` — Dashboard "Hôm nay" của giáo viên**: lịch dạy hôm nay, buổi chưa điểm danh, bài chờ chấm, HV cần chú ý. DoD: vào được lớp/buổi trong **1–2 thao tác**.
-
-Sau đó ưu tiên **`P4-T4` — Attendance roster** (việc giáo viên dùng nhiều nhất): một màn hình, nút lớn, chọn hàng loạt, nút Lưu **sticky**. Dùng RPC `bulk_mark_attendance` (đã upsert theo `(session_id, enrollment_id)` → bấm Lưu 2 lần vẫn 1 bản ghi/HV).
+Sau P4-T4: **P4-T2** (Class detail 8 tab — dashboard đã trỏ sẵn `/teacher/classes/<id>`, chưa có trang) → **P4-T3** (Session log) → P4-T5…T10.
 
 ⚠️ **Gate của Phase 4 (đọc kỹ trước khi code):** giáo viên **không** được truy cập lớp ngoài phạm vi qua UI, direct URL, server action **và** Supabase client gọi thẳng. Mọi query giáo viên đều quy về bảng `class_teachers` — RLS đã lo, đừng tự viết `if role ===` ở app.
 
@@ -119,6 +121,18 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 8 — Claude — P4-T1 (Dashboard "Hôm nay" của giáo viên)
+- **Làm được:** `/teacher` thành dashboard thật (bỏ ComingSoon): lịch dạy hôm nay (giờ VN) kèm **tiến độ điểm danh từng buổi** và nút Điểm danh; buổi **đã diễn ra mà còn thiếu điểm danh**; bài chờ chấm; lớp của tôi; học viên cần chú ý. Vào buổi/lớp trong **1 thao tác** (đúng DoD).
+- **Không có một dòng `where teacher_id = ...` nào** trong query — cố ý: RLS đã khoanh phạm vi qua `class_teachers`. Cùng câu query đó, admin thấy tất, giáo viên chỉ thấy lớp mình. Tự lọc thêm ở app là tạo nguồn sự thật thứ hai về quyền — và cái ở app là cái sẽ quên cập nhật.
+- **"Đã điểm danh" tính theo enrollment ĐANG MỞ**, không phải toàn bộ enrollment: học viên đã rút thì không cần điểm danh, nếu lấy mẫu số sai thì buổi sẽ **vĩnh viễn** hiện "thiếu điểm danh".
+- **File thay đổi:** `src/features/dashboard/server/teacher-queries.ts` (mới), `src/app/(dashboard)/teacher/page.tsx`, `docs/08-phase-plan.md`.
+- **Migration/data impact:** không có.
+- **Đã test (THẬT, có số):** `lint` · `typecheck` sạch · `npm test` **28/28** · `build` xanh, `/teacher` là `ƒ`. **Smoke Chrome headless: 9/9 PASS** (dựng buổi học thật rồi xóa sau khi test) — hiện đúng buổi hôm nay của LOP-02; buổi quá khứ chưa điểm danh vào đúng danh sách tồn đọng với tiến độ **0/2**; điểm danh xong thì buổi **rời khỏi** danh sách.
+- **🔒 GATE PHASE 4 — ĐÃ KIỂM CHỨNG THẬT:** GV A **không** thấy buổi của LOP-03 trên UI, và **gọi thẳng Supabase client bằng JWT của mình cũng nhận về 0 dòng**. "Lớp của tôi" chỉ có LOP-01 + LOP-02. RLS chặn ở DB, không phải ẩn menu.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** Dashboard trỏ sẵn link `/teacher/attendance?session=<id>` và `/teacher/classes/<id>` — **hai trang đó chưa có** (P4-T4 và P4-T2). Bấm vào hiện ComingSoon. Đây là chủ ý để P4-T4 cắm thẳng vào, không phải link chết.
+- **Next action:** **P4-T4** — Attendance roster (xem VIỆC TIẾP THEO).
 
 ### [2026-07-14] Phiên 7 — Claude — D-19 (học lại) + P3-T10 → **ĐÓNG PHASE 3**
 - **Làm được:**
@@ -177,12 +191,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
   2. **Tên file tải về bị mojibake.** Supabase Storage percent-encode **hai lần** phần non-ASCII của `Content-Disposition` → người dùng nhận file tên `Gi%C3%A1o tr%C3%ACnh.pdf`. → `sanitizeDownloadName()` ASCII hóa (bỏ dấu tiếng Việt, bỏ chữ Hán); tiêu đề hiển thị trên web vẫn giữ nguyên tiếng Việt/chữ Hán. Có unit test.
 - **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Upload cho **giáo viên** chưa có UI (server action đang giới hạn `super_admin`) — RLS đã cho phép GV dạy course đó, UI sẽ mở ở **P4-T2**; không phải lỗ hổng, chỉ là chưa lộ giao diện.
 - **Next action:** **P3-T7** — Schedule + sinh buổi học (RPC `generate_class_sessions`, hỗ trợ lớp linh hoạt không recurrence).
-
-### [2026-07-13] Phiên 2 — Codex — P3-T6
-- **Làm được:** Hoàn tất CRUD lớp: danh sách responsive, tạo/sửa, trang chi tiết, sĩ số mở, hình thức và địa điểm tự do; phân công/gỡ GV chính và trợ giảng. Chặn hạ/gỡ GV chính khi lớp đang hoạt động ở server và DB; chỉ hiện giáo viên có cả hồ sơ lẫn tài khoản đang hoạt động.
-- **File thay đổi:** `src/app/(dashboard)/admin/classes/*`, `src/features/classes/*`, `src/features/teachers/server/queries.ts`, migration 20, pgTAP `active_class_integrity.test.sql`, `docs/03-workflow.md`, phase plan và WORKLOG.
-- **Migration/data impact:** migration `20260713000020_active_class_integrity.sql` thêm 2 trigger fail-closed cho điều kiện lớp `active`; không xóa/chuyển đổi dữ liệu. `supabase db reset` áp dụng sạch 20/20 migration; seed dev nạp lại đúng UTF-8.
-- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **10/10 pass** · `npm run db:test` **6/6 pass** (lần đầu fixture dùng sai enum nên 0 assertion, đã sửa fixture và chạy lại xanh) · `npm run build` xanh, route `/admin/classes/[id]` dynamic · Chrome headless smoke: login admin → list lớp → chi tiết `LOP-01` → dialog sửa lớp đều OK.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud; cảnh báo Next.js về convention `middleware` deprecated chưa chặn build.
-- **Next action:** **P3-T3** — Course materials: upload private bucket, signed URL, `visibility`; sau đó P3-T7.
