@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
+  BookOpenCheck,
   CalendarDays,
   ClipboardCheck,
   Clock3,
@@ -21,7 +22,10 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getClassById, getClassProgress } from "@/features/classes/server/queries";
+import {
+  getClassById,
+  getClassProgress,
+} from "@/features/classes/server/queries";
 import { MaterialsManager } from "@/features/courses/components/materials-manager";
 import {
   getCourseCurriculum,
@@ -41,6 +45,7 @@ import {
   ASSESSMENT_TYPE_LABELS,
   ASSIGNMENT_ROLE_LABELS,
   ASSIGNMENT_STATUS_LABELS,
+  ASSIGNMENT_STATUS_TONE,
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
   DELIVERY_MODE_LABELS,
@@ -74,7 +79,9 @@ export default async function TeacherClassDetailPage({
   const openEnrollments = classRecord.enrollments.filter((enrollment) =>
     isOpenEnrollment(enrollment.status),
   );
-  const openEnrollmentIds = new Set(openEnrollments.map((enrollment) => enrollment.id));
+  const openEnrollmentIds = new Set(
+    openEnrollments.map((enrollment) => enrollment.id),
+  );
   const sessions = [...classRecord.class_sessions].sort(
     (a, b) => a.session_number - b.session_number,
   );
@@ -106,9 +113,9 @@ export default async function TeacherClassDetailPage({
           tone={CLASS_STATUS_TONE[classRecord.status]}
         />
         <span className="text-muted-foreground text-sm">
-          {DELIVERY_MODE_LABELS[classRecord.delivery_mode]} · {openEnrollments.length}/
-          {classRecord.capacity} học viên · {sessions.length}/
-          {classRecord.planned_session_count ?? "—"} buổi
+          {DELIVERY_MODE_LABELS[classRecord.delivery_mode]} ·{" "}
+          {openEnrollments.length}/{classRecord.capacity} học viên ·{" "}
+          {sessions.length}/{classRecord.planned_session_count ?? "—"} buổi
         </span>
       </div>
 
@@ -138,7 +145,10 @@ export default async function TeacherClassDetailPage({
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <Field label="Khóa học" value={classRecord.course.title} />
                 <Field label="Mã khóa" value={classRecord.course.code} />
-                <Field label="Khai giảng" value={formatDate(classRecord.start_date)} />
+                <Field
+                  label="Khai giảng"
+                  value={formatDate(classRecord.start_date)}
+                />
                 <Field
                   label="Dự kiến kết thúc"
                   value={formatDate(classRecord.expected_end_date)}
@@ -163,13 +173,18 @@ export default async function TeacherClassDetailPage({
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="Hình thức" value={DELIVERY_MODE_LABELS[classRecord.delivery_mode]} />
+                <Field
+                  label="Hình thức"
+                  value={DELIVERY_MODE_LABELS[classRecord.delivery_mode]}
+                />
                 <Field label="Tên địa điểm" value={classRecord.location_name} />
                 <Field label="Địa chỉ" value={classRecord.address} />
                 <Field label="Ghi chú" value={classRecord.location_note} />
                 {classRecord.meeting_url && (
                   <div className="sm:col-span-2">
-                    <p className="text-muted-foreground text-xs">Phòng học trực tuyến</p>
+                    <p className="text-muted-foreground text-xs">
+                      Phòng học trực tuyến
+                    </p>
                     <a
                       href={classRecord.meeting_url}
                       target="_blank"
@@ -193,10 +208,14 @@ export default async function TeacherClassDetailPage({
               <CardContent className="p-0">
                 <ul className="divide-y">
                   {classRecord.class_teachers.map((assignment) => (
-                    <li key={assignment.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                    <li
+                      key={assignment.id}
+                      className="flex items-center justify-between gap-3 px-5 py-3"
+                    >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">
-                          {assignment.teacher?.profile?.full_name ?? "Giáo viên"}
+                          {assignment.teacher?.profile?.full_name ??
+                            "Giáo viên"}
                         </p>
                         <p className="text-muted-foreground text-xs">
                           {assignment.teacher?.teacher_code ?? "—"}
@@ -206,8 +225,14 @@ export default async function TeacherClassDetailPage({
                         </p>
                       </div>
                       <StatusBadge
-                        label={ASSIGNMENT_ROLE_LABELS[assignment.assignment_role]}
-                        tone={assignment.assignment_role === "primary" ? "info" : "neutral"}
+                        label={
+                          ASSIGNMENT_ROLE_LABELS[assignment.assignment_role]
+                        }
+                        tone={
+                          assignment.assignment_role === "primary"
+                            ? "info"
+                            : "neutral"
+                        }
                       />
                     </li>
                   ))}
@@ -235,14 +260,24 @@ export default async function TeacherClassDetailPage({
               ) : (
                 <ul className="divide-y">
                   {schedules.map((schedule) => (
-                    <li key={schedule.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
-                      <span className="w-24 font-medium">{weekdayLabel(schedule.weekday)}</span>
+                    <li
+                      key={schedule.id}
+                      className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm"
+                    >
+                      <span className="w-24 font-medium">
+                        {weekdayLabel(schedule.weekday)}
+                      </span>
                       <span className="flex items-center gap-1 tabular-nums">
-                        <Clock3 className="text-muted-foreground size-4" aria-hidden />
-                        {formatClock(schedule.start_time)}–{formatClock(schedule.end_time)}
+                        <Clock3
+                          className="text-muted-foreground size-4"
+                          aria-hidden
+                        />
+                        {formatClock(schedule.start_time)}–
+                        {formatClock(schedule.end_time)}
                       </span>
                       <span className="text-muted-foreground ml-auto text-xs">
-                        {formatDate(schedule.effective_from)} → {formatDate(schedule.effective_to)}
+                        {formatDate(schedule.effective_from)} →{" "}
+                        {formatDate(schedule.effective_to)}
                       </span>
                     </li>
                   ))}
@@ -253,7 +288,9 @@ export default async function TeacherClassDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Danh sách buổi học ({sessions.length})</CardTitle>
+              <CardTitle className="text-base">
+                Danh sách buổi học ({sessions.length})
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {sessions.length === 0 ? (
@@ -265,20 +302,33 @@ export default async function TeacherClassDetailPage({
               ) : (
                 <ul className="divide-y">
                   {sessions.map((session) => (
-                    <li key={session.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                    <li
+                      key={session.id}
+                      className="flex flex-wrap items-center gap-3 px-5 py-3"
+                    >
                       <span className="w-16 shrink-0 text-sm font-medium">
                         Buổi {session.session_number}
                       </span>
                       <div className="min-w-48 flex-1">
-                        <p className="text-sm">{formatDateTime(session.starts_at)}</p>
+                        <p className="text-sm">
+                          {formatDateTime(session.starts_at)}
+                        </p>
                         <p className="text-muted-foreground truncate text-xs">
-                          {session.topic ?? session.lesson_log ?? "Chưa ghi nội dung"}
+                          {session.topic ??
+                            session.lesson_log ??
+                            "Chưa ghi nội dung"}
                         </p>
                       </div>
                       <StatusBadge
                         label={SESSION_STATUS_LABELS[session.status]}
                         tone={SESSION_STATUS_TONE[session.status]}
                       />
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/teacher/sessions/${session.id}`}>
+                          <BookOpenCheck className="size-4" aria-hidden />
+                          Nhật ký
+                        </Link>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -291,7 +341,8 @@ export default async function TeacherClassDetailPage({
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Học viên ({openEnrollments.length} đang mở / {classRecord.enrollments.length} lượt học)
+                Học viên ({openEnrollments.length} đang mở /{" "}
+                {classRecord.enrollments.length} lượt học)
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -306,13 +357,17 @@ export default async function TeacherClassDetailPage({
                   {classRecord.enrollments.map((enrollment) => {
                     const progress = progressByEnrollment.get(enrollment.id);
                     return (
-                      <li key={enrollment.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                      <li
+                        key={enrollment.id}
+                        className="flex flex-wrap items-center gap-3 px-5 py-3"
+                      >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">
                             {enrollment.student?.full_name ?? "Học viên"}
                           </p>
                           <p className="text-muted-foreground text-xs">
-                            {enrollment.student?.student_code ?? "—"} · Ghi danh {formatDate(enrollment.enrolled_on)}
+                            {enrollment.student?.student_code ?? "—"} · Ghi danh{" "}
+                            {formatDate(enrollment.enrolled_on)}
                           </p>
                         </div>
                         <span className="text-muted-foreground text-xs">
@@ -349,17 +404,22 @@ export default async function TeacherClassDetailPage({
               ) : (
                 <ul className="divide-y">
                   {sessions.map((session) => {
-                    const markedCount = session.attendance_records.filter((record) =>
-                      openEnrollmentIds.has(record.enrollment_id),
+                    const markedCount = session.attendance_records.filter(
+                      (record) => openEnrollmentIds.has(record.enrollment_id),
                     ).length;
                     const isComplete =
-                      openEnrollments.length > 0 && markedCount >= openEnrollments.length;
+                      openEnrollments.length > 0 &&
+                      markedCount >= openEnrollments.length;
 
                     return (
-                      <li key={session.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                      <li
+                        key={session.id}
+                        className="flex flex-wrap items-center gap-3 px-5 py-3"
+                      >
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium">
-                            Buổi {session.session_number} · {formatDateTime(session.starts_at)}
+                            Buổi {session.session_number} ·{" "}
+                            {formatDateTime(session.starts_at)}
                           </p>
                           <p className="text-muted-foreground text-xs">
                             {openEnrollments.length === 0
@@ -371,8 +431,14 @@ export default async function TeacherClassDetailPage({
                           label={isComplete ? "Đã đủ" : "Chưa đủ"}
                           tone={isComplete ? "success" : "warning"}
                         />
-                        <Button asChild size="sm" variant={isComplete ? "outline" : "default"}>
-                          <Link href={`/teacher/attendance?session=${session.id}`}>
+                        <Button
+                          asChild
+                          size="sm"
+                          variant={isComplete ? "outline" : "default"}
+                        >
+                          <Link
+                            href={`/teacher/attendance?session=${session.id}`}
+                          >
                             {isComplete ? "Xem / sửa" : "Điểm danh"}
                           </Link>
                         </Button>
@@ -386,27 +452,40 @@ export default async function TeacherClassDetailPage({
         </TabsContent>
 
         <TabsContent value="assignments" className="mt-4">
+          <div className="mb-3 flex justify-end">
+            <Button asChild size="sm">
+              <Link href={`/teacher/assignments?class=${classRecord.id}`}>
+                Quản lý bài tập
+              </Link>
+            </Button>
+          </div>
           {classRecord.assignments.length === 0 ? (
             <EmptyPanel
               icon={FileCheck2}
               title="Chưa có bài tập"
-              description="Chức năng tạo và giao bài tập sẽ được bổ sung ở P4-T5."
+              description="Tạo bản nháp, đính kèm đề bài rồi giao cho học viên bằng một hành động riêng."
             />
           ) : (
             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y">
                   {classRecord.assignments.map((assignment) => (
-                    <li key={assignment.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                    <li
+                      key={assignment.id}
+                      className="flex flex-wrap items-center gap-3 px-5 py-3"
+                    >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{assignment.title}</p>
+                        <p className="truncate text-sm font-medium">
+                          {assignment.title}
+                        </p>
                         <p className="text-muted-foreground text-xs">
-                          Hạn {formatDateTime(assignment.due_at)} · {assignment.submissions.length} bài nộp
+                          Hạn {formatDateTime(assignment.due_at)} ·{" "}
+                          {assignment.submissions.length} bài nộp
                         </p>
                       </div>
                       <StatusBadge
                         label={ASSIGNMENT_STATUS_LABELS[assignment.status]}
-                        tone={assignment.published_at ? "success" : "neutral"}
+                        tone={ASSIGNMENT_STATUS_TONE[assignment.status]}
                       />
                     </li>
                   ))}
@@ -417,28 +496,49 @@ export default async function TeacherClassDetailPage({
         </TabsContent>
 
         <TabsContent value="assessments" className="mt-4">
+          <div className="mb-3 flex justify-end">
+            <Button asChild size="sm">
+              <Link href={`/teacher/assessments?class=${classRecord.id}`}>
+                Quản lý bài kiểm tra
+              </Link>
+            </Button>
+          </div>
           {classRecord.assessments.length === 0 ? (
             <EmptyPanel
               icon={GraduationCap}
               title="Chưa có bài kiểm tra"
-              description="Chức năng tạo, nhập điểm và công bố kết quả sẽ được bổ sung ở P4-T7."
+              description="Tạo bài kiểm tra, nhập điểm tổng và 6 kỹ năng, rồi công bố kết quả bằng một hành động riêng."
             />
           ) : (
             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y">
                   {classRecord.assessments.map((assessment) => (
-                    <li key={assessment.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                    <li
+                      key={assessment.id}
+                      className="flex flex-wrap items-center gap-3 px-5 py-3"
+                    >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{assessment.title}</p>
+                        <p className="truncate text-sm font-medium">
+                          {assessment.title}
+                        </p>
                         <p className="text-muted-foreground text-xs">
-                          {ASSESSMENT_TYPE_LABELS[assessment.type]} · {formatDate(assessment.assessment_date)} · {assessment.assessment_results.length} kết quả
+                          {ASSESSMENT_TYPE_LABELS[assessment.type]} ·{" "}
+                          {formatDate(assessment.assessment_date)} ·{" "}
+                          {assessment.assessment_results.length} kết quả
                         </p>
                       </div>
                       <StatusBadge
-                        label={assessment.published_at ? "Đã công bố" : "Bản nháp"}
+                        label={
+                          assessment.published_at ? "Đã công bố" : "Bản nháp"
+                        }
                         tone={assessment.published_at ? "success" : "neutral"}
                       />
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/teacher/assessments/${assessment.id}`}>
+                          Nhập điểm
+                        </Link>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -468,7 +568,10 @@ export default async function TeacherClassDetailPage({
                     const percent = clampPercent(progress.progress_percent);
 
                     return (
-                      <li key={progress.enrollment_id} className="space-y-3 px-5 py-4">
+                      <li
+                        key={progress.enrollment_id}
+                        className="space-y-3 px-5 py-4"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
                             <p className="text-sm font-medium">
@@ -480,8 +583,16 @@ export default async function TeacherClassDetailPage({
                           </div>
                           <div className="flex items-center gap-2">
                             <StatusBadge
-                              label={progress.is_completion_ready ? "Đủ điều kiện" : "Chưa đủ điều kiện"}
-                              tone={progress.is_completion_ready ? "success" : "warning"}
+                              label={
+                                progress.is_completion_ready
+                                  ? "Đủ điều kiện"
+                                  : "Chưa đủ điều kiện"
+                              }
+                              tone={
+                                progress.is_completion_ready
+                                  ? "success"
+                                  : "warning"
+                              }
                             />
                             <span className="w-12 text-right text-sm font-semibold tabular-nums">
                               {formatPercent(progress.progress_percent)}
@@ -496,17 +607,27 @@ export default async function TeacherClassDetailPage({
                           aria-valuemax={100}
                           aria-valuenow={percent}
                         >
-                          <div className="bg-primary h-full rounded-full" style={{ width: `${percent}%` }} />
+                          <div
+                            className="bg-primary h-full rounded-full"
+                            style={{ width: `${percent}%` }}
+                          />
                         </div>
                         <div className="text-muted-foreground grid gap-1 text-xs sm:grid-cols-4">
-                          <span>Chuyên cần: {formatPercent(progress.attendance_rate)}</span>
                           <span>
-                            Bài học: {progress.completed_lessons ?? 0}/{progress.total_lessons ?? 0}
+                            Chuyên cần:{" "}
+                            {formatPercent(progress.attendance_rate)}
                           </span>
                           <span>
-                            Bài tập: {progress.submitted_assignments ?? 0}/{progress.total_assignments ?? 0}
+                            Bài học: {progress.completed_lessons ?? 0}/
+                            {progress.total_lessons ?? 0}
                           </span>
-                          <span>Điểm TB: {formatScore(progress.avg_score)}</span>
+                          <span>
+                            Bài tập: {progress.submitted_assignments ?? 0}/
+                            {progress.total_assignments ?? 0}
+                          </span>
+                          <span>
+                            Điểm TB: {formatScore(progress.avg_score)}
+                          </span>
                         </div>
                       </li>
                     );
@@ -539,7 +660,9 @@ function Field({
   return (
     <div>
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="mt-0.5 text-sm break-words whitespace-pre-line">{value ?? "—"}</p>
+      <p className="mt-0.5 text-sm break-words whitespace-pre-line">
+        {value ?? "—"}
+      </p>
     </div>
   );
 }

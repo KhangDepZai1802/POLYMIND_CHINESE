@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -2316,6 +2316,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      close_assignment: { Args: { p_assignment_id: string }; Returns: Json }
       enroll_student: {
         Args: {
           p_class_id: string
@@ -2326,6 +2327,10 @@ export type Database = {
         Returns: string
       }
       generate_class_sessions: { Args: { p_class_id: string }; Returns: number }
+      grade_submission: {
+        Args: { p_feedback?: string; p_score: number; p_submission_id: string }
+        Returns: Json
+      }
       log_audit: {
         Args: {
           p_action: string
@@ -2340,6 +2345,8 @@ export type Database = {
         Args: { p_assessment_id: string }
         Returns: number
       }
+      publish_assignment: { Args: { p_assignment_id: string }; Returns: Json }
+      publish_evaluation: { Args: { p_evaluation_id: string }; Returns: Json }
       record_tuition_payment: {
         Args: {
           p_amount: number
@@ -2350,6 +2357,31 @@ export type Database = {
           p_reference?: string
         }
         Returns: string
+      }
+      save_assessment_result: {
+        Args: {
+          p_assessment_id: string
+          p_enrollment_id: string
+          p_feedback?: string
+          p_grammar_score?: number
+          p_listening_score?: number
+          p_overall_score?: number
+          p_reading_score?: number
+          p_speaking_score?: number
+          p_vocabulary_score?: number
+          p_writing_score?: number
+        }
+        Returns: Json
+      }
+      save_session_log: {
+        Args: {
+          p_complete: boolean
+          p_lesson_id: string
+          p_lesson_log: string
+          p_session_id: string
+          p_teacher_note: string
+        }
+        Returns: number
       }
       transfer_enrollment: {
         Args: {

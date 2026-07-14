@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   AlertTriangle,
+  BookOpenCheck,
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
@@ -79,7 +80,9 @@ export default async function TeacherDashboardPage() {
 
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">
-                          <span className="font-mono text-xs">{s.classCode}</span>{" "}
+                          <span className="font-mono text-xs">
+                            {s.classCode}
+                          </span>{" "}
                           · Buổi {s.sessionNumber}
                         </p>
                         <p className="text-muted-foreground truncate text-xs">
@@ -96,10 +99,22 @@ export default async function TeacherDashboardPage() {
                         <Button asChild size="sm" className="shrink-0">
                           <Link href={`/teacher/attendance?session=${s.id}`}>
                             <ClipboardCheck className="size-4" aria-hidden />
-                            Điểm danh {s.expected > 0 ? `${s.marked}/${s.expected}` : ""}
+                            Điểm danh{" "}
+                            {s.expected > 0 ? `${s.marked}/${s.expected}` : ""}
                           </Link>
                         </Button>
                       )}
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0"
+                      >
+                        <Link href={`/teacher/sessions/${s.id}`}>
+                          <BookOpenCheck className="size-4" aria-hidden />
+                          Nhật ký
+                        </Link>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -134,7 +149,9 @@ export default async function TeacherDashboardPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">
-                          <span className="font-mono text-xs">{s.classCode}</span>{" "}
+                          <span className="font-mono text-xs">
+                            {s.classCode}
+                          </span>{" "}
                           · Buổi {s.sessionNumber}
                         </p>
                         <p className="text-muted-foreground text-xs">
@@ -189,7 +206,15 @@ export default async function TeacherDashboardPage() {
                         <StatusBadge label="Nộp muộn" tone="warning" />
                       )}
                       <Button asChild size="sm" variant="outline">
-                        <Link href="/teacher/assignments">Chấm bài</Link>
+                        <Link
+                          href={
+                            s.assignment?.id
+                              ? `/teacher/assignments/${s.assignment.id}`
+                              : "/teacher/assignments"
+                          }
+                        >
+                          Chấm bài
+                        </Link>
                       </Button>
                     </li>
                   ))}

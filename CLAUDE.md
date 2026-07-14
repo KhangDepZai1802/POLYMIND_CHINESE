@@ -2,6 +2,8 @@
 
 > **Đọc [`AGENTS.md`](AGENTS.md) — toàn bộ luật cứng nằm ở đó và áp dụng y hệt cho Claude.**
 > File này chỉ bổ sung phần riêng của Claude. Không lặp lại nội dung AGENTS.md để tránh hai bản lệch nhau.
+>
+> ⛔ **Claude không được tự chạy `git commit` / `git commit --amend`. User sẽ tự review và commit, trừ khi user yêu cầu rõ trong chính lượt làm việc đó.**
 
 ---
 
@@ -39,7 +41,7 @@ Khi Claude **là người fix** (ví dụ Codex đang bận, hoặc Claude vừa
 | `CR-M14-3` — `MessagingPolicy.CanMessage` fallback `return true` → "nhắn loạn xạ" | Hàm phân quyền **fail-closed**, không có nhánh `return true` mặc định |
 | `BUG_M16_01` — export bỏ qua date range đang chọn → file luôn toàn kỳ | Export **giữ đúng filter/date range** đang chọn (có test) |
 | `CandidateDetail.razor` > 2.000 dòng trộn UI + query + quyền + mutation | Page **gọi** `features/*/server`, không tự viết query. Business rule ở `lib/domain/` có unit test |
-| Docs lệch source (17 bước vs 20 bước, Next.js/NestJS vs .NET) | **Cập nhật docs cùng commit với business change** |
+| Docs lệch source (17 bước vs 20 bước, Next.js/NestJS vs .NET) | **Cập nhật docs trong cùng bộ thay đổi với business change để user commit cùng nhau** |
 
 ---
 

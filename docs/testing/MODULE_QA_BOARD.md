@@ -30,10 +30,10 @@
 | 5 | M05 | Teachers | CRUD hồ sơ, `teacher_code`, phân công lớp | P3 | Medium | Pending | Not Required | Not Started |
 | 6 | M06 | Courses & Curriculum | Level, Course, Module, Lesson, Materials | P3 | Medium | **Bugs Found** | **Fixed** | Not Started |
 | 7 | M07 | Classes | Lớp triển khai, sĩ số, hình thức, địa điểm, GV chính/trợ giảng | P3 | High | Pending | Not Required | Not Started |
-| 8 | M08 | Schedules & Sessions | Lịch lặp, **sinh buổi idempotent**, đổi lịch/học bù, lớp linh hoạt | P3, P4 | **High** | Pending | Not Required | Not Started |
+| 8 | M08 | Schedules & Sessions | Lịch lặp, **sinh buổi idempotent**, đổi lịch/học bù, lớp linh hoạt | P3, P4 | **High** | **Bugs Found** | **Fixed** | Not Started |
 | 9 | M09 | Enrollments | Ghi danh (**capacity race**), tạm dừng, **chuyển lớp giữ lịch sử**, rút, hoàn thành | P3 | **High** | Pending | Not Required | Not Started |
 | 10 | M10 | Attendance | Bulk upsert (**không sinh trùng**), class-match trigger, attribution actor thật | P4 | **High** | Pending | Not Required | Not Started |
-| 11 | M11 | Assignments & Submissions | Draft/publish, hạn nộp, nộp text/file, chấm điểm, **HV không sửa được score** | P4, P5 | **High** | Pending | Not Required | Not Started |
+| 11 | M11 | Assignments & Submissions | Draft/publish, hạn nộp, nộp text/file, chấm điểm, **HV không sửa được score** | P4, P5 | **High** | **Bugs Found** | **Fixed** | Not Started |
 | 12 | M12 | Assessments & Evaluations | Điểm 0–100 + 6 kỹ năng, **draft ≠ publish**, xếp loại từ grading scale, `student_notes` staff_only | P4 | **High** | Pending | Not Required | Not Started |
 | 13 | M13 | Progress & Completion | View tiến độ (tính, không nhập tay), readiness, xác nhận hoàn thành có audit | P4, P5 | Medium | Pending | Not Required | Not Started |
 | 14 | M14 | Tuition | Invoice/payment/**receipt duy nhất**, số dư = tính ra, **teacher DENY toàn bộ** | P6 | **High** | Pending | Not Required | Not Started |
@@ -62,7 +62,18 @@
 
 | Bug ID | Module | Fix của Codex | Trạng thái |
 |---|---|---|---|
-| BUG-M06-001 | M06, M18 | Upload tài liệu ở cấp khóa học chấp nhận `module_id`/`lesson_id` không được gửi; mở server action tài liệu cho teacher rồi để RLS khoanh course được phân công. Smoke production đã upload/xóa sạch, nhưng **Codex không tự đánh dấu Verified**. | Chờ Claude xác minh độc lập |
+| — | — | — | *(trống)* |
+
+### Đã xác minh độc lập
+
+| Bug ID | Module | Fix của Codex | Xác minh của Claude | Trạng thái |
+|---|---|---|---|---|
+| BUG-M08-001 | M08 | `getSessionLog` fail-fast khi route param không phải UUID → `notFound()` thay vì gửi chuỗi rác xuống Postgres và trả 500. | **(2026-07-14, phiên 18) Góc soi riêng, không chạy lại test của Codex.** Rủi ro thật của một guard **không phải** "URL rác còn 500" mà là **guard chặn nhầm đường đi đúng** — nên kiểm đủ 3 ca: (a) 4 URL rác (`khong-phai-uuid`, `123`, `../etc`) → **404**, không 500; (b) UUID **hợp lệ nhưng của lớp GV B** → vẫn **404** (guard không nới lỏng IDOR); (c) **REGRESSION**: buổi học của chính GV A → **200** và render đúng LOP-02. | ✅ **Verified** |
+| BUG-M11-002 | M11 | `getSubmissionGradingBoard` fail-fast khi route param không phải UUID → `notFound()` thay vì 500. | **(2026-07-14, phiên 18)** Cùng bộ 3 ca như trên: URL rác → **404**; assignment của chính GV A → **200**, hiện đúng bảng chấm bài. Đường đi đúng không bị guard chặn nhầm. | ✅ **Verified** |
+| BUG-M06-001 | M06, M18 | Upload tài liệu ở cấp khóa học chấp nhận `module_id`/`lesson_id` không được gửi; mở server action tài liệu cho teacher rồi để RLS khoanh course được phân công. | *(2026-07-14, phiên 14)* | ✅ **Verified** |
+| BUG-M11-001 | M11 | Trigger khởi tạo submission chuẩn hóa mọi user flow có `auth.uid()` (kể cả super admin), không chỉ role student. | *(2026-07-14, phiên 14)* | ✅ **Verified** |
+
+> Chi tiết bằng chứng của `BUG-M06-001` và `BUG-M11-001`: xem `WORKLOG.md` phiên 14.
 
 ---
 

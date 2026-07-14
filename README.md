@@ -61,7 +61,7 @@ npx supabase db reset    # reset DB + chạy lại migration + seed
 npx supabase test db     # pgTAP: constraint + RLS + IDOR
 ```
 
-**Trước khi commit:** `npm run lint && npm run typecheck && npm test && npm run build` phải xanh.
+**Trước khi bàn giao để user commit:** `npm run lint && npm run typecheck && npm test && npm run build` phải xanh. Claude Code và Codex không tự chạy `git commit` nếu user chưa yêu cầu rõ trong lượt làm việc đó.
 
 ---
 

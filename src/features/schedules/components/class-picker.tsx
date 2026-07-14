@@ -21,19 +21,23 @@ type ClassOption = { id: string; code: string; name: string };
 export function ClassPicker({
   classes,
   selectedId,
+  basePath = "/admin/schedule",
+  placeholder = "Chọn lớp để xem lịch",
 }: {
   classes: ClassOption[];
   selectedId?: string;
+  basePath?: string;
+  placeholder?: string;
 }) {
   const router = useRouter();
 
   return (
     <Select
       value={selectedId ?? ""}
-      onValueChange={(id) => router.push(`/admin/schedule?class=${id}`)}
+      onValueChange={(id) => router.push(`${basePath}?class=${id}`)}
     >
       <SelectTrigger className="w-full sm:w-80">
-        <SelectValue placeholder="Chọn lớp để xem lịch" />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {classes.map((c) => (

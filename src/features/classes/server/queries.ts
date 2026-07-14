@@ -39,7 +39,8 @@ export async function getClassById(id: string) {
        ),
        class_schedules (id, weekday, start_time, end_time, effective_from, effective_to),
        class_sessions (
-         id, session_number, starts_at, ends_at, status, topic, lesson_log, teacher_note,
+         id, session_number, starts_at, ends_at, status, topic, lesson_id, lesson_log,
+         teacher_note, completed_at, completed_by,
          attendance_records (id, enrollment_id, status)
        ),
        enrollments (

@@ -12,7 +12,7 @@
 1. Đọc `WORKLOG.md` → mục **VIỆC TIẾP THEO** → lấy task ID (vd `P2-T11`).
 2. **Claim task**: ghi vào `WORKLOG.md` → `TRẠNG THÁI HIỆN TẠI`: `P2-T11 — đang làm — Claude — <ngày>`.
 3. Làm **đúng phạm vi task đó**. Không đụng file ngoài scope. Không "tiện tay sửa luôn" thứ khác — sẽ giẫm chân agent kia.
-4. Xong: chạy đủ **Definition of Done** của task → cập nhật `WORKLOG.md` (trạng thái, nhật ký, next action) → commit.
+4. Xong: chạy đủ **Definition of Done** của task → cập nhật `WORKLOG.md` (trạng thái, nhật ký, next action) → bàn giao thay đổi để **user tự review và commit**. Agent không tự chạy `git commit`.
 5. Không xong: ghi **blocker thật** vào `WORKLOG.md`, để task ở trạng thái `đang dở`, mô tả chính xác đang dở ở đâu.
 
 **Ba điều tuyệt đối không được làm:**
@@ -101,38 +101,53 @@
 
 ---
 
-## Phase 4 — Teacher operations
+## Phase 4 — Teacher operations ✅ **XONG (2026-07-14)**
 
 **Gate:** teacher **không** truy cập được lớp ngoài scope qua UI, direct URL, server action **và** Supabase client trực tiếp.
+
+> **Gate ĐÃ KIỂM CHỨNG THẬT, cả 4 đường:**
+> - **UI** — GV A không thấy LOP-03 ở dashboard, danh sách lớp, class picker của bài tập / bài KT / đánh giá / báo cáo.
+> - **Direct URL** — đoán URL buổi học, assignment, bài KT, hồ sơ đánh giá của lớp GV B đều trả **404**, không lộ một dòng dữ liệu. URL không phải uuid cũng **404** (không phải 500 kèm stack).
+> - **Server action / RPC** — GV A gọi thẳng `bulk_mark_attendance`, `save_session_log`, `save_assessment_result`, `publish_assessment_results`, `publish_evaluation` cho lớp ngoài scope → bị **từ chối**, dữ liệu không đổi.
+> - **Supabase client trực tiếp** — dùng chính JWT của GV A/học viên quét thẳng bảng: teacher lớp khác nhận **0 dòng**; học viên **không** đọc được ghi chú `staff_only`, kết quả/đánh giá chưa công bố.
+>
+> Bằng chứng: pgTAP **151/151** (`assessment_integrity`, `evaluation_notes`, `session_log`, `assignment_integrity`, `submission_grading`) · Playwright gate **3/3** + route-param regression **1/1** · Vitest **43/43**.
 
 | ID | Task | Definition of Done | Trạng thái |
 |---|---|---|---|
 | P4-T1 | Dashboard "Hôm nay" | Lịch dạy, buổi chưa điểm danh, bài chờ chấm, HV cần chú ý. Vào lớp/buổi trong **1–2 thao tác** | ☑ |
 | P4-T2 | Class detail (tabs) | Tổng quan · Lịch/Buổi · Học viên · Điểm danh · Bài tập · Kiểm tra · Tiến độ · Tài liệu | ☑ |
-| P4-T3 | Session log | Mở/hoàn tất buổi, nội dung thực dạy, lesson progress | ☐ |
+| P4-T3 | Session log | Mở/hoàn tất buổi, nội dung thực dạy, lesson progress | ☑ |
 | P4-T4 | **Attendance roster** | Một màn hình, nút lớn, chọn hàng loạt, nút Lưu **sticky**. Bấm 2 lần không sinh trùng | ☑ |
-| P4-T5 | Assignment | CRUD + attachment + publish (draft ≠ publish) | ☐ |
-| P4-T6 | Chấm bài | Xem bài nộp (text/file) + điểm + feedback | ☐ |
-| P4-T7 | Assessment | Tạo bài KT, nhập điểm tổng + 6 kỹ năng, draft → publish (RPC) | ☐ |
-| P4-T8 | Đánh giá & ghi chú | `learning_evaluations` + `student_notes` (`staff_only` HV **không đọc được**) | ☐ |
-| P4-T9 | Teacher reports | Chỉ lớp mình dạy | ☐ |
-| P4-T10 | Tests | Component + RLS negative (teacher lớp khác) | ☐ |
+| P4-T5 | Assignment | CRUD + attachment + publish (draft ≠ publish) | ☑ |
+| P4-T6 | Chấm bài | Xem bài nộp (text/file) + điểm + feedback | ☑ |
+| P4-T7 | Assessment | Tạo bài KT, nhập điểm tổng + 6 kỹ năng, draft → publish (RPC) | ☑ |
+| P4-T8 | Đánh giá & ghi chú | `learning_evaluations` + `student_notes` (`staff_only` HV **không đọc được**) | ☑ |
+| P4-T9 | Teacher reports | Chỉ lớp mình dạy | ☑ |
+| P4-T10 | Tests | Component + RLS negative (teacher lớp khác) | ☑ |
 
 ---
 
-## Phase 5 — Student portal
+## Phase 5 — Student portal ✅ **XONG (2026-07-14)**
 
 **Gate:** student **không** thấy bất kỳ dữ liệu học viên khác; submission end-to-end pass.
 
+> **Gate ĐÃ KIỂM CHỨNG THẬT:**
+> - **Không thấy dữ liệu HV khác** — pgTAP `student_isolation.test.sql` dựng **HV-A và HV-B CÙNG MỘT LỚP** (ca khó nhất: mọi điều kiện theo `class_id` đều đúng cho cả hai) rồi quét thẳng bảng bằng **JWT của A**: `students` 1 dòng (của A) · `enrollments` 1 dòng · `submissions` **0** (không đọc được bài của B) · `assessment_results` **0** (không đọc được điểm của B dù đã công bố cho B) · `attendance_records` chỉ của A. A cũng **không** nộp bài được dưới danh nghĩa ghi danh của B, **không** tự sửa điểm, **không** tự nâng `role`.
+> - **Submission end-to-end** — Playwright: HV1 nộp text → DB `enrollment_id` đúng, `status=submitted`, `submitted_at` do DB đặt, điểm tự khai bị **xóa sạch** → upload file private (path đúng `{class_id}/{submission_id}/…`) → GV chấm bằng RPC → HV thấy **88,5** + nhận xét, và bài **bị khóa sửa**.
+> - **Direct URL** — bài tập lớp khác → **404**; URL không phải uuid → **404** (không phải 500).
+>
+> Bằng chứng: pgTAP **167/167** · Playwright **5/5** · Vitest **43/43**.
+
 | ID | Task | Definition of Done | Trạng thái |
 |---|---|---|---|
-| P5-T1 | Dashboard | Buổi kế tiếp, deadline, chuyên cần, điểm mới, học phí sắp hạn | ☐ |
-| P5-T2 | Lịch học + tài liệu | Buổi học + tài liệu đã publish | ☐ |
-| P5-T3 | Chuyên cần cá nhân | Chỉ của mình | ☐ |
-| P5-T4 | Nộp bài | Text + file upload, trạng thái đúng hạn/muộn | ☐ |
-| P5-T5 | Kết quả & tiến độ | Chỉ bản **đã publish** + đánh giá `visible_to_student` | ☐ |
-| P5-T6 | Hồ sơ + đổi mật khẩu + thông báo | Không sửa được `role`/`is_active` | ☐ |
-| P5-T7 | Tests | E2E nộp bài; negative: xem lớp/HV khác | ☐ |
+| P5-T1 | Dashboard | Buổi kế tiếp, deadline, chuyên cần, điểm mới, học phí sắp hạn | ☑ |
+| P5-T2 | Lịch học + tài liệu | Buổi học + tài liệu đã publish | ☑ |
+| P5-T3 | Chuyên cần cá nhân | Chỉ của mình | ☑ |
+| P5-T4 | Nộp bài | Text + file upload, trạng thái đúng hạn/muộn | ☑ |
+| P5-T5 | Kết quả & tiến độ | Chỉ bản **đã publish** + đánh giá `visible_to_student` | ☑ |
+| P5-T6 | Hồ sơ + đổi mật khẩu + thông báo | Không sửa được `role`/`is_active` | ☑ |
+| P5-T7 | Tests | E2E nộp bài; negative: xem lớp/HV khác | ☑ |
 
 ---
 

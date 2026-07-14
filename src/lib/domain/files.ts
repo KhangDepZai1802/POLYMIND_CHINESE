@@ -42,8 +42,17 @@ export type AllowedFileExtension = (typeof ALLOWED_FILE_EXTENSIONS)[number];
 /** Bucket PRIVATE chứa tài liệu khóa học (migration 14). */
 export const MATERIALS_BUCKET = "course-materials";
 
+/** Bucket PRIVATE chứa đề bài/attachment của assignment (migration 14). */
+export const ASSIGNMENT_FILES_BUCKET = "assignment-files";
+
+/** Bucket PRIVATE chứa file học viên nộp (migration 14). */
+export const SUBMISSIONS_BUCKET = "submissions";
+
 /** Bằng đúng `file_size_limit` của bucket `course-materials` (migration 14). */
 export const MAX_MATERIAL_SIZE_BYTES = 52_428_800; // 50 MB
+
+/** Bằng đúng `file_size_limit` của bucket `assignment-files` (migration 14). */
+export const MAX_ASSIGNMENT_FILE_SIZE_BYTES = 20_971_520; // 20 MB
 
 /** Hạn của signed URL. Đặc tả: URL tải xuống phải sống ngắn (≤ 5 phút). */
 export const SIGNED_URL_TTL_SECONDS = 120;

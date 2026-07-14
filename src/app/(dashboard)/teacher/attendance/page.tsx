@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarClock, CheckCircle2 } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpenCheck,
+  CalendarClock,
+  CheckCircle2,
+} from "lucide-react";
 
 import { AttendanceRoster } from "@/features/attendance/components/attendance-roster";
 import { getAttendanceSheet } from "@/features/attendance/server/queries";
@@ -111,6 +116,14 @@ export default async function TeacherAttendancePage({
       <PageHeader
         title={`Điểm danh · Buổi ${sheet.sessionNumber}`}
         description={`${sheet.classCode} — ${sheet.className}`}
+        action={
+          <Button asChild variant="outline">
+            <Link href={`/teacher/sessions/${sheet.id}`}>
+              <BookOpenCheck className="size-4" aria-hidden />
+              Nhật ký buổi
+            </Link>
+          </Button>
+        }
       />
 
       <Card className="mb-5">

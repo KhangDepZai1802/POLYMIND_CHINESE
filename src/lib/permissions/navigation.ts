@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
+  ClipboardPen,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -66,7 +67,17 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
       mobile: true,
     },
     {
-      label: "Đánh giá tiến độ",
+      label: "Kiểm tra & Điểm",
+      href: "/teacher/assessments",
+      icon: GraduationCap,
+    },
+    {
+      label: "Đánh giá & Ghi chú",
+      href: "/teacher/evaluations",
+      icon: ClipboardPen,
+    },
+    {
+      label: "Báo cáo lớp",
       href: "/teacher/progress",
       icon: TrendingUp,
       mobile: true,

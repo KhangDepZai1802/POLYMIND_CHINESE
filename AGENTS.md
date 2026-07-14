@@ -5,6 +5,14 @@
 
 ---
 
+## ⛔ QUYỀN COMMIT — USER TỰ THỰC HIỆN
+
+- **Claude Code và Codex KHÔNG được tự chạy `git commit` hoặc `git commit --amend`.**
+- Khi hoàn thành công việc, agent để nguyên thay đổi trong working tree, báo rõ file đã sửa và kết quả kiểm tra để **user tự review và commit**.
+- Chỉ được commit khi user yêu cầu rõ ràng trong chính lượt làm việc đó.
+
+---
+
 ## ⚠️ BẮT BUỘC — TRƯỚC KHI GÕ DÒNG CODE ĐẦU TIÊN
 
 **1. Đọc [`WORKLOG.md`](WORKLOG.md).** Đó là file phối hợp chung giữa các phiên AI. Đọc:
@@ -33,7 +41,7 @@ P2-T11 — đang làm — Codex — 2026-07-15
 
 ### Nguồn sự thật
 - **Docs = nguồn sự thật về YÊU CẦU.** Migration + source = nguồn sự thật về **IMPLEMENTATION**.
-- Lệch nhau → sửa cho khớp và **cập nhật docs trong cùng commit**. Không để lệch âm thầm.
+- Lệch nhau → sửa cho khớp và **cập nhật docs trong cùng bộ thay đổi để user commit cùng nhau**. Không để lệch âm thầm.
 - **Không tự đổi quyết định đã chốt** (`WORKLOG.md` → `QUYẾT ĐỊNH ĐÃ CHỐT`). Vướng thì **hỏi user**.
 
 ### Bảo mật (không thương lượng)
@@ -116,7 +124,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 - [ ] Có bug/QA → cập nhật `docs/testing/MODULE_QA_BOARD.md`
 - [ ] Có blocker → ghi vào `BLOCKERS`
 - [ ] Lint / typecheck / test / build xanh (hoặc blocker được ghi rõ)
-- [ ] Commit
+- [ ] **Không chạy `git commit`**; bàn giao thay đổi để user tự review và commit
 
 ---
 
