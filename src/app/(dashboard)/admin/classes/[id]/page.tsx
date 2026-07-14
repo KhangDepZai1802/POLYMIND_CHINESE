@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Pencil, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Pencil } from "lucide-react";
 
 import { ClassFormDialog } from "@/features/classes/components/class-form-dialog";
 import { TeacherAssignments } from "@/features/classes/components/teacher-assignments";
@@ -9,6 +9,12 @@ import {
   getClassById,
   getCourseOptionsForClasses,
 } from "@/features/classes/server/queries";
+import { EnrollmentPanel } from "@/features/enrollments/components/enrollment-panel";
+import {
+  getClassEnrollments,
+  getEnrollableStudents,
+  getTransferTargets,
+} from "@/features/enrollments/server/queries";
 import { getActiveTeacherOptions } from "@/features/teachers/server/queries";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -16,16 +22,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
 import { formatDate } from "@/lib/dates";
+import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
   DELIVERY_MODE_LABELS,
-  ENROLLMENT_STATUS_LABELS,
 } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Chi tiết lớp học" };
 
-const OPEN_ENROLLMENT_STATUSES = new Set(["pending", "active", "paused"]);
 
 export default async function AdminClassDetailPage({
   params,
@@ -34,16 +39,20 @@ export default async function AdminClassDetailPage({
 }) {
   await requireRole("super_admin");
   const { id } = await params;
-  const [classRecord, courses, teachers] = await Promise.all([
-    getClassById(id),
-    getCourseOptionsForClasses(),
-    getActiveTeacherOptions(),
-  ]);
+  const [classRecord, courses, teachers, enrollments, enrollableStudents, transferTargets] =
+    await Promise.all([
+      getClassById(id),
+      getCourseOptionsForClasses(),
+      getActiveTeacherOptions(),
+      getClassEnrollments(id),
+      getEnrollableStudents(),
+      getTransferTargets(id),
+    ]);
 
   if (!classRecord) notFound();
 
   const openEnrollments = classRecord.enrollments.filter((enrollment) =>
-    OPEN_ENROLLMENT_STATUSES.has(enrollment.status),
+    isOpenEnrollment(enrollment.status),
   );
   const sessions = [...classRecord.class_sessions].sort(
     (a, b) => a.session_number - b.session_number,
@@ -186,44 +195,13 @@ export default async function AdminClassDetailPage({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex-row items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-base">Học viên</CardTitle>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {openEnrollments.length}/{classRecord.capacity} chỗ đang sử
-                  dụng
-                </p>
-              </div>
-              <Users className="text-muted-foreground size-5" aria-hidden />
-            </CardHeader>
-            <CardContent className="p-0">
-              {openEnrollments.length === 0 ? (
-                <p className="text-muted-foreground px-5 pb-5 text-sm">
-                  Chưa có học viên đang mở trong lớp.
-                </p>
-              ) : (
-                <ul className="divide-y border-t">
-                  {openEnrollments.map((enrollment) => (
-                    <li
-                      key={enrollment.id}
-                      className="flex items-center gap-3 px-5 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {enrollment.student?.full_name ?? "Học viên"}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {enrollment.student?.student_code} ·{" "}
-                          {ENROLLMENT_STATUS_LABELS[enrollment.status]}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+          <EnrollmentPanel
+            classId={classRecord.id}
+            capacity={classRecord.capacity}
+            enrollments={enrollments}
+            enrollableStudents={enrollableStudents}
+            transferTargets={transferTargets}
+          />
         </div>
       </div>
     </>

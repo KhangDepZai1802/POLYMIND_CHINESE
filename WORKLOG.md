@@ -39,11 +39,12 @@
 > Cập nhật: **2026-07-14** — Claude — P3-T3
 
 - **Phase 0 XONG** · **Phase 1 XONG** · **Phase 2 XONG**. Repo: `Documents\Polymind Chinese`, git `main`, đã push GitHub.
+- **P3-T8 — xong — Claude — 2026-07-14.** Vòng đời ghi danh qua RPC (ghi danh / tạm dừng / học lại / hoàn thành / rút / chuyển lớp), giữ history, tôn trọng D-18.
 - **P3-T7 — xong — Claude — 2026-07-14.** Lịch lặp + sinh buổi học (idempotent) + lớp linh hoạt không lịch. Trang `/admin/schedule` đã thật (bỏ ComingSoon). Migration 22 chốt attribution + chặn xóa buổi đã có lịch sử.
 - **P3-T3 — xong — Claude — 2026-07-14.** Tài liệu khóa học: upload thẳng lên private bucket (signed upload URL), signed URL tải xuống, `visibility`. Migration 21 chốt attribution ở DB.
 - **P3-T6 — xong — Codex — 2026-07-13.** CRUD lớp + phân công GV, có chốt chặn DB giữ điều kiện lớp `active`.
-- **DB: 22 migration.** pgTAP **16/16 pass** (3 file). Unit test **20/20 pass**.
-- **Phase 3 còn: P3-T8 (Enrollment lifecycle) · P3-T9 (Admin dashboard) · P3-T10 (unit test domain).**
+- **DB: 22 migration.** pgTAP **16/16 pass** (3 file). Unit test **28/28 pass**.
+- **Phase 3 còn: P3-T9 (Admin dashboard KPI) · P3-T10 (unit test domain — phần enrollment transitions đã làm ở P3-T8).**
 - **GitHub:** https://github.com/KhangDepZai1802/POLYMIND_CHINESE
 - App chạy được: Next.js 16 + TS strict + Tailwind v4 + shadcn/ui. Auth SSR (login/forgot/reset/invite), app shell 3 role, logo PolyMind, footer bản quyền.
 - **DB: 20 migration + seed chạy sạch.** 33 bảng, **0 bảng thiếu RLS**, 98 policy, 5 view, 7 RPC, 5 private bucket.
@@ -55,9 +56,11 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P3-T8` — Enrollment lifecycle**: ghi danh / tạm dừng / chuyển lớp / rút / hoàn thành — **bắt buộc đi qua RPC** (`enroll_student` khóa hàng chống vượt sĩ số · `change_enrollment_status` · `transfer_enrollment`), giữ `enrollment_status_history`. Nhớ **D-18**: một học viên chỉ có **tối đa một** enrollment đang mở (`pending`/`active`/`paused`) — đã cưỡng chế bằng partial unique index `ux_enrollments_one_open_per_student` (migration 19), UI phải báo lỗi tử tế khi vi phạm chứ không được ném lỗi DB thô.
+**`P3-T9` — Admin dashboard**: KPI thật lấy từ 5 view có sẵn (`v_enrollment_progress` · `v_class_progress` · `v_student_attendance_summary` · `v_at_risk_students` · `v_tuition_balance`) — **không tự viết lại phép tính** ở tầng app, view đã là nguồn sự thật. Xem `docs/01` §15 để biết KPI nào phải hiện.
 
-Sau P3-T8: **P3-T9** (Admin dashboard KPI từ 5 view) → **P3-T10** (unit test domain: recurrence · capacity · enrollment transitions).
+Sau P3-T9: **P3-T10** (unit test domain còn thiếu: recurrence 35 buổi · capacity. Phần **enrollment transitions đã có** `tests/unit/domain/enrollment.test.ts` từ P3-T8).
+
+⚠️ **Câu hỏi nghiệp vụ cần user chốt (không tự quyết):** `uq_enrollments_student_class` (migration 04) cấm một học viên ghi danh **lại vào chính lớp cũ** — kể cả sau khi đã rút hoặc hoàn thành. Nghĩa là **học lại đúng lớp đó (retake) là không thể**; phải mở lớp mới. Nếu trung tâm có nghiệp vụ học lại thì cần forward-fix ràng buộc này. Hiện app báo lỗi rõ ràng chứ không ném lỗi DB thô.
 
 Mục tiêu Phase 3: super admin đi trọn được **Course → Class → Schedule → sinh buổi → gán GV → Enrollment**.
 
@@ -112,6 +115,17 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-14] Phiên 5 — Claude — P3-T8 (Enrollment lifecycle)
+- **Làm được:** Thẻ "Học viên" ở trang chi tiết lớp thành `EnrollmentPanel` thật: ghi danh, tạm dừng, cho học lại, xác nhận hoàn thành, rút học, **chuyển lớp**, xem **lịch sử** đổi trạng thái. Mọi thao tác **đi qua RPC**, không có đường `update()` thẳng nào. Mỗi lần đổi trạng thái đều hỏi **lý do** → ghi vào `enrollment_status_history` (append-only) trong cùng transaction.
+- **Luật vòng đời tách ra `lib/domain/enrollment.ts`** (thuần, có unit test, **fail-closed**: trạng thái lạ → không cho làm gì). UI chỉ hiện nút theo `allowedEnrollmentTransitions()`; không ai đi thẳng sang `transferred` (chỉ RPC chuyển lớp được đặt).
+- **File thay đổi:** `src/lib/domain/enrollment.ts` (mới), `src/features/enrollments/*` (mới: schema, queries, actions, `enrollment-panel.tsx`), `src/app/(dashboard)/admin/classes/[id]/page.tsx` (thay thẻ Học viên tĩnh của Codex bằng panel; bỏ bản sao `OPEN_ENROLLMENT_STATUSES` trùng lặp), `tests/unit/domain/enrollment.test.ts` (mới), `docs/08-phase-plan.md`.
+- **Migration/data impact:** **không có migration mới.** Dùng đúng 3 RPC + partial unique index đã có từ Phase 2 / migration 19.
+- **Đã test (THẬT, có số):** `lint` sạch · `typecheck` sạch · `npm test` **28/28** (thêm 8 test enrollment) · `build` xanh. **Smoke Chrome headless qua UI thật: 14/14 PASS** — ghi danh → `started_on`/`created_by` do RPC đặt → lịch sử ghi ngay → **D-18: RPC từ chối ghi danh lớp thứ hai** ("Học viên đang học lớp LOP-01…") → **sĩ số: RPC từ chối khi lớp đầy** ("Lớp đã đủ sĩ số (2/2)") → tạm dừng → học lại → rút học (`ended_on` được đặt) → lịch sử đủ **4 chặng, có lý do** → trạng thái cuối không đổi tiếp được → ghi danh đã đóng **không** tính vào D-18 nên HV học được lớp mới. **Chuyển lớp qua UI: 4/4 PASS** — ghi danh cũ thành `transferred` (**không** bị xóa), mở ghi danh mới ở lớp đích, vẫn đúng 1 ghi danh mở, history ghi 2 dòng, audit có `enrollment.transfer`.
+- **Quyết định mới:** không có.
+- **Bài học khi test (ghi lại cho phiên sau):** seed **đã ghi danh sẵn** HV001–HV005 vào LOP-01/02/03. Script smoke ban đầu dùng `.first()` để bấm nút nên **bấm nhầm vào hàng HV004 của seed** và làm hỏng dữ liệu seed (phải `db reset` khôi phục). Khi viết smoke: **luôn neo thao tác vào đúng hàng của học viên thử** (dùng `aria-label` "Lịch sử của <tên>"), đừng dùng `.first()`.
+- **Blocker/rủi ro:** BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. **Câu hỏi nghiệp vụ cần user chốt:** `uq_enrollments_student_class` cấm ghi danh lại vào **chính lớp cũ** → không hỗ trợ "học lại đúng lớp đó" (xem mục VIỆC TIẾP THEO).
+- **Next action:** **P3-T9** — Admin dashboard KPI từ 5 view.
 
 ### [2026-07-14] Phiên 4 — Claude — P3-T7 (Schedule + sinh buổi học)
 - **Làm được:** `/admin/schedule` thành trang thật (trước là ComingSoon): chọn lớp qua URL (`?class=`), CRUD lịch lặp (thứ + khung giờ + khoảng áp dụng), nút **Sinh buổi học** gọi RPC `generate_class_sessions`, danh sách buổi học (giờ VN), thêm buổi thủ công, hủy buổi, xóa buổi sinh nhầm. Link "Quản lý lịch" mà Codex đặt sẵn ở trang chi tiết lớp giờ đã trỏ tới trang có thật.
