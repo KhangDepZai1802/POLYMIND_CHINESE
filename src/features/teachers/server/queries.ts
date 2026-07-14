@@ -19,7 +19,8 @@ export async function getTeachers(search?: string) {
   }
 
   const { data, error } = await query;
-  if (error) throw new Error(`Không tải được danh sách giáo viên: ${error.message}`);
+  if (error)
+    throw new Error(`Không tải được danh sách giáo viên: ${error.message}`);
   return data;
 }
 
@@ -45,9 +46,10 @@ export async function getActiveTeacherOptions() {
   const { data, error } = await supabase
     .from("teachers")
     .select(
-      `id, teacher_code, profile:profiles!fk_teachers_profile (full_name)`,
+      `id, teacher_code, profile:profiles!fk_teachers_profile!inner (full_name)`,
     )
     .eq("is_active", true)
+    .eq("profile.is_active", true)
     .order("teacher_code");
 
   if (error) throw new Error(`Không tải được giáo viên: ${error.message}`);

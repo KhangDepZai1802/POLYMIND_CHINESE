@@ -19,7 +19,7 @@ Super Admin tạo Level (HSK 1–6 đã seed sẵn)
   → kích hoạt lớp (status → active)
 ```
 
-**Điều kiện kích hoạt lớp** (`planned → active`), kiểm ở server **và** RPC:
+**Điều kiện kích hoạt lớp** (`planned → active`), kiểm ở server **và** trigger DB:
 - Có `planned_session_count` và `session_duration_minutes`.
 - Có đúng 1 giáo viên `primary`.
 - Có `start_date`.
