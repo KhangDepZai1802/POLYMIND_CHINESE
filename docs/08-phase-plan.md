@@ -181,7 +181,7 @@
 | P7-T4 | A11y + responsive | WCAG AA, touch target 44px, keyboard nav | ☑ |
 | P7-T5 | Production build | `npm run build` với env hợp lệ | ☑ |
 | P7-T6 | Deploy docs | Backup/restore + rollback + migration rehearsal | ☑ |
-| P7-T7 | Deploy cloud | ⛔ **BLOCKED — chưa có credential Supabase/Vercel.** Không được ghi "đã deploy" khi chưa deploy | ⛔ |
+| P7-T7 | Deploy cloud | Supabase migration trước app; cấu hình Auth/Storage/env; smoke test URL thật | ◐ |
 
 ---
 

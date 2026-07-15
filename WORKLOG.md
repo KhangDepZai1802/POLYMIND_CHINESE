@@ -36,20 +36,20 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-15** — Codex — P7-T6 hoàn thành
+> Cập nhật: **2026-07-15** — Codex — P7-T7
 
-- **Phase 0 → 6 XONG; P7-T1 → P7-T6 XONG.** Mười task P6-T6, P6-T7, P6-T8, P6-T9, P7-T1…P7-T6 đã hoàn thành trong phiên 23.
+- **P7-T7 — đang làm — Codex — 2026-07-15.** Supabase cloud đã áp 34 migration + production seed; Vercel project/GitHub đã link.
 - **Vận hành:** cron idempotent, báo cáo CSV/XLSX, audit viewer, payment concurrency, security/rate limit, RLS catalog, E2E 3 role, WCAG/responsive và deploy runbook đã có.
 - **DB:** 34 migration áp sạch · 33 bảng public đều RLS · catalog khóa 24 RPC · 5 bucket private/16 policy Storage · pgTAP **319/319**.
 - **Kiểm tra gần nhất (THẬT):** lint sạch · typecheck sạch · Vitest **67/67** · Playwright **20/20** desktop/mobile · production build xanh.
 - **QA:** Verification Queue trống; residual dependency audit còn **4 moderate**, không có high/critical, đã ghi trong `docs/testing/SECURITY_REVIEW.md`.
-- **Deploy cloud:** chưa deploy; P7-T7 vẫn bị chặn bởi BLK-1/BLK-2. Trạng thái đúng: **ready to deploy, blocked by credentials**.
+- **Deploy cloud:** Vercel Production đã đủ App URL, Supabase URL, publishable key, secret key đã rotate và `CRON_SECRET`; user đã cho phép commit/push trong phiên này, sẵn sàng deployment đầu tiên.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P7-T7` — Deploy cloud — ⛔ BLOCKED.** Chỉ bắt đầu khi user cung cấp đủ credential Supabase cloud và tài khoản/quyền Vercel; không được gọi là đã deploy trước thời điểm đó.
+**`P7-T7` — Deploy cloud — Codex đang làm.** Tiếp theo: commit/push `main`, theo dõi deployment, cấu hình Auth URL rồi smoke test URL thật.
 
 ✅ **Verification Queue TRỐNG.** Cả 4 bug đã được Claude xác minh độc lập: `BUG-M06-001`, `BUG-M11-001` (phiên 14) · `BUG-M08-001`, `BUG-M11-002` (phiên 18). Xem `docs/testing/MODULE_QA_BOARD.md`.
 
@@ -64,10 +64,9 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 | ID | Blocker | Ảnh hưởng | Cần gì để gỡ |
 |---|---|---|---|
-| BLK-1 | **Chưa có credential Supabase cloud** (project URL, publishable key, service role key, DB password) | `P7-T7` deploy không làm được. Phase 1–6 **không** bị chặn — dev bằng Supabase local trên Docker | User tạo project trên supabase.com → đưa 4 giá trị vào `.env.local` |
-| BLK-2 | **Chưa có tài khoản Vercel** | `P7-T7` deploy không làm được | User tạo tài khoản Vercel + link repo |
+| — | Không có blocker đang mở | — | — |
 
-> **Hệ quả:** cho tới khi BLK-1/BLK-2 được gỡ, trạng thái dự án là **"ready to deploy, blocked by credentials"** — **KHÔNG** được gọi là "đã deploy".
+> Supabase schema/seed đã lên cloud nhưng app **chưa deploy**. Không ghi “đã deploy” cho tới khi URL production qua smoke test.
 
 ---
 
