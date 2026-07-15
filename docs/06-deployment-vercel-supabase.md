@@ -37,7 +37,7 @@ npx supabase gen types typescript --local > src/types/database.ts
 npm run dev     # http://localhost:3000
 ```
 
-Dừng: `npx supabase stop`. Supabase Studio local: http://localhost:54323
+Dừng: `npx supabase stop`. Supabase Studio local: http://localhost:55323
 
 ---
 
@@ -130,10 +130,55 @@ Route cron xác thực bằng `Authorization: Bearer ${CRON_SECRET}` — thiếu
 
 | Phạm vi | Cách backup | Cách restore |
 |---|---|---|
-| **Database** | Supabase PITR (bản trả phí) hoặc `pg_dump` định kỳ | `psql < dump.sql` hoặc PITR restore |
-| **Storage** | Script định kỳ liệt kê + tải object từng bucket (Supabase **không** tự backup Storage ở bản free) | Upload lại object theo đúng `object_path` |
+| **Database** | Supabase PITR (bản trả phí) hoặc CLI dump định kỳ | PITR hoặc restore ba file `roles/schema/data` vào project đích |
+| **Storage** | Script định kỳ liệt kê + tải object từng bucket (Supabase **không** tự backup binary object ở bản free) | Upload lại object theo đúng bucket + `object_path` |
 
 Restore đủ nghĩa = **DB + Storage khớp nhau**. Restore DB về mốc T mà Storage ở mốc T+1 → metadata trỏ tới object không tồn tại.
+
+### 7.1. Quy trình backup database
+
+Chạy từ máy vận hành có Docker + Supabase CLI. `<backup-dir>` phải nằm **ngoài repo**, được mã hóa và chỉ operator có quyền đọc. Không ghi connection string vào file hay shell history.
+
+```bash
+# Dùng Session Pooler URL lấy từ Dashboard → Connect.
+supabase db dump --db-url "$DATABASE_URL" -f <backup-dir>/roles.sql --role-only
+supabase db dump --db-url "$DATABASE_URL" -f <backup-dir>/schema.sql
+supabase db dump --db-url "$DATABASE_URL" -f <backup-dir>/data.sql --use-copy --data-only \
+  -x "storage.buckets_vectors" -x "storage.vector_indexes"
+
+# Lưu checksum cùng bản backup; dùng certutil -hashfile <file> SHA256 trên Windows.
+sha256sum <backup-dir>/roles.sql <backup-dir>/schema.sql <backup-dir>/data.sql \
+  > <backup-dir>/SHA256SUMS
+```
+
+Giữ cùng một `backup_id`/timestamp cho database và Storage. Mỗi backup phải có manifest: project ref, UTC bắt đầu/kết thúc, migration mới nhất, số object từng bucket, checksum và người thực hiện. Tham chiếu lệnh hiện hành: [Supabase CLI backup/restore](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore).
+
+### 7.2. Backup Storage
+
+Năm bucket hiện tại: `avatars`, `course-materials`, `assignment-files`, `submissions`, `student-documents`; tất cả phải private. Với từng bucket:
+
+1. Liệt kê toàn bộ object thành manifest gồm `bucket_id`, `name/object_path`, `size`, `updated_at`, checksum nếu có.
+2. Tải **byte thô** từng object vào `<backup-dir>/storage/<bucket>/<object_path>`; không pipe qua PowerShell (xem luật UTF-8 trong `AGENTS.md`).
+3. So sánh số object + tổng byte giữa manifest và thư mục backup.
+4. Mã hóa, giới hạn quyền, và áp retention giống backup DB.
+
+### 7.3. Restore rehearsal — chỉ staging/project rỗng
+
+> ⛔ Không chạy restore thử vào production hoặc project staging đang dùng chung. Tạo project đích rỗng/disposable.
+
+```bash
+# Xác minh checksum trước khi restore.
+sha256sum -c <backup-dir>/SHA256SUMS
+
+psql --single-transaction --variable ON_ERROR_STOP=1 \
+  --file <backup-dir>/roles.sql \
+  --file <backup-dir>/schema.sql \
+  --command 'SET session_replication_role = replica' \
+  --file <backup-dir>/data.sql \
+  --dbname "$RESTORE_DATABASE_URL"
+```
+
+Sau DB, upload lại Storage đúng bucket/path rồi mới mở app. Kiểm bắt buộc: migration history, 33 bảng public đều bật RLS, 5 bucket private, số row các bảng trọng yếu, số object/tổng byte, signed download và một file UTF-8 mở đúng. Chỉ coi backup dùng được khi một restore rehearsal gần nhất đã hoàn tất và kết quả được ghi vào nhật ký vận hành.
 
 ---
 
@@ -141,17 +186,47 @@ Restore đủ nghĩa = **DB + Storage khớp nhau**. Restore DB về mốc T mà
 
 | Sự cố | Xử lý |
 |---|---|
-| App deploy hỏng | **Vercel Instant Rollback** về deployment trước — vài giây, không cần build lại |
+| App deploy hỏng | `vercel rollback` hoặc **Vercel Instant Rollback** về deployment trước; sau đó `vercel rollback status` và smoke test |
 | Migration hỏng ở production | **Forward-fix:** viết migration mới sửa lại. **KHÔNG sửa migration đã chạy** (Supabase đã ghi nhận nó vào bảng lịch sử; sửa file cũ làm lệch trạng thái) |
 | Migration làm mất dữ liệu | Restore từ PITR/dump. Đây là lý do phải **rehearsal migration trên staging trước** |
 | Rò secret | Rotate key ở Supabase Dashboard → cập nhật env Vercel → redeploy |
 
-**Migration rehearsal (bắt buộc trước production):**
+Rollback app **không rollback database**. Vì vậy migration production phải tương thích ít nhất với deployment app liền trước (ưu tiên expand → deploy app → backfill/contract ở release sau). Nếu app cũ không tương thích schema mới thì không Instant Rollback mù quáng: bật maintenance/read-only nếu cần và phát hành forward-fix.
+
+Sau Instant Rollback, Vercel tắt auto-assignment production domain cho deployment mới. Khi fix đã qua smoke, dùng `vercel promote <deployment-url>` để mở lại luồng production. Chi tiết: [Vercel rollback](https://vercel.com/docs/deployments/rollback-production-deployment).
+
+### 8.1. Migration rehearsal (bắt buộc trước production)
+
 ```bash
-npx supabase db reset          # local: chạy sạch từ migration đầu tiên
-npx supabase db push --dry-run # xem SQL sẽ chạy lên cloud
-# → chạy trên staging trước → kiểm → mới lên production
+# Cổng 1 — local sạch: áp từ migration đầu tiên và chạy toàn bộ pgTAP.
+npm run db:reset
+npm run db:test
+
+# Cổng 2 — xem đúng migration còn thiếu trên project staging đã link.
+npx supabase db push --dry-run
+
+# Cổng 3 — backup staging rồi áp thật; TUYỆT ĐỐI không dùng seed.dev.sql.
+npx supabase db push
+npm run db:seed:dev       # chỉ local/staging disposable; không bao giờ production
+npm run test:e2e
 ```
+
+Trước khi lên production, operator phải lưu: output dry-run, danh sách/timestamp migration, backup ID staging, kết quả pgTAP/E2E/build, deployment app sẽ phát hành và người phê duyệt. Sau đó lặp lại `db push --dry-run` với project production; danh sách ngoài release plan → **dừng**.
+
+Thứ tự release production:
+
+1. Xác nhận backup DB + Storage gần nhất và restore rehearsal còn hiệu lực.
+2. `db push --dry-run` → so với release plan.
+3. `db push` production; kiểm RLS/RPC/health ở DB.
+4. Deploy/promote app; chạy checklist §6.
+5. Theo dõi 5xx, Auth, Postgres và cron; ghi deployment URL + migration cuối vào nhật ký.
+
+### 8.2. Tiêu chí dừng và xử lý sự cố
+
+- Dry-run có migration lạ, backup thiếu checksum, hoặc test đỏ → **không deploy**.
+- App 5xx nhưng DB an toàn/tương thích → rollback app ngay, rồi điều tra.
+- Migration lỗi nhưng chưa mất dữ liệu → giữ app cũ/maintenance, viết migration forward-fix mới.
+- Có dấu hiệu mất/corrupt dữ liệu → chặn mutation, ghi mốc UTC, chọn PITR/backup trước sự cố và thực hiện restore theo §7.3.
 
 ---
 

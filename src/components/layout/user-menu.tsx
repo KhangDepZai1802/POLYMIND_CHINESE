@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LogOut, User } from "lucide-react";
 
 import { logoutAction } from "@/features/auth/server/actions";
@@ -68,10 +69,19 @@ export function UserMenu({
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem disabled>
-          <User className="size-4" aria-hidden />
-          Hồ sơ cá nhân
-        </DropdownMenuItem>
+        {role === "student" ? (
+          <DropdownMenuItem asChild>
+            <Link href="/student/profile">
+              <User className="size-4" aria-hidden />
+              Hồ sơ cá nhân
+            </Link>
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem disabled>
+            <User className="size-4" aria-hidden />
+            Hồ sơ cá nhân
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSeparator />
 

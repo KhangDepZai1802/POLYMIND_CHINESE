@@ -35,8 +35,9 @@ const optionalAmount = z
 const optionalText = z
   .string()
   .trim()
+  .nullish()
   .transform((v) => (v === "" ? null : v))
-  .nullable();
+  .transform((v) => v ?? null);
 
 export const courseSchema = z.object({
   code: codeSchema,

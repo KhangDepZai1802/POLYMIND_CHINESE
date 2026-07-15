@@ -2317,6 +2317,11 @@ export type Database = {
         Returns: undefined
       }
       close_assignment: { Args: { p_assignment_id: string }; Returns: Json }
+      consume_rate_limit: { Args: { p_scope: string }; Returns: boolean }
+      delete_tuition_invoice_draft: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
       enroll_student: {
         Args: {
           p_class_id: string
@@ -2326,11 +2331,16 @@ export type Database = {
         }
         Returns: string
       }
+      expire_announcement: {
+        Args: { p_announcement_id: string }
+        Returns: undefined
+      }
       generate_class_sessions: { Args: { p_class_id: string }; Returns: number }
       grade_submission: {
         Args: { p_feedback?: string; p_score: number; p_submission_id: string }
         Returns: Json
       }
+      issue_tuition_invoice: { Args: { p_invoice_id: string }; Returns: Json }
       log_audit: {
         Args: {
           p_action: string
@@ -2340,6 +2350,10 @@ export type Database = {
           p_resource_type: string
         }
         Returns: undefined
+      }
+      publish_announcement: {
+        Args: { p_announcement_id: string }
+        Returns: number
       }
       publish_assessment_results: {
         Args: { p_assessment_id: string }
@@ -2355,6 +2369,19 @@ export type Database = {
           p_note?: string
           p_paid_at?: string
           p_reference?: string
+        }
+        Returns: string
+      }
+      run_assignment_due_reminders: { Args: { p_now?: string }; Returns: Json }
+      run_invoice_overdue: { Args: { p_now?: string }; Returns: Json }
+      run_session_reminders: { Args: { p_now?: string }; Returns: Json }
+      save_announcement: {
+        Args: {
+          p_announcement_id?: string
+          p_body: string
+          p_class_id?: string
+          p_expires_at?: string
+          p_title: string
         }
         Returns: string
       }
@@ -2382,6 +2409,19 @@ export type Database = {
           p_teacher_note: string
         }
         Returns: number
+      }
+      save_tuition_invoice: {
+        Args: {
+          p_discount: number
+          p_due_date?: string
+          p_enrollment_id?: string
+          p_invoice_id?: string
+          p_issue_date: string
+          p_items: Json
+          p_note?: string
+          p_student_id: string
+        }
+        Returns: string
       }
       transfer_enrollment: {
         Args: {

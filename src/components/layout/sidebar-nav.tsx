@@ -27,7 +27,7 @@ export function SidebarNav({ role }: { role: UserRole }) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav aria-label="Điều hướng chính" className="flex-1 space-y-1 overflow-y-auto p-3">
         {items.map((item) => {
           const active = isNavItemActive(item, pathname);
           const Icon = item.icon;
@@ -38,7 +38,7 @@ export function SidebarNav({ role }: { role: UserRole }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",

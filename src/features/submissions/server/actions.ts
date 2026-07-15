@@ -20,6 +20,7 @@ import {
   fileExtension,
 } from "@/lib/domain/files";
 import { createClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
@@ -180,6 +181,9 @@ export async function createSubmissionUploadUrlAction(input: {
 
   if (!submission) return { error: "Không tìm thấy bài nộp của bạn." };
   if (submission.graded_at) return { error: "Bài đã được chấm." };
+  if (!(await consumeRateLimit(supabase, "submission_upload"))) {
+    return { error: "Bạn đã tạo quá nhiều lượt tải lên. Vui lòng thử lại sau." };
+  }
 
   const path = `${input.classId}/${input.submissionId}/${crypto.randomUUID()}.${ext}`;
   const { data, error } = await supabase.storage

@@ -425,9 +425,13 @@ Trigger chặn tổng thanh toán vượt `invoice.total` (trừ khi đi qua flo
 
 `id` uuid PK · `class_id` FK nullable _(null = toàn hệ thống)_ · `title` NOT NULL · `body` text NOT NULL · `published_at` timestamptz · `expires_at` timestamptz CHECK > `published_at` · `created_by` uuid FK · timestamps. **Không reply/thread/chat.**
 
+Mutation chỉ qua `save_announcement` / `publish_announcement` / `expire_announcement`. `created_by = auth.uid()`; bản đã publish khóa nội dung và không hard-delete. Publish theo lớp chỉ sinh notification cho giáo viên được phân công và học viên có enrollment `active/paused/completed` của lớp đó; publish toàn hệ thống gửi tới mọi teacher/student đang hoạt động.
+
 #### `notifications`
 
 `id` uuid PK · `user_id` FK → `auth.users` ON DELETE CASCADE NOT NULL · `type` `notification_type` NOT NULL · `title` NOT NULL · `body` text · `link` text _(route nội bộ)_ · `resource_type` / `resource_id` · `dedupe_key` text nullable · `read_at` timestamptz · `created_at`.
+
+Teacher/student chỉ có column privilege `UPDATE (read_at)` trên notification của mình. Nội dung/link/resource là bất biến với người nhận, kể cả gọi PostgREST trực tiếp.
 
 ```sql
 -- Chống cron sinh trùng; chỉ áp dụng khi dedupe_key khác null
@@ -438,6 +442,8 @@ CREATE UNIQUE INDEX ux_notifications_dedupe
 #### `notification_preferences`
 
 `id` uuid PK · `user_id` FK NOT NULL · `type` `notification_type` NOT NULL · **UNIQUE `(user_id, type)`** · `in_app_enabled` boolean NOT NULL DEFAULT true · `email_enabled` boolean NOT NULL DEFAULT false _(chỗ mở cho phase sau — **không** thêm SMS/Zalo giả lập)_ · timestamps.
+
+Trigger ép preference về actor thật và giữ `email_enabled = false` cho user flow thường. Trigger trước INSERT `notifications` đọc preference này; nếu loại tương ứng bị tắt thì bỏ bản ghi ngay tại DB. Không có preference = mặc định bật.
 
 #### `audit_logs`
 
@@ -498,11 +504,11 @@ app.teaches_enrollment(uuid)-- enrollment thuộc lớp mà teacher hiện tại
 | `grading_scale_rules`       | ALL             | SELECT                                                                                 | SELECT                                                                            |
 | `learning_evaluations`      | ALL             | ALL: enrollment lớp mình dạy                                                           | SELECT: own **AND `published_at IS NOT NULL` AND `visible_to_student`**           |
 | `student_notes`             | ALL             | ALL: enrollment lớp mình dạy                                                           | SELECT: own **AND `visibility = 'student_visible'`**                              |
-| `tuition_invoices`          | ALL             | **DENY**                                                                               | SELECT: own                                                                       |
-| `tuition_invoice_items`     | ALL             | **DENY**                                                                               | SELECT: invoice của own                                                           |
+| `tuition_invoices`          | SELECT + RPC mutation | **DENY**                                                                          | SELECT: own **AND `status <> 'draft'`**                                            |
+| `tuition_invoice_items`     | SELECT + RPC mutation | **DENY**                                                                          | SELECT: invoice đã phát hành của own                                               |
 | `tuition_payments`          | ALL             | **DENY**                                                                               | SELECT: own. **Không INSERT**                                                     |
 | `tuition_receipts`          | ALL             | **DENY**                                                                               | SELECT: payment của own                                                           |
-| `announcements`             | ALL             | SELECT: toàn hệ thống + lớp mình dạy (đã publish)                                      | SELECT: toàn hệ thống + lớp mình học (đã publish)                                 |
+| `announcements`             | SELECT + RPC mutation | SELECT: toàn hệ thống + lớp mình dạy (đã publish, còn hiệu lực)                   | SELECT: toàn hệ thống + lớp mình học (đã publish, còn hiệu lực)                   |
 | `notifications`             | ALL             | SELECT/UPDATE (`read_at`): own                                                         | SELECT/UPDATE (`read_at`): own                                                    |
 | `notification_preferences`  | ALL             | ALL: own                                                                               | ALL: own                                                                          |
 | `audit_logs`                | **SELECT only** | **DENY**                                                                               | **DENY**                                                                          |
@@ -554,7 +560,13 @@ progress = 0.40 × (bài học completed / tổng bài học)
 | `save_assessment_result(assessment_id, enrollment_id, 7 điểm…, feedback)`     | **Đường ghi điểm duy nhất.** Kiểm giáo viên đúng lớp, enrollment còn thuộc lớp, `0 ≤ điểm ≤ max_score`; upsert theo `(assessment_id, enrollment_id)` → lưu 2 lần **không sinh trùng**; `graded_by` = `auth.uid()`; `classification` do trigger tính |
 | `publish_assessment_results(assessment_id)`                                   | Khóa hàng bài KT, set `published_at` cho **các kết quả đã có điểm** + set `published_at` của bài KT + notification `result_published` (`dedupe_key` chặn trùng khi công bố lại) + audit, atomic. Bài KT **chưa có điểm nào → từ chối công bố**    |
 | `publish_evaluation(evaluation_id)`                                           | Khóa hàng, đặt **cùng lúc** `published_at` + `visible_to_student = true` (không bao giờ lệch nửa vời) + notification (`dedupe_key` chặn trùng) + audit, atomic           |
-| `record_tuition_payment(invoice_id, amount, method, ...)`                     | Insert payment + cập nhật `invoice.status` + sinh **đúng 1** receipt + notification — một transaction. UNIQUE `payment_id` ở `tuition_receipts` là chốt chặn cuối        |
+| `save_tuition_invoice(student_id, issue_date, discount, items, ...)`           | Tạo/cập nhật invoice draft + thay toàn bộ items trong **một transaction**; DB tính `line_total`, `subtotal`, `total`; enrollment phải thuộc đúng học viên                 |
+| `issue_tuition_invoice(invoice_id)`                                            | Khóa invoice draft → `issued` + notification `invoice_new` + audit; gọi lại không sinh notification trùng                                                              |
+| `delete_tuition_invoice_draft(invoice_id)`                                     | Chỉ hard-delete draft chưa phát hành; invoice lịch sử bị từ chối                                                                                                        |
+| `record_tuition_payment(invoice_id, amount, method, ...)`                     | Chỉ nhận invoice `issued/partial/overdue`; insert payment + cập nhật `invoice.status` + sinh **đúng 1** receipt + notification — một transaction. UNIQUE `payment_id` ở `tuition_receipts` là chốt chặn cuối |
+| `save_announcement(title, body, class_id, expires_at, announcement_id)`       | Tạo/cập nhật draft; `created_by` là actor thật; bản đã publish bị khóa nội dung                                                                      |
+| `publish_announcement(announcement_id)`                                       | Khóa draft → published, chọn audience toàn hệ thống/theo lớp và sinh notification idempotent trong một transaction                                  |
+| `expire_announcement(announcement_id)`                                        | Kết thúc hiệu lực bản đã publish, giữ nguyên lịch sử và ghi audit                                                                                    |
 | `admin_invite_user(email, role, ...)`                                         | Tạo `auth.users` (service role, server-only) + `profiles` + `teachers`/`students`, **idempotent**                                                                        |
 
 Tất cả RPC nghiệp vụ: `SECURITY DEFINER`, `SET search_path = ''`, **kiểm quyền ngay dòng đầu** (`IF NOT app.is_super_admin() THEN RAISE EXCEPTION`), `REVOKE EXECUTE FROM PUBLIC, anon` rồi `GRANT` đúng role cần.

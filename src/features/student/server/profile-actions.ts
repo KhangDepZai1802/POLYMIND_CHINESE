@@ -85,25 +85,3 @@ export async function changeMyPasswordAction(
 
   return { success: "Đã đổi mật khẩu." };
 }
-
-export async function markNotificationReadAction(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireRole("student");
-  const id = formData.get("id");
-  if (typeof id !== "string") return { error: "Thiếu mã thông báo." };
-
-  const supabase = await createClient();
-  // RLS `(user_id = auth.uid())` là chốt chặn: không đánh dấu hộ thông báo của
-  // người khác được, dù có đoán đúng id.
-  const { error } = await supabase
-    .from("notifications")
-    .update({ read_at: new Date().toISOString() })
-    .eq("id", id);
-
-  if (error) return { error: dbErrorToMessage(error) };
-
-  revalidatePath("/student/profile");
-  return { success: "Đã đánh dấu đã đọc." };
-}

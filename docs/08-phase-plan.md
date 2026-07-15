@@ -157,15 +157,15 @@
 
 | ID | Task | Definition of Done | Trạng thái |
 |---|---|---|---|
-| P6-T1 | Invoice | CRUD + items + phát hành | ☐ |
-| P6-T2 | Payment + Receipt | Qua RPC `record_tuition_payment` → **đúng 1 receipt** | ☐ |
-| P6-T3 | Học phí (student view) | Chỉ của mình; **không** tự ghi nhận thanh toán | ☐ |
-| P6-T4 | Notifications in-app | Chuông + danh sách + preferences + link có authorization | ☐ |
-| P6-T5 | Announcements | Toàn hệ thống / theo lớp, một chiều | ☐ |
-| P6-T6 | Cron | 3 route + `CRON_SECRET` + `dedupe_key` | ☐ |
-| P6-T7 | Reports + Export | CSV/XLSX **giữ đúng filter/date range đang chọn** | ☐ |
-| P6-T8 | Audit log viewer | Chỉ super admin | ☐ |
-| P6-T9 | Tests | Integration: payment → 1 receipt (kể cả gọi đồng thời) | ☐ |
+| P6-T1 | Invoice | CRUD + items + phát hành | ☑ |
+| P6-T2 | Payment + Receipt | Qua RPC `record_tuition_payment` → **đúng 1 receipt** | ☑ |
+| P6-T3 | Học phí (student view) | Chỉ của mình; **không** tự ghi nhận thanh toán | ☑ |
+| P6-T4 | Notifications in-app | Chuông + danh sách + preferences + link có authorization | ☑ |
+| P6-T5 | Announcements | Toàn hệ thống / theo lớp, một chiều | ☑ |
+| P6-T6 | Cron | 3 route + `CRON_SECRET` + `dedupe_key` | ☑ |
+| P6-T7 | Reports + Export | CSV/XLSX **giữ đúng filter/date range đang chọn** | ☑ |
+| P6-T8 | Audit log viewer | Chỉ super admin | ☑ |
+| P6-T9 | Tests | Integration: payment → 1 receipt (kể cả gọi đồng thời) | ☑ |
 
 ---
 
@@ -175,12 +175,12 @@
 
 | ID | Task | Definition of Done | Trạng thái |
 |---|---|---|---|
-| P7-T1 | Security review | IDOR, upload abuse, rate limit, path traversal | ☐ |
-| P7-T2 | pgTAP full matrix | Đủ SELECT/INSERT/UPDATE/DELETE + RPC + Storage cho 3 role | ☐ |
-| P7-T3 | E2E 3 role | 6 kịch bản ở `05-testing-strategy.md` | ☐ |
-| P7-T4 | A11y + responsive | WCAG AA, touch target 44px, keyboard nav | ☐ |
-| P7-T5 | Production build | `npm run build` với env hợp lệ | ☐ |
-| P7-T6 | Deploy docs | Backup/restore + rollback + migration rehearsal | ☐ |
+| P7-T1 | Security review | IDOR, upload abuse, rate limit, path traversal | ☑ |
+| P7-T2 | pgTAP full matrix | Đủ SELECT/INSERT/UPDATE/DELETE + RPC + Storage cho 3 role | ☑ |
+| P7-T3 | E2E 3 role | 6 kịch bản ở `05-testing-strategy.md` | ☑ |
+| P7-T4 | A11y + responsive | WCAG AA, touch target 44px, keyboard nav | ☑ |
+| P7-T5 | Production build | `npm run build` với env hợp lệ | ☑ |
+| P7-T6 | Deploy docs | Backup/restore + rollback + migration rehearsal | ☑ |
 | P7-T7 | Deploy cloud | ⛔ **BLOCKED — chưa có credential Supabase/Vercel.** Không được ghi "đã deploy" khi chưa deploy | ⛔ |
 
 ---

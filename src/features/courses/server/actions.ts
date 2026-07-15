@@ -26,6 +26,7 @@ import {
   sanitizeDownloadName,
 } from "@/lib/domain/files";
 import { createClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 
 /**
  * Mutation của khóa học.
@@ -53,7 +54,7 @@ export async function createCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  const user = await requireRole("super_admin");
 
   const parsed = courseSchema.safeParse(formToObject(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -62,7 +63,7 @@ export async function createCourseAction(
 
   const { data, error } = await supabase
     .from("courses")
-    .insert(parsed.data)
+    .insert({ ...parsed.data, created_by: user.id })
     .select("id, code, title")
     .single();
 
@@ -299,6 +300,9 @@ export async function createMaterialUploadUrlAction(input: {
   const path = `${input.courseId}/${crypto.randomUUID()}.${ext}`;
 
   const supabase = await createClient();
+  if (!(await consumeRateLimit(supabase, "material_upload"))) {
+    return { error: "Bạn đã tạo quá nhiều lượt tải lên. Vui lòng thử lại sau." };
+  }
 
   // Ký URL bằng client CỦA NGƯỜI DÙNG, không phải admin client: policy INSERT
   // của storage vẫn phải duyệt. Không có quyền với course này → ký không nổi.

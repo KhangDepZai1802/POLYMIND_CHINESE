@@ -25,6 +25,7 @@ import {
   sanitizeDownloadName,
 } from "@/lib/domain/files";
 import { createClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 
 function assignmentFormData(formData: FormData) {
   return {
@@ -275,6 +276,9 @@ export async function createAssignmentUploadUrlAction(input: {
 
   if (!assignment) return { error: "Không tìm thấy bài tập trong lớp này." };
   if (assignment.status === "closed") return { error: "Bài tập đã đóng." };
+  if (!(await consumeRateLimit(supabase, "assignment_upload"))) {
+    return { error: "Bạn đã tạo quá nhiều lượt tải lên. Vui lòng thử lại sau." };
+  }
 
   const path = `${input.classId}/${input.assignmentId}/${crypto.randomUUID()}.${ext}`;
   const { data, error } = await supabase.storage

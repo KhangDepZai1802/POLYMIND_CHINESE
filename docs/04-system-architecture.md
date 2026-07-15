@@ -71,7 +71,7 @@ Quy tắc sống còn:
 
 1. `lib/supabase/admin.ts` bắt đầu bằng `import 'server-only'`. Import nhầm vào Client Component → **build fail** (đúng như mong muốn).
 2. **Không bao giờ** dùng admin client để phục vụ request thường của teacher/student. Làm vậy là vô hiệu hóa toàn bộ RLS — đúng cái bẫy đã sập ở hệ cũ.
-3. Admin client chỉ cho: mời user, khóa/mở tài khoản, đổi role, seed. Đếm được trên đầu ngón tay.
+3. Admin client chỉ cho: mời user, khóa/mở tài khoản, đổi role, seed; system cron đã xác thực chỉ được gọi ba RPC nền bị revoke khỏi user role. Đếm được trên đầu ngón tay.
 4. `SUPABASE_SERVICE_ROLE_KEY` **không bao giờ** có tiền tố `NEXT_PUBLIC_`.
 
 ---
@@ -125,7 +125,7 @@ src/
 └─ types/       database.ts (generate từ Supabase — KHÔNG viết tay)
 ```
 
-`features/*`: `users · students · teachers · courses · classes · schedules · enrollments · attendance · assignments · assessments · progress · tuition · notifications · reports · audit`
+`features/*`: `users · students · teachers · courses · classes · schedules · enrollments · attendance · assignments · assessments · progress · tuition · notifications · announcements · reports · audit`
 
 ### Quy tắc code (rút từ sai lầm của hệ cũ)
 
@@ -178,7 +178,7 @@ RLS đã lọc → không cần `WHERE user_id = ...` thủ công. Nhưng **vẫ
 
 Mutation nhiều bảng **phải** là RPC PostgreSQL (`SECURITY DEFINER`, `SET search_path = ''`, kiểm quyền ở dòng đầu):
 
-`enroll_student` · `transfer_enrollment` · `change_enrollment_status` · `bulk_mark_attendance` · `generate_class_sessions` · `save_session_log` · `publish_assignment` · `close_assignment` · `grade_submission` · `save_assessment_result` · `publish_assessment_results` · `publish_evaluation` · `record_tuition_payment` · `admin_invite_user`
+`enroll_student` · `transfer_enrollment` · `change_enrollment_status` · `bulk_mark_attendance` · `generate_class_sessions` · `save_session_log` · `publish_assignment` · `close_assignment` · `grade_submission` · `save_assessment_result` · `publish_assessment_results` · `publish_evaluation` · `save_tuition_invoice` · `issue_tuition_invoice` · `delete_tuition_invoice_draft` · `record_tuition_payment` · `save_announcement` · `publish_announcement` · `expire_announcement` · `admin_invite_user`
 
 **Idempotency được cưỡng chế ở DB, không ở app** (app-level check luôn thua race condition — bài học từ lỗi trả hoa hồng 2 lần ở hệ cũ):
 

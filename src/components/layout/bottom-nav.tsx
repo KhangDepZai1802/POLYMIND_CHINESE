@@ -21,7 +21,7 @@ export function BottomNav({ role }: { role: UserRole }) {
   const items = getMobileNavigation(role);
 
   return (
-    <nav className="bg-card fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav aria-label="Điều hướng chính trên di động" className="bg-card fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] md:hidden">
       <ul className="flex">
         {items.map((item) => {
           const active = isNavItemActive(item, pathname);

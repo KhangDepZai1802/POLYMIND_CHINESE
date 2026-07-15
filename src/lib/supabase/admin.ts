@@ -16,6 +16,7 @@ import type { Database } from "@/types/database";
  *      - Khóa / mở tài khoản
  *      - Đổi role
  *      - Seed
+ *      - System cron đã xác thực, chỉ gọi RPC nền bị khóa cho service_role
  *    Đếm được trên đầu ngón tay. Tất cả đều là admin flow, server-only, và
  *    PHẢI tự kiểm quyền `super_admin` trước khi gọi.
  *

@@ -202,12 +202,14 @@ Ghi chú nội bộ (`student_notes` với `visibility = 'staff_only'`): học v
 ## 7. Học phí
 
 ```text
-Super Admin phát hành hóa đơn
-  → tuition_invoices (draft) + tuition_invoice_items
-  → total = subtotal − discount
+Super Admin lưu hóa đơn nháp → save_tuition_invoice(...)
+  → tuition_invoices (draft) + tuition_invoice_items trong MỘT transaction
+  → DB tính line_total, subtotal và total = subtotal − discount
   → ISSUE → status = 'issued', notification "Hóa đơn mới" tới học viên
 
-Học viên xem số phải thu + hạn (KHÔNG tự ghi nhận thanh toán được)
+Học viên không thấy draft; sau ISSUE mới xem số phải thu + hạn
+trên /student/tuition, gồm khoản mục + payment + receipt của chính mình
+(KHÔNG tự ghi nhận thanh toán được)
 
 Super Admin ghi nhận thanh toán → record_tuition_payment(...)
   → MỘT transaction:
@@ -225,6 +227,9 @@ Super Admin ghi nhận thanh toán → record_tuition_payment(...)
 | Tình huống | Xử lý |
 |---|---|
 | Ghi payment vượt số phải thu | Trigger chặn, trừ khi đi qua flow refund tường minh |
+| Ghi payment cho invoice draft/paid/cancelled/refunded | RPC từ chối trước khi sinh payment/receipt |
+| Client khai sai `line_total` / `total` | Không nhận hai giá trị này; DB tính lại từ `quantity × unit_amount` |
+| Sửa/xóa hóa đơn đã phát hành | RPC từ chối; chỉ draft mới sửa hoặc hard-delete được |
 | Gọi `record_tuition_payment` 2 lần đồng thời | Transaction + UNIQUE `payment_id` trên receipts → **không sinh 2 phiếu thu** |
 | Giáo viên cố đọc hóa đơn | RLS **DENY** tuyệt đối trên toàn bộ 4 bảng tuition |
 | Học viên gọi INSERT `tuition_payments` | Không có policy INSERT cho student → từ chối |
@@ -257,6 +262,22 @@ Lớp/khóa đã `completed` → **read-only**. Sửa hồi tố phải giới h
 
 Một chiều. Không reply, không thread, không chat.
 
+```text
+Mọi role mở chuông trên header
+  → RLS chỉ trả notifications của chính tài khoản
+  → người nhận chỉ UPDATE read_at (không sửa nội dung/link)
+  → lưu notification_preferences theo từng type
+  → trigger DB bỏ notification mới nếu type đó bị tắt
+
+Super Admin soạn announcement draft
+  → chọn toàn hệ thống hoặc một lớp + thời điểm hết hiệu lực
+  → PUBLISH qua publish_announcement
+      → khóa nội dung + chọn đúng teacher/student audience
+      → sinh notification có dedupe_key announcement:{id}
+  → giáo viên/học viên chỉ thấy bản đã publish, còn hiệu lực, đúng lớp
+  → KẾT THÚC qua expire_announcement; không hard-delete lịch sử
+```
+
 | Loại | Kích hoạt bởi | Người nhận |
 |---|---|---|
 | `session_upcoming` | Cron (trước buổi học) | Học viên trong lớp |
@@ -270,6 +291,7 @@ Một chiều. Không reply, không thread, không chat.
 | `announcement` | Super admin publish | Toàn hệ thống hoặc một lớp |
 
 - Mỗi notification có `link` nội bộ. **Click vào link vẫn phải qua authorization** — link không phải là quyền.
+- UI chỉ render link bắt đầu bằng `/` và nằm trong đúng khu vực role; route đích vẫn kiểm role + RLS như mọi truy cập trực tiếp khác.
 - Cron dùng `dedupe_key` (vd `assignment_due:{assignment_id}:{user_id}`) → chạy lại **không sinh trùng** (UNIQUE partial index).
 - V1 chỉ bắt buộc **in-app**. Email nghiệp vụ là phase sau — nhưng **email invite/reset của Supabase Auth phải hoạt động**.
 

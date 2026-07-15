@@ -209,8 +209,10 @@ Nguyên tắc bất di bất dịch:
 - Số dư = `invoice.total − SUM(payments)`. Là **giá trị tính ra**, không lưu thành cột "công nợ" rời (sẽ lệch).
 - Trạng thái hóa đơn: `draft | issued | partial | paid | overdue | cancelled | refunded`.
 - `amount > 0` cho mọi payment. Tổng thanh toán hợp lệ **không vượt** số phải thu, trừ khi đi qua flow hoàn tiền/điều chỉnh rõ ràng.
+- Chỉ ghi nhận payment cho hóa đơn đã phát hành (`issued | partial | overdue`); draft, paid, cancelled, refunded đều bị từ chối ở RPC.
 - Mỗi payment sinh **đúng một** receipt — ràng buộc bằng UNIQUE trên `tuition_receipts.payment_id`, không dựa vào app-level check (bài học từ lỗi thu-trùng ở hệ cũ).
-- **Giáo viên không đọc được bảng học phí.** Học viên chỉ đọc hóa đơn/thanh toán của chính mình và **không tự ghi nhận thanh toán**.
+- **Giáo viên không đọc được bảng học phí.** Học viên chỉ đọc hóa đơn **đã phát hành**/thanh toán của chính mình, không thấy draft và **không tự ghi nhận thanh toán**.
+- Hóa đơn + khoản mục được lưu nguyên tử; `subtotal`, `line_total`, `total` do DB tính. Hóa đơn đã phát hành không sửa hoặc hard-delete.
 
 ### BR-9 — Hoàn thành khóa
 
@@ -222,6 +224,8 @@ Nguyên tắc bất di bất dịch:
 
 - Một chiều, không reply, không thread.
 - Mỗi notification có link nội bộ hợp lệ; **kiểm authorization khi click** (link không phải là quyền).
+- Người nhận chỉ được đổi `read_at`; không được sửa tiêu đề, nội dung, link hay chủ sở hữu notification. Tùy chọn `in_app_enabled` được trigger DB áp dụng cho **mọi** nguồn sinh notification; thiếu preference = mặc định bật.
+- Announcement có hai phạm vi: toàn hệ thống (`class_id = null`) hoặc một lớp. Super admin soạn draft → publish riêng; sau publish khóa nội dung, chỉ được kết thúc hiệu lực. Giáo viên/học viên chỉ đọc bản đã publish, còn hiệu lực và thuộc audience của mình.
 - Cron sinh nhắc lịch phải dùng `dedupe_key` để chạy lại không tạo thông báo trùng.
 
 ### BR-11 — Audit

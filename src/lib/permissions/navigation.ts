@@ -53,7 +53,12 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
 
   teacher: [
     { label: "Hôm nay", href: "/teacher", icon: LayoutDashboard, mobile: true },
-    { label: "Lớp của tôi", href: "/teacher/classes", icon: School, mobile: true },
+    {
+      label: "Lớp của tôi",
+      href: "/teacher/classes",
+      icon: School,
+      mobile: true,
+    },
     {
       label: "Điểm danh",
       href: "/teacher/attendance",
@@ -103,8 +108,14 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
       icon: FileText,
       mobile: true,
     },
-    { label: "Kết quả", href: "/student/results", icon: BarChart3, mobile: true },
-    { label: "Hồ sơ", href: "/student/profile", icon: UserCircle, mobile: true },
+    {
+      label: "Kết quả",
+      href: "/student/results",
+      icon: BarChart3,
+      mobile: true,
+    },
+    { label: "Học phí", href: "/student/tuition", icon: Wallet, mobile: true },
+    { label: "Hồ sơ", href: "/student/profile", icon: UserCircle },
   ],
 };
 

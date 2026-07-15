@@ -37,7 +37,7 @@ Những thứ này **sẽ không bao giờ** vào sản phẩm. Đừng đề xu
 
 | # | Hạng mục | Mức |
 |---|---|---|
-| T-1 | Rate limit chi tiết cho từng server action (v1 chỉ dựa vào rate limit của Supabase Auth) | Medium |
+| T-1 | Tinh chỉnh rate limit theo telemetry production. v1 đã có DB-backed limit cho upload/export và Supabase Auth limit cho đăng nhập. | Medium |
 | T-2 | Dọn object Storage mồ côi (xóa metadata nhưng object còn lại) — cần job đối soát định kỳ | Medium |
 | T-3 | Retention cho `audit_logs` (bảng sẽ phình theo thời gian) | Low |
 | T-4 | Nhiều lần nộp bài (`submission_attempts`) — v1 chỉ giữ bản hiện hành khi `max_attempts = 1` | Low |

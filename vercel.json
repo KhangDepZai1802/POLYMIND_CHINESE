@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/session-reminders", "schedule": "0 1 * * *" },
+    { "path": "/api/cron/assignment-due", "schedule": "30 1 * * *" },
+    { "path": "/api/cron/invoice-overdue", "schedule": "0 2 * * *" }
+  ]
+}

@@ -36,36 +36,22 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-14** — Claude — P5-T7
+> Cập nhật: **2026-07-15** — Codex — P7-T6 hoàn thành
 
-- **Phase 0 · 1 · 2 · 3 · 4 XONG** · 🎉 **PHASE 5 XONG** (T1→T7 đủ 7 task).
-- **Gate Phase 5 ĐẠT, kiểm chứng thật:** học viên **không** thấy dữ liệu của học viên khác — kiểm bằng chính JWT học viên, với **HV-A và HV-B CÙNG MỘT LỚP** (ca khó nhất). Luồng **nộp bài end-to-end** chạy thật trên trình duyệt: text + file private + GV chấm + HV thấy điểm + bài bị khóa sửa. Bằng chứng ở `docs/08-phase-plan.md` §Phase 5.
-- **P5-T1…T7 — xong — Claude — 2026-07-14.** Cả 5 trang học viên bỏ ComingSoon: `/student` (dashboard) · `/student/schedule` (lịch + tài liệu + chuyên cần) · `/student/assignments` + `/student/assignments/[id]` (nộp bài) · `/student/results` (điểm + đánh giá + tiến độ) · `/student/profile` (hồ sơ + đổi mật khẩu + thông báo). Thêm `/student/evaluations` (redirect) để link trong notification không còn 404.
-- **Gate Phase 4 ĐẠT** (UI · direct URL · server action/RPC · Supabase client gọi thẳng) — xem `docs/08-phase-plan.md` §Phase 4.
-- **QA:** Verification Queue **trống**. Cả 4 bug (`BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`) đã được Claude **xác minh độc lập**.
-- **DB:** 28 migration · 33 bảng · 0 bảng thiếu RLS · 97 policy public + 16 policy Storage · 5 view `security_invoker` · 13 RPC nghiệp vụ (+ `log_audit`) · 5 private bucket. **Phase 5 không thêm migration nào** — RLS nền đã đủ.
-- **Kiểm tra gần nhất (THẬT):** lint/typecheck sạch · Vitest **43/43** · pgTAP **167/167** · Playwright **5/5** · build xanh.
+- **Phase 0 → 6 XONG; P7-T1 → P7-T6 XONG.** Mười task P6-T6, P6-T7, P6-T8, P6-T9, P7-T1…P7-T6 đã hoàn thành trong phiên 23.
+- **Vận hành:** cron idempotent, báo cáo CSV/XLSX, audit viewer, payment concurrency, security/rate limit, RLS catalog, E2E 3 role, WCAG/responsive và deploy runbook đã có.
+- **DB:** 34 migration áp sạch · 33 bảng public đều RLS · catalog khóa 24 RPC · 5 bucket private/16 policy Storage · pgTAP **319/319**.
+- **Kiểm tra gần nhất (THẬT):** lint sạch · typecheck sạch · Vitest **67/67** · Playwright **20/20** desktop/mobile · production build xanh.
+- **QA:** Verification Queue trống; residual dependency audit còn **4 moderate**, không có high/critical, đã ghi trong `docs/testing/SECURITY_REVIEW.md`.
+- **Deploy cloud:** chưa deploy; P7-T7 vẫn bị chặn bởi BLK-1/BLK-2. Trạng thái đúng: **ready to deploy, blocked by credentials**.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P6-T1` — Tuition, notifications & reports — chưa claim.** Phase 5 đã đóng; mở [`docs/08-phase-plan.md`](docs/08-phase-plan.md) → Phase 6 để lấy task ID và Definition of Done.
-
-⚠️ **Gate của Phase 6** (đọc kỹ trước khi code): **giáo viên KHÔNG được đọc học phí** — đây là ranh giới quyền quan trọng nhất của phase này. Bài học `BUG_M16_01` ở hệ cũ: **export phải giữ đúng filter/date range đang chọn**, nếu không file xuất ra luôn là toàn kỳ.
-
-Nền đã có sẵn để dùng ngay:
-- RPC `record_tuition_payment` — sinh **đúng 1** phiếu thu (UNIQUE `tuition_receipts.payment_id` là chốt chặn cuối, không phải check ở app).
-- View `v_tuition_balance` (`security_invoker`) — số dư là **tính ra**, không phải cột nhập tay.
-- Bảng `notifications` có partial unique `(user_id, dedupe_key)` → cron/RPC gọi lại **không sinh thông báo trùng**.
-- Cổng học viên đã đọc `v_tuition_balance` (KPI "Còn phải đóng" + cảnh báo quá hạn ở `/student`) — Phase 6 chỉ cần làm phía admin.
+**`P7-T7` — Deploy cloud — ⛔ BLOCKED.** Chỉ bắt đầu khi user cung cấp đủ credential Supabase cloud và tài khoản/quyền Vercel; không được gọi là đã deploy trước thời điểm đó.
 
 ✅ **Verification Queue TRỐNG.** Cả 4 bug đã được Claude xác minh độc lập: `BUG-M06-001`, `BUG-M11-001` (phiên 14) · `BUG-M08-001`, `BUG-M11-002` (phiên 18). Xem `docs/testing/MODULE_QA_BOARD.md`.
-
-Nền đã sẵn sàng để dùng ngay:
-- 11 RPC nghiệp vụ: `enroll_student` (khóa hàng chống vượt sĩ số) · `transfer_enrollment` · `change_enrollment_status` · `generate_class_sessions` (idempotent) · `bulk_mark_attendance` (upsert) · `save_session_log` (session + progress nguyên tử) · `publish_assignment` + `close_assignment` · `grade_submission` · `publish_assessment_results` · `record_tuition_payment` (sinh đúng 1 phiếu thu).
-- 5 view: `v_enrollment_progress` · `v_class_progress` · `v_student_attendance_summary` · `v_at_risk_students` · `v_tuition_balance`.
-- Types: `src/types/database.ts` đã generate từ schema thật (`npm run db:types`).
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -116,6 +102,42 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-15] Phiên 23 — Codex — P6-T6 → P7-T6 (10 task)
+- **Làm được:** hoàn thành đúng 10 task: ba cron route/RPC idempotent; báo cáo học phí thực + CSV/XLSX giữ filter; audit viewer read-only; runner payment concurrency; security review + rate limit DB-backed; pgTAP catalog full matrix; E2E sáu kịch bản/ba role; WCAG AA + responsive/touch/keyboard; production build; runbook backup/restore/rollback/migration rehearsal.
+- **File thay đổi:** migrations 33–34 + pgTAP; `src/app/api/{cron,export}`, `src/features/{reports,audit,tuition}`, security helpers/headers; admin reports/system; shared a11y controls/layout; Playwright critical-flow + accessibility specs; `docs/testing/{SECURITY_REVIEW,RLS_MATRIX_COVERAGE}.md`, `docs/06-deployment-vercel-supabase.md`, phase plan và WORKLOG.
+- **Migration/data impact:** migration 33 thêm 3 RPC cron service-only và notification dedupe; migration 34 thêm bảng private rate-limit + RPC authenticated allowlist. Reset áp sạch đủ 34 migration; seed dev nạp bằng `docker cp`, kiểm UTF-8 hiển thị đúng. Không hard-delete dữ liệu lịch sử, không sửa migration cũ.
+- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · Vitest **67/67** · `npm run db:reset` xanh · pgTAP **319/319** · payment concurrency thật đạt 1 payment/1 receipt · Playwright **20/20** Chromium desktop + Pixel 7 · `npm run build` xanh với Next 16.2.10.
+- **Quyết định mới:** không có; giữ local-first và không deploy khi thiếu credential.
+- **Blocker/rủi ro:** P7-T7 vẫn bị BLK-1/BLK-2; npm audit production còn 4 moderate đã phân tích, không có high/critical. Cảnh báo Next `middleware` → `proxy` là deprecation không chặn build.
+- **Next action:** **P7-T7** — user cung cấp credential Supabase/Vercel rồi mới rehearsal staging và deploy cloud.
+
+### [2026-07-15] Phiên 22 — Codex — P6-T3 → P6-T5
+- **Làm được:** P6-T3 thêm `/student/tuition` chỉ đọc qua RLS, hiển thị khoản mục/số dư/payment/receipt và không có mutation thu tiền. P6-T4 thêm chuông unread ở header, notification center + đánh dấu một/tất cả đã đọc + preferences dùng chung cả ba role; link chỉ render khi là route nội bộ đúng khu vực role. P6-T5 thêm quản lý announcement draft → publish → kết thúc hiệu lực, phạm vi toàn hệ thống/theo lớp, feed cho giáo viên/học viên và phân phối notification đúng audience; không reply/thread/chat, không hard-delete lịch sử.
+- **File thay đổi:** `src/features/{tuition,notifications,announcements}/*`, `src/app/(dashboard)/{layout,admin/notifications,teacher/notifications,student/{tuition,notifications,profile}}/*`, `src/components/layout/user-menu.tsx`, `src/lib/permissions/navigation.ts`, `src/types/database.ts`, migrations 31–32, pgTAP notification/announcement, unit test notification link, `docs/{01,02,03,04,08-phase-plan.md}`, `WORKLOG.md`.
+- **Migration/data impact:** migration 31 áp preference bằng trigger DB, ép actor thật và thu hẹp UPDATE notification còn `read_at`; migration 32 thêm 3 RPC announcement, khóa direct mutation, thay policy expiry dùng thời gian thực. Không thêm/xóa bảng/cột, không xóa dữ liệu lịch sử. `npm run db:reset` áp sạch đủ 32 migration.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **55/55** · pgTAP **284/284** (**16** assertion notification center + **32** announcement workflow/RLS) · build production xanh; `/student/tuition`, `/admin/notifications`, `/teacher/notifications`, `/student/notifications` đều là route động `ƒ`.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** không có blocker P6-T3→T5. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud.
+- **Next action:** **P6-T6** — ba cron route + `CRON_SECRET` + `dedupe_key`, kiểm chạy lại không sinh thông báo trùng.
+
+### [2026-07-15] Phiên 21 — Codex — P6-T2
+- **Làm được:** hoàn thiện luồng Payment + Receipt trên `/admin/tuition`: chỉ hiện hành động thu cho hóa đơn `issued/partial/overdue`, form ghi nhận số tiền/phương thức/thời điểm/tham chiếu/ghi chú, lịch sử payment và mã phiếu thu. Server action gọi duy nhất RPC `record_tuition_payment`; RPC forward-fix khóa hóa đơn, từ chối trạng thái không hợp lệ và tạo payment + receipt trong cùng transaction.
+- **File thay đổi:** `src/features/tuition/{schema,types,server/actions,server/queries,components/invoice-manager}.ts(x)`, `supabase/migrations/20260715000030_tuition_payment_integrity.sql`, `supabase/tests/database/tuition_payment_workflow.test.sql`, `tests/unit/domain/tuition-invoice-schema.test.ts`, `docs/{01-business-analysis,02-database-design,03-workflow,08-phase-plan}.md`, `WORKLOG.md`.
+- **Migration/data impact:** migration 30 forward-fix RPC hiện hữu, không thêm/xóa bảng hay cột; chặn thu trên `draft/paid/cancelled/refunded`, giữ attribution theo `auth.uid()` và quyền thực thi chỉ cho `authenticated`. `npm run db:reset` áp sạch đủ 30 migration.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **51/51** · pgTAP **236/236** (**32** assertion riêng payment/receipt/RLS) · build production xanh, `/admin/tuition` là route động `ƒ`.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** không có blocker P6-T2. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud.
+- **Next action:** **P6-T3** — màn hình học phí cho học viên, chỉ dữ liệu của mình và không có mutation ghi nhận thanh toán.
+
+### [2026-07-15] Phiên 20 — Codex — P6-T1
+- **Làm được:** thay ComingSoon `/admin/tuition` bằng module hóa đơn thật: KPI, danh sách chi tiết, form nhiều khoản mục, tạo/sửa/xóa draft và phát hành riêng. Thêm RPC transaction `save_tuition_invoice` (DB tự tính `line_total/subtotal/total`, kiểm enrollment thuộc học viên), `issue_tuition_invoice` (notification idempotent + audit), `delete_tuition_invoice_draft`; khóa mutation trực tiếp trên 4 bảng tuition. Học viên không thấy draft ở tầng RLS; hóa đơn đã phát hành không sửa/hard-delete.
+- **File thay đổi:** `src/features/tuition/*`, `src/app/(dashboard)/admin/tuition/page.tsx`, `src/components/shared/submit-button.tsx`, `src/types/database.ts`, `supabase/migrations/20260715000029_tuition_invoice_workflow.sql`, `supabase/tests/database/tuition_invoice_workflow.test.sql`, `tests/unit/domain/tuition-invoice-schema.test.ts`, `docs/{01,02,03,04,08-phase-plan.md}`, `WORKLOG.md`.
+- **Migration/data impact:** migration 29 thêm 1 sequence + 3 RPC, thu hẹp GRANT mutation tuition về RPC-only, thay 2 RLS policy để draft vô hình với học viên; không xóa dữ liệu production. `npm run db:reset` áp sạch đủ 29 migration.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **48/48** · pgTAP **204/204** (**37** assertion riêng invoice workflow/RLS) · build production xanh, `/admin/tuition` là route động `ƒ`.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** không có blocker P6-T1. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. P6-T2 cần chặn payment trên invoice draft trước khi nối UI.
+- **Next action:** **P6-T2** — Payment + Receipt qua `record_tuition_payment`; hiển thị payment/receipt trên hóa đơn và giữ invariant đúng 1 receipt.
+
 ### [2026-07-14] Phiên 19 — Claude — P5-T1…T7 — 🎉 ĐÓNG PHASE 5
 - **Làm được:** toàn bộ **cổng học viên** (5 trang ComingSoon → thật). `/student`: buổi kế tiếp, bài chưa nộp, chuyên cần, còn phải đóng + cảnh báo hóa đơn quá hạn. `/student/schedule`: 3 tab — buổi học (kèm điểm danh của mình), tài liệu (tải bằng signed URL ngắn hạn), chuyên cần. `/student/assignments` + `[id]`: **nộp bài text + file**, xem đề bài đính kèm, thấy điểm/nhận xét sau khi chấm. `/student/results`: 3 tab — điểm (tổng + 6 kỹ năng), đánh giá học tập + lời nhắn, tiến độ. `/student/profile`: hồ sơ, sửa liên hệ, **đổi mật khẩu**, danh sách thông báo + đánh dấu đã đọc.
 - **Link trong notification là hợp đồng, không phải trang trí:** RPC `publish_evaluation` sinh link `/student/evaluations` — route đó **chưa tồn tại**, mọi thông báo "Đánh giá học tập mới" sẽ dẫn tới **404**. Đã thêm route redirect sang `/student/results?tab=evaluations`. `/student/results` và `/student/assignments/[id]` cũng đã có đủ.
@@ -138,59 +160,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không có.
 - **Blocker/rủi ro:** không có blocker; hai fix chờ Claude xác minh độc lập, Codex không tự ghi Verified.
 - **Next action:** Claude xác minh `BUG-M08-001` + `BUG-M11-002`; Codex dừng, không làm tiếp Phase 5.
-
-### [2026-07-14] Phiên 17 — Claude — P4-T10 (Tests) — 🎉 ĐÓNG PHASE 4
-- **Làm được:** repo có **component test** đầu tiên (Testing Library đã cài từ lâu nhưng chưa dùng). 6 test mới nhắm đúng những chỗ hỏng là **hỏng âm thầm**, không phải chỗ dễ test:
-  1. **`AttendanceRoster` — chưa chọn ≠ vắng.** Render roster, không chọn ai, đọc đúng `FormData` mà trình duyệt sẽ POST → **không có field `status_*` nào**. Nếu component mặc định `absent`, cả lớp bị đánh vắng oan chỉ vì một cú bấm Lưu — và không có lỗi nào bật lên. Test thứ hai: "Tất cả có mặt" rồi sửa 1 người thành Vắng → gửi đúng `present/absent/present`.
-  2. **`AssessmentScoreBoard` — ô trống ≠ 0 điểm.** Chấm 3/6 kỹ năng (90, 80, 70) → *Tính TB* ra **80** (TB của 3 ô đã nhập), không phải **40** (nếu coi 3 ô trống là 0 → học viên mất 40 điểm).
-  3. **Schema:** ô điểm rỗng → `null` chứ không phải `0`, nhưng **0 do giáo viên cố ý cho vẫn là 0** (phân biệt được "chưa chấm" với "0 điểm"); rating bỏ trống → `null`, **không phải `weak`** (vu oan học viên).
-- **RLS negative (phần còn lại của DoD) đã có sẵn từ T7/T8** — không viết trùng: `assessment_integrity.test.sql` (GV lớp khác đọc 0 dòng · gọi thẳng RPC nhập điểm/công bố đều bị từ chối) và `evaluation_notes.test.sql` (học viên quét toàn bảng chỉ thấy ghi chú `student_visible`; đánh giá chưa gửi → 0 dòng; học viên không tạo/sửa được ghi chú).
-- **Sửa hạ tầng test:** 3 smoke chạy song song thì evaluation smoke **đỏ vì hết giờ** (30s mặc định), chạy riêng thì xanh — test đỏ vì *timeout*, không phải vì sai. Smoke chạy trên `next dev` (biên dịch route theo yêu cầu) và đụng DB thật, nên nâng `timeout` của Playwright lên **90s**. Đây là sửa đúng nguyên nhân, không phải nới assertion cho nó xanh.
-- **File thay đổi:** `tests/unit/components/{attendance-roster,assessment-score-board}.test.tsx` (mới), `tests/unit/domain/score-schema.test.ts` (mới), `tests/unit/components/…` fixture, `playwright.config.ts` (timeout), `docs/08-phase-plan.md`, `WORKLOG.md`.
-- **Migration/data impact:** không có.
-- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch (bắt được 2 lỗi `noUncheckedIndexedAccess` trong chính fixture test của tôi, đã sửa) · `npm test` **43/43** (32 → 43) · `npx supabase test db` **151/151** · `npm run build` xanh · `npx playwright test` **3/3 PASS chạy song song**.
-- **🎉 GATE PHASE 4 — ĐẠT, kiểm chứng thật cả 4 đường** (UI · direct URL · server action/RPC · Supabase client gọi thẳng bằng JWT thật). Đã ghi bằng chứng cụ thể vào `docs/08-phase-plan.md` §Phase 4 để phiên sau không phải tin lời.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** không có blocker Phase 4. BLK-1/BLK-2 vẫn **chỉ** chặn deploy cloud. Nợ kỹ thuật ngoài scope (đề nghị Codex): `/teacher/assignments/[id]` và `/teacher/sessions/[id]` nhiều khả năng vẫn trả **500** với URL không phải uuid — các trang tôi viết (T7/T8) đã có guard uuid → 404.
-- **Next action:** **Phase 5 — Student portal.** Lưu ý: notification do RPC sinh đã trỏ sẵn `/student/results`, `/student/evaluations`, `/student/assignments/[id]` — **3 route đó chưa tồn tại**, Phase 5 phải tạo đúng đường dẫn này nếu không thông báo dẫn tới 404.
-
-### [2026-07-14] Phiên 16 — Claude — P4-T9 (Teacher reports)
-- **Làm được:** `/teacher/progress` từ ComingSoon thành **Báo cáo lớp** thật: chọn lớp → 4 KPI (học viên đang học · chuyên cần TB · điểm TB · tiến độ TB), khối **Học viên cần chú ý** kèm lý do rủi ro và nút *Ghi nhận xét* nhảy thẳng sang hồ sơ đánh giá (P4-T8), và bảng chi tiết từng học viên (chuyên cần, có mặt/muộn/vắng, bài đã nộp, điểm TB, tiến độ, đủ điều kiện hoàn thành).
-- **Không viết SQL mới:** dùng đúng 4 view có sẵn (`v_class_progress`, `v_enrollment_progress`, `v_student_attendance_summary`, `v_at_risk_students`). View là `security_invoker` → RLS chạy dưới danh nghĩa người gọi và tự khoanh về `class_teachers`. Vì vậy **không có một dòng `where teacher_id` nào** trong query: cùng câu đó, admin thấy mọi lớp, giáo viên chỉ thấy lớp mình. Tự lọc thêm ở app là tạo nguồn sự thật thứ hai về quyền — và cái ở app là cái sẽ quên cập nhật.
-- **Học viên đã rút/chuyển lớp không nằm trong báo cáo** — giữ mẫu số chuyên cần đúng (cùng luật với P4-T1/T4).
-- **Đổi nhãn menu:** "Đánh giá tiến độ" → **"Báo cáo lớp"**. Sau khi P4-T8 thêm "Đánh giá & Ghi chú", hai mục cùng chữ "đánh giá" nhưng khác hẳn nội dung là mời gọi bấm nhầm.
-- **File thay đổi:** `src/features/reports/server/teacher-queries.ts` (mới), `src/app/(dashboard)/teacher/progress/page.tsx`, `src/lib/permissions/navigation.ts`, `tests/e2e/report.smoke.spec.ts` (mới), `docs/08-phase-plan.md`, `WORKLOG.md`.
-- **Migration/data impact:** **không có migration** — task này chỉ đọc.
-- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **32/32** · `npm run build` xanh, `/teacher/progress` là `ƒ`. **Playwright Chromium 1/1 PASS**: KPI "Học viên đang học" và số dòng bảng chi tiết **khớp đúng số enrollment đang mở đọc thẳng từ DB bằng postgres** (không phải tin vào chính UI). **Gate Phase 4:** GV A không thấy LOP-03 ở đâu trên trang; gõ thẳng `?class=<LOP-03>` cũng **không** mở được báo cáo lớp đó — RLS trả 0 dòng nên trang rơi về lớp GV A thực sự dạy, không lộ một dòng dữ liệu nào.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** không có blocker P4-T9. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud.
-- **Next action:** **P4-T10** — Tests (component + RLS negative) → đóng Phase 4.
-
-### [2026-07-14] Phiên 15 — Claude — P4-T8 (Đánh giá & ghi chú)
-- **Làm được:** `/teacher/evaluations` (chọn lớp → roster học viên, hiện số đánh giá đã gửi + số ghi chú nội bộ) và `/teacher/evaluations/[enrollmentId]`: **đánh giá học tập** (ngày + kỳ, 7 mức rating: chung + 6 kỹ năng, điểm mạnh / cần cải thiện / kế hoạch / nhận xét) lưu **nháp**, rồi *Gửi cho học viên* là hành động riêng; **ghi chú** về học viên với hai phạm vi rõ ràng. Ghi chú nội bộ có viền cảnh báo + dòng chữ "Học viên không đọc được ghi chú này" ngay dưới mỗi ghi chú — người dùng không phải đoán.
-- **🔒 Ranh giới cốt lõi của task (DoD):** học viên **KHÔNG** đọc được ghi chú `staff_only`. Đây là **RLS ở DB**, không phải ẩn UI: pgTAP dùng **chính JWT của học viên** quét toàn bảng `student_notes` → chỉ trả về đúng ghi chú `student_visible`; đánh giá chưa gửi → **0 dòng**. Học viên cũng không tạo/sửa được ghi chú trong hồ sơ của mình (INSERT bị RLS chặn; UPDATE chạy nhưng lọc 0 row).
-- **Bẫy hai cột đã bịt (migration 28):** `learning_evaluations` có **hai** cột cùng quyết định "học viên có thấy không" — `published_at` và `visible_to_student`. Bật một, quên cột kia → giáo viên tin là đã gửi đánh giá mà học viên không thấy gì (hoặc ngược lại, tưởng còn nháp mà học viên đã đọc). Đã REVOKE cả hai khỏi `GRANT UPDATE` của `authenticated` và chỉ cho RPC `publish_evaluation` đặt **cùng lúc**. Không còn đường nào bật lệch.
-- **Cùng bộ luật với P4-T7:** `created_by` ép về `auth.uid()` (client khai giả bị bỏ qua) và bất biến · `enrollment_id` bất biến (đổi = chuyển ghi chú/đánh giá sang hồ sơ người khác, không phải "sửa") · đánh giá đã gửi **không hard delete** · rating bỏ trống = *chưa đánh giá*, không phải `weak`.
-- **File thay đổi:** `supabase/migrations/20260714000028_evaluation_notes_integrity.sql`, `supabase/tests/database/evaluation_notes.test.sql`, `src/features/evaluations/*` (schema, queries, actions, `evaluation-profile.tsx`), `src/app/(dashboard)/teacher/evaluations/{page.tsx,[id]/page.tsx}`, `src/lib/permissions/navigation.ts`, `src/types/database.ts`, `tests/e2e/evaluation.smoke.spec.ts` (mới), `docs/{02,04,08}`, `WORKLOG.md`.
-- **Migration/data impact:** migration 28 không xóa dữ liệu, không đổi cột. Thêm 1 RPC (`publish_evaluation`), 5 trigger (attribution + initial state + chặn xóa bản đã gửi), thu hẹp GRANT UPDATE `learning_evaluations`. Reset sạch áp đủ **28 migration**; seed dev nạp lại bằng `npm run db:seed:dev`, kiểm mắt UTF-8 đúng.
-- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **32/32** · `npx supabase test db` **151/151** (23 assertion riêng đánh giá/ghi chú) · `npm run build` xanh, `/teacher/evaluations` + `/teacher/evaluations/[id]` đều là `ƒ`. **Playwright Chromium 2/2 PASS** (chạy song song cả P4-T7 + P4-T8): GV A ghi chú nội bộ → DB `staff_only`, `created_by` = GV A → ghi chú chia sẻ → `student_visible` → đánh giá nháp: DB xác nhận `published_at IS NULL` **và** `visible_to_student = false`, **0 notification** → bấm Gửi → **cả hai cột bật cùng lúc**, đúng **1** notification. **IDOR: GV A mở hồ sơ học viên của LOP-03 → 404**; URL rác (`/teacher/evaluations/khong-phai-uuid`) → **404, không phải 500**.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** không có blocker P4-T8. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud. Nhắc lại từ phiên 14: `/teacher/assignments/[id]` và `/teacher/sessions/[id]` (file Codex) **nhiều khả năng vẫn trả 500 với URL không phải uuid** — ngoài scope nên chưa sửa.
-- **Next action:** **P4-T9** — Teacher reports (chỉ lớp mình dạy; dùng lại 5 view `security_invoker`).
-
-### [2026-07-14] Phiên 14 — Claude — P4-T7 (Assessment)
-- **Làm được:** `/teacher/assessments` (chọn lớp → tạo/sửa/xóa bài KT) và `/teacher/assessments/[id]` (bảng nhập điểm). Mỗi học viên một form: **điểm tổng + 6 kỹ năng** (nghe/nói/đọc/viết/từ vựng/ngữ pháp) + nhận xét, kèm nút *Tính TB 6 kỹ năng* điền hộ ô điểm tổng. Thanh trên cùng đếm "đã chấm x/y · đã công bố z" và nút **Công bố** riêng biệt. Tab Kiểm tra ở chi tiết lớp và menu trái đã nối thẳng vào.
-- **Ba chỗ dễ sai đã xử lý có chủ ý:**
-  1. **Ô điểm để trống ≠ 0 điểm.** `z.coerce.number()` biến chuỗi rỗng thành **0** — nghĩa là kỹ năng chưa chấm sẽ bị ghi 0 vào học bạ học viên. Schema map rỗng → `null`.
-  2. **Công bố là hành động riêng, không phải một cột form.** `published_at` bị REVOKE khỏi `GRANT UPDATE` của `authenticated` → không có đường nào set nó bằng UPDATE trực tiếp, chỉ qua RPC.
-  3. **Sửa điểm sau khi công bố không âm thầm thu hồi kết quả** học viên đã nhìn thấy (`published_at` không nằm trong nhánh `DO UPDATE` của upsert).
-- **🔒 Phân quyền/toàn vẹn (migration 27):** INSERT ép `published_at = null` + `created_by = auth.uid()` cho **mọi** user flow có JWT (kể cả super admin, đúng bài học `BUG-M11-001`). `INSERT`/`UPDATE` trực tiếp vào `assessment_results` bị **REVOKE** — mọi lần nhập điểm đi qua `save_assessment_result` (một hành động = một đường ghi). Trigger kiểm: enrollment cùng lớp với bài KT · HV đã rút/chuyển lớp **không** nhận điểm · điểm trong `0..max_score` · `graded_by` = actor thật. Bài KT/kết quả **đã công bố không hard delete**. `publish_assessment_results` khóa hàng, **từ chối công bố khi chưa có điểm nào**, và chỉ công bố dòng đã có điểm tổng — HV chưa chấm không bị báo "đã có kết quả" rồi mở ra thấy ô trống.
-- **Chốt thang điểm 0..100 ở DB:** `grading_scale_rules` và các CHECK của `assessment_results` đều chạy trên 0..100, nhưng `assessments.max_score` trước đó cho phép mọi số > 0. Đặt `max_score = 300` sẽ tạo ra bài KT **không bao giờ nhập nổi điểm đúng thang** — bẫy im lặng. Đã thêm CHECK `max_score ≤ 100`.
-- **Bug tự bắt được khi smoke:** URL `/teacher/assessments/<chuỗi-không-phải-uuid>` trả **500 kèm stack** thay vì 404 (chuỗi rác đi thẳng xuống Postgres). Đã chặn bằng guard uuid ở query → trả `null` → `notFound()`. ⚠️ **Cùng lỗi này nhiều khả năng còn ở `/teacher/assignments/[id]` và `/teacher/sessions/[id]`** (file của Codex, ngoài scope task này nên **không sửa** — đề nghị Codex kiểm).
-- **File thay đổi:** `supabase/migrations/20260714000027_assessment_integrity.sql`, `supabase/tests/database/assessment_integrity.test.sql`, `src/features/assessments/*` (schema, queries, actions, `assessment-manager.tsx`, `assessment-score-board.tsx`), `src/app/(dashboard)/teacher/assessments/{page.tsx,[id]/page.tsx}`, `src/app/(dashboard)/teacher/classes/[id]/page.tsx` (tab Kiểm tra), `src/lib/permissions/navigation.ts`, `src/types/database.ts`, `tests/e2e/assessment.smoke.spec.ts` (mới), `docs/{02,04,08}`, `WORKLOG.md`.
-- **Migration/data impact:** migration 27 không xóa dữ liệu (bảng `assessments` đang rỗng). Thêm 1 RPC (`save_assessment_result`), sửa `publish_assessment_results`, 5 trigger toàn vẹn, 1 CHECK, thu hẹp GRANT UPDATE `assessments` và REVOKE INSERT/UPDATE `assessment_results`. Reset sạch áp đủ **27 migration**. Seed dev nạp bằng `npm run db:seed:dev` (byte thô) và kiểm mắt UTF-8 đúng (`Quản trị viên Demo`, không mojibake).
-- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **28/28** · `npx supabase test db` **128/128** (28 assertion riêng assessment) · `npm run build` xanh, `/teacher/assessments` và `/teacher/assessments/[id]` đều là `ƒ`. **Playwright Chromium 1/1 PASS** (`tests/e2e/assessment.smoke.spec.ts`, tự dọn dữ liệu, cần seed dev): GV A tạo bài KT → DB xác nhận `published_at IS NULL` + `created_by` = GV A (không phải giá trị client khai) → nhập 6 kỹ năng → *Tính TB* ra đúng 85 → lưu → DB `85.00|90.00|Giỏi|graded_by=GV A|chưa công bố` (**xếp loại do DB tính**) → **0 notification khi chưa công bố** → Công bố → đúng **1** notification cho đúng học viên đã có điểm, nút Công bố tự tắt. **IDOR: GV A mở bài KT của LOP-03 (lớp GV B, GV A không có cả vai trợ giảng) → 404**, class picker không hề có LOP-03.
-- **🔍 QA — xác minh độc lập 2 fix của Codex (vai Claude = verify):** cả hai **PASS**, dựng kịch bản riêng chứ không chạy lại test của Codex. `BUG-M11-001`: super admin JWT thật (`app.is_super_admin() = true`) INSERT submission tự khai `status='graded'`, `score=100`, `graded_by=<chính mình>` → DB ép về `submitted` / `score=NULL` / `graded_by=NULL` → **nhánh admin thật sự bị chặn**. `BUG-M06-001`: schema nhận payload **thiếu hẳn** `module_id`/`lesson_id` (ca "Cả khóa học") → `null`, uuid rác vẫn từ chối (4/4 vitest, giữ lại `tests/unit/domain/material-schema.verify.test.ts` làm test hồi quy); và vì action đã mở cho teacher nên kiểm luôn chốt chặn thật: GV A ghi tài liệu vào khóa **HSK3 không dạy** → `new row violates row-level security policy`, **0 dòng**. Verification Queue giờ **trống**.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** không có blocker P4-T7. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud.
-- **Next action:** **P4-T8** — Đánh giá & ghi chú (`learning_evaluations` + `student_notes`, `staff_only` HV không đọc được).

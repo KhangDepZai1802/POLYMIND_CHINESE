@@ -19,12 +19,14 @@ export function SubmitButton({
   variant,
   size,
   disabled,
+  "aria-label": ariaLabel,
 }: {
   children: React.ReactNode;
   pendingText?: string;
   className?: string;
   variant?: React.ComponentProps<typeof Button>["variant"];
   size?: React.ComponentProps<typeof Button>["size"];
+  "aria-label"?: string;
   /** Khóa nút vì lý do nghiệp vụ (vd chưa có lịch lặp để sinh buổi). */
   disabled?: boolean;
 }) {
@@ -37,6 +39,7 @@ export function SubmitButton({
       className={className}
       variant={variant}
       size={size}
+      aria-label={ariaLabel}
     >
       {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {pending ? (pendingText ?? "Đang lưu…") : children}
