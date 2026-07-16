@@ -36,20 +36,21 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-15** — Codex — P7-T7
+> Cập nhật: **2026-07-15** — Codex — P7-T8
 
+- **P7-T8 — đang làm — Codex — 2026-07-15.** Thay luồng mời email bằng Super Admin cấp tên đăng nhập + mật khẩu trực tiếp cho giáo viên/học viên trong trang quản trị; email không bắt buộc.
 - **P7-T7 — đang làm — Codex — 2026-07-15.** Supabase cloud đã áp 34 migration + production seed; Vercel project/GitHub đã link.
 - **Vận hành:** cron idempotent, báo cáo CSV/XLSX, audit viewer, payment concurrency, security/rate limit, RLS catalog, E2E 3 role, WCAG/responsive và deploy runbook đã có.
 - **DB:** 34 migration áp sạch · 33 bảng public đều RLS · catalog khóa 24 RPC · 5 bucket private/16 policy Storage · pgTAP **319/319**.
 - **Kiểm tra gần nhất (THẬT):** lint sạch · typecheck sạch · Vitest **67/67** · Playwright **20/20** desktop/mobile · production build xanh.
 - **QA:** Verification Queue trống; residual dependency audit còn **4 moderate**, không có high/critical, đã ghi trong `docs/testing/SECURITY_REVIEW.md`.
-- **Deploy cloud:** Vercel Production đã đủ App URL, Supabase URL, publishable key, secret key đã rotate và `CRON_SECRET`; user đã cho phép commit/push trong phiên này, sẵn sàng deployment đầu tiên.
+- **Deploy cloud:** `https://polymind-chinese-one.vercel.app` đã phục vụ thật (`/api/health` và `/login` HTTP 200); public signup đã tắt; ba khu vực role chặn anonymous đúng và cron thiếu secret trả 401. Chưa đóng P7-T7 vì còn phải xác nhận `NEXT_PUBLIC_APP_URL` khớp domain thật và smoke test có đăng nhập.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**`P7-T7` — Deploy cloud — Codex đang làm.** Tiếp theo: commit/push `main`, theo dõi deployment, cấu hình Auth URL rồi smoke test URL thật.
+**`P7-T8` — Admin cấp tài khoản trực tiếp — Codex đang làm.** Tiếp theo: thêm username duy nhất, login username/email và form admin tạo/reset mật khẩu; migration cloud phải chạy trước khi redeploy app. Sau đó quay lại smoke `P7-T7`.
 
 ✅ **Verification Queue TRỐNG.** Cả 4 bug đã được Claude xác minh độc lập: `BUG-M06-001`, `BUG-M11-001` (phiên 14) · `BUG-M08-001`, `BUG-M11-002` (phiên 18). Xem `docs/testing/MODULE_QA_BOARD.md`.
 
@@ -64,9 +65,9 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 | ID | Blocker | Ảnh hưởng | Cần gì để gỡ |
 |---|---|---|---|
-| — | Không có blocker đang mở | — | — |
+| BLK-3 | Smoke test Production có đăng nhập chưa chạy đủ 3 role; luồng mời email không phù hợp người dùng không có Gmail | Chưa được đánh dấu P7-T7 `☑` | Hoàn thành P7-T8, migrate/redeploy rồi smoke 3 role + IDOR + signed URL |
 
-> Supabase schema/seed đã lên cloud nhưng app **chưa deploy**. Không ghi “đã deploy” cho tới khi URL production qua smoke test.
+> App đã deploy và qua smoke public/anonymous; **P7-T7 vẫn chưa hoàn thành** cho tới khi smoke có đăng nhập qua đủ Definition of Done.
 
 ---
 
@@ -96,10 +97,20 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 | D-19 | **HỌC VIÊN RỚT ĐƯỢC HỌC LẠI CHÍNH LỚP ĐÓ** *(user chốt 2026-07-14)*. Gỡ `uq_enrollments_student_class` (migration 23) — ràng buộc cũ cấm ghi danh lại vào một lớp đã từng học, kể cả sau khi rút/hoàn thành. **Không phá D-18:** `ux_enrollments_one_open_per_student` vẫn bảo đảm tối đa MỘT ghi danh đang mở trên toàn hệ thống → không thể có hai ghi danh mở trong cùng lớp. Mỗi lần học là **một enrollment riêng**; điểm danh/điểm/bài nộp treo vào `enrollment_id` nên lịch sử lần trước **không bị trộn** với lần học lại. |
 | D-18 | **MỘT HỌC VIÊN CHỈ HỌC MỘT LỚP TẠI MỘT THỜI ĐIỂM** *(user chốt 2026-07-13 — **đảo ngược D-10** và §4.13 của đặc tả gốc)*. "Một thời điểm" = tối đa **một** enrollment đang mở (`pending`/`active`/`paused`). Enrollment đã đóng (`completed`/`withdrawn`/`transferred`) **không tính** → học xong HSK 1 vẫn đăng ký được HSK 2, và chuyển lớp vẫn chạy. Cưỡng chế bằng partial unique index `ux_enrollments_one_open_per_student` (migration 19) — **không** chỉ kiểm ở app. |
 | D-20 | **USER TỰ COMMIT** *(user chốt 2026-07-14)*. Claude Code và Codex **không được tự chạy `git commit` hoặc `git commit --amend`**. Agent để thay đổi trong working tree, báo file đã sửa + kết quả kiểm tra để user tự review và commit. Chỉ ngoại lệ khi user yêu cầu commit rõ ràng trong chính lượt làm việc đó. |
+| D-21 | **SUPER ADMIN CẤP TÀI KHOẢN TRỰC TIẾP TẠI TRANG QUẢN TRỊ** *(user chốt 2026-07-15)*. Giáo viên/học viên dùng tên đăng nhập + mật khẩu do admin tạo; không bắt buộc Gmail/email và không phụ thuộc email invite. Email thật, nếu có, chỉ là thông tin liên hệ/phục hồi tùy chọn. |
 
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-15] Phiên 24 — Codex — P7-T7 deploy smoke (partial)
+- **Làm được:** xác minh URL Production thật trả HTTP 200 cho `/api/health` và `/login`; đọc Auth settings công khai thấy `disable_signup=true`; anonymous vào `/admin`, `/teacher`, `/student` đều 307 về `/login`; cron không có Authorization trả 401. Trước đó cloud đã kiểm đủ 33/33 bảng public bật RLS, 5 bucket private và 16 Storage policy.
+- **File thay đổi:** chỉ `WORKLOG.md`; phase plan giữ P7-T7 `◐` vì chưa đủ smoke có đăng nhập.
+- **Migration/data impact:** không có migration, không sửa dữ liệu Production.
+- **Đã test:** HTTP thật trên `https://polymind-chinese-one.vercel.app`: health 200 · login 200 · ba role route anonymous 307 đúng · cron thiếu secret 401; Auth `/auth/v1/settings` trả `disable_signup=true`.
+- **Quyết định mới:** không có.
+- **Blocker/rủi ro:** phải xác nhận Vercel `NEXT_PUBLIC_APP_URL` khớp domain thật và chạy login 3 role + teacher IDOR + signed upload/download; agent không nhận mật khẩu Production.
+- **Next action:** user cập nhật env/redeploy, chạy checklist authenticated smoke và báo kết quả; chỉ khi pass mới đổi P7-T7 sang `☑`.
 
 ### [2026-07-15] Phiên 23 — Codex — P6-T6 → P7-T6 (10 task)
 - **Làm được:** hoàn thành đúng 10 task: ba cron route/RPC idempotent; báo cáo học phí thực + CSV/XLSX giữ filter; audit viewer read-only; runner payment concurrency; security review + rate limit DB-backed; pgTAP catalog full matrix; E2E sáu kịch bản/ba role; WCAG AA + responsive/touch/keyboard; production build; runbook backup/restore/rollback/migration rehearsal.
@@ -150,12 +161,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không có.
 - **Blocker/rủi ro:** không có blocker Phase 5. BLK-1/BLK-2 vẫn **chỉ** chặn deploy cloud.
 - **Next action:** **Phase 6** — Tuition, notifications & reports. Gate: **giáo viên KHÔNG đọc được học phí**; export phải giữ đúng filter đang chọn (bài học `BUG_M16_01`).
-
-### [2026-07-14] Phiên 18 — Codex — BUG-M08-001 + BUG-M11-002
-- **Làm được:** xác nhận hai route động gửi thẳng chuỗi URL vào cột UUID của Postgres, khiến URL rác có thể trả 500; thêm guard UUID fail-fast trong query của session log và bảng chấm bài để page đi qua `notFound()` và trả 404.
-- **File thay đổi:** `src/features/sessions/server/queries.ts`, `src/features/assignments/server/queries.ts`, `tests/e2e/teacher-route-params.smoke.spec.ts`, `docs/08-phase-plan.md`, `docs/testing/MODULE_QA_BOARD.md`, `WORKLOG.md`.
-- **Migration/data impact:** không có; không đổi schema hay dữ liệu.
-- **Đã test (THẬT, có số):** `npm run lint` sạch · `npm run typecheck` sạch · `npm test` **43/43** · `npm run build` xanh · Playwright Chromium route-param **1/1 PASS**: cả `/teacher/assignments/khong-phai-uuid` và `/teacher/sessions/khong-phai-uuid` trả **404**. Không đổi DB nên không chạy lại pgTAP.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** không có blocker; hai fix chờ Claude xác minh độc lập, Codex không tự ghi Verified.
-- **Next action:** Claude xác minh `BUG-M08-001` + `BUG-M11-002`; Codex dừng, không làm tiếp Phase 5.

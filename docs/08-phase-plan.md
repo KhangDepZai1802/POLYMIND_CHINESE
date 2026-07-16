@@ -182,6 +182,7 @@
 | P7-T5 | Production build | `npm run build` với env hợp lệ | ☑ |
 | P7-T6 | Deploy docs | Backup/restore + rollback + migration rehearsal | ☑ |
 | P7-T7 | Deploy cloud | Supabase migration trước app; cấu hình Auth/Storage/env; smoke test URL thật | ◐ |
+| P7-T8 | Admin cấp tài khoản trực tiếp | Super Admin tạo tên đăng nhập + mật khẩu cho giáo viên/học viên tại trang quản trị; không bắt buộc email; đăng nhập và đặt lại mật khẩu vẫn fail-closed | ◐ |
 
 ---
 
