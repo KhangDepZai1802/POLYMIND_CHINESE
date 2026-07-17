@@ -37,8 +37,9 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-16** — Codex — tiếp tục toàn bộ backlog từ P7-T8
+> Cập nhật: **2026-07-17** — Claude — mở rộng P7-T8: trang Quản trị & Audit thành nơi quản lý toàn bộ tài khoản mọi role
 
+- **P7-T8b — hoàn thành (chưa smoke runtime) — Claude — 2026-07-17.** `/admin/system` thành 2 tab Quản trị | Nhật ký audit; tab Quản trị liệt kê mọi tài khoản theo role (super_admin/teacher/student) kèm tên đăng nhập + mã + trạng thái, đổi username + mật khẩu và khóa/mở ngay tại đó (dùng lại `provisionPasswordAccount`/`setUserActive`, không migration). Lint/typecheck/test 91/91/build xanh; **chưa smoke bằng trình duyệt** vì Docker/dev server đang tắt.
 - **P7-T12 — hoàn thành — Codex — 2026-07-16.** Card Buổi học mặc định dạng tuần, có lùi/tiến/Hôm nay và chuyển Tối giản/Tuần/Tháng; giữ thao tác hủy/xóa ở tuần và tối giản.
 - **P7-T11 — hoàn thành — Codex — 2026-07-16.** Course tách `core/business`; Loại chỉ còn cho `core`; mã khóa/lớp/GV/HV do DB tự sinh, có migration + pgTAP.
 - **P7-T10 — hoàn thành — Codex — 2026-07-16.** Khử request auth/profile trùng trong một render, bỏ profile round-trip ở middleware protected route, song song hóa critical path dashboard và thêm loading overlay accessible.
@@ -128,6 +129,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-17] Phiên 28 — Claude — P7-T8b (trang Quản trị tài khoản)
+
+- **Làm được:** Biến `/admin/system` thành 2 tab "Quản trị | Nhật ký audit". Tab Quản trị liệt kê MỌI tài khoản của cả 3 role, mỗi role một bảng, có ô tìm theo tên/tên đăng nhập/email; mỗi dòng hiện họ tên, **tên đăng nhập**, mã GV/HV, liên hệ, trạng thái và menu "Đổi đăng nhập / mật khẩu" + "Khóa/Mở". Chặn tự khóa chính mình; khóa GV đồng bộ `teachers.is_active`. Làm rõ với user: mật khẩu cũ KHÔNG hiển thị lại được (hash một chiều) — chỉ đặt mới.
+- **File thay đổi:** thêm `src/features/accounts/{schema.ts, server/queries.ts, server/actions.ts, components/{account-row-actions,accounts-view,system-tabs}.tsx}`; thêm `src/features/audit/components/audit-log-view.tsx`; viết lại `src/app/(dashboard)/admin/system/page.tsx`; thêm `tests/unit/domain/account-management.test.ts`; `WORKLOG.md`, `docs/08-phase-plan.md`.
+- **Migration/data impact:** KHÔNG có migration. Dùng lại `provisionPasswordAccount` và `setUserActive` sẵn có; đọc `profiles` qua RLS `for all` của super_admin (không service role cho user flow ngoài phần Auth Admin vốn có).
+- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · Vitest **91/91** (thêm 4) · `npm run build` xanh, `/admin/system` là route động `ƒ`. **CHƯA** smoke trình duyệt: Docker Desktop tắt, `supabase start`/`npm run dev` chưa chạy.
+- **Quyết định mới:** không có (bám D-21; mật khẩu không lưu dạng đọc-được theo luật bảo mật).
+- **Blocker/rủi ro:** cần user bật Docker → `npx supabase start` → `npm run dev`, đăng nhập admin, mở `/admin/system` để xác minh hiển thị đúng tên đăng nhập GV Quách Duy Khang và thao tác đổi mật khẩu/khóa chạy thật.
+- **Next action:** smoke runtime P7-T8b; sau đó P7-T9 → migrate/redeploy → smoke authenticated P7-T7.
+
 ### [2026-07-16] Phiên 27 — Codex — P7-T11 + P7-T12
 
 - **Làm được:** tách Course thành Chương trình cốt lõi/doanh nghiệp, chỉ cốt lõi có dropdown Loại; loại hẳn `business_custom`; gỡ ô nhập mã khóa/lớp/GV/HV và chuyển sang sequence/default DB. Đổi card Buổi học thành thời khóa biểu Tuần mặc định, có trước/sau/Hôm nay và chuyển Tối giản/Tuần/Tháng; lịch mở ở buổi sắp tới gần nhất. Song song hóa request danh sách lớp + lịch đang chọn; giữ loading overlay giữa màn hình từ P7-T10 và kiểm chung trong build.
@@ -176,13 +187,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không có; giữ local-first và không deploy khi thiếu credential.
 - **Blocker/rủi ro:** P7-T7 vẫn bị BLK-1/BLK-2; npm audit production còn 4 moderate đã phân tích, không có high/critical. Cảnh báo Next `middleware` → `proxy` là deprecation không chặn build.
 - **Next action:** **P7-T7** — user cung cấp credential Supabase/Vercel rồi mới rehearsal staging và deploy cloud.
-
-### [2026-07-15] Phiên 22 — Codex — P6-T3 → P6-T5
-
-- **Làm được:** P6-T3 thêm `/student/tuition` chỉ đọc qua RLS, hiển thị khoản mục/số dư/payment/receipt và không có mutation thu tiền. P6-T4 thêm chuông unread ở header, notification center + đánh dấu một/tất cả đã đọc + preferences dùng chung cả ba role; link chỉ render khi là route nội bộ đúng khu vực role. P6-T5 thêm quản lý announcement draft → publish → kết thúc hiệu lực, phạm vi toàn hệ thống/theo lớp, feed cho giáo viên/học viên và phân phối notification đúng audience; không reply/thread/chat, không hard-delete lịch sử.
-- **File thay đổi:** `src/features/{tuition,notifications,announcements}/*`, `src/app/(dashboard)/{layout,admin/notifications,teacher/notifications,student/{tuition,notifications,profile}}/*`, `src/components/layout/user-menu.tsx`, `src/lib/permissions/navigation.ts`, `src/types/database.ts`, migrations 31–32, pgTAP notification/announcement, unit test notification link, `docs/{01,02,03,04,08-phase-plan.md}`, `WORKLOG.md`.
-- **Migration/data impact:** migration 31 áp preference bằng trigger DB, ép actor thật và thu hẹp UPDATE notification còn `read_at`; migration 32 thêm 3 RPC announcement, khóa direct mutation, thay policy expiry dùng thời gian thực. Không thêm/xóa bảng/cột, không xóa dữ liệu lịch sử. `npm run db:reset` áp sạch đủ 32 migration.
-- **Đã test:** lint sạch · typecheck sạch · Vitest **55/55** · pgTAP **284/284** (**16** assertion notification center + **32** announcement workflow/RLS) · build production xanh; `/student/tuition`, `/admin/notifications`, `/teacher/notifications`, `/student/notifications` đều là route động `ƒ`.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** không có blocker P6-T3→T5. BLK-1/BLK-2 vẫn chỉ chặn deploy cloud.
-- **Next action:** **P6-T6** — ba cron route + `CRON_SECRET` + `dedupe_key`, kiểm chạy lại không sinh thông báo trùng.
