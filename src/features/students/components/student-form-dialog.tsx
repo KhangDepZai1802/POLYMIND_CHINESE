@@ -87,7 +87,8 @@ export function StudentFormDialog({
             {isEdit ? "Sửa hồ sơ học viên" : "Thêm học viên"}
           </DialogTitle>
           <DialogDescription>
-            Hồ sơ tạo được trước khi có tài khoản. Gửi lời mời sau, khi đã có email.
+            Hồ sơ tạo được trước khi có tài khoản. Quản trị viên có thể cấp tên
+            đăng nhập và mật khẩu sau; email liên hệ không bắt buộc.
           </DialogDescription>
         </DialogHeader>
 
@@ -101,35 +102,24 @@ export function StudentFormDialog({
             </Alert>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="student_code">Mã học viên *</Label>
-              <Input
-                id="student_code"
-                name="student_code"
-                required
-                defaultValue={student?.student_code}
-                placeholder="HV001"
-                className="uppercase"
-              />
-              {fe["student_code"] && (
-                <p className="text-destructive text-xs">{fe["student_code"]}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Họ tên *</Label>
-              <Input
-                id="full_name"
-                name="full_name"
-                required
-                defaultValue={student?.full_name}
-              />
-              {fe["full_name"] && (
-                <p className="text-destructive text-xs">{fe["full_name"]}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="full_name">Họ tên *</Label>
+            <Input
+              id="full_name"
+              name="full_name"
+              required
+              defaultValue={student?.full_name}
+            />
+            {fe["full_name"] && (
+              <p className="text-destructive text-xs">{fe["full_name"]}</p>
+            )}
           </div>
+
+          {!isEdit && (
+            <p className="text-muted-foreground text-xs">
+              Mã học viên được hệ thống tự sinh sau khi lưu.
+            </p>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
@@ -304,9 +294,7 @@ export function StudentFormDialog({
             >
               Hủy
             </Button>
-            <SubmitButton>
-              {isEdit ? "Lưu thay đổi" : "Tạo hồ sơ"}
-            </SubmitButton>
+            <SubmitButton>{isEdit ? "Lưu thay đổi" : "Tạo hồ sơ"}</SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

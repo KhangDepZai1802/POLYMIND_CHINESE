@@ -2,9 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getPublicEnv } from "@/lib/env";
-import { homePathForRole, isRoleAllowedOnPath } from "@/lib/permissions/routes";
+import { homePathForRole } from "@/lib/permissions/routes";
 import type { Database } from "@/types/database";
-import type { UserRole } from "@/types/roles";
+import { isUserRole } from "@/types/roles";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -23,11 +23,12 @@ function isPublicPath(pathname: string) {
 }
 
 /**
- * Refresh session + guard route theo role.
+ * Refresh session + chặn sớm anonymous.
  *
  * ⚠️ Đây CHỈ là lớp UX (chặn sớm, redirect cho đẹp). Nó KHÔNG phải phân quyền.
- * Mỗi Server Action / Route Handler vẫn phải tự kiểm quyền, và RLS vẫn chặn ở DB.
- * Ba lớp — không lớp nào được coi là đủ một mình.
+ * Role/is_active được kiểm ở Server Component/Action/Route Handler và RLS vẫn
+ * chặn ở DB. Không query `profiles` tại middleware cho mọi navigation vì vừa
+ * trùng việc vừa buộc thêm một network round-trip tuần tự.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -73,9 +74,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Đã đăng nhập → lấy role + is_active từ bảng profiles.
-  // KHÔNG đọc từ user.user_metadata: client sửa được nó, dùng làm nguồn phân
-  // quyền là tự mở cửa cho leo thang quyền.
+  // Route đã đăng nhập được kiểm role + is_active lại ở Server Component/Action
+  // và cuối cùng bởi RLS. Không query profiles thêm một lần tại middleware cho
+  // mọi lần chuyển trang: việc đó tạo thêm một network round-trip nối tiếp trên
+  // critical path nhưng không tăng quyền bảo mật (middleware chỉ là lớp UX).
+  //
+  // Riêng / và /login cần biết role để đưa user đã đăng nhập về đúng trang chủ.
+  if (pathname !== "/" && pathname !== "/login") {
+    return supabaseResponse;
+  }
+
+  // KHÔNG đọc role từ user.user_metadata: client sửa được nó.
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, is_active")
@@ -93,24 +102,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const role = profile.role as UserRole;
-
-  // Đã đăng nhập mà vào trang login → về khu vực của mình
-  if (pathname === "/login" || pathname === "/") {
+  if (!isUserRole(profile.role)) {
+    await supabase.auth.signOut();
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = homePathForRole(role);
+    redirectUrl.pathname = "/login";
     redirectUrl.search = "";
+    redirectUrl.searchParams.set("error", "account_disabled");
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isPublicPath(pathname)) return supabaseResponse;
-
-  if (!isRoleAllowedOnPath(role, pathname)) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = homePathForRole(role);
-    redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  return supabaseResponse;
+  const redirectUrl = request.nextUrl.clone();
+  redirectUrl.pathname = homePathForRole(profile.role);
+  redirectUrl.search = "";
+  return NextResponse.redirect(redirectUrl);
 }

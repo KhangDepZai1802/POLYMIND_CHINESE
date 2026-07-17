@@ -8,36 +8,46 @@
 
 ```text
 Super Admin tạo Level (HSK 1–6 đã seed sẵn)
-  → tạo Course (khóa học/chương trình)
+  → tạo Course: chọn Chương trình cốt lõi/doanh nghiệp
+      → cốt lõi: chọn thêm Loại HSK/giao tiếp/thiếu nhi/luyện thi/tùy chỉnh
+      → doanh nghiệp: không có Loại
+      → DB tự sinh mã khóa học
   → tạo Module → Lesson (giáo trình)
-  → tạo Class (lớp triển khai từ Course)
+  → tạo Class (lớp triển khai từ Course; DB tự sinh mã lớp)
   → cấu hình sĩ số, số buổi, thời lượng, hình thức, địa điểm
-  → gán giáo viên chính (bắt buộc) + trợ giảng (tùy chọn)
+  → gán một giáo viên phụ trách (bắt buộc trước khi kích hoạt)
   → cấu hình lịch lặp  HOẶC  đánh dấu lịch linh hoạt
   → sinh buổi học (generate_class_sessions)
   → ghi danh học viên
   → kích hoạt lớp (status → active)
 ```
 
+Mã giáo viên và học viên cũng được DB tự sinh khi tạo hồ sơ. Form không nhận mã nghiệp vụ do người dùng tự đặt; sequence + UNIQUE ở DB xử lý an toàn cả khi có nhiều request tạo đồng thời.
+
 **Điều kiện kích hoạt lớp** (`planned → active`), kiểm ở server **và** trigger DB:
+
 - Có `planned_session_count` và `session_duration_minutes`.
 - Có đúng 1 giáo viên `primary`.
 - Có `start_date`.
 
 **Lịch linh hoạt:** `LOP-01` (Ban Giám đốc VCB) **không có row `class_schedules`**. Buổi học được admin tạo tay từng buổi khi khách hàng chốt lịch. Hệ thống **không** được ép mọi lớp phải có recurrence — đây là yêu cầu nghiệp vụ, không phải thiếu dữ liệu.
 
+**Cách xem buổi học:** mặc định mở tuần chứa buổi sắp tới gần nhất (nếu khóa đã kết thúc thì mở tuần của buổi cuối). Mũi tên trái/phải đổi tuần hoặc tháng; nút “Hôm nay” quay về kỳ hiện tại. `Tối giản` giữ danh sách đầy đủ và các hành động hủy/xóa; `Tuần` cũng cho thao tác ngay trên card buổi; `Tháng` ưu tiên tổng quan, có thể chuyển về tuần/tối giản để thao tác.
+
 **Sinh buổi học — `generate_class_sessions(class_id)`:**
+
 1. Đọc `class_schedules` của lớp (nếu rỗng → trả về 0 buổi, không lỗi).
 2. Duyệt từ `start_date`, theo `weekday` của từng schedule, sinh tuần tự tới khi đủ `planned_session_count`.
 3. Chuyển giờ địa phương `Asia/Ho_Chi_Minh` → **UTC** khi ghi `starts_at`/`ends_at`.
 4. `INSERT ... ON CONFLICT (class_id, session_number) DO NOTHING`.
 
 **Failure path:**
-| Tình huống | Xử lý |
-|---|---|
-| Chạy lại lần 2 | Không sinh buổi trùng (idempotent nhờ UNIQUE + ON CONFLICT) |
-| Lớp chưa có `planned_session_count` | RAISE EXCEPTION, không sinh gì |
-| Lớp không có lịch lặp | Trả về 0 buổi, **không phải lỗi** |
+
+| Tình huống                                   | Xử lý                                                          |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| Chạy lại lần 2                               | Không sinh buổi trùng (idempotent nhờ UNIQUE + ON CONFLICT)    |
+| Lớp chưa có `planned_session_count`          | RAISE EXCEPTION, không sinh gì                                 |
+| Lớp không có lịch lặp                        | Trả về 0 buổi, **không phải lỗi**                              |
 | Đã có buổi rồi, tăng `planned_session_count` | Sinh **tiếp** từ `session_number` lớn nhất, không đụng buổi cũ |
 
 ---
@@ -59,12 +69,13 @@ Super Admin tạo hồ sơ giáo viên/học viên (chưa có tài khoản)
 - Service role key **chỉ tồn tại ở server environment**. Không `NEXT_PUBLIC_`.
 
 **Failure path:**
-| Tình huống | Xử lý |
-|---|---|
-| Email đã có tài khoản | Link hồ sơ vào user cũ (không tạo user mới), báo rõ cho admin |
-| Gửi email thất bại | Rollback link? **Không** — giữ hồ sơ, cho phép "Gửi lại lời mời" |
-| Tài khoản bị `is_active = false` | Chặn ở **cả** middleware **lẫn** RLS (`app.is_active()`). Không chỉ ẩn UI. |
-| Quên mật khẩu | Supabase Auth reset flow chuẩn; thông báo lỗi login luôn **generic** (không tiết lộ email có tồn tại hay không) |
+
+| Tình huống                       | Xử lý                                                                                                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email đã có tài khoản            | Link hồ sơ vào user cũ (không tạo user mới), báo rõ cho admin                                                                                              |
+| Gửi email thất bại               | Rollback link? **Không** — giữ hồ sơ, cho phép "Gửi lại lời mời"                                                                                           |
+| Tài khoản bị `is_active = false` | Server guard (`requireUser`/`requireRole`) fail-closed và RLS chặn bằng `app.is_active()`; middleware sign out khi user quay về `/login`. Không chỉ ẩn UI. |
+| Quên mật khẩu                    | Supabase Auth reset flow chuẩn; thông báo lỗi login luôn **generic** (không tiết lộ email có tồn tại hay không)                                            |
 
 ---
 
@@ -90,18 +101,19 @@ Chuyển lớp: transfer_enrollment(enrollment_id, to_class_id, reason)
 ```
 
 Nguyên tắc bất di bất dịch:
+
 - **Không bao giờ xóa enrollment.**
 - Điểm danh, bài nộp, điểm số của lớp cũ **ở lại lớp cũ**. Chuyển lớp **không** tự động mang chúng sang. Nếu nghiệp vụ cần quy đổi → là thao tác riêng, có audit riêng.
 - Học phí liên quan xử lý bằng **invoice adjustment / refund** tường minh, **không** sửa trực tiếp số liệu hóa đơn cũ.
 
-| Trạng thái | Ý nghĩa | Cho phép chuyển tới |
-|---|---|---|
-| `pending` | Đã đăng ký, chưa bắt đầu | `active`, `withdrawn` |
-| `active` | Đang học | `paused`, `completed`, `withdrawn`, `transferred` |
-| `paused` | Tạm dừng (bảo lưu) | `active`, `withdrawn`, `transferred` |
-| `completed` | Hoàn thành khóa | *(cuối)* |
-| `withdrawn` | Rút học | *(cuối)* |
-| `transferred` | Đã chuyển sang lớp khác | *(cuối)* |
+| Trạng thái    | Ý nghĩa                  | Cho phép chuyển tới                               |
+| ------------- | ------------------------ | ------------------------------------------------- |
+| `pending`     | Đã đăng ký, chưa bắt đầu | `active`, `withdrawn`                             |
+| `active`      | Đang học                 | `paused`, `completed`, `withdrawn`, `transferred` |
+| `paused`      | Tạm dừng (bảo lưu)       | `active`, `withdrawn`, `transferred`              |
+| `completed`   | Hoàn thành khóa          | _(cuối)_                                          |
+| `withdrawn`   | Rút học                  | _(cuối)_                                          |
+| `transferred` | Đã chuyển sang lớp khác  | _(cuối)_                                          |
 
 ---
 
@@ -124,6 +136,7 @@ Giáo viên mở Dashboard "Hôm nay"
 - Trigger DB chặn điểm danh cho enrollment **không thuộc lớp của session** — dù server có bug thì DB vẫn giữ.
 
 **Đổi lịch / nghỉ / học bù:**
+
 ```text
 Buổi gốc: status → 'cancelled' hoặc 'rescheduled' (KHÔNG xóa row)
 Buổi bù:  tạo session mới, original_session_id = <buổi gốc>
@@ -135,55 +148,52 @@ Buổi bù:  tạo session mới, original_session_id = <buổi gốc>
 ## 5. Bài tập
 
 ```text
-Giáo viên tạo bài tập (status = draft, chưa ai thấy)
-  → đính kèm file (bucket assignment-files, path do server sinh)
-  → đặt due_at, max_score, allow_late_submission
-  → PUBLISH  → published_at = now(), status = 'published'
-  → notification "Bài tập mới" tới học viên trong lớp
+Giáo viên tạo/version câu hỏi → tạo bộ bài tập → thêm section/câu
+  → preview bằng cùng renderer học viên → kiểm tra & khóa version
+  → giao cho một hoặc nhiều lớp phụ trách (mỗi lớp một delivery)
+  → đặt window, số lượt, late penalty, grading/release mode → publish
 
-Học viên thấy bài (chỉ khi published_at IS NOT NULL)
-  → nộp text và/hoặc file (bucket submissions)
-  → hệ thống tự set is_late = (submitted_at > due_at)
-  → nếu is_late và allow_late_submission = false → CHẶN
+Học viên mở delivery của lớp mình → start_attempt idempotent
+  → autosave từng câu → resume được → submit idempotent
+  → DB chấm tự động phần objective, chuyển phần rubric/essay sang chờ chấm
 
-Giáo viên chấm: score (0..max_score) + feedback
-  → status = 'graded'
-  → notification "Đã có điểm" tới học viên
+Giáo viên chấm phần thủ công → DB tính lại tổng
+  → công bố theo manual / after_graded / after_due
+  → answer key chỉ xuất hiện đúng answer_release_mode
 ```
 
-**Ba điều kiện để học viên nộp được** (kiểm ở **cả** server **và** RLS `WITH CHECK`):
+**Ba điều kiện để học viên làm/nộp được** (kiểm ở server, RPC và RLS):
+
 1. `enrollment_id` thuộc **chính học viên đó**.
-2. Assignment **đã publish**.
-3. Assignment thuộc **lớp học viên đang học**.
+2. Delivery đã publish, đang trong window và còn lượt.
+3. Delivery thuộc lớp có enrollment đang hoạt động của học viên.
 
 **Failure path:**
-| Tình huống | Xử lý |
-|---|---|
-| Học viên sửa `score`/`feedback` qua Supabase client trực tiếp | RLS `WITH CHECK` + trigger chặn → 403 |
-| Nộp bài cho `enrollment_id` của người khác | RLS chặn (`app.owns_enrollment`) |
-| Giáo viên chấm bài của lớp khác | RLS chặn (`app.teaches_enrollment`) |
-| File sai định dạng / quá lớn | Server từ chối trước khi upload; whitelist MIME + size |
-| Bấm Nộp 2 lần | UNIQUE `(assignment_id, enrollment_id)` → upsert, không sinh 2 bản ghi |
+
+| Tình huống                                                    | Xử lý                                                                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Học viên đọc answer key trước release                         | RPC payload loại field + RLS answer key trả 0 dòng                     |
+| Start đồng thời                                               | Unique attempt + RPC khóa hàng → đúng một lượt                         |
+| Save/nộp sau deadline                                         | RPC fail-closed; không tin đồng hồ client                              |
+| Giáo viên chấm bài lớp khác                                   | RLS/RPC `app.teaches_class` chặn                                      |
+| Bấm Nộp 2 lần                                                 | RPC idempotent, không chấm hoặc notification trùng                     |
 
 ---
 
-## 6. Kiểm tra và đánh giá tiến độ
+## 6. Kiểm tra/thi và đánh giá tiến độ
 
 ```text
-Giáo viên tạo bài kiểm tra (quiz | midterm | final | mock_hsk | speaking | custom)
-  → nhập điểm tổng (0–100) + điểm 6 kỹ năng (nghe/nói/đọc/viết/từ vựng/ngữ pháp)
-  → LƯU DRAFT  (published_at = NULL → học viên KHÔNG thấy)
-  → review lại
-  → PUBLISH  → publish_assessment_results(assessment_id)
-       → set published_at
-       → trigger tính classification từ grading_scale_rules
-       → sinh notification "Kết quả đã công bố"
-  → học viên thấy điểm + xếp loại
+Giáo viên tạo và khóa bộ đề thi → lên lịch window cùng ngày Việt Nam
+  → duration không vượt window → publish
+Học viên vào phòng chờ → kiểm tra audio + xác nhận quy định → start
+  → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút
+  → nộp chủ động hoặc pg_cron finalize khi hết hạn/browser đóng
+Giáo viên chấm phần thủ công → khóa kết quả → công bố
+  → điểm 0–100 + classification + notification dedupe
+  → regrade bắt buộc lý do và audit trước/sau
 ```
 
-**Draft và publish là hai hành động tách biệt.** Học viên **chỉ** thấy row có `published_at IS NOT NULL` — cưỡng chế bằng **RLS**, không phải bằng `WHERE` ở tầng app (app có thể quên; RLS thì không).
-
-**Xếp loại được server tính**, từ `grading_scale_rules`. Client **không** gửi `classification` lên — nếu gửi cũng bị trigger ghi đè.
+**Draft, khóa version, publish delivery, khóa kết quả và publish result là các bước tách biệt.** Học viên chỉ thấy điểm sau release; xếp loại do DB tính từ `grading_scale_rules`. Integrity event chỉ để tham khảo, không tự động kết luận gian lận.
 
 ```text
 Đánh giá định kỳ (tuần/tháng):
@@ -224,26 +234,27 @@ Super Admin ghi nhận thanh toán → record_tuition_payment(...)
 **Số dư = `total − SUM(payments)`**, tính ở view `v_tuition_balance`. **Không có bảng công nợ.** Đây là ranh giới cứng — hệ cũ để nó mọc thành cả module vay/thu nợ.
 
 **Failure path:**
-| Tình huống | Xử lý |
-|---|---|
-| Ghi payment vượt số phải thu | Trigger chặn, trừ khi đi qua flow refund tường minh |
-| Ghi payment cho invoice draft/paid/cancelled/refunded | RPC từ chối trước khi sinh payment/receipt |
-| Client khai sai `line_total` / `total` | Không nhận hai giá trị này; DB tính lại từ `quantity × unit_amount` |
-| Sửa/xóa hóa đơn đã phát hành | RPC từ chối; chỉ draft mới sửa hoặc hard-delete được |
-| Gọi `record_tuition_payment` 2 lần đồng thời | Transaction + UNIQUE `payment_id` trên receipts → **không sinh 2 phiếu thu** |
-| Giáo viên cố đọc hóa đơn | RLS **DENY** tuyệt đối trên toàn bộ 4 bảng tuition |
-| Học viên gọi INSERT `tuition_payments` | Không có policy INSERT cho student → từ chối |
-| Quá hạn | Cron đánh dấu `overdue` + notification (có `dedupe_key`, chạy lại không spam) |
+
+| Tình huống                                            | Xử lý                                                                         |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Ghi payment vượt số phải thu                          | Trigger chặn, trừ khi đi qua flow refund tường minh                           |
+| Ghi payment cho invoice draft/paid/cancelled/refunded | RPC từ chối trước khi sinh payment/receipt                                    |
+| Client khai sai `line_total` / `total`                | Không nhận hai giá trị này; DB tính lại từ `quantity × unit_amount`           |
+| Sửa/xóa hóa đơn đã phát hành                          | RPC từ chối; chỉ draft mới sửa hoặc hard-delete được                          |
+| Gọi `record_tuition_payment` 2 lần đồng thời          | Transaction + UNIQUE `payment_id` trên receipts → **không sinh 2 phiếu thu**  |
+| Giáo viên cố đọc hóa đơn                              | RLS **DENY** tuyệt đối trên toàn bộ 4 bảng tuition                            |
+| Học viên gọi INSERT `tuition_payments`                | Không có policy INSERT cho student → từ chối                                  |
+| Quá hạn                                               | Cron đánh dấu `overdue` + notification (có `dedupe_key`, chạy lại không spam) |
 
 ---
 
 ## 8. Hoàn thành khóa
 
 ```text
-Hệ thống TÍNH readiness (view v_enrollment_progress):
+Hệ thống TÍNH readiness (view v_enrollment_assessment_progress):
     chuyên cần ≥ course.completion_min_attendance_rate  (mặc định 80%)
     điểm TB    ≥ course.completion_min_overall_score    (mặc định 50/100)
-    [tùy chọn] đã nộp đủ bài tập
+    [tùy chọn] đã nộp đủ bài tập engine mới
   → hiển thị "Đủ điều kiện" / "Chưa đủ điều kiện" + thiếu gì
 
 NGƯỜI xác nhận: super admin HOẶC giáo viên được phân công
@@ -278,17 +289,17 @@ Super Admin soạn announcement draft
   → KẾT THÚC qua expire_announcement; không hard-delete lịch sử
 ```
 
-| Loại | Kích hoạt bởi | Người nhận |
-|---|---|---|
-| `session_upcoming` | Cron (trước buổi học) | Học viên trong lớp |
-| `session_changed` | Đổi/hủy/học bù | Học viên trong lớp |
-| `assignment_new` | Publish bài tập | Học viên trong lớp |
-| `assignment_due` | Cron (trước hạn nộp) | Học viên **chưa nộp** |
-| `assessment_upcoming` | Cron | Học viên trong lớp |
-| `result_published` | Publish điểm/đánh giá | Học viên có kết quả |
-| `attendance_absent` | Điểm danh `absent`/`late` | Học viên đó |
-| `invoice_new` / `invoice_due` / `invoice_overdue` | Phát hành / cron | Học viên chủ hóa đơn |
-| `announcement` | Super admin publish | Toàn hệ thống hoặc một lớp |
+| Loại                                              | Kích hoạt bởi             | Người nhận                 |
+| ------------------------------------------------- | ------------------------- | -------------------------- |
+| `session_upcoming`                                | Cron (trước buổi học)     | Học viên trong lớp         |
+| `session_changed`                                 | Đổi/hủy/học bù            | Học viên trong lớp         |
+| `assignment_new`                                  | Publish bài tập           | Học viên trong lớp         |
+| `assignment_due`                                  | Cron (trước hạn nộp)      | Học viên **chưa nộp**      |
+| `assessment_upcoming`                             | Cron                      | Học viên trong lớp         |
+| `result_published`                                | Publish điểm/đánh giá     | Học viên có kết quả        |
+| `attendance_absent`                               | Điểm danh `absent`/`late` | Học viên đó                |
+| `invoice_new` / `invoice_due` / `invoice_overdue` | Phát hành / cron          | Học viên chủ hóa đơn       |
+| `announcement`                                    | Super admin publish       | Toàn hệ thống hoặc một lớp |
 
 - Mỗi notification có `link` nội bộ. **Click vào link vẫn phải qua authorization** — link không phải là quyền.
 - UI chỉ render link bắt đầu bằng `/` và nằm trong đúng khu vực role; route đích vẫn kiểm role + RLS như mọi truy cập trực tiếp khác.

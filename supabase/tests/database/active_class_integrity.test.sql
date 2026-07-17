@@ -43,8 +43,8 @@ select throws_ok(
     set status = 'active'
     where id = '41000000-0000-0000-0000-000000000001'$$,
   'P0001',
-  'Không thể kích hoạt: lớp phải có đúng một giáo viên chính',
-  'Không kích hoạt lớp khi chưa có giáo viên chính'
+  'Không thể kích hoạt: lớp phải có một giáo viên phụ trách',
+  'Không kích hoạt lớp khi chưa có giáo viên phụ trách'
 );
 
 insert into auth.users (
@@ -98,12 +98,11 @@ values (
   'GV-TEST-ACTIVE'
 );
 
-insert into public.class_teachers (id, class_id, teacher_id, assignment_role)
+insert into public.class_teachers (id, class_id, teacher_id)
 values (
   '44000000-0000-0000-0000-000000000001',
   '41000000-0000-0000-0000-000000000001',
-  '43000000-0000-0000-0000-000000000001',
-  'primary'
+  '43000000-0000-0000-0000-000000000001'
 );
 
 select lives_ok(
@@ -123,26 +122,24 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$update public.class_teachers
-    set assignment_role = 'assistant'
+  $$delete from public.class_teachers
     where id = '44000000-0000-0000-0000-000000000001'$$,
   'P0001',
-  'Không thể gỡ hoặc đổi vai trò giáo viên chính khi lớp đang hoạt động',
-  'Không hạ vai trò giáo viên chính khi lớp đang hoạt động'
+  'Không thể gỡ hoặc đổi giáo viên phụ trách khi lớp đang hoạt động',
+  'Không gỡ giáo viên phụ trách khi lớp đang hoạt động'
 );
 
 select lives_ok(
   $$update public.classes
     set status = 'paused'
     where id = '41000000-0000-0000-0000-000000000001'$$,
-  'Cho phép tạm dừng lớp trước khi thay đổi giáo viên chính'
+  'Cho phép tạm dừng lớp trước khi thay đổi giáo viên phụ trách'
 );
 
 select lives_ok(
-  $$update public.class_teachers
-    set assignment_role = 'assistant'
+  $$delete from public.class_teachers
     where id = '44000000-0000-0000-0000-000000000001'$$,
-  'Cho phép đổi vai trò giáo viên chính sau khi lớp đã tạm dừng'
+  'Cho phép gỡ giáo viên phụ trách sau khi lớp đã tạm dừng'
 );
 
 select * from finish();

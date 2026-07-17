@@ -73,7 +73,10 @@ export async function inviteUser(params: {
   );
 
   if (profileError) {
-    return { ok: false, error: `Không tạo được hồ sơ: ${profileError.message}` };
+    return {
+      ok: false,
+      error: `Không tạo được hồ sơ: ${profileError.message}`,
+    };
   }
 
   return { ok: true, userId, alreadyExisted };
@@ -115,7 +118,9 @@ export async function resendInvite(
 
   const { error } = await admin.auth.admin.inviteUserByEmail(
     email.trim().toLowerCase(),
-    { redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=${redirectPath}` },
+    {
+      redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=${redirectPath}`,
+    },
   );
 
   if (error) return { ok: false, error: error.message };

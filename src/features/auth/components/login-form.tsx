@@ -28,7 +28,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
       <CardHeader>
         <CardTitle>Đăng nhập</CardTitle>
         <CardDescription>
-          Dùng email và mật khẩu được trung tâm cấp.
+          Dùng tên đăng nhập và mật khẩu được trung tâm cấp.
         </CardDescription>
       </CardHeader>
 
@@ -42,14 +42,14 @@ export function LoginForm({ initialError }: { initialError?: string }) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="identifier">Tên đăng nhập</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
+              id="identifier"
+              name="identifier"
+              type="text"
+              autoComplete="username"
               required
-              placeholder="ten@polymind.vn"
+              placeholder="Ví dụ: gv.an"
             />
           </div>
 

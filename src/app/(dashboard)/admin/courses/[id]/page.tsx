@@ -26,6 +26,7 @@ import {
   CLASS_STATUS_TONE,
   COURSE_STATUS_LABELS,
   COURSE_STATUS_TONE,
+  COURSE_PROGRAM_LABELS,
   COURSE_TYPE_LABELS,
   DELIVERY_MODE_LABELS,
 } from "@/lib/domain/labels";
@@ -83,7 +84,10 @@ export default async function CourseDetailPage({
           tone={COURSE_STATUS_TONE[course.status]}
         />
         <span className="text-muted-foreground text-sm">
-          {COURSE_TYPE_LABELS[course.course_type]}
+          {COURSE_PROGRAM_LABELS[course.program]}
+          {course.course_type
+            ? ` · ${COURSE_TYPE_LABELS[course.course_type]}`
+            : ""}
           {course.level ? ` · ${course.level.name}` : ""}
         </span>
       </div>
@@ -97,7 +101,9 @@ export default async function CourseDetailPage({
           <TabsTrigger value="materials">
             Tài liệu ({materials.length})
           </TabsTrigger>
-          <TabsTrigger value="classes">Lớp đã mở ({classes.length})</TabsTrigger>
+          <TabsTrigger value="classes">
+            Lớp đã mở ({classes.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -159,7 +165,7 @@ export default async function CourseDetailPage({
                   <Field
                     label="Bắt buộc nộp đủ bài tập"
                     value={
-                      course.completion_require_all_assignments ? "Có" : "Không"
+                      course.completion_require_all_exercises ? "Có" : "Không"
                     }
                   />
                 </CardContent>
@@ -214,8 +220,9 @@ export default async function CourseDetailPage({
                           </div>
                           <p className="mt-1 truncate font-medium">{c.name}</p>
                           <p className="text-muted-foreground text-xs">
-                            {DELIVERY_MODE_LABELS[c.delivery_mode]} · Sĩ số tối đa{" "}
-                            {c.capacity} · Khai giảng {formatDate(c.start_date)}
+                            {DELIVERY_MODE_LABELS[c.delivery_mode]} · Sĩ số tối
+                            đa {c.capacity} · Khai giảng{" "}
+                            {formatDate(c.start_date)}
                           </p>
                         </div>
                       </Link>

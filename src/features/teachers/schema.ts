@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { adminPasswordSchema, usernameSchema } from "@/features/users/schema";
+
 const optionalText = z
   .string()
   .trim()
@@ -7,21 +9,25 @@ const optionalText = z
   .nullable();
 
 export const teacherSchema = z.object({
-  email: z.email({ message: "Email không hợp lệ" }),
+  username: usernameSchema,
+  password: adminPasswordSchema,
+  email: z
+    .union([z.literal(""), z.email({ message: "Email liên hệ không hợp lệ" })])
+    .transform((value) => value || null),
   full_name: z.string().trim().min(2, { message: "Nhập họ tên giáo viên" }),
-  teacher_code: z
-    .string()
-    .trim()
-    .min(2, { message: "Nhập mã giáo viên" })
-    .max(20)
-    .regex(/^[A-Z0-9-]+$/, { message: "Mã chỉ gồm chữ IN HOA, số và gạch ngang" }),
   phone: optionalText,
   specialization: optionalText,
   bio: optionalText,
 });
 
-export const teacherUpdateSchema = teacherSchema.omit({ email: true }).extend({
+export const teacherUpdateSchema = teacherSchema
+  .omit({ email: true, username: true, password: true })
+  .extend({ id: z.uuid() });
+
+export const teacherCredentialsSchema = z.object({
   id: z.uuid(),
+  username: usernameSchema,
+  password: adminPasswordSchema,
 });
 
 export type TeacherInput = z.infer<typeof teacherSchema>;

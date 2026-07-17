@@ -4,7 +4,13 @@ import { useState } from "react";
 import {
   AlertCircle,
   CalendarClock,
+  CalendarDays,
   CalendarPlus,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  List,
   Plus,
   Repeat,
   Trash2,
@@ -12,6 +18,16 @@ import {
   XCircle,
 } from "lucide-react";
 
+import {
+  formatCalendarDay,
+  formatCalendarPeriod,
+  getMonthGridDateKeys,
+  getWeekDateKeys,
+  monthKey,
+  pickInitialDateKey,
+  shiftCalendarAnchor,
+  type CalendarView,
+} from "@/features/schedules/calendar";
 import {
   cancelSessionAction,
   createManualSessionAction,
@@ -48,13 +64,20 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ActionState } from "@/lib/action-state";
 import {
   WEEKDAYS,
+  dateKeyInVN,
   formatClock,
   formatDate,
   formatDateTime,
+  formatTime,
+  todayISO,
   weekdayLabel,
 } from "@/lib/dates";
-import { SESSION_STATUS_LABELS, SESSION_STATUS_TONE } from "@/lib/domain/labels";
+import {
+  SESSION_STATUS_LABELS,
+  SESSION_STATUS_TONE,
+} from "@/lib/domain/labels";
 import { useFormAction } from "@/lib/use-form-action";
+import { cn } from "@/lib/utils";
 
 type SessionStatus = "scheduled" | "completed" | "cancelled" | "rescheduled";
 
@@ -128,7 +151,9 @@ export function ScheduleManager({
         <CardContent className="p-0">
           {isFlexible ? (
             <div className="border-t px-5 py-4">
-              <p className="text-sm font-medium">Lớp linh hoạt — không có lịch lặp</p>
+              <p className="text-sm font-medium">
+                Lớp linh hoạt — không có lịch lặp
+              </p>
               <p className="text-muted-foreground mt-1 text-sm">
                 Đây là trạng thái <strong>hợp lệ</strong>, không phải thiếu dữ
                 liệu: có lớp học theo lịch do khách hàng chốt từng buổi. Thêm
@@ -173,8 +198,8 @@ export function ScheduleManager({
           <CardTitle className="text-base">Sinh buổi học</CardTitle>
           <p className="text-muted-foreground mt-1 text-sm">
             Đã sinh <strong>{generated}</strong>
-            {plannedSessionCount ? `/${plannedSessionCount}` : ""} buổi. Bấm nhiều
-            lần không sinh trùng — chống trùng bằng ràng buộc ở DB.
+            {plannedSessionCount ? `/${plannedSessionCount}` : ""} buổi. Bấm
+            nhiều lần không sinh trùng — chống trùng bằng ràng buộc ở DB.
           </p>
         </CardHeader>
         <CardContent>
@@ -215,14 +240,341 @@ export function ScheduleManager({
               }
             />
           ) : (
-            <ul className="divide-y border-t">
-              {sessions.map((s) => (
-                <SessionRow key={s.id} classId={classId} session={s} />
-              ))}
-            </ul>
+            <SessionCalendar classId={classId} sessions={sessions} />
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function SessionCalendar({
+  classId,
+  sessions,
+}: {
+  classId: string;
+  sessions: Session[];
+}) {
+  const currentDateKey = todayISO();
+  const [view, setView] = useState<CalendarView>("week");
+  const [anchorKey, setAnchorKey] = useState(() =>
+    pickInitialDateKey(
+      sessions.map((session) => dateKeyInVN(session.starts_at)),
+      currentDateKey,
+    ),
+  );
+
+  const sessionsByDate = new Map<string, Session[]>();
+  for (const session of sessions) {
+    const dateKey = dateKeyInVN(session.starts_at);
+    const dateSessions = sessionsByDate.get(dateKey) ?? [];
+    dateSessions.push(session);
+    sessionsByDate.set(dateKey, dateSessions);
+  }
+  for (const dateSessions of sessionsByDate.values()) {
+    dateSessions.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  }
+
+  const move = (amount: number) => {
+    if (view === "compact") return;
+    setAnchorKey((current) => shiftCalendarAnchor(current, view, amount));
+  };
+
+  return (
+    <div className="border-t">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="bg-muted inline-flex w-fit rounded-lg p-1"
+          role="group"
+          aria-label="Kiểu hiển thị thời khóa biểu"
+        >
+          <ViewButton
+            active={view === "compact"}
+            icon={<List className="size-4" aria-hidden />}
+            label="Tối giản"
+            onClick={() => setView("compact")}
+          />
+          <ViewButton
+            active={view === "week"}
+            icon={<CalendarRange className="size-4" aria-hidden />}
+            label="Tuần"
+            onClick={() => setView("week")}
+          />
+          <ViewButton
+            active={view === "month"}
+            icon={<CalendarDays className="size-4" aria-hidden />}
+            label="Tháng"
+            onClick={() => setView("month")}
+          />
+        </div>
+
+        {view !== "compact" && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-11"
+              onClick={() => move(-1)}
+              aria-label={
+                view === "week" ? "Xem tuần trước" : "Xem tháng trước"
+              }
+            >
+              <ChevronLeft className="size-4" aria-hidden />
+            </Button>
+            <p
+              className="min-w-40 text-center text-sm font-semibold"
+              aria-live="polite"
+            >
+              {formatCalendarPeriod(anchorKey, view)}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-11"
+              onClick={() => move(1)}
+              aria-label={view === "week" ? "Xem tuần sau" : "Xem tháng sau"}
+            >
+              <ChevronRight className="size-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              onClick={() => setAnchorKey(currentDateKey)}
+            >
+              Hôm nay
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {view === "compact" && (
+        <ul className="divide-y border-t">
+          {sessions.map((session) => (
+            <SessionRow key={session.id} classId={classId} session={session} />
+          ))}
+        </ul>
+      )}
+
+      {view === "week" && (
+        <WeekCalendar
+          classId={classId}
+          anchorKey={anchorKey}
+          currentDateKey={currentDateKey}
+          sessionsByDate={sessionsByDate}
+        />
+      )}
+
+      {view === "month" && (
+        <MonthCalendar
+          anchorKey={anchorKey}
+          currentDateKey={currentDateKey}
+          sessionsByDate={sessionsByDate}
+        />
+      )}
+    </div>
+  );
+}
+
+function ViewButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={active ? "secondary" : "ghost"}
+      size="sm"
+      className="min-h-11"
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      {icon}
+      {label}
+    </Button>
+  );
+}
+
+function WeekCalendar({
+  classId,
+  anchorKey,
+  currentDateKey,
+  sessionsByDate,
+}: {
+  classId: string;
+  anchorKey: string;
+  currentDateKey: string;
+  sessionsByDate: Map<string, Session[]>;
+}) {
+  const days = getWeekDateKeys(anchorKey);
+
+  return (
+    <div className="overflow-x-auto border-t">
+      <div className="grid min-w-[840px] grid-cols-7">
+        {days.map((dateKey, index) => {
+          const dateSessions = sessionsByDate.get(dateKey) ?? [];
+          const isToday = dateKey === currentDateKey;
+
+          return (
+            <section
+              key={dateKey}
+              className="min-h-80 border-l first:border-l-0"
+              aria-label={`${WEEKDAYS[index]?.label}, ${formatCalendarDay(dateKey, "dd/MM/yyyy")}`}
+            >
+              <div
+                className={cn(
+                  "border-b px-3 py-2 text-center",
+                  isToday && "bg-primary text-primary-foreground",
+                )}
+              >
+                <p className="text-xs font-medium uppercase">
+                  {WEEKDAYS[index]?.short}
+                </p>
+                <p className="mt-0.5 text-lg font-semibold">
+                  {formatCalendarDay(dateKey, "dd")}
+                </p>
+              </div>
+              <div className="space-y-2 p-2">
+                {dateSessions.length === 0 ? (
+                  <p className="text-muted-foreground py-6 text-center text-xs">
+                    Không có buổi học
+                  </p>
+                ) : (
+                  dateSessions.map((session) => (
+                    <WeekSessionCard
+                      key={session.id}
+                      classId={classId}
+                      session={session}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeekSessionCard({
+  classId,
+  session,
+}: {
+  classId: string;
+  session: Session;
+}) {
+  return (
+    <article
+      className={cn(
+        "bg-card rounded-lg border p-2 shadow-sm",
+        session.status === "cancelled" && "opacity-60",
+      )}
+    >
+      <div className="flex items-center gap-1 text-xs font-semibold">
+        <Clock3 className="size-3.5" aria-hidden />
+        {formatTime(session.starts_at)}–{formatTime(session.ends_at)}
+      </div>
+      <p className="mt-1 text-sm font-semibold">
+        Buổi {session.session_number}
+      </p>
+      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
+        {session.lesson?.title ?? session.topic ?? "Chưa gắn bài học"}
+      </p>
+      <div className="mt-2 flex items-end justify-between gap-1">
+        <StatusBadge
+          label={SESSION_STATUS_LABELS[session.status]}
+          tone={SESSION_STATUS_TONE[session.status]}
+        />
+        <SessionActions classId={classId} session={session} />
+      </div>
+    </article>
+  );
+}
+
+function MonthCalendar({
+  anchorKey,
+  currentDateKey,
+  sessionsByDate,
+}: {
+  anchorKey: string;
+  currentDateKey: string;
+  sessionsByDate: Map<string, Session[]>;
+}) {
+  const days = getMonthGridDateKeys(anchorKey);
+  const activeMonth = monthKey(anchorKey);
+
+  return (
+    <div className="overflow-x-auto border-t">
+      <div className="min-w-[840px]">
+        <div className="grid grid-cols-7 border-b">
+          {WEEKDAYS.map((weekday) => (
+            <div
+              key={weekday.value}
+              className="border-l px-2 py-2 text-center text-xs font-semibold first:border-l-0"
+            >
+              {weekday.label}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {days.map((dateKey) => {
+            const dateSessions = sessionsByDate.get(dateKey) ?? [];
+            const isToday = dateKey === currentDateKey;
+            const isOutside = monthKey(dateKey) !== activeMonth;
+
+            return (
+              <section
+                key={dateKey}
+                className={cn(
+                  "min-h-32 border-b border-l p-2 first:border-l-0",
+                  isOutside && "bg-muted/30 text-muted-foreground",
+                )}
+                aria-label={formatCalendarDay(dateKey, "dd/MM/yyyy")}
+              >
+                <span
+                  className={cn(
+                    "inline-flex size-7 items-center justify-center rounded-full text-sm font-medium",
+                    isToday && "bg-primary text-primary-foreground",
+                  )}
+                >
+                  {formatCalendarDay(dateKey, "d")}
+                </span>
+                <div className="mt-1 space-y-1">
+                  {dateSessions.slice(0, 3).map((session) => (
+                    <div
+                      key={session.id}
+                      className={cn(
+                        "bg-primary/10 text-primary truncate rounded px-1.5 py-1 text-xs font-medium",
+                        session.status === "cancelled" &&
+                          "bg-muted text-muted-foreground line-through",
+                      )}
+                      title={`Buổi ${session.session_number} · ${SESSION_STATUS_LABELS[session.status]}`}
+                    >
+                      {formatTime(session.starts_at)} · Buổi{" "}
+                      {session.session_number}
+                    </div>
+                  ))}
+                  {dateSessions.length > 3 && (
+                    <p className="text-muted-foreground px-1 text-xs">
+                      +{dateSessions.length - 3} buổi khác
+                    </p>
+                  )}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -234,11 +586,6 @@ function SessionRow({
   classId: string;
   session: Session;
 }) {
-  // Buổi đã dạy: không cho xóa ở UI, và DB cũng chặn (migration 22). Ẩn nút chỉ
-  // là lịch sự — chốt chặn thật nằm ở trigger.
-  const canDelete = session.status === "scheduled";
-  const canCancel = session.status === "scheduled";
-
   return (
     <li className="flex items-center gap-3 px-5 py-3">
       <span className="bg-muted flex size-8 shrink-0 items-center justify-center rounded text-xs font-semibold">
@@ -260,29 +607,46 @@ function SessionRow({
         </p>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        {canCancel && (
-          <SessionActionButton
-            action={cancelSessionAction}
-            id={session.id}
-            classId={classId}
-            icon={<XCircle className="size-4" aria-hidden />}
-            label={`Hủy buổi ${session.session_number}`}
-            confirmMessage={`Hủy buổi ${session.session_number}? Buổi vẫn được giữ trong lịch sử.`}
-          />
-        )}
-        {canDelete && (
-          <SessionActionButton
-            action={deleteSessionAction}
-            id={session.id}
-            classId={classId}
-            icon={<Trash2 className="text-destructive size-4" aria-hidden />}
-            label={`Xóa buổi ${session.session_number}`}
-            confirmMessage={`Xóa hẳn buổi ${session.session_number}? Chỉ dùng khi sinh nhầm — buổi đã điểm danh sẽ bị DB từ chối.`}
-          />
-        )}
-      </div>
+      <SessionActions classId={classId} session={session} />
     </li>
+  );
+}
+
+function SessionActions({
+  classId,
+  session,
+}: {
+  classId: string;
+  session: Session;
+}) {
+  // Buổi đã dạy: không cho xóa ở UI, và DB cũng chặn (migration 22). Ẩn nút chỉ
+  // là lịch sự — chốt chặn thật nằm ở trigger.
+  const canDelete = session.status === "scheduled";
+  const canCancel = session.status === "scheduled";
+
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      {canCancel && (
+        <SessionActionButton
+          action={cancelSessionAction}
+          id={session.id}
+          classId={classId}
+          icon={<XCircle className="size-4" aria-hidden />}
+          label={`Hủy buổi ${session.session_number}`}
+          confirmMessage={`Hủy buổi ${session.session_number}? Buổi vẫn được giữ trong lịch sử.`}
+        />
+      )}
+      {canDelete && (
+        <SessionActionButton
+          action={deleteSessionAction}
+          id={session.id}
+          classId={classId}
+          icon={<Trash2 className="text-destructive size-4" aria-hidden />}
+          label={`Xóa buổi ${session.session_number}`}
+          confirmMessage={`Xóa hẳn buổi ${session.session_number}? Chỉ dùng khi sinh nhầm — buổi đã điểm danh sẽ bị DB từ chối.`}
+        />
+      )}
+    </div>
   );
 }
 
@@ -523,8 +887,8 @@ function ManualSessionDialog({
         <DialogHeader>
           <DialogTitle>Thêm buổi học</DialogTitle>
           <DialogDescription>
-            Dùng cho lớp linh hoạt (không có lịch lặp) hoặc buổi học bù. Nhập giờ
-            Việt Nam.
+            Dùng cho lớp linh hoạt (không có lịch lặp) hoặc buổi học bù. Nhập
+            giờ Việt Nam.
           </DialogDescription>
         </DialogHeader>
 

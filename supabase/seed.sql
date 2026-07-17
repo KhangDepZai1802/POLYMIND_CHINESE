@@ -112,13 +112,13 @@ on conflict (code) do update
 -- =============================================================================
 
 insert into public.courses
-  (code, title, title_en, course_type, level_id, target_audience, objectives,
+  (code, title, title_en, program, course_type, level_id, target_audience, objectives,
    default_session_count, default_session_duration_minutes, status)
 values
   ('VCB-EXEC',
    'Tiếng Trung Đàm Phán Tài Chính Chiến Lược',
    'Business Chinese for Executives',
-   'business_custom', null,
+   'business', null, null,
    'Ban Giám đốc',
    'Đàm phán tài chính, thuật ngữ chuyên ngành, giao tiếp cấp lãnh đạo.',
    35, 90, 'active'),
@@ -126,13 +126,14 @@ values
   ('VCB-BANK',
    'Tiếng Trung ngân hàng',
    'Banking Chinese',
-   'business_custom', null,
+   'business', null, null,
    'Lãnh đạo phòng / Cán bộ nhân viên',
    'Từ vựng và tình huống nghiệp vụ ngân hàng, giao tiếp với khách hàng.',
    35, 90, 'active')
 on conflict (code) do update
   set title                            = excluded.title,
       title_en                         = excluded.title_en,
+      program                          = excluded.program,
       course_type                      = excluded.course_type,
       target_audience                  = excluded.target_audience,
       objectives                       = excluded.objectives,

@@ -20,7 +20,9 @@ export function formatDate(value: string | Date | null | undefined): string {
 }
 
 /** Ngày + giờ: 20/07/2026 08:00 */
-export function formatDateTime(value: string | Date | null | undefined): string {
+export function formatDateTime(
+  value: string | Date | null | undefined,
+): string {
   if (!value) return "—";
   const date = typeof value === "string" ? parseISO(value) : value;
   return formatInTimeZone(date, APP_TIMEZONE, "dd/MM/yyyy HH:mm");
@@ -33,6 +35,12 @@ export function formatTime(value: string | Date | null | undefined): string {
   return formatInTimeZone(date, APP_TIMEZONE, "HH:mm");
 }
 
+/** Khóa ngày yyyy-MM-dd theo giờ Việt Nam, dùng để xếp buổi vào lịch tuần/tháng. */
+export function dateKeyInVN(value: string | Date): string {
+  const date = typeof value === "string" ? parseISO(value) : value;
+  return formatInTimeZone(date, APP_TIMEZONE, "yyyy-MM-dd");
+}
+
 /** Giờ trong cột `time` của Postgres ("08:00:00") → "08:00". Không đổi múi giờ. */
 export function formatClock(value: string | null | undefined): string {
   if (!value) return "—";
@@ -40,10 +48,14 @@ export function formatClock(value: string | null | undefined): string {
 }
 
 /** Ngày dài có thứ: Thứ Hai, 20/07/2026 */
-export function formatDateLong(value: string | Date | null | undefined): string {
+export function formatDateLong(
+  value: string | Date | null | undefined,
+): string {
   if (!value) return "—";
   const date = typeof value === "string" ? parseISO(value) : value;
-  return formatInTimeZone(date, APP_TIMEZONE, "EEEE, dd/MM/yyyy", { locale: vi });
+  return formatInTimeZone(date, APP_TIMEZONE, "EEEE, dd/MM/yyyy", {
+    locale: vi,
+  });
 }
 
 /** Cho `<input type="date">` — luôn yêu cầu yyyy-MM-dd. */
@@ -101,7 +113,9 @@ export function weekdayLabel(weekday: number): string {
 }
 
 /** Tiền Việt: 1.500.000 ₫ */
-export function formatCurrency(value: number | string | null | undefined): string {
+export function formatCurrency(
+  value: number | string | null | undefined,
+): string {
   if (value === null || value === undefined || value === "") return "—";
   const n = typeof value === "string" ? Number(value) : value;
   if (Number.isNaN(n)) return "—";
@@ -113,7 +127,9 @@ export function formatCurrency(value: number | string | null | undefined): strin
 }
 
 /** Phần trăm: 87,5% */
-export function formatPercent(value: number | string | null | undefined): string {
+export function formatPercent(
+  value: number | string | null | undefined,
+): string {
   if (value === null || value === undefined || value === "") return "—";
   const n = typeof value === "string" ? Number(value) : value;
   if (Number.isNaN(n)) return "—";

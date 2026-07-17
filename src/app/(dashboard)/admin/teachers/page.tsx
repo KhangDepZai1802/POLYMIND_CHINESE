@@ -17,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/session";
-import { ASSIGNMENT_ROLE_LABELS } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Giáo viên" };
 
@@ -40,7 +39,7 @@ export default async function AdminTeachersPage() {
             <EmptyState
               icon={GraduationCap}
               title="Chưa có giáo viên nào"
-              description="Thêm giáo viên và gửi lời mời để họ đăng nhập."
+              description="Thêm giáo viên và cấp tài khoản để họ đăng nhập."
             />
           ) : (
             <>
@@ -89,10 +88,9 @@ export default async function AdminTeachersPage() {
                                 <span
                                   key={ct.id}
                                   className="bg-muted rounded px-1.5 py-0.5 text-xs"
-                                  title={`${ct.class?.name} — ${ASSIGNMENT_ROLE_LABELS[ct.assignment_role]}`}
+                                  title={ct.class?.name}
                                 >
                                   {ct.class?.code}
-                                  {ct.assignment_role === "assistant" && " (TG)"}
                                 </span>
                               ))}
                             </div>
@@ -141,7 +139,6 @@ export default async function AdminTeachersPage() {
                               className="bg-muted rounded px-1.5 py-0.5 text-xs"
                             >
                               {ct.class?.code}
-                              {ct.assignment_role === "assistant" && " (TG)"}
                             </span>
                           ))}
                         </div>

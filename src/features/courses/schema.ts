@@ -5,9 +5,10 @@ const COURSE_TYPES = [
   "communication",
   "kids",
   "exam_prep",
-  "business_custom",
   "custom",
 ] as const;
+
+const COURSE_PROGRAMS = ["core", "business"] as const;
 
 const COURSE_STATUSES = ["draft", "active", "archived"] as const;
 
@@ -39,38 +40,58 @@ const optionalText = z
   .transform((v) => (v === "" ? null : v))
   .transform((v) => v ?? null);
 
-export const courseSchema = z.object({
-  code: codeSchema,
-  title: z.string().trim().min(3, { message: "Tên khóa học tối thiểu 3 ký tự" }),
-  title_en: optionalText,
-  course_type: z.enum(COURSE_TYPES, { message: "Chọn loại khóa học" }),
-  level_id: z
-    .string()
-    .trim()
-    .transform((v) => (v === "" || v === "none" ? null : v))
-    .nullable(),
-  target_audience: optionalText,
-  objectives: optionalText,
-  description: optionalText,
+export const courseSchema = z
+  .object({
+    program: z.enum(COURSE_PROGRAMS, { message: "Chọn chương trình" }),
+    title: z
+      .string()
+      .trim()
+      .min(3, { message: "Tên khóa học tối thiểu 3 ký tự" }),
+    title_en: optionalText,
+    course_type: z
+      .union([z.literal(""), z.enum(COURSE_TYPES)])
+      .nullish()
+      .transform((value) => (value ? value : null)),
+    level_id: z
+      .string()
+      .trim()
+      .transform((v) => (v === "" || v === "none" ? null : v))
+      .nullable(),
+    target_audience: optionalText,
+    objectives: optionalText,
+    description: optionalText,
 
-  // Để trống là hợp lệ: trung tâm chưa chốt số buổi cho khóa cốt lõi.
-  // Số buổi THẬT được chốt ở từng lớp triển khai.
-  default_session_count: optionalPositiveInt,
-  default_session_duration_minutes: optionalPositiveInt,
-  default_tuition_amount: optionalAmount,
+    // Để trống là hợp lệ: trung tâm chưa chốt số buổi cho khóa cốt lõi.
+    // Số buổi THẬT được chốt ở từng lớp triển khai.
+    default_session_count: optionalPositiveInt,
+    default_session_duration_minutes: optionalPositiveInt,
+    default_tuition_amount: optionalAmount,
 
-  completion_min_attendance_rate: z.coerce
-    .number()
-    .min(0, { message: "Từ 0 đến 100" })
-    .max(100, { message: "Từ 0 đến 100" }),
-  completion_min_overall_score: z.coerce
-    .number()
-    .min(0, { message: "Từ 0 đến 100" })
-    .max(100, { message: "Từ 0 đến 100" }),
-  completion_require_all_assignments: z.coerce.boolean(),
+    completion_min_attendance_rate: z.coerce
+      .number()
+      .min(0, { message: "Từ 0 đến 100" })
+      .max(100, { message: "Từ 0 đến 100" }),
+    completion_min_overall_score: z.coerce
+      .number()
+      .min(0, { message: "Từ 0 đến 100" })
+      .max(100, { message: "Từ 0 đến 100" }),
+    completion_require_all_exercises: z.coerce.boolean(),
 
-  status: z.enum(COURSE_STATUSES),
-});
+    status: z.enum(COURSE_STATUSES),
+  })
+  .superRefine((data, context) => {
+    if (data.program === "core" && !data.course_type) {
+      context.addIssue({
+        code: "custom",
+        path: ["course_type"],
+        message: "Chọn loại cho chương trình cốt lõi",
+      });
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    course_type: data.program === "business" ? null : data.course_type,
+  }));
 
 export const levelSchema = z.object({
   code: codeSchema,
@@ -84,7 +105,10 @@ export const moduleSchema = z.object({
   course_id: z.uuid(),
   title: z.string().trim().min(2, { message: "Nhập tên chương" }),
   description: optionalText,
-  order_index: z.coerce.number().int().min(1, { message: "Thứ tự từ 1 trở lên" }),
+  order_index: z.coerce
+    .number()
+    .int()
+    .min(1, { message: "Thứ tự từ 1 trở lên" }),
 });
 
 export const lessonSchema = z.object({
@@ -93,7 +117,10 @@ export const lessonSchema = z.object({
   objectives: optionalText,
   content_summary: optionalText,
   planned_duration_minutes: optionalPositiveInt,
-  order_index: z.coerce.number().int().min(1, { message: "Thứ tự từ 1 trở lên" }),
+  order_index: z.coerce
+    .number()
+    .int()
+    .min(1, { message: "Thứ tự từ 1 trở lên" }),
 });
 
 // --- Tài liệu khóa học -------------------------------------------------------
@@ -109,7 +136,9 @@ const MATERIAL_VISIBILITIES = ["staff_only", "enrolled_students"] as const;
 const optionalUuid = z
   .union([z.literal(""), z.literal("none"), z.uuid()])
   .nullish()
-  .transform((v) => (v === undefined || v === null || v === "" || v === "none" ? null : v));
+  .transform((v) =>
+    v === undefined || v === null || v === "" || v === "none" ? null : v,
+  );
 
 const materialTitle = z
   .string()
@@ -130,12 +159,16 @@ export const materialRegisterSchema = z.object({
   title: materialTitle,
   module_id: optionalUuid,
   lesson_id: optionalUuid,
-  visibility: z.enum(MATERIAL_VISIBILITIES, { message: "Chọn phạm vi hiển thị" }),
+  visibility: z.enum(MATERIAL_VISIBILITIES, {
+    message: "Chọn phạm vi hiển thị",
+  }),
 });
 
 export const materialUpdateSchema = z.object({
   title: materialTitle,
-  visibility: z.enum(MATERIAL_VISIBILITIES, { message: "Chọn phạm vi hiển thị" }),
+  visibility: z.enum(MATERIAL_VISIBILITIES, {
+    message: "Chọn phạm vi hiển thị",
+  }),
 });
 
 export type MaterialRegisterInput = z.infer<typeof materialRegisterSchema>;

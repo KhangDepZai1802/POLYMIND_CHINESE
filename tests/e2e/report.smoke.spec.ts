@@ -23,7 +23,7 @@ test("Báo cáo lớp chỉ hiện lớp GV A dạy, số liệu khớp DB", asy
   );
 
   await page.goto("/login");
-  await page.fill('input[name="email"]', "gv.a@polymind.test");
+  await page.fill('input[name="identifier"]', "gv.a@polymind.test");
   await page.fill('input[name="password"]', "Polymind@2026");
   await page.click('button[type="submit"]');
   await page.waitForURL("**/teacher");

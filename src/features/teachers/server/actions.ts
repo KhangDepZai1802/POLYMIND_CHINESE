@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  teacherCredentialsSchema,
   teacherSchema,
   teacherUpdateSchema,
 } from "@/features/teachers/schema";
-import { inviteUser, resendInvite, setUserActive } from "@/features/users/server/invite";
+import { provisionPasswordAccount } from "@/features/users/server/account";
+import { setUserActive } from "@/features/users/server/invite";
 import {
   dbErrorToMessage,
   zodToActionState,
@@ -35,14 +37,16 @@ export async function createTeacherAction(
 
   const input = parsed.data;
 
-  const invited = await inviteUser({
-    email: input.email,
+  const account = await provisionPasswordAccount({
+    username: input.username,
+    password: input.password,
     fullName: input.full_name,
     role: "teacher",
     phone: input.phone,
+    contactEmail: input.email,
   });
 
-  if (!invited.ok) return { error: invited.error };
+  if (!account.ok) return { error: account.error };
 
   // Dùng admin client: `teachers` chưa có dòng nào cho user này nên RLS của
   // super_admin vẫn insert được, nhưng nếu email đã tồn tại và profile vừa được
@@ -52,8 +56,7 @@ export async function createTeacherAction(
   const { data, error } = await admin
     .from("teachers")
     .insert({
-      user_id: invited.userId,
-      teacher_code: input.teacher_code,
+      user_id: account.userId,
       specialization: input.specialization,
       bio: input.bio,
     })
@@ -61,10 +64,13 @@ export async function createTeacherAction(
     .single();
 
   if (error) {
+    if (account.created) {
+      await admin.auth.admin.deleteUser(account.userId);
+    }
     return {
       error:
         error.code === "23505"
-          ? "Mã giáo viên đã tồn tại, hoặc người này đã là giáo viên."
+          ? "Người này đã có hồ sơ giáo viên."
           : dbErrorToMessage(error),
     };
   }
@@ -74,15 +80,11 @@ export async function createTeacherAction(
     action: "teacher.create",
     resourceType: "teacher",
     resourceId: data.id,
-    after: { teacher_code: data.teacher_code, email: input.email },
+    after: { teacher_code: data.teacher_code, username: input.username },
   });
 
   revalidatePath("/admin/teachers");
-  return {
-    success: invited.alreadyExisted
-      ? `Đã liên kết giáo viên với tài khoản ${input.email} (tài khoản đã tồn tại).`
-      : `Đã tạo giáo viên và gửi lời mời tới ${input.email}.`,
-  };
+  return { success: `Đã tạo giáo viên và cấp tài khoản ${input.username}.` };
 }
 
 export async function updateTeacherAction(
@@ -94,7 +96,7 @@ export async function updateTeacherAction(
   const parsed = teacherUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
-  const { id, full_name, phone, teacher_code, specialization, bio } = parsed.data;
+  const { id, full_name, phone, specialization, bio } = parsed.data;
 
   const supabase = await createClient();
 
@@ -108,7 +110,7 @@ export async function updateTeacherAction(
 
   const { error } = await supabase
     .from("teachers")
-    .update({ teacher_code, specialization, bio })
+    .update({ specialization, bio })
     .eq("id", id);
 
   if (error) return { error: dbErrorToMessage(error) };
@@ -126,7 +128,7 @@ export async function updateTeacherAction(
     action: "teacher.update",
     resourceType: "teacher",
     resourceId: id,
-    after: { teacher_code, full_name },
+    after: { full_name },
   });
 
   revalidatePath("/admin/teachers");
@@ -168,7 +170,8 @@ export async function toggleTeacherActiveAction(
   if (error) return { error: dbErrorToMessage(error) };
 
   const result = await setUserActive(teacher.user_id, activate);
-  if (!result.ok) return { error: result.error ?? "Không đổi được trạng thái." };
+  if (!result.ok)
+    return { error: result.error ?? "Không đổi được trạng thái." };
 
   await logAudit(supabase, {
     action: activate ? "teacher.activate" : "teacher.deactivate",
@@ -185,17 +188,46 @@ export async function toggleTeacherActiveAction(
   };
 }
 
-export async function resendTeacherInviteAction(
+export async function resetTeacherPasswordAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   await requireRole("super_admin");
 
-  const email = formData.get("email");
-  if (typeof email !== "string" || !email) return { error: "Thiếu email." };
+  const parsed = teacherCredentialsSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) return zodToActionState(parsed.error);
 
-  const result = await resendInvite(email);
-  if (!result.ok) return { error: `Không gửi lại được lời mời: ${result.error}` };
+  const supabase = await createClient();
+  const { data: teacher } = await supabase
+    .from("teachers")
+    .select(
+      "id, user_id, profile:profiles!fk_teachers_profile(full_name, phone, email)",
+    )
+    .eq("id", parsed.data.id)
+    .maybeSingle();
 
-  return { success: `Đã gửi lại lời mời tới ${email}.` };
+  if (!teacher?.profile) return { error: "Không tìm thấy giáo viên." };
+
+  const result = await provisionPasswordAccount({
+    userId: teacher.user_id,
+    username: parsed.data.username,
+    password: parsed.data.password,
+    fullName: teacher.profile.full_name,
+    phone: teacher.profile.phone,
+    contactEmail: teacher.profile.email,
+    role: "teacher",
+  });
+  if (!result.ok) return { error: result.error };
+
+  await logAudit(supabase, {
+    action: "teacher.password_reset",
+    resourceType: "teacher",
+    resourceId: teacher.id,
+    after: { username: parsed.data.username },
+  });
+
+  revalidatePath("/admin/teachers");
+  return { success: "Đã cập nhật tên đăng nhập và mật khẩu." };
 }

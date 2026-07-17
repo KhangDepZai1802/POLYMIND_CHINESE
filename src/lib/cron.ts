@@ -10,14 +10,20 @@ import type { Database } from "@/types/database";
 type CronRpcName = Extract<
   keyof Database["public"]["Functions"],
   | "run_session_reminders"
-  | "run_assignment_due_reminders"
   | "run_invoice_overdue"
+  | "finalize_expired_exam_attempts"
+  | "finalize_assessment_attempts"
 >;
 
 export async function runCron(request: Request, rpc: CronRpcName) {
   const { CRON_SECRET } = getServerEnv();
 
-  if (!hasValidCronAuthorization(request.headers.get("authorization"), CRON_SECRET)) {
+  if (
+    !hasValidCronAuthorization(
+      request.headers.get("authorization"),
+      CRON_SECRET,
+    )
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

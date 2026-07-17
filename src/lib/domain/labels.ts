@@ -17,8 +17,14 @@ export const COURSE_TYPE_LABELS: Record<Enums["course_type"], string> = {
   communication: "Giao tiếp",
   kids: "Thiếu nhi",
   exam_prep: "Luyện thi",
-  business_custom: "Doanh nghiệp (B2B)",
   custom: "Tùy chỉnh",
+};
+
+export const CORE_COURSE_TYPE_LABELS = COURSE_TYPE_LABELS;
+
+export const COURSE_PROGRAM_LABELS: Record<Enums["course_program"], string> = {
+  core: "Chương trình cốt lõi",
+  business: "Chương trình doanh nghiệp",
 };
 
 export const COURSE_STATUS_LABELS: Record<Enums["course_status"], string> = {
@@ -41,12 +47,6 @@ export const DELIVERY_MODE_LABELS: Record<Enums["delivery_mode"], string> = {
   hybrid: "Kết hợp",
   in_house: "Tại doanh nghiệp",
 };
-
-export const ASSIGNMENT_ROLE_LABELS: Record<Enums["assignment_role"], string> =
-  {
-    primary: "Giáo viên chính",
-    assistant: "Trợ giảng",
-  };
 
 export const SESSION_STATUS_LABELS: Record<Enums["session_status"], string> = {
   scheduled: "Đã lên lịch",
@@ -84,24 +84,6 @@ export const LESSON_PROGRESS_LABELS: Record<
   not_started: "Chưa học",
   in_progress: "Đang học",
   completed: "Đã hoàn thành",
-};
-
-export const ASSIGNMENT_STATUS_LABELS: Record<
-  Enums["assignment_status"],
-  string
-> = {
-  draft: "Nháp",
-  published: "Đã giao",
-  closed: "Đã đóng",
-};
-
-export const SUBMISSION_STATUS_LABELS: Record<
-  Enums["submission_status"],
-  string
-> = {
-  submitted: "Đã nộp",
-  graded: "Đã chấm",
-  returned: "Đã trả bài",
 };
 
 export const ASSESSMENT_TYPE_LABELS: Record<Enums["assessment_type"], string> =
@@ -171,6 +153,12 @@ export const NOTIFICATION_TYPE_LABELS: Record<
   invoice_due: "Học phí sắp đến hạn",
   invoice_overdue: "Học phí quá hạn",
   announcement: "Thông báo chung",
+  exercise_assigned: "Bài tập mới",
+  exercise_returned: "Bài tập được trả lại",
+  exercise_result_published: "Kết quả bài tập",
+  exam_scheduled: "Lịch kiểm tra/thi",
+  exam_opening: "Kỳ thi sắp mở",
+  exam_result_published: "Kết quả kiểm tra/thi",
 };
 
 /**
@@ -216,24 +204,6 @@ export const SESSION_STATUS_TONE: Record<Enums["session_status"], BadgeTone> = {
   completed: "success",
   cancelled: "danger",
   rescheduled: "warning",
-};
-
-export const ASSIGNMENT_STATUS_TONE: Record<
-  Enums["assignment_status"],
-  BadgeTone
-> = {
-  draft: "neutral",
-  published: "success",
-  closed: "warning",
-};
-
-export const SUBMISSION_STATUS_TONE: Record<
-  Enums["submission_status"],
-  BadgeTone
-> = {
-  submitted: "info",
-  graded: "success",
-  returned: "warning",
 };
 
 export const COURSE_STATUS_TONE: Record<Enums["course_status"], BadgeTone> = {

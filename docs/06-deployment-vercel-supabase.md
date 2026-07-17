@@ -1,6 +1,6 @@
 # 06 — Deploy: Vercel + Supabase
 
-> **Trạng thái hiện tại: chưa deploy.** Chưa có credential Supabase cloud và Vercel (xem `BLOCKERS` trong [`WORKLOG.md`](../WORKLOG.md)).
+> **Trạng thái hiện tại (2026-07-16): đã deploy production.** Supabase migration 1–53 và alias Vercel `https://polymind-chinese-one.vercel.app` đã qua health/anonymous/cron-secret smoke; backup trước cleanup nằm ngoài repo tại `C:\tmp\polymind-chinese-backup-20260716`.
 > Cho tới khi có credential, trạng thái đúng là **"ready to deploy, blocked by credentials"** — **không được gọi là "đã deploy"**.
 
 ---
@@ -58,7 +58,7 @@ psql "$DATABASE_URL" -f supabase/seed.sql
 
 **Bắt buộc kiểm sau khi push:**
 - [ ] Mọi bảng đã `ENABLE ROW LEVEL SECURITY` (Dashboard → Database → Tables, cột RLS)
-- [ ] 5 bucket Storage đều **private**
+- [x] 4 bucket Storage đều **private**
 - [ ] Auth: **tắt public sign-up** (Dashboard → Authentication → Providers → Email → Enable signup = **off**)
 - [ ] Auth: cấu hình Site URL + Redirect URLs trỏ về domain Vercel
 - [ ] Email invite/reset hoạt động (Supabase SMTP mặc định có rate limit thấp — production nên gắn SMTP riêng)
@@ -87,14 +87,13 @@ psql "$DATABASE_URL" -f supabase/seed.sql
 {
   "crons": [
     { "path": "/api/cron/session-reminders", "schedule": "0 1 * * *" },
-    { "path": "/api/cron/assignment-due",    "schedule": "30 1 * * *" },
     { "path": "/api/cron/invoice-overdue",   "schedule": "0 2 * * *" }
   ]
 }
 ```
 *(Giờ UTC. `0 1 * * *` UTC = 08:00 giờ Việt Nam.)*
 
-Route cron xác thực bằng `Authorization: Bearer ${CRON_SECRET}` — thiếu/sai → **401**.
+Route cron HTTP xác thực bằng `Authorization: Bearer ${CRON_SECRET}` — thiếu/sai → **401**. Assessment finalizer cần chạy mỗi phút nên dùng Supabase `pg_cron` (`assessment-attempt-finalizer`), tránh giới hạn cron hằng ngày của Vercel Hobby.
 
 ---
 
@@ -155,7 +154,7 @@ Giữ cùng một `backup_id`/timestamp cho database và Storage. Mỗi backup p
 
 ### 7.2. Backup Storage
 
-Năm bucket hiện tại: `avatars`, `course-materials`, `assignment-files`, `submissions`, `student-documents`; tất cả phải private. Với từng bucket:
+Bốn bucket hiện tại: `avatars`, `course-materials`, `student-documents`, `question-media`; tất cả phải private. Với từng bucket:
 
 1. Liệt kê toàn bộ object thành manifest gồm `bucket_id`, `name/object_path`, `size`, `updated_at`, checksum nếu có.
 2. Tải **byte thô** từng object vào `<backup-dir>/storage/<bucket>/<object_path>`; không pipe qua PowerShell (xem luật UTF-8 trong `AGENTS.md`).
@@ -178,7 +177,7 @@ psql --single-transaction --variable ON_ERROR_STOP=1 \
   --dbname "$RESTORE_DATABASE_URL"
 ```
 
-Sau DB, upload lại Storage đúng bucket/path rồi mới mở app. Kiểm bắt buộc: migration history, 33 bảng public đều bật RLS, 5 bucket private, số row các bảng trọng yếu, số object/tổng byte, signed download và một file UTF-8 mở đúng. Chỉ coi backup dùng được khi một restore rehearsal gần nhất đã hoàn tất và kết quả được ghi vào nhật ký vận hành.
+Sau DB, upload lại Storage đúng bucket/path rồi mới mở app. Kiểm bắt buộc: migration history, 50 bảng public đều bật RLS, 4 bucket private, số row các bảng trọng yếu, số object/tổng byte, signed download và một file UTF-8 mở đúng. Chỉ coi backup dùng được khi một restore rehearsal gần nhất đã hoàn tất và kết quả được ghi vào nhật ký vận hành.
 
 ---
 
@@ -252,4 +251,4 @@ Thứ tự release production:
 | 5 | Project ref | Trong URL dashboard | BLK-1 |
 | 6 | Tài khoản Vercel + quyền link repo | vercel.com | BLK-2 |
 
-Có đủ 6 mục này → chạy được `P7-T7`.
+Có đủ 6 mục này → release/deploy lại được an toàn; lần gần nhất hoàn tất ngày 2026-07-16.

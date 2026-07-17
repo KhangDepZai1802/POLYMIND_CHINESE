@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
+import { useNavProgress } from "@/components/shared/use-nav-progress";
 import {
   Select,
   SelectContent,
@@ -29,23 +30,32 @@ export function ClassPicker({
   basePath?: string;
   placeholder?: string;
 }) {
-  const router = useRouter();
+  const { navigate, isPending } = useNavProgress();
 
   return (
-    <Select
-      value={selectedId ?? ""}
-      onValueChange={(id) => router.push(`${basePath}?class=${id}`)}
-    >
-      <SelectTrigger className="w-full sm:w-80">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {classes.map((c) => (
-          <SelectItem key={c.id} value={c.id}>
-            {c.code} — {c.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="relative w-full sm:w-80">
+      <Select
+        value={selectedId ?? ""}
+        disabled={isPending}
+        onValueChange={(id) => navigate(`${basePath}?class=${id}`)}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {classes.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.code} — {c.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {isPending && (
+        <Loader2
+          className="text-muted-foreground absolute top-1/2 right-9 size-4 -translate-y-1/2 animate-spin"
+          aria-hidden
+        />
+      )}
+    </div>
   );
 }

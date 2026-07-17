@@ -72,10 +72,7 @@ export default async function AdminClassesPage() {
                   </TableHeader>
                   <TableBody>
                     {classes.map((classRecord) => {
-                      const primary = classRecord.class_teachers.find(
-                        (assignment) =>
-                          assignment.assignment_role === "primary",
-                      );
+                      const primary = classRecord.class_teachers;
                       const openCount = classRecord.enrollments.filter(
                         (enrollment) =>
                           OPEN_ENROLLMENT_STATUSES.has(enrollment.status),
@@ -137,9 +134,7 @@ export default async function AdminClassesPage() {
 
               <ul className="divide-y lg:hidden">
                 {classes.map((classRecord) => {
-                  const primary = classRecord.class_teachers.find(
-                    (assignment) => assignment.assignment_role === "primary",
-                  );
+                  const primary = classRecord.class_teachers;
                   const openCount = classRecord.enrollments.filter(
                     (enrollment) =>
                       OPEN_ENROLLMENT_STATUSES.has(enrollment.status),

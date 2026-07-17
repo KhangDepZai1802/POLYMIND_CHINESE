@@ -2,7 +2,14 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(13);
+
+select has_extension('pg_cron', 'Có pg_cron cho assessment finalizer');
+select is(
+  (select schedule from cron.job where jobname = 'assessment-attempt-finalizer'),
+  '* * * * *',
+  'assessment finalizer chạy mỗi phút trong DB'
+);
 
 select ok(
   has_function_privilege('service_role', 'public.run_session_reminders(timestamptz)', 'EXECUTE'),
@@ -11,10 +18,6 @@ select ok(
 select ok(
   not has_function_privilege('authenticated', 'public.run_session_reminders(timestamptz)', 'EXECUTE'),
   'user role không gọi được session reminder'
-);
-select ok(
-  not has_function_privilege('authenticated', 'public.run_assignment_due_reminders(timestamptz)', 'EXECUTE'),
-  'user role không gọi được assignment reminder'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.run_invoice_overdue(timestamptz)', 'EXECUTE'),
@@ -105,48 +108,6 @@ values
     'scheduled'
   );
 
-insert into public.assignments (
-  id, class_id, title, due_at, status, published_at, created_by
-)
-values
-  (
-    'e6000000-0000-0000-0000-000000000001',
-    'e3000000-0000-0000-0000-000000000001',
-    'Bài chưa nộp',
-    '2026-07-15 13:00+00',
-    'published',
-    '2026-07-14 01:00+00',
-    'e0000000-0000-0000-0000-000000000001'
-  ),
-  (
-    'e6000000-0000-0000-0000-000000000002',
-    'e3000000-0000-0000-0000-000000000001',
-    'Bài đã nộp',
-    '2026-07-15 13:00+00',
-    'published',
-    '2026-07-14 01:00+00',
-    'e0000000-0000-0000-0000-000000000001'
-  );
-
--- INSERT luôn bị trigger ép về draft; mô phỏng publish sau khi tạo.
-update public.assignments
-set status = 'published', published_at = '2026-07-14 01:00+00'
-where id in (
-  'e6000000-0000-0000-0000-000000000001',
-  'e6000000-0000-0000-0000-000000000002'
-);
-
-insert into public.submissions (
-  id, assignment_id, enrollment_id, submitted_at, status
-)
-values (
-  'e7000000-0000-0000-0000-000000000001',
-  'e6000000-0000-0000-0000-000000000002',
-  'e4000000-0000-0000-0000-000000000001',
-  '2026-07-15 00:30+00',
-  'submitted'
-);
-
 insert into public.tuition_invoices (
   id, invoice_code, student_id, issue_date, due_date,
   subtotal, discount, total, status
@@ -177,22 +138,6 @@ select is(
   (public.run_session_reminders('2026-07-15 01:00+00')->>'notifications_created')::integer,
   0,
   'chạy lại session cron không tạo trùng'
-);
-
-select is(
-  (public.run_assignment_due_reminders('2026-07-15 01:00+00')->>'notifications_created')::integer,
-  1,
-  'assignment cron chỉ nhắc bài chưa nộp trong 24 giờ'
-);
-select is(
-  (select resource_id from public.notifications where type = 'assignment_due'),
-  'e6000000-0000-0000-0000-000000000001'::uuid,
-  'assignment notification trỏ đúng bài chưa nộp'
-);
-select is(
-  (public.run_assignment_due_reminders('2026-07-15 01:00+00')->>'notifications_created')::integer,
-  0,
-  'chạy lại assignment cron không tạo trùng'
 );
 
 select is(

@@ -28,7 +28,7 @@ Hàm thuần trong `lib/domain/`, **không phụ thuộc DB** → test nhanh, ch
 | Sĩ số lớp | Đủ chỗ → cho ghi danh · đầy → từ chối · `capacity` phải > 0 |
 | Enrollment transitions | Bảng chuyển trạng thái hợp lệ (docs/03 §3) · chuyển sai → từ chối · `completed`/`withdrawn`/`transferred` là trạng thái cuối |
 | Chuyên cần | Tỷ lệ = (present + late) / tổng buổi đã diễn ra · buổi `cancelled` **không** tính vào mẫu số |
-| Bài tập | Nộp sau `due_at` → `is_late` · `allow_late_submission = false` → chặn · `max_attempts` |
+| Bài tập engine | Window/lượt/phạt trễ · autosave/resume · submit idempotent · grading method/release mode |
 | Điểm & xếp loại | `0 ≤ score ≤ max_score` · điểm trung bình có trọng số · **xếp loại tra từ `grading_scale_rules`** (không hard-code) |
 | Hoàn thành khóa | Đủ chuyên cần + đủ điểm → "đủ điều kiện" · thiếu một trong hai → "chưa đủ" + nêu rõ thiếu gì |
 | Số dư hóa đơn | `balance = total − SUM(payments)` · partial / paid / overdue / refund |
@@ -64,10 +64,10 @@ Kiểm **đủ** SELECT / INSERT / UPDATE / DELETE cho mỗi bảng, cộng RPC 
 - [ ] Student A đọc hồ sơ / điểm / bài nộp / hóa đơn của Student B → **denied**
 - [ ] Đọc **roster** lớp mình (danh sách học viên khác) → **denied**
 - [ ] Đọc `student_notes` có `visibility = 'staff_only'` → **denied**
-- [ ] Đọc `assessment_results` **chưa publish** → **denied**
+- [ ] Đọc điểm/answer key exercise hoặc exam **chưa release** → **denied**
 - [ ] Đọc `learning_evaluations` chưa publish hoặc `visible_to_student = false` → **denied**
-- [ ] Đọc `assignments` chưa publish → **denied**
-- [ ] Tự sửa `score` / `feedback` trên submission của mình → **denied**
+- [ ] Đọc delivery draft/ngoài lớp hoặc attempt của học viên khác → **denied**
+- [ ] Tự sửa `final_score` / `feedback` trên attempt/answer của mình → **denied**
 - [ ] Tự sửa `attendance_records` → **denied**
 - [ ] INSERT `tuition_payments` (tự ghi nhận đã trả tiền) → **denied**
 - [ ] Sửa `profiles.role` hoặc `profiles.is_active` của chính mình → **denied**
@@ -75,7 +75,7 @@ Kiểm **đủ** SELECT / INSERT / UPDATE / DELETE cho mỗi bảng, cộng RPC 
 
 ### Teacher
 - [ ] Teacher A đọc/sửa lớp **không được phân công** → **denied**
-- [ ] Chấm submission của **lớp khác** → **denied**
+- [ ] Chấm exercise/exam attempt của **lớp khác** → **denied**
 - [ ] INSERT/UPDATE `class_teachers` (tự gán mình sang lớp khác) → **denied**
 - [ ] Đọc **bất kỳ bảng tuition nào** (4 bảng) → **denied**
 - [ ] Đọc `audit_logs` → **denied**
@@ -111,7 +111,7 @@ Kiểm **đủ** SELECT / INSERT / UPDATE / DELETE cho mỗi bảng, cộng RPC 
 
 ## 6. Component / UI
 
-Form validation + error + loading + empty state · attendance roster bulk action · assignment submission + upload state · grade draft/publish · responsive navigation theo role · unsaved changes warning · confirmation cho mutation nhạy cảm.
+Form validation + error + loading + empty state · attendance roster bulk action · question/set builder · autosave/submit/grading/release · exam timer/clipboard/IME · responsive navigation theo role · unsaved changes warning · confirmation cho mutation nhạy cảm.
 
 ---
 

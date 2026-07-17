@@ -29,7 +29,7 @@
 | 4 | M04 | Students | CRUD hồ sơ, guardian (field, **không phải role**), link tài khoản | P3 | High | Pending | Not Required | Not Started |
 | 5 | M05 | Teachers | CRUD hồ sơ, `teacher_code`, phân công lớp | P3 | Medium | Pending | Not Required | Not Started |
 | 6 | M06 | Courses & Curriculum | Level, Course, Module, Lesson, Materials | P3 | Medium | **Bugs Found** | **Fixed** | Not Started |
-| 7 | M07 | Classes | Lớp triển khai, sĩ số, hình thức, địa điểm, GV chính/trợ giảng | P3 | High | Pending | Not Required | Not Started |
+| 7 | M07 | Classes | Lớp triển khai, sĩ số, hình thức, địa điểm, một GV phụ trách | P3, P7 | High | Pending | Not Required | Not Started |
 | 8 | M08 | Schedules & Sessions | Lịch lặp, **sinh buổi idempotent**, đổi lịch/học bù, lớp linh hoạt | P3, P4 | **High** | **Bugs Found** | **Fixed** | Not Started |
 | 9 | M09 | Enrollments | Ghi danh (**capacity race**), tạm dừng, **chuyển lớp giữ lịch sử**, rút, hoàn thành | P3 | **High** | Pending | Not Required | Not Started |
 | 10 | M10 | Attendance | Bulk upsert (**không sinh trùng**), class-match trigger, attribution actor thật | P4 | **High** | Pending | Not Required | Not Started |

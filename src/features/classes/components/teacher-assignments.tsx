@@ -18,11 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ASSIGNMENT_ROLE_LABELS } from "@/lib/domain/labels";
 import { useFormAction } from "@/lib/use-form-action";
-import type { Database } from "@/types/database";
-
-type AssignmentRole = Database["public"]["Enums"]["assignment_role"];
 
 type TeacherOption = {
   id: string;
@@ -33,7 +29,6 @@ type TeacherOption = {
 type Assignment = {
   id: string;
   teacher_id: string;
-  assignment_role: AssignmentRole;
   teacher: {
     id: string;
     teacher_code: string;
@@ -48,67 +43,55 @@ type Assignment = {
 
 export function TeacherAssignments({
   classId,
-  assignments,
+  assignment,
   teachers,
 }: {
   classId: string;
-  assignments: Assignment[];
+  assignment: Assignment | null;
   teachers: TeacherOption[];
 }) {
   const { state, formAction } = useFormAction(assignTeacherAction);
-  const sortedAssignments = [...assignments].sort((a, b) =>
-    a.assignment_role === b.assignment_role
-      ? (a.teacher?.teacher_code ?? "").localeCompare(
-          b.teacher?.teacher_code ?? "",
-        )
-      : a.assignment_role === "primary"
-        ? -1
-        : 1,
-  );
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Đội ngũ giảng dạy</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        {sortedAssignments.length === 0 ? (
+        {!assignment ? (
           <div className="bg-muted/40 rounded-lg border border-dashed p-4 text-sm">
             <p className="font-medium">Chưa phân công giáo viên</p>
             <p className="text-muted-foreground mt-1 text-xs">
-              Lớp phải có đúng một giáo viên chính trước khi chuyển sang Đang
+              Lớp phải có một giáo viên phụ trách trước khi chuyển sang Đang
               học.
             </p>
           </div>
         ) : (
           <ul className="divide-y rounded-lg border">
-            {sortedAssignments.map((assignment) => (
-              <li key={assignment.id} className="flex items-center gap-3 p-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium">
-                      {assignment.teacher?.profile?.full_name ?? "Giáo viên"}
-                    </p>
-                    <span className="bg-muted rounded px-1.5 py-0.5 text-xs">
-                      {ASSIGNMENT_ROLE_LABELS[assignment.assignment_role]}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    {assignment.teacher?.teacher_code ?? "—"}
-                    {assignment.teacher?.specialization
-                      ? ` · ${assignment.teacher.specialization}`
-                      : ""}
+            <li className="flex items-center gap-3 p-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium">
+                    {assignment.teacher?.profile?.full_name ?? "Giáo viên"}
                   </p>
+                  <span className="bg-muted rounded px-1.5 py-0.5 text-xs">
+                    Giáo viên phụ trách
+                  </span>
                 </div>
-                <RemoveAssignmentButton
-                  id={assignment.id}
-                  classId={classId}
-                  teacherName={
-                    assignment.teacher?.profile?.full_name ?? "giáo viên"
-                  }
-                />
-              </li>
-            ))}
+                <p className="text-muted-foreground text-xs">
+                  {assignment.teacher?.teacher_code ?? "—"}
+                  {assignment.teacher?.specialization
+                    ? ` · ${assignment.teacher.specialization}`
+                    : ""}
+                </p>
+              </div>
+              <RemoveAssignmentButton
+                id={assignment.id}
+                classId={classId}
+                teacherName={
+                  assignment.teacher?.profile?.full_name ?? "giáo viên"
+                }
+              />
+            </li>
           </ul>
         )}
 
@@ -116,7 +99,9 @@ export function TeacherAssignments({
           <input type="hidden" name="class_id" value={classId} />
           <div className="flex items-center gap-2">
             <UserPlus className="text-muted-foreground size-4" aria-hidden />
-            <p className="text-sm font-medium">Thêm phân công</p>
+            <p className="text-sm font-medium">
+              {assignment ? "Đổi giáo viên phụ trách" : "Phân công giáo viên"}
+            </p>
           </div>
 
           {state.error && (
@@ -126,7 +111,7 @@ export function TeacherAssignments({
             </Alert>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
             <div className="space-y-2">
               <Label htmlFor="teacher_id">Giáo viên</Label>
               <Select name="teacher_id" required>
@@ -144,25 +129,9 @@ export function TeacherAssignments({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="assignment_role">Vai trò</Label>
-              <Select name="assignment_role" defaultValue="assistant">
-                <SelectTrigger id="assignment_role" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ASSIGNMENT_ROLE_LABELS).map(
-                    ([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <SubmitButton className="w-full sm:w-auto">Phân công</SubmitButton>
+            <SubmitButton className="w-full sm:w-auto">
+              {assignment ? "Đổi giáo viên" : "Phân công"}
+            </SubmitButton>
           </div>
         </form>
       </CardContent>

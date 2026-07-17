@@ -99,41 +99,32 @@ export function ClassFormDialog({
             </Alert>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="class-code">Mã lớp *</Label>
-              <Input
-                id="class-code"
-                name="code"
-                required
-                defaultValue={classRecord?.code}
-                placeholder="LOP-HSK1-01"
-                className="uppercase"
-              />
-              <FieldError message={fe["code"]} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="class-course">Khóa học *</Label>
-              <Select
-                name="course_id"
-                defaultValue={classRecord?.course_id}
-                required
-              >
-                <SelectTrigger id="class-course" className="w-full">
-                  <SelectValue placeholder="Chọn khóa học" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.code} — {course.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FieldError message={fe["course_id"]} />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="class-course">Khóa học *</Label>
+            <Select
+              name="course_id"
+              defaultValue={classRecord?.course_id}
+              required
+            >
+              <SelectTrigger id="class-course" className="w-full">
+                <SelectValue placeholder="Chọn khóa học" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.code} — {course.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldError message={fe["course_id"]} />
           </div>
+
+          {!isEdit && (
+            <p className="text-muted-foreground text-xs">
+              Mã lớp được hệ thống tự sinh sau khi lưu.
+            </p>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="class-name">Tên lớp *</Label>

@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import {
-  inviteStudentSchema,
+  studentAccountSchema,
   studentSchema,
   studentUpdateSchema,
 } from "@/features/students/schema";
-import { inviteUser } from "@/features/users/server/invite";
+import { provisionPasswordAccount } from "@/features/users/server/account";
 import {
   dbErrorToMessage,
   zodToActionState,
@@ -42,14 +42,7 @@ export async function createStudentAction(
     .select("id, student_code, full_name")
     .single();
 
-  if (error) {
-    return {
-      error:
-        error.code === "23505"
-          ? "Mã học viên đã tồn tại. Vui lòng dùng mã khác."
-          : dbErrorToMessage(error),
-    };
-  }
+  if (error) return { error: dbErrorToMessage(error) };
 
   await logAudit(supabase, {
     action: "student.create",
@@ -88,7 +81,7 @@ export async function updateStudentAction(
     resourceType: "student",
     resourceId: id,
     before,
-    after: { student_code: fields.student_code, full_name: fields.full_name },
+    after: { full_name: fields.full_name },
   });
 
   revalidatePath("/admin/students");
@@ -102,16 +95,16 @@ export async function updateStudentAction(
  * Link `students.user_id` với `auth.users.id`. Từ lúc này học viên đăng nhập
  * được và RLS `app.my_student_id()` bắt đầu nhận ra họ.
  */
-export async function inviteStudentAction(
+export async function provisionStudentAccountAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   await requireRole("super_admin");
 
-  const parsed = inviteStudentSchema.safeParse(Object.fromEntries(formData));
+  const parsed = studentAccountSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
-  const { id, email } = parsed.data;
+  const { id, email, username, password } = parsed.data;
   const supabase = await createClient();
 
   const { data: student } = await supabase
@@ -122,24 +115,22 @@ export async function inviteStudentAction(
 
   if (!student) return { error: "Không tìm thấy học viên." };
 
-  if (student.user_id) {
-    return { error: "Học viên này đã có tài khoản." };
-  }
-
-  const invited = await inviteUser({
-    email,
+  const account = await provisionPasswordAccount({
+    userId: student.user_id,
+    username,
+    password,
     fullName: student.full_name,
     role: "student",
     phone: student.phone,
-    redirectPath: "/accept-invite",
+    contactEmail: email,
   });
 
-  if (!invited.ok) return { error: invited.error };
+  if (!account.ok) return { error: account.error };
 
   const admin = createAdminClient();
   const { error } = await admin
     .from("students")
-    .update({ user_id: invited.userId, email })
+    .update({ user_id: account.userId, email })
     .eq("id", id);
 
   if (error) {
@@ -152,18 +143,20 @@ export async function inviteStudentAction(
   }
 
   await logAudit(supabase, {
-    action: "student.invite",
+    action: student.user_id
+      ? "student.password_reset"
+      : "student.account_create",
     resourceType: "student",
     resourceId: id,
-    after: { email },
+    after: { username, email },
   });
 
   revalidatePath("/admin/students");
   revalidatePath(`/admin/students/${id}`);
   return {
-    success: invited.alreadyExisted
-      ? `Đã liên kết học viên với tài khoản ${email} (tài khoản đã tồn tại).`
-      : `Đã gửi lời mời tới ${email}.`,
+    success: student.user_id
+      ? "Đã cập nhật tên đăng nhập và mật khẩu."
+      : `Đã cấp tài khoản ${username} cho học viên.`,
   };
 }
 

@@ -59,9 +59,7 @@ export function ResetPasswordForm({
               required
               minLength={8}
             />
-            <p className="text-muted-foreground text-xs">
-              Ít nhất 8 ký tự.
-            </p>
+            <p className="text-muted-foreground text-xs">Ít nhất 8 ký tự.</p>
           </div>
 
           <div className="space-y-2">

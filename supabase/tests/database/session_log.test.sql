@@ -66,11 +66,10 @@ values (
   10, 10, 90, date '2026-07-20', 'offline', 'planned'
 );
 
-insert into public.class_teachers (class_id, teacher_id, assignment_role)
+insert into public.class_teachers (class_id, teacher_id)
 values (
   '75000000-0000-0000-0000-000000000001',
-  '71000000-0000-0000-0000-000000000001',
-  'primary'
+  '71000000-0000-0000-0000-000000000001'
 );
 
 insert into public.students (id, student_code, full_name)

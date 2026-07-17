@@ -47,10 +47,10 @@ values
   ('e4000000-0000-0000-0000-000000000001', 'ANN-CLASS-A', 'e3000000-0000-0000-0000-000000000001', 'Lớp nhận announcement', 10, 10, 90, '2026-07-20', 'offline', 'planned'),
   ('e4000000-0000-0000-0000-000000000002', 'ANN-CLASS-B', 'e3000000-0000-0000-0000-000000000001', 'Lớp không liên quan', 10, 10, 90, '2026-07-20', 'offline', 'planned');
 
-insert into public.class_teachers (class_id, teacher_id, assignment_role)
+insert into public.class_teachers (class_id, teacher_id)
 values
-  ('e4000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000002', 'primary'),
-  ('e4000000-0000-0000-0000-000000000002', 'e1000000-0000-0000-0000-000000000003', 'primary');
+  ('e4000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000002'),
+  ('e4000000-0000-0000-0000-000000000002', 'e1000000-0000-0000-0000-000000000003');
 
 insert into public.enrollments (id, student_id, class_id, status)
 values
@@ -325,4 +325,3 @@ select throws_ok(
 
 select * from finish();
 rollback;
-

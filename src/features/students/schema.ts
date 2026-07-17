@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { adminPasswordSchema, usernameSchema } from "@/features/users/schema";
+
 const optionalText = z
   .string()
   .trim()
@@ -24,12 +26,6 @@ const optionalEmail = z
   .nullable();
 
 export const studentSchema = z.object({
-  student_code: z
-    .string()
-    .trim()
-    .min(2, { message: "Nhập mã học viên" })
-    .max(20)
-    .regex(/^[A-Z0-9-]+$/, { message: "Mã chỉ gồm chữ IN HOA, số và gạch ngang" }),
   full_name: z.string().trim().min(2, { message: "Nhập họ tên học viên" }),
   dob: optionalDate,
   gender: optionalText,
@@ -51,9 +47,11 @@ export const studentSchema = z.object({
 
 export const studentUpdateSchema = studentSchema.extend({ id: z.uuid() });
 
-export const inviteStudentSchema = z.object({
+export const studentAccountSchema = z.object({
   id: z.uuid(),
-  email: z.email({ message: "Email không hợp lệ" }),
+  username: usernameSchema,
+  password: adminPasswordSchema,
+  email: optionalEmail,
 });
 
 export type StudentInput = z.infer<typeof studentSchema>;

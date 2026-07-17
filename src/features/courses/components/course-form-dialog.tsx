@@ -31,19 +31,24 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/components/shared/submit-button";
 import {
+  CORE_COURSE_TYPE_LABELS,
+  COURSE_PROGRAM_LABELS,
   COURSE_STATUS_LABELS,
-  COURSE_TYPE_LABELS,
 } from "@/lib/domain/labels";
 import { useFormAction } from "@/lib/use-form-action";
+import type { Database } from "@/types/database";
 
 type Level = { id: string; code: string; name: string };
+type CourseProgram = Database["public"]["Enums"]["course_program"];
+type CourseType = Database["public"]["Enums"]["course_type"];
 
 type Course = {
   id: string;
   code: string;
   title: string;
   title_en: string | null;
-  course_type: string;
+  program: CourseProgram;
+  course_type: CourseType | null;
   level_id: string | null;
   target_audience: string | null;
   objectives: string | null;
@@ -53,7 +58,7 @@ type Course = {
   default_tuition_amount: number | null;
   completion_min_attendance_rate: number;
   completion_min_overall_score: number;
-  completion_require_all_assignments: boolean;
+  completion_require_all_exercises: boolean;
   status: string;
 };
 
@@ -73,6 +78,9 @@ export function CourseFormDialog({
 }) {
   const isEdit = Boolean(course);
   const [open, setOpen] = useState(false);
+  const [program, setProgram] = useState<CourseProgram>(
+    course?.program ?? "core",
+  );
 
   const { state, formAction } = useFormAction(
     isEdit ? updateCourseAction : createCourseAction,
@@ -94,9 +102,7 @@ export function CourseFormDialog({
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Sửa khóa học" : "Thêm khóa học"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Sửa khóa học" : "Thêm khóa học"}</DialogTitle>
           <DialogDescription>
             Khóa học là <strong>bản thiết kế</strong> chương trình. Việc mở lớp
             (sĩ số, giáo viên, lịch, ngày khai giảng) làm ở mục Lớp học.
@@ -115,38 +121,58 @@ export function CourseFormDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="code">Mã khóa học *</Label>
-              <Input
-                id="code"
-                name="code"
-                required
-                defaultValue={course?.code}
-                placeholder="HSK1"
-                className="uppercase"
-              />
-              <FieldError message={fe["code"]} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="course_type">Loại *</Label>
+              <Label htmlFor="program">Chương trình *</Label>
               <Select
-                name="course_type"
-                defaultValue={course?.course_type ?? "hsk"}
+                name="program"
+                value={program}
+                onValueChange={(value) => setProgram(value as CourseProgram)}
               >
-                <SelectTrigger id="course_type" className="w-full">
-                  <SelectValue placeholder="Chọn loại" />
+                <SelectTrigger id="program" className="w-full">
+                  <SelectValue placeholder="Chọn chương trình" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(COURSE_TYPE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
+                  {Object.entries(COURSE_PROGRAM_LABELS).map(
+                    ([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
-              <FieldError message={fe["course_type"]} />
+              <FieldError message={fe["program"]} />
             </div>
+
+            {program === "core" && (
+              <div className="space-y-2">
+                <Label htmlFor="course_type">Loại *</Label>
+                <Select
+                  name="course_type"
+                  defaultValue={course?.course_type ?? "hsk"}
+                >
+                  <SelectTrigger id="course_type" className="w-full">
+                    <SelectValue placeholder="Chọn loại" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CORE_COURSE_TYPE_LABELS).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+                <FieldError message={fe["course_type"]} />
+              </div>
+            )}
           </div>
+
+          {!isEdit && (
+            <p className="text-muted-foreground text-xs">
+              Mã khóa học được hệ thống tự sinh sau khi lưu.
+            </p>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="title">Tên khóa học *</Label>
@@ -173,10 +199,7 @@ export function CourseFormDialog({
 
             <div className="space-y-2">
               <Label htmlFor="level_id">Bậc năng lực</Label>
-              <Select
-                name="level_id"
-                defaultValue={course?.level_id ?? "none"}
-              >
+              <Select name="level_id" defaultValue={course?.level_id ?? "none"}>
                 <SelectTrigger id="level_id" className="w-full">
                   <SelectValue placeholder="Không gắn bậc" />
                 </SelectTrigger>
@@ -266,7 +289,9 @@ export function CourseFormDialog({
           </div>
 
           <div className="rounded-lg border p-4">
-            <p className="mb-1 text-sm font-medium">Điều kiện hoàn thành khóa</p>
+            <p className="mb-1 text-sm font-medium">
+              Điều kiện hoàn thành khóa
+            </p>
             <p className="text-muted-foreground mb-3 text-xs">
               Hệ thống chỉ <strong>tính</strong> và hiển thị &quot;đủ / chưa đủ
               điều kiện&quot;. Người xác nhận hoàn thành vẫn là giáo viên hoặc
@@ -309,12 +334,12 @@ export function CourseFormDialog({
 
             <div className="mt-4 flex items-center gap-2">
               <Checkbox
-                id="completion_require_all_assignments"
-                name="completion_require_all_assignments"
-                defaultChecked={course?.completion_require_all_assignments}
+                id="completion_require_all_exercises"
+                name="completion_require_all_exercises"
+                defaultChecked={course?.completion_require_all_exercises}
               />
               <Label
-                htmlFor="completion_require_all_assignments"
+                htmlFor="completion_require_all_exercises"
                 className="font-normal"
               >
                 Bắt buộc nộp đủ bài tập
@@ -346,7 +371,9 @@ export function CourseFormDialog({
             >
               Hủy
             </Button>
-            <SubmitButton>{isEdit ? "Lưu thay đổi" : "Tạo khóa học"}</SubmitButton>
+            <SubmitButton>
+              {isEdit ? "Lưu thay đổi" : "Tạo khóa học"}
+            </SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

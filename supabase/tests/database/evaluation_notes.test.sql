@@ -63,8 +63,8 @@ values (
   10, 10, 90, date '2026-07-20', 'offline', 'planned'
 );
 
-insert into public.class_teachers (class_id, teacher_id, assignment_role)
-values ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', 'primary');
+insert into public.class_teachers (class_id, teacher_id)
+values ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001');
 
 insert into public.students (id, student_code, full_name, user_id)
 values ('94000000-0000-0000-0000-000000000001', 'HV-EVAL-1', 'Học viên được đánh giá', '90000000-0000-0000-0000-000000000003');

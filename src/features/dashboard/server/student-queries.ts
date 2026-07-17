@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { getStudentAssessmentOverview } from "@/features/assessment-results/server/overview";
 
 /**
  * Dữ liệu dashboard học viên.
@@ -32,7 +33,7 @@ export async function getStudentDashboard() {
 
   const classId = enrollment.class.id;
 
-  const [sessions, assignments, attendance, results, invoices] =
+  const [sessions, overview, attendance, invoices] =
     await Promise.all([
       supabase
         .from("class_sessions")
@@ -42,17 +43,7 @@ export async function getStudentDashboard() {
         .gte("ends_at", nowIso)
         .order("starts_at")
         .limit(5),
-      // RLS: học viên chỉ thấy assignment đã publish, và chỉ thấy submission của
-      // chính mình → `submissions` nhúng ở đây không lộ bài của bạn cùng lớp.
-      supabase
-        .from("assignments")
-        .select(
-          `id, title, due_at, max_score, status,
-           submissions (id, status, submitted_at, score, graded_at)`,
-        )
-        .eq("class_id", classId)
-        .eq("status", "published")
-        .order("due_at", { nullsFirst: false }),
+      getStudentAssessmentOverview(),
       supabase
         .from("v_student_attendance_summary")
         .select(
@@ -61,51 +52,57 @@ export async function getStudentDashboard() {
         .eq("enrollment_id", enrollment.id)
         .maybeSingle(),
       supabase
-        .from("assessment_results")
-        .select(
-          `id, overall_score, classification, published_at,
-           assessment:assessments (id, title, type, max_score)`,
-        )
-        .not("published_at", "is", null)
-        .order("published_at", { ascending: false })
-        .limit(5),
-      supabase
         .from("v_tuition_balance")
         .select("invoice_id, invoice_code, due_date, total, balance, is_overdue")
         .gt("balance", 0)
         .order("due_date"),
     ]);
 
-  const failed = [sessions, assignments, attendance, results, invoices].find(
+  const failed = [sessions, attendance, invoices].find(
     (result) => result.error,
   );
   if (failed?.error) {
     throw new Error(`Không tải được dashboard: ${failed.error.message}`);
   }
 
-  // "Chưa nộp" = chưa có submission nào có `submitted_at`. Bài đã quá hạn vẫn hiện
-  // ở đây: giấu đi thì học viên tưởng mình không nợ bài nào.
-  const pending = (assignments.data ?? [])
-    .map((assignment) => ({
-      ...assignment,
-      submission: assignment.submissions[0] ?? null,
-    }))
-    .filter((assignment) => !assignment.submission?.submitted_at);
-
-  const graded = (assignments.data ?? [])
-    .map((assignment) => ({
-      ...assignment,
-      submission: assignment.submissions[0] ?? null,
-    }))
-    .filter((assignment) => assignment.submission?.graded_at);
+  const pending = overview.exercises.filter(
+    (exercise) => !exercise.attempts.some((attempt) => attempt.submitted_at),
+  );
+  const publishedExerciseResults = overview.exercises.flatMap((exercise) =>
+    exercise.attempts
+      .filter((attempt) => attempt.results_published_at)
+      .map((attempt) => ({
+        id: attempt.id,
+        title: exercise.title,
+        kind: "Bài tập",
+        score: attempt.final_score,
+        maxScore: exercise.max_score,
+        publishedAt: attempt.results_published_at!,
+        href: `/student/exercises/results/${attempt.id}`,
+      })),
+  );
+  const publishedExamResults = overview.exams.flatMap((exam) =>
+    exam.results_published_at
+      ? exam.attempts.map((attempt) => ({
+          id: attempt.id,
+          title: exam.title,
+          kind: "Kỳ thi",
+          score: attempt.final_score_100,
+          maxScore: 100,
+          publishedAt: exam.results_published_at!,
+          href: `/student/exams/results/${attempt.id}`,
+        }))
+      : [],
+  );
 
   return {
     enrollment,
     sessions: sessions.data ?? [],
-    pendingAssignments: pending,
-    gradedAssignments: graded,
+    pendingExercises: pending,
     attendance: attendance.data,
-    results: results.data ?? [],
+    results: [...publishedExerciseResults, ...publishedExamResults]
+      .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+      .slice(0, 5),
     invoices: invoices.data ?? [],
   } as const;
 }

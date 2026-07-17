@@ -9,8 +9,8 @@ export async function getTeachers(search?: string) {
     .from("teachers")
     .select(
       `id, user_id, teacher_code, specialization, bio, is_active, created_at,
-       profile:profiles!fk_teachers_profile (full_name, phone, email, is_active),
-       class_teachers (id, assignment_role, class:classes (id, code, name, status))`,
+       profile:profiles!fk_teachers_profile (full_name, phone, email, username, is_active),
+       class_teachers (id, class:classes (id, code, name, status))`,
     )
     .order("teacher_code");
 

@@ -152,7 +152,7 @@ export default async function AdminClassDetailPage({
 
           <TeacherAssignments
             classId={classRecord.id}
-            assignments={classRecord.class_teachers}
+            assignment={classRecord.class_teachers}
             teachers={teachers}
           />
         </div>

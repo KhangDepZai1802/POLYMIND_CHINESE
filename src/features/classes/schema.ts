@@ -8,7 +8,6 @@ const CLASS_STATUSES = [
   "cancelled",
 ] as const;
 const DELIVERY_MODES = ["offline", "online", "hybrid", "in_house"] as const;
-const ASSIGNMENT_ROLES = ["primary", "assistant"] as const;
 
 const optionalText = z
   .string()
@@ -29,15 +28,6 @@ const optionalDate = z
 
 export const classSchema = z
   .object({
-    code: z
-      .string()
-      .trim()
-      .min(2, { message: "Mã lớp phải có ít nhất 2 ký tự" })
-      .max(30, { message: "Mã lớp tối đa 30 ký tự" })
-      .regex(/^[A-Z0-9-]+$/, {
-        message:
-          "Mã chỉ gồm chữ IN HOA, số và dấu gạch ngang (VD: LOP-HSK1-01)",
-      }),
     course_id: z.uuid({ message: "Chọn khóa học" }),
     name: z.string().trim().min(3, { message: "Tên lớp tối thiểu 3 ký tự" }),
     target_audience: optionalText,
@@ -100,7 +90,6 @@ export const classSchema = z
 export const teacherAssignmentSchema = z.object({
   class_id: z.uuid(),
   teacher_id: z.uuid({ message: "Chọn giáo viên" }),
-  assignment_role: z.enum(ASSIGNMENT_ROLES),
 });
 
 export type ClassInput = z.infer<typeof classSchema>;

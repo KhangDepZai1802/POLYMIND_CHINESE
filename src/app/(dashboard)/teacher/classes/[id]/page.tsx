@@ -42,10 +42,6 @@ import {
 } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
-  ASSESSMENT_TYPE_LABELS,
-  ASSIGNMENT_ROLE_LABELS,
-  ASSIGNMENT_STATUS_LABELS,
-  ASSIGNMENT_STATUS_TONE,
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
   DELIVERY_MODE_LABELS,
@@ -126,8 +122,8 @@ export default async function TeacherClassDetailPage({
             <TabsTrigger value="schedule">Lịch/Buổi</TabsTrigger>
             <TabsTrigger value="students">Học viên</TabsTrigger>
             <TabsTrigger value="attendance">Điểm danh</TabsTrigger>
-            <TabsTrigger value="assignments">Bài tập</TabsTrigger>
-            <TabsTrigger value="assessments">Kiểm tra</TabsTrigger>
+            <TabsTrigger value="exercises">Bài tập</TabsTrigger>
+            <TabsTrigger value="exams">Kiểm tra</TabsTrigger>
             <TabsTrigger value="progress">Tiến độ</TabsTrigger>
             <TabsTrigger value="materials">Tài liệu</TabsTrigger>
           </TabsList>
@@ -207,7 +203,7 @@ export default async function TeacherClassDetailPage({
               </CardHeader>
               <CardContent className="p-0">
                 <ul className="divide-y">
-                  {classRecord.class_teachers.map((assignment) => (
+                  {classRecord.class_teachers && [classRecord.class_teachers].map((assignment) => (
                     <li
                       key={assignment.id}
                       className="flex items-center justify-between gap-3 px-5 py-3"
@@ -224,16 +220,7 @@ export default async function TeacherClassDetailPage({
                             : ""}
                         </p>
                       </div>
-                      <StatusBadge
-                        label={
-                          ASSIGNMENT_ROLE_LABELS[assignment.assignment_role]
-                        }
-                        tone={
-                          assignment.assignment_role === "primary"
-                            ? "info"
-                            : "neutral"
-                        }
-                      />
+                      <StatusBadge label="Giáo viên phụ trách" tone="info" />
                     </li>
                   ))}
                 </ul>
@@ -451,15 +438,15 @@ export default async function TeacherClassDetailPage({
           </Card>
         </TabsContent>
 
-        <TabsContent value="assignments" className="mt-4">
+        <TabsContent value="exercises" className="mt-4">
           <div className="mb-3 flex justify-end">
             <Button asChild size="sm">
-              <Link href={`/teacher/assignments?class=${classRecord.id}`}>
+              <Link href="/teacher/exercises">
                 Quản lý bài tập
               </Link>
             </Button>
           </div>
-          {classRecord.assignments.length === 0 ? (
+          {classRecord.exercise_deliveries.length === 0 ? (
             <EmptyPanel
               icon={FileCheck2}
               title="Chưa có bài tập"
@@ -469,7 +456,7 @@ export default async function TeacherClassDetailPage({
             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y">
-                  {classRecord.assignments.map((assignment) => (
+                  {classRecord.exercise_deliveries.map((assignment) => (
                     <li
                       key={assignment.id}
                       className="flex flex-wrap items-center gap-3 px-5 py-3"
@@ -480,12 +467,12 @@ export default async function TeacherClassDetailPage({
                         </p>
                         <p className="text-muted-foreground text-xs">
                           Hạn {formatDateTime(assignment.due_at)} ·{" "}
-                          {assignment.submissions.length} bài nộp
+                          {assignment.attempts.filter((attempt) => attempt.submitted_at).length} bài nộp
                         </p>
                       </div>
                       <StatusBadge
-                        label={ASSIGNMENT_STATUS_LABELS[assignment.status]}
-                        tone={ASSIGNMENT_STATUS_TONE[assignment.status]}
+                        label={assignment.status}
+                        tone={assignment.status === "results_published" ? "success" : "neutral"}
                       />
                     </li>
                   ))}
@@ -495,25 +482,25 @@ export default async function TeacherClassDetailPage({
           )}
         </TabsContent>
 
-        <TabsContent value="assessments" className="mt-4">
+        <TabsContent value="exams" className="mt-4">
           <div className="mb-3 flex justify-end">
             <Button asChild size="sm">
-              <Link href={`/teacher/assessments?class=${classRecord.id}`}>
+              <Link href="/teacher/exams">
                 Quản lý bài kiểm tra
               </Link>
             </Button>
           </div>
-          {classRecord.assessments.length === 0 ? (
+          {classRecord.exam_deliveries.length === 0 ? (
             <EmptyPanel
               icon={GraduationCap}
               title="Chưa có bài kiểm tra"
-              description="Tạo bài kiểm tra, nhập điểm tổng và 6 kỹ năng, rồi công bố kết quả bằng một hành động riêng."
+              description="Dựng bộ đề, lên lịch kỳ thi và chấm từng câu trong module Thi."
             />
           ) : (
             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y">
-                  {classRecord.assessments.map((assessment) => (
+                  {classRecord.exam_deliveries.map((assessment) => (
                     <li
                       key={assessment.id}
                       className="flex flex-wrap items-center gap-3 px-5 py-3"
@@ -523,9 +510,9 @@ export default async function TeacherClassDetailPage({
                           {assessment.title}
                         </p>
                         <p className="text-muted-foreground text-xs">
-                          {ASSESSMENT_TYPE_LABELS[assessment.type]} ·{" "}
-                          {formatDate(assessment.assessment_date)} ·{" "}
-                          {assessment.assessment_results.length} kết quả
+                          {assessment.exam_type} ·{" "}
+                          {formatDate(assessment.opens_at)} ·{" "}
+                          {assessment.attempts.filter((attempt) => attempt.graded_at).length} kết quả
                         </p>
                       </div>
                       <StatusBadge
@@ -535,8 +522,8 @@ export default async function TeacherClassDetailPage({
                         tone={assessment.published_at ? "success" : "neutral"}
                       />
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/teacher/assessments/${assessment.id}`}>
-                          Nhập điểm
+                        <Link href={`/teacher/exams/${assessment.id}`}>
+                          Theo dõi & chấm
                         </Link>
                       </Button>
                     </li>
@@ -622,8 +609,8 @@ export default async function TeacherClassDetailPage({
                             {progress.total_lessons ?? 0}
                           </span>
                           <span>
-                            Bài tập: {progress.submitted_assignments ?? 0}/
-                            {progress.total_assignments ?? 0}
+                            Bài tập: {progress.submitted_exercises ?? 0}/
+                            {progress.total_exercises ?? 0}
                           </span>
                           <span>
                             Điểm TB: {formatScore(progress.avg_score)}

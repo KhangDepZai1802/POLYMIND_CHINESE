@@ -29,10 +29,9 @@ import { CLASS_STATUS_LABELS, CLASS_STATUS_TONE } from "@/lib/domain/labels";
 export const metadata: Metadata = { title: "Hôm nay" };
 
 export default async function TeacherDashboardPage() {
-  const user = await requireRole("teacher");
-
-  const [today, needAttendance, pendingGrading, atRisk, myClasses] =
+  const [user, today, needAttendance, pendingGrading, atRisk, myClasses] =
     await Promise.all([
+      requireRole("teacher"),
       getTeacherSessionsToday(),
       getSessionsNeedingAttendance(),
       getPendingGrading(),
@@ -198,7 +197,7 @@ export default async function TeacherDashboardPage() {
                           {s.enrollment?.student?.full_name ?? "Học viên"}
                         </p>
                         <p className="text-muted-foreground truncate text-xs">
-                          {s.assignment?.title} · Nộp{" "}
+                          {s.delivery?.title} · Nộp{" "}
                           {formatDate(s.submitted_at)}
                         </p>
                       </div>
@@ -208,9 +207,9 @@ export default async function TeacherDashboardPage() {
                       <Button asChild size="sm" variant="outline">
                         <Link
                           href={
-                            s.assignment?.id
-                              ? `/teacher/assignments/${s.assignment.id}`
-                              : "/teacher/assignments"
+                            s.delivery?.id
+                              ? `/teacher/${s.kind === "exercise" ? "exercises" : "exams"}/${s.delivery.id}`
+                              : `/teacher/${s.kind === "exercise" ? "exercises" : "exams"}`
                           }
                         >
                           Chấm bài

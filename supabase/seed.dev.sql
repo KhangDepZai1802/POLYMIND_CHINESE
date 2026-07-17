@@ -119,23 +119,21 @@ on conflict (student_code) do update
   set full_name = excluded.full_name, learning_goal = excluded.learning_goal;
 
 -- --- Phân công giáo viên ------------------------------------------------------
--- LOP-01 và LOP-02: GV A là chính. LOP-02 có thêm GV B làm trợ giảng.
--- LOP-03: GV B là chính.
+-- LOP-01 và LOP-02: GV A phụ trách. LOP-03: GV B phụ trách.
 --
 -- Cấu hình này cố tình tạo ra ranh giới để kiểm RLS:
 --   GV A KHÔNG dạy LOP-03 → không được thấy học viên/dữ liệu của LOP-03.
 
-insert into public.class_teachers (class_id, teacher_id, assignment_role)
-select c.id, t.id, v.role::public.assignment_role
+insert into public.class_teachers (class_id, teacher_id)
+select c.id, t.id
 from (values
-  ('LOP-01', 'GV001', 'primary'),
-  ('LOP-02', 'GV001', 'primary'),
-  ('LOP-02', 'GV002', 'assistant'),
-  ('LOP-03', 'GV002', 'primary')
-) as v(class_code, teacher_code, role)
+  ('LOP-01', 'GV001'),
+  ('LOP-02', 'GV001'),
+  ('LOP-03', 'GV002')
+) as v(class_code, teacher_code)
 join public.classes c on c.code = v.class_code
 join public.teachers t on t.teacher_code = v.teacher_code
-on conflict (class_id, teacher_id) do nothing;
+on conflict (class_id) do update set teacher_id = excluded.teacher_id;
 
 -- --- Ghi danh -----------------------------------------------------------------
 -- MỖI HỌC VIÊN CHỈ MỘT LỚP đang mở (user chốt 2026-07-13).

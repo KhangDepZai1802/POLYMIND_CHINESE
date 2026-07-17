@@ -8,6 +8,7 @@ import {
   loginSchema,
   resetPasswordSchema,
 } from "@/features/auth/schema";
+import { loginIdentifierToEmail } from "@/features/users/account";
 import { getPublicEnv } from "@/lib/env";
 import { homePathForRole } from "@/lib/permissions/routes";
 import { createClient } from "@/lib/supabase/server";
@@ -25,14 +26,14 @@ export type ActionState = {
  * user (account enumeration). Sai email hay sai mật khẩu — người dùng đều nhận
  * đúng một câu.
  */
-const GENERIC_LOGIN_ERROR = "Email hoặc mật khẩu không đúng.";
+const GENERIC_LOGIN_ERROR = "Tên đăng nhập hoặc mật khẩu không đúng.";
 
 export async function loginAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
+    identifier: formData.get("identifier"),
     password: formData.get("password"),
   });
 
@@ -43,7 +44,7 @@ export async function loginAction(
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
+    email: loginIdentifierToEmail(parsed.data.identifier),
     password: parsed.data.password,
   });
 

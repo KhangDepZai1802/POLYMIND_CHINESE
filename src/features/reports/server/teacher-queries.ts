@@ -20,7 +20,7 @@ export async function getTeacherClassReport(classId: string) {
   const [classProgress, enrollments, progress, attendance, atRisk] =
     await Promise.all([
       supabase
-        .from("v_class_progress")
+        .from("v_class_assessment_progress")
         .select(
           `class_id, class_code, class_name, status, capacity, active_students,
            completed_students, avg_attendance_rate, avg_score, avg_progress_percent`,
@@ -33,10 +33,10 @@ export async function getTeacherClassReport(classId: string) {
         .eq("class_id", classId)
         .not("status", "in", "(withdrawn,transferred)"),
       supabase
-        .from("v_enrollment_progress")
+        .from("v_enrollment_assessment_progress")
         .select(
-          `enrollment_id, total_lessons, completed_lessons, total_assignments,
-           submitted_assignments, avg_score, attendance_rate, progress_percent,
+          `enrollment_id, total_lessons, completed_lessons, total_exercises,
+           submitted_exercises, avg_score, attendance_rate, progress_percent,
            is_completion_ready`,
         )
         .eq("class_id", classId),
@@ -48,10 +48,10 @@ export async function getTeacherClassReport(classId: string) {
         )
         .eq("class_id", classId),
       supabase
-        .from("v_at_risk_students")
+        .from("v_at_risk_assessment_students")
         .select(
           `enrollment_id, full_name, student_code, attendance_rate, avg_score,
-           progress_percent, missing_assignments, risk_reasons`,
+           progress_percent, missing_exercises, risk_reasons`,
         )
         .eq("class_id", classId),
     ]);

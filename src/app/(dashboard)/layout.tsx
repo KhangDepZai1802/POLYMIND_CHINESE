@@ -1,8 +1,11 @@
+import { Suspense } from "react";
+
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Logo } from "@/components/shared/logo";
+import { NavProgress } from "@/components/shared/nav-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { getNotificationBellData } from "@/features/notifications/server/queries";
@@ -21,11 +24,16 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireUser();
-  const { unreadCount } = await getNotificationBellData();
+  const [user, { unreadCount }] = await Promise.all([
+    requireUser(),
+    getNotificationBellData(),
+  ]);
 
   return (
     <div className="bg-muted/30 flex min-h-screen">
+      <Suspense fallback={null}>
+        <NavProgress />
+      </Suspense>
       <a
         href="#noi-dung-chinh"
         className="bg-background text-foreground focus:ring-ring fixed top-2 left-2 z-50 -translate-y-20 rounded-md px-4 py-3 font-medium shadow-lg focus:translate-y-0 focus:ring-2 focus:outline-none"

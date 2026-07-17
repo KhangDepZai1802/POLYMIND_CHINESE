@@ -11,7 +11,7 @@ export async function getClasses() {
        planned_session_count, session_duration_minutes, delivery_mode, location_name,
        course:courses (id, code, title),
        class_teachers (
-         id, teacher_id, assignment_role,
+         id, teacher_id,
          teacher:teachers (id, teacher_code, profile:profiles!fk_teachers_profile (full_name))
        ),
        enrollments (id, status)`,
@@ -31,7 +31,7 @@ export async function getClassById(id: string) {
       `*,
        course:courses (id, code, title, course_type, status),
        class_teachers (
-         id, teacher_id, assignment_role, created_at,
+         id, teacher_id, created_at,
          teacher:teachers (
            id, teacher_code, specialization,
            profile:profiles!fk_teachers_profile (full_name, phone, email)
@@ -47,13 +47,13 @@ export async function getClassById(id: string) {
          id, status, enrolled_on,
          student:students (id, student_code, full_name)
        ),
-       assignments (
+       exercise_deliveries (
          id, title, due_at, max_score, status, published_at,
-         submissions (id, status, submitted_at, graded_at)
+         attempts:exercise_attempts (id, status, submitted_at, graded_at)
        ),
-       assessments (
-         id, title, type, assessment_date, max_score, published_at,
-         assessment_results (id, published_at)
+       exam_deliveries (
+         id, title, exam_type, opens_at, status, published_at,
+         attempts:exam_attempts (id, status, submitted_at, graded_at)
        )`,
     )
     .eq("id", id)
@@ -73,10 +73,10 @@ export async function getClassById(id: string) {
 export async function getClassProgress(classId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("v_enrollment_progress")
+    .from("v_enrollment_assessment_progress")
     .select(
       `enrollment_id, enrollment_status, student_id, attendance_rate,
-       completed_lessons, total_lessons, submitted_assignments, total_assignments,
+       completed_lessons, total_lessons, submitted_exercises, total_exercises,
        avg_score, progress_percent, is_completion_ready`,
     )
     .eq("class_id", classId)

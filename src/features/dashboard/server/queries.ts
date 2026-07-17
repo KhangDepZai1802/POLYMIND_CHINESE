@@ -67,7 +67,7 @@ export async function getAdminOverview() {
       .lte("starts_at", to)
       .neq("status", "cancelled"),
     supabase
-      .from("v_at_risk_students")
+      .from("v_at_risk_assessment_students")
       .select("enrollment_id", { count: "exact", head: true }),
   ]);
 
@@ -114,12 +114,12 @@ export async function getSessionsToday() {
   return data;
 }
 
-/** Tiến độ từng lớp — số liệu lấy nguyên từ `v_class_progress`. */
+/** Tiến độ từng lớp — số liệu lấy nguyên từ assessment engine mới. */
 export async function getClassProgress() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("v_class_progress")
+    .from("v_class_assessment_progress")
     .select("*")
     .in("status", ["active", "planned"])
     .order("class_code");
@@ -128,12 +128,12 @@ export async function getClassProgress() {
   return data;
 }
 
-/** Học viên cần chú ý — `v_at_risk_students` đã tự chấm lý do rủi ro. */
+/** Học viên cần chú ý — view assessment mới tự chấm lý do rủi ro. */
 export async function getAtRiskStudents(limit = 8) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("v_at_risk_students")
+    .from("v_at_risk_assessment_students")
     .select("*")
     .order("progress_percent", { nullsFirst: true })
     .limit(limit);

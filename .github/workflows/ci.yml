@@ -67,7 +67,7 @@ jobs:
       # Migration nào chỉ chạy được trên DB đã có sẵn dữ liệu sẽ chết ở đây —
       # đúng như mong muốn.
       - name: Reset DB (migration + seed)
-        run: supabase db reset
+        run: npm run db:reset
 
       - name: pgTAP (constraint + RLS + IDOR)
         run: supabase test db

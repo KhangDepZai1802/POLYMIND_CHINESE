@@ -43,7 +43,7 @@ export default async function AdminStudentsPage() {
             <EmptyState
               icon={Users}
               title="Chưa có học viên nào"
-              description="Tạo hồ sơ học viên. Tài khoản đăng nhập có thể mời sau."
+              description="Tạo hồ sơ học viên. Tài khoản đăng nhập có thể cấp sau."
             />
           ) : (
             <>
@@ -113,7 +113,7 @@ export default async function AdminStudentsPage() {
                           </TableCell>
                           <TableCell>
                             <StatusBadge
-                              label={s.user_id ? "Đã có" : "Chưa mời"}
+                              label={s.user_id ? "Đã cấp" : "Chưa cấp"}
                               tone={s.user_id ? "success" : "neutral"}
                             />
                           </TableCell>
@@ -137,7 +137,7 @@ export default async function AdminStudentsPage() {
                           {s.student_code}
                         </span>
                         <StatusBadge
-                          label={s.user_id ? "Có tài khoản" : "Chưa mời"}
+                          label={s.user_id ? "Có tài khoản" : "Chưa cấp"}
                           tone={s.user_id ? "success" : "neutral"}
                         />
                       </div>
@@ -146,8 +146,8 @@ export default async function AdminStudentsPage() {
                         {s.phone ?? "—"}
                         {s.current_level ? ` · ${s.current_level.name}` : ""}
                       </p>
-                      {s.enrollments.filter((e) => e.status === "active").length >
-                        0 && (
+                      {s.enrollments.filter((e) => e.status === "active")
+                        .length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {s.enrollments
                             .filter((e) => e.status === "active")

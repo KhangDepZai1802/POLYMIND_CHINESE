@@ -32,29 +32,37 @@ export async function getCourses(params?: {
   let query = supabase
     .from("courses")
     .select(
-      `id, code, title, title_en, course_type, status, target_audience,
+      `id, code, title, title_en, program, course_type, status, target_audience,
        default_session_count, default_session_duration_minutes, default_tuition_amount,
        level:levels (id, code, name),
        classes (id)`,
     )
+    .order("program")
     .order("course_type")
     .order("code");
 
   if (params?.search) {
-    query = query.or(`code.ilike.%${params.search}%,title.ilike.%${params.search}%`);
+    query = query.or(
+      `code.ilike.%${params.search}%,title.ilike.%${params.search}%`,
+    );
   }
   if (params?.courseType && params.courseType !== "all") {
     query = query.eq(
       "course_type",
-      params.courseType as "hsk" | "communication" | "kids" | "exam_prep" | "business_custom" | "custom",
+      params.courseType as
+        "hsk" | "communication" | "kids" | "exam_prep" | "custom",
     );
   }
   if (params?.status && params.status !== "all") {
-    query = query.eq("status", params.status as "draft" | "active" | "archived");
+    query = query.eq(
+      "status",
+      params.status as "draft" | "active" | "archived",
+    );
   }
 
   const { data, error } = await query;
-  if (error) throw new Error(`Không tải được danh sách khóa học: ${error.message}`);
+  if (error)
+    throw new Error(`Không tải được danh sách khóa học: ${error.message}`);
   return data;
 }
 

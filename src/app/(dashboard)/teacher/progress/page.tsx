@@ -142,8 +142,8 @@ export default async function TeacherProgressPage({
                           {student.student_code} · Chuyên cần{" "}
                           {formatPercent(student.attendance_rate)} · Tiến độ{" "}
                           {formatPercent(student.progress_percent)}
-                          {student.missing_assignments
-                            ? ` · Thiếu ${student.missing_assignments} bài`
+                          {student.missing_exercises
+                            ? ` · Thiếu ${student.missing_exercises} bài`
                             : ""}
                         </p>
                         {student.risk_reasons && (
@@ -223,8 +223,8 @@ export default async function TeacherProgressPage({
                             {row.attendance?.absent_count ?? 0}
                           </td>
                           <td className="px-3 py-3">
-                            {row.progress?.submitted_assignments ?? 0}/
-                            {row.progress?.total_assignments ?? 0}
+                            {row.progress?.submitted_exercises ?? 0}/
+                            {row.progress?.total_exercises ?? 0}
                           </td>
                           <td className="px-3 py-3">
                             {row.progress?.avg_score === null ||

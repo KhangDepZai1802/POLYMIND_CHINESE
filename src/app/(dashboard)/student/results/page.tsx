@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   BookOpen,
   ClipboardPen,
@@ -14,15 +15,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RATING_FIELDS } from "@/features/evaluations/schema";
-import { SKILL_FIELDS } from "@/features/assessments/schema";
 import { getMyResults } from "@/features/student/server/result-queries";
 import { getMyEnrollment } from "@/features/student/server/queries";
 import { requireRole } from "@/lib/auth/session";
 import { formatDate, formatPercent, formatScore } from "@/lib/dates";
-import {
-  ASSESSMENT_TYPE_LABELS,
-  EVALUATION_RATING_LABELS,
-} from "@/lib/domain/labels";
+import { EVALUATION_RATING_LABELS } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Kết quả" };
 
@@ -98,60 +95,23 @@ export default async function StudentResultsPage({
                 <CardHeader>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <CardTitle className="text-base">
-                        {result.assessment?.title ?? "Bài kiểm tra"}
-                      </CardTitle>
+                      <CardTitle className="text-base">{result.title}</CardTitle>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        {result.assessment
-                          ? ASSESSMENT_TYPE_LABELS[result.assessment.type]
-                          : "—"}{" "}
-                        · {formatDate(result.assessment?.assessment_date)}
+                        {result.kind} · Công bố {formatDate(result.publishedAt)}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      {result.classification && (
-                        <StatusBadge label={result.classification} tone="info" />
-                      )}
                       <span className="text-xl font-semibold">
-                        {formatScore(result.overall_score)}
+                        {formatScore(result.score)}
                         <span className="text-muted-foreground text-sm font-normal">
-                          /{formatScore(result.assessment?.max_score)}
+                          /{formatScore(result.maxScore)}
                         </span>
                       </span>
                     </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                    {SKILL_FIELDS.map((skill) => (
-                      <div
-                        key={skill.name}
-                        className="bg-muted/40 rounded-md border px-3 py-2"
-                      >
-                        <p className="text-muted-foreground text-xs">
-                          {skill.label}
-                        </p>
-                        <p className="mt-0.5 font-medium">
-                          {result[skill.name] === null
-                            ? "—"
-                            : formatScore(result[skill.name])}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {result.feedback && (
-                    <div>
-                      <p className="text-muted-foreground text-xs font-medium">
-                        Nhận xét của giáo viên
-                      </p>
-                      <p className="mt-1 text-sm whitespace-pre-wrap">
-                        {result.feedback}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
+                <CardContent><Link href={result.href} className="text-primary text-sm font-medium hover:underline">Xem chi tiết điểm, feedback và đáp án</Link></CardContent>
               </Card>
             ))
           )}
@@ -278,7 +238,7 @@ export default async function StudentResultsPage({
             <ProgressStat
               icon={ClipboardPen}
               label="Bài đã nộp"
-              value={`${progress?.submitted_assignments ?? 0}/${progress?.total_assignments ?? 0}`}
+              value={`${progress?.submitted_exercises ?? 0}/${progress?.total_exercises ?? 0}`}
             />
           </div>
 

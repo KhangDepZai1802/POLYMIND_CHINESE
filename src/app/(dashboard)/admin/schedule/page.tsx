@@ -27,9 +27,10 @@ export default async function AdminSchedulePage({
   await requireRole("super_admin");
 
   const { class: classId } = await searchParams;
-  const classes = await getClassOptions();
-
-  const board = classId ? await getClassScheduleBoard(classId) : null;
+  const [classes, board] = await Promise.all([
+    getClassOptions(),
+    classId ? getClassScheduleBoard(classId) : Promise.resolve(null),
+  ]);
   const lessons = board?.course
     ? await getLessonOptionsForClass(board.course.id)
     : [];
@@ -75,6 +76,7 @@ export default async function AdminSchedulePage({
           </div>
 
           <ScheduleManager
+            key={board.id}
             classId={board.id}
             plannedSessionCount={board.planned_session_count}
             hasStartDate={Boolean(board.start_date)}

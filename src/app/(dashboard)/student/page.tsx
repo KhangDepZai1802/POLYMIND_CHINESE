@@ -26,13 +26,14 @@ import {
   formatPercent,
   formatScore,
 } from "@/lib/dates";
-import { ASSESSMENT_TYPE_LABELS } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Tổng quan" };
 
 export default async function StudentDashboardPage() {
-  const user = await requireRole("student");
-  const data = await getStudentDashboard();
+  const [user, data] = await Promise.all([
+    requireRole("student"),
+    getStudentDashboard(),
+  ]);
 
   if (!data.enrollment?.class) {
     return (
@@ -57,7 +58,7 @@ export default async function StudentDashboardPage() {
   const {
     enrollment,
     sessions,
-    pendingAssignments,
+    pendingExercises,
     attendance,
     results,
     invoices,
@@ -86,9 +87,9 @@ export default async function StudentDashboardPage() {
         <Stat
           icon={FileText}
           label="Bài chưa nộp"
-          value={pendingAssignments.length}
+          value={pendingExercises.length}
           hint={
-            pendingAssignments.length > 0
+            pendingExercises.length > 0
               ? "Xem hạn nộp bên dưới"
               : "Bạn đã nộp hết bài được giao"
           }
@@ -138,11 +139,11 @@ export default async function StudentDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="size-4" aria-hidden />
-              Bài tập cần nộp ({pendingAssignments.length})
+              Bài tập cần nộp ({pendingExercises.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {pendingAssignments.length === 0 ? (
+            {pendingExercises.length === 0 ? (
               <EmptyState
                 icon={FileText}
                 title="Không có bài nào chờ nộp"
@@ -150,29 +151,30 @@ export default async function StudentDashboardPage() {
               />
             ) : (
               <ul className="divide-y">
-                {pendingAssignments.map((assignment) => {
+                {pendingExercises.map((exercise) => {
                   const overdue =
-                    assignment.due_at !== null &&
-                    new Date(assignment.due_at) < new Date();
+                    new Date(exercise.due_at) < new Date();
 
                   return (
                     <li
-                      key={assignment.id}
+                      key={exercise.id}
                       className="flex flex-wrap items-center gap-3 px-5 py-3"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">
-                          {assignment.title}
+                          {exercise.title}
                         </p>
                         <p className="text-muted-foreground text-xs">
-                          Hạn {formatDateTime(assignment.due_at)} · Tối đa{" "}
-                          {formatScore(assignment.max_score)} điểm
+                          Hạn {formatDateTime(exercise.due_at)} · Tối đa{" "}
+                          {formatScore(exercise.max_score)} điểm
                         </p>
                       </div>
-                      {overdue && <StatusBadge label="Quá hạn" tone="warning" />}
+                      {overdue && (
+                        <StatusBadge label="Quá hạn" tone="warning" />
+                      )}
                       <Button asChild size="sm">
-                        <Link href={`/student/assignments/${assignment.id}`}>
-                          Nộp bài
+                        <Link href="/student/exercises">
+                          Làm bài
                         </Link>
                       </Button>
                     </li>
@@ -243,22 +245,16 @@ export default async function StudentDashboardPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">
-                        {result.assessment?.title ?? "Bài kiểm tra"}
+                        {result.title}
                       </p>
                       <p className="text-muted-foreground text-xs">
-                        {result.assessment
-                          ? ASSESSMENT_TYPE_LABELS[result.assessment.type]
-                          : "—"}{" "}
-                        · Công bố {formatDate(result.published_at)}
+                        {result.kind} · Công bố {formatDate(result.publishedAt)}
                       </p>
                     </div>
-                    {result.classification && (
-                      <StatusBadge label={result.classification} tone="info" />
-                    )}
                     <span className="font-semibold">
-                      {formatScore(result.overall_score)}/
-                      {formatScore(result.assessment?.max_score)}
+                      {formatScore(result.score)}/{formatScore(result.maxScore)}
                     </span>
+                    <Button asChild size="sm" variant="ghost"><Link href={result.href}>Xem</Link></Button>
                   </li>
                 ))}
               </ul>

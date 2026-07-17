@@ -72,13 +72,12 @@ export async function updateClassAction(
     const { count, error: teacherError } = await supabase
       .from("class_teachers")
       .select("id", { count: "exact", head: true })
-      .eq("class_id", id)
-      .eq("assignment_role", "primary");
+      .eq("class_id", id);
 
     if (teacherError) return { error: dbErrorToMessage(teacherError) };
     if (count !== 1) {
       return {
-        error: "Không thể kích hoạt: lớp phải có đúng một giáo viên chính.",
+        error: "Không thể kích hoạt: lớp phải có một giáo viên phụ trách.",
       };
     }
   }
@@ -153,47 +152,26 @@ export async function assignTeacherAction(
 
   const { data: existingAssignment, error: assignmentError } = await supabase
     .from("class_teachers")
-    .select("assignment_role, class:classes (status)")
+    .select("teacher_id, class:classes (status)")
     .eq("class_id", parsed.data.class_id)
-    .eq("teacher_id", parsed.data.teacher_id)
     .maybeSingle();
 
   if (assignmentError) return { error: dbErrorToMessage(assignmentError) };
   if (
-    existingAssignment?.assignment_role === "primary" &&
-    parsed.data.assignment_role === "assistant" &&
+    existingAssignment &&
+    existingAssignment.teacher_id !== parsed.data.teacher_id &&
     existingAssignment.class?.status === "active"
   ) {
     return {
       error:
-        "Không thể đổi giáo viên chính thành trợ giảng khi lớp đang hoạt động. Hãy tạm dừng lớp trước.",
+        "Không thể đổi giáo viên phụ trách khi lớp đang hoạt động. Hãy tạm dừng lớp trước.",
     };
-  }
-
-  if (parsed.data.assignment_role === "primary") {
-    const { data: currentPrimary, error: primaryError } = await supabase
-      .from("class_teachers")
-      .select("teacher_id")
-      .eq("class_id", parsed.data.class_id)
-      .eq("assignment_role", "primary")
-      .maybeSingle();
-
-    if (primaryError) return { error: dbErrorToMessage(primaryError) };
-    if (
-      currentPrimary &&
-      currentPrimary.teacher_id !== parsed.data.teacher_id
-    ) {
-      return {
-        error:
-          "Lớp đã có giáo viên chính. Hãy gỡ phân công cũ trước khi chọn giáo viên chính mới.",
-      };
-    }
   }
 
   const { data, error } = await supabase
     .from("class_teachers")
-    .upsert(parsed.data, { onConflict: "class_id,teacher_id" })
-    .select("id, class_id, teacher_id, assignment_role")
+    .upsert(parsed.data, { onConflict: "class_id" })
+    .select("id, class_id, teacher_id")
     .single();
 
   if (error) return { error: dbErrorToMessage(error) };
@@ -203,15 +181,9 @@ export async function assignTeacherAction(
     resourceType: "class",
     resourceId: data.class_id,
     before: existingAssignment
-      ? {
-          teacher_id: data.teacher_id,
-          assignment_role: existingAssignment.assignment_role,
-        }
+      ? { teacher_id: existingAssignment.teacher_id }
       : undefined,
-    after: {
-      teacher_id: data.teacher_id,
-      assignment_role: data.assignment_role,
-    },
+    after: { teacher_id: data.teacher_id },
   });
 
   revalidatePath("/admin/classes");
@@ -235,20 +207,17 @@ export async function removeTeacherAssignmentAction(
   const supabase = await createClient();
   const { data: assignment, error: assignmentError } = await supabase
     .from("class_teachers")
-    .select("teacher_id, assignment_role, class:classes (status)")
+    .select("teacher_id, class:classes (status)")
     .eq("id", id)
     .eq("class_id", classId)
     .maybeSingle();
 
   if (assignmentError) return { error: dbErrorToMessage(assignmentError) };
   if (!assignment) return { error: "Không tìm thấy phân công giáo viên." };
-  if (
-    assignment.assignment_role === "primary" &&
-    assignment.class?.status === "active"
-  ) {
+  if (assignment.class?.status === "active") {
     return {
       error:
-        "Không thể gỡ giáo viên chính khi lớp đang hoạt động. Hãy tạm dừng lớp trước.",
+        "Không thể gỡ giáo viên phụ trách khi lớp đang hoạt động. Hãy tạm dừng lớp trước.",
     };
   }
 
@@ -266,7 +235,6 @@ export async function removeTeacherAssignmentAction(
     resourceId: classId,
     before: {
       teacher_id: assignment.teacher_id,
-      assignment_role: assignment.assignment_role,
     },
   });
 

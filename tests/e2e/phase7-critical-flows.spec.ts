@@ -3,7 +3,6 @@ import { execFileSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
 
 const DB = "supabase_db_Polymind_Chinese";
-const COURSE_CODE = "KH-P7-E2E";
 const COURSE_TITLE = "Khóa Phase 7 E2E";
 const INVOICE_ITEM = "Học phí Phase 7 E2E";
 const LIFECYCLE_NAMES = [
@@ -22,14 +21,14 @@ function sql(query: string): string {
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Tên đăng nhập").fill(email);
   await page.getByLabel("Mật khẩu").fill("Polymind@2026");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
 }
 
 function purgeCourse() {
-  sql(`delete from audit_logs where resource_id in (select id from courses where code = '${COURSE_CODE}')`);
-  sql(`delete from courses where code = '${COURSE_CODE}'`);
+  sql(`delete from audit_logs where resource_id in (select id from courses where title = '${COURSE_TITLE}')`);
+  sql(`delete from courses where title = '${COURSE_TITLE}'`);
 }
 
 function purgeInvoice() {
@@ -69,19 +68,17 @@ test("scenario 1 — admin tạo khóa và kiểm chứng chuỗi setup vận h�
   await page.getByRole("button", { name: "Thêm khóa học" }).click();
 
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Mã khóa học *").fill(COURSE_CODE);
   await dialog.getByLabel("Tên khóa học *").fill(COURSE_TITLE);
   await dialog.getByRole("button", { name: "Tạo khóa học" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByText(`Đã tạo khóa học "${COURSE_TITLE}".`)).toBeVisible();
 
-  expect(
-    sql(`select exists(
-      select 1 from courses c
-      where c.code = '${COURSE_CODE}'
-        and c.created_by = (select id from auth.users where email = 'admin@polymind.test')
-    )`),
-  ).toBe("t");
+  expect(sql(`select code from courses where title = '${COURSE_TITLE}'`)).toMatch(/^KH\d{6}$/);
+  expect(sql(`select exists(
+    select 1 from courses c
+    where c.title = '${COURSE_TITLE}'
+      and c.created_by = (select id from auth.users where email = 'admin@polymind.test')
+  )`)).toBe("t");
   expect(
     sql(`select
       exists(select 1 from teachers) and exists(select 1 from students)

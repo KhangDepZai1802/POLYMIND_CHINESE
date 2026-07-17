@@ -45,8 +45,8 @@ function formToObject(formData: FormData) {
     raw[key] = value;
   }
   // Checkbox không được tick thì trình duyệt KHÔNG gửi field lên.
-  raw["completion_require_all_assignments"] =
-    formData.get("completion_require_all_assignments") === "on";
+  raw["completion_require_all_exercises"] =
+    formData.get("completion_require_all_exercises") === "on";
   return raw;
 }
 
@@ -225,7 +225,8 @@ export async function createLessonAction(
     };
   }
 
-  if (typeof courseId === "string") revalidatePath(`/admin/courses/${courseId}`);
+  if (typeof courseId === "string")
+    revalidatePath(`/admin/courses/${courseId}`);
   return { success: "Đã thêm bài học." };
 }
 
@@ -301,7 +302,9 @@ export async function createMaterialUploadUrlAction(input: {
 
   const supabase = await createClient();
   if (!(await consumeRateLimit(supabase, "material_upload"))) {
-    return { error: "Bạn đã tạo quá nhiều lượt tải lên. Vui lòng thử lại sau." };
+    return {
+      error: "Bạn đã tạo quá nhiều lượt tải lên. Vui lòng thử lại sau.",
+    };
   }
 
   // Ký URL bằng client CỦA NGƯỜI DÙNG, không phải admin client: policy INSERT
@@ -471,7 +474,11 @@ export async function deleteMaterialAction(
     .remove([material.object_path]);
 
   if (storageError) {
-    console.error("[storage] xóa file thất bại:", material.object_path, storageError.message);
+    console.error(
+      "[storage] xóa file thất bại:",
+      material.object_path,
+      storageError.message,
+    );
   }
 
   await logAudit(supabase, {

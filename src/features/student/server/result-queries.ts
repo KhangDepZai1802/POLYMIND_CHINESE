@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
  * Kết quả & tiến độ của học viên.
  *
  * Ranh giới bảo mật ở đây **do RLS giữ, không phải do `where` trong file này**:
- * - `assessment_results` → chỉ row `published_at IS NOT NULL` của chính mình.
+ * - attempt bài tập/kỳ thi → chỉ trả điểm sau công bố.
  * - `learning_evaluations` → chỉ row đã công bố **và** `visible_to_student`.
  * - `student_notes` → chỉ ghi chú `student_visible`; ghi chú `staff_only` của giáo
  *   viên **không bao giờ** đi qua đây, kể cả khi ai đó lỡ bỏ điều kiện lọc ở app.
@@ -14,16 +14,16 @@ import { createClient } from "@/lib/supabase/server";
 export async function getMyResults(enrollmentId: string) {
   const supabase = await createClient();
 
-  const [results, evaluations, notes, progress] = await Promise.all([
+  const [exerciseResults, examResults, evaluations, notes, progress] = await Promise.all([
     supabase
-      .from("assessment_results")
-      .select(
-        `id, overall_score, listening_score, speaking_score, reading_score,
-         writing_score, vocabulary_score, grammar_score, classification,
-         feedback, published_at,
-         assessment:assessments (id, title, type, assessment_date, max_score)`,
-      )
-      .order("published_at", { ascending: false }),
+      .from("exercise_attempts")
+      .select("id,final_score,results_published_at,delivery:exercise_deliveries(title,max_score)")
+      .not("results_published_at", "is", null)
+      .order("results_published_at", { ascending: false }),
+    supabase
+      .from("exam_attempts")
+      .select("id,final_score_100,delivery:exam_deliveries(title,results_published_at)")
+      .not("delivery.results_published_at", "is", null),
     supabase
       .from("learning_evaluations")
       .select(
@@ -39,17 +39,17 @@ export async function getMyResults(enrollmentId: string) {
       .select("id, body, created_at")
       .order("created_at", { ascending: false }),
     supabase
-      .from("v_enrollment_progress")
+      .from("v_enrollment_assessment_progress")
       .select(
-        `total_lessons, completed_lessons, total_assignments,
-         submitted_assignments, avg_score, attendance_rate, progress_percent,
+        `total_lessons, completed_lessons, total_exercises,
+         submitted_exercises, avg_score, attendance_rate, progress_percent,
          is_completion_ready`,
       )
       .eq("enrollment_id", enrollmentId)
       .maybeSingle(),
   ]);
 
-  const failed = [results, evaluations, notes, progress].find(
+  const failed = [exerciseResults, examResults, evaluations, notes, progress].find(
     (result) => result.error,
   );
   if (failed?.error) {
@@ -57,7 +57,26 @@ export async function getMyResults(enrollmentId: string) {
   }
 
   return {
-    results: results.data ?? [],
+    results: [
+      ...(exerciseResults.data ?? []).map((row) => ({
+        id: row.id,
+        title: row.delivery?.title ?? "Bài tập",
+        kind: "Bài tập",
+        score: row.final_score,
+        maxScore: row.delivery?.max_score ?? 0,
+        publishedAt: row.results_published_at!,
+        href: `/student/exercises/results/${row.id}`,
+      })),
+      ...(examResults.data ?? []).map((row) => ({
+        id: row.id,
+        title: row.delivery?.title ?? "Kỳ thi",
+        kind: "Kỳ thi",
+        score: row.final_score_100,
+        maxScore: 100,
+        publishedAt: row.delivery?.results_published_at ?? "",
+        href: `/student/exams/results/${row.id}`,
+      })),
+    ].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)),
     evaluations: evaluations.data ?? [],
     notes: notes.data ?? [],
     progress: progress.data,

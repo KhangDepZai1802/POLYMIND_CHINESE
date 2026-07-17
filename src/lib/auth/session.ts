@@ -1,6 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { homePathForRole } from "@/lib/permissions/routes";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +21,7 @@ export type CurrentUser = {
  * Role đọc từ bảng `profiles` — KHÔNG đọc từ `user.user_metadata` (client sửa
  * được nó; dùng làm nguồn phân quyền là tự mở cửa cho leo thang quyền).
  */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const supabase = await createClient();
 
   const {
@@ -46,7 +47,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     fullName: profile.full_name,
     avatarPath: profile.avatar_path,
   };
-}
+});
 
 /** Bắt buộc đã đăng nhập. Chưa → về /login. */
 export async function requireUser(): Promise<CurrentUser> {

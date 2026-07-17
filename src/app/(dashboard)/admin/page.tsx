@@ -32,10 +32,9 @@ import {
 export const metadata: Metadata = { title: "Tổng quan" };
 
 export default async function AdminDashboardPage() {
-  const user = await requireRole("super_admin");
-
-  const [overview, sessionsToday, classProgress, atRisk, tuition] =
+  const [user, overview, sessionsToday, classProgress, atRisk, tuition] =
     await Promise.all([
+      requireRole("super_admin"),
       getAdminOverview(),
       getSessionsToday(),
       getClassProgress(),
@@ -216,7 +215,10 @@ export default async function AdminDashboardPage() {
               ) : (
                 <ul className="divide-y border-t">
                   {sessionsToday.map((s) => (
-                    <li key={s.id} className="flex items-center gap-3 px-5 py-3">
+                    <li
+                      key={s.id}
+                      className="flex items-center gap-3 px-5 py-3"
+                    >
                       <span className="text-muted-foreground w-24 shrink-0 text-xs tabular-nums">
                         {formatTime(s.starts_at)}–{formatTime(s.ends_at)}
                       </span>

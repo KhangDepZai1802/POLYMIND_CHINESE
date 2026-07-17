@@ -9,7 +9,7 @@ const accounts = [
 
 async function login(page: Page, email: string, path: string) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Tên đăng nhập").fill(email);
   await page.getByLabel("Mật khẩu").fill("Polymind@2026");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await page.waitForURL(`**${path}`);

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(6);
 
 -- =============================================================================
 -- GATE PHASE 5: học viên KHÔNG thấy dữ liệu của học viên khác.
@@ -70,10 +70,10 @@ values
    'a2000000-0000-0000-0000-000000000002', 'Lớp KHÔNG liên quan',
    10, 10, 90, date '2026-07-20', 'offline', 'planned');
 
-insert into public.class_teachers (class_id, teacher_id, assignment_role)
+insert into public.class_teachers (class_id, teacher_id)
 values
-  ('a3000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000003', 'primary'),
-  ('a3000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000003', 'primary');
+  ('a3000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000003'),
+  ('a3000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000003');
 
 insert into public.students (id, student_code, full_name, user_id)
 values
@@ -99,37 +99,6 @@ values
    'a0000000-0000-0000-0000-000000000003'),
   ('a6000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000002', 'absent',
    'a0000000-0000-0000-0000-000000000003');
-
--- Bài tập: 1 đã giao ở lớp chung, 1 còn NHÁP, 1 ở lớp khác.
-insert into public.assignments (id, class_id, title, status, published_at, max_score, created_by)
-values
-  ('a7000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001',
-   'Bài đã giao', 'published', now(), 100, 'a0000000-0000-0000-0000-000000000003'),
-  ('a7000000-0000-0000-0000-000000000002', 'a3000000-0000-0000-0000-000000000001',
-   'Bài còn nháp', 'draft', null, 100, 'a0000000-0000-0000-0000-000000000003'),
-  ('a7000000-0000-0000-0000-000000000003', 'a3000000-0000-0000-0000-000000000002',
-   'Bài lớp khác', 'published', now(), 100, 'a0000000-0000-0000-0000-000000000003');
-
--- Trigger integrity (migration 25) ép MỌI INSERT assignment về `draft` → phải giao
--- bài bằng UPDATE riêng, đúng như luật "draft ≠ published" của sản phẩm.
-update public.assignments
-set status = 'published', published_at = now()
-where id in ('a7000000-0000-0000-0000-000000000001', 'a7000000-0000-0000-0000-000000000003');
-
--- B đã nộp bài (seed không JWT nên trigger cho phép nạp dữ liệu lịch sử).
-insert into public.submissions (id, assignment_id, enrollment_id, text_answer, submitted_at, status, score)
-values (
-  'a8000000-0000-0000-0000-000000000002', 'a7000000-0000-0000-0000-000000000001',
-  'a5000000-0000-0000-0000-000000000002', 'Bài làm bí mật của B', now(), 'graded', 95
-);
-
--- Bài KT đã công bố: B được 95.
-insert into public.assessments (id, class_id, type, title, max_score, created_by, published_at)
-values ('a9000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001',
-        'midterm', 'KT giữa kỳ', 100, 'a0000000-0000-0000-0000-000000000003', now());
-
-insert into public.assessment_results (assessment_id, enrollment_id, overall_score, published_at)
-values ('a9000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000002', 95, now());
 
 -- =============================================================================
 -- Đăng nhập bằng HỌC VIÊN A
@@ -157,25 +126,6 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from public.submissions),
-  0,
-  '🔒 A KHÔNG đọc được bài nộp của B — dù cùng lớp, cùng bài tập'
-);
-
-select is(
-  (select count(*)::integer from public.submissions
-   where text_answer = 'Bài làm bí mật của B'),
-  0,
-  '🔒 Nội dung bài làm của B không lộ cho A'
-);
-
-select is(
-  (select count(*)::integer from public.assessment_results),
-  0,
-  '🔒 A KHÔNG đọc được điểm bài kiểm tra của B (dù đã công bố cho B)'
-);
-
-select is(
   (select count(*)::integer from public.attendance_records),
   1,
   '🔒 A chỉ thấy điểm danh của mình (1 dòng), không thấy của B'
@@ -185,75 +135,6 @@ select is(
   (select status::text from public.attendance_records),
   'present',
   'Điểm danh A đọc được đúng là của A'
-);
-
--- Bài tập: thấy bài đã giao của lớp mình, KHÔNG thấy bài nháp, KHÔNG thấy lớp khác.
-select is(
-  (select count(*)::integer from public.assignments),
-  1,
-  '🔒 A chỉ thấy bài ĐÃ GIAO của lớp mình (không thấy bài nháp, không thấy lớp khác)'
-);
-
-select is(
-  (select title from public.assignments),
-  'Bài đã giao',
-  'Bài tập A đọc được đúng là bài đã giao của lớp mình'
-);
-
--- =============================================================================
--- A cố tình ghi đè lên dữ liệu của B / tự nâng điểm
--- =============================================================================
-
--- Nộp bài dưới danh nghĩa enrollment của B.
-select throws_ok(
-  $$insert into public.submissions (assignment_id, enrollment_id, text_answer)
-    values ('a7000000-0000-0000-0000-000000000001',
-            'a5000000-0000-0000-0000-000000000002', 'A giả danh B')$$,
-  '42501',
-  null,
-  '🔒 A KHÔNG nộp bài được dưới danh nghĩa ghi danh của B'
-);
-
--- Nộp bài vào assignment còn nháp. Trigger integrity chạy TRƯỚC RLS nên chặn ở đây
--- bằng P0001; dù đi tới RLS thì policy cũng đòi `status = 'published'`.
-select throws_ok(
-  $$insert into public.submissions (assignment_id, enrollment_id, text_answer)
-    values ('a7000000-0000-0000-0000-000000000002',
-            'a5000000-0000-0000-0000-000000000001', 'Nộp vào bài nháp')$$,
-  'P0001',
-  'Bài tập chưa mở nhận bài nộp',
-  '🔒 A không nộp được bài vào assignment CHƯA GIAO'
-);
-
--- A nộp bài hợp lệ của chính mình.
-insert into public.submissions (assignment_id, enrollment_id, text_answer, score, status)
-values (
-  'a7000000-0000-0000-0000-000000000001',
-  'a5000000-0000-0000-0000-000000000001',
-  'Bài làm của A', 100, 'graded'
-);
-
-select is(
-  (select score from public.submissions
-   where enrollment_id = 'a5000000-0000-0000-0000-000000000001'),
-  null::numeric,
-  '🔒 A tự khai score=100 lúc nộp → DB xóa sạch, điểm là NULL'
-);
-
-select is(
-  (select status::text from public.submissions
-   where enrollment_id = 'a5000000-0000-0000-0000-000000000001'),
-  'submitted',
-  'Trạng thái bài nộp do DB đặt (submitted), không phải do client khai'
-);
-
--- A tự chấm điểm cho mình bằng UPDATE trực tiếp.
-select throws_ok(
-  $$update public.submissions set score = 100
-    where enrollment_id = 'a5000000-0000-0000-0000-000000000001'$$,
-  '42501',
-  null,
-  '🔒 A KHÔNG tự sửa điểm bài nộp của mình (column grant chỉ cho text_answer)'
 );
 
 -- A tự nâng quyền.

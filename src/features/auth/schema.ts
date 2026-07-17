@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.email({ message: "Email không hợp lệ" }),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, { message: "Vui lòng nhập tên đăng nhập" }),
   password: z.string().min(1, { message: "Vui lòng nhập mật khẩu" }),
 });
 

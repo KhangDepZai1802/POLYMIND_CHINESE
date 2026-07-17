@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, MailPlus, MoreHorizontal } from "lucide-react";
+import { Archive, KeyRound, MoreHorizontal, UserPlus } from "lucide-react";
 
 import { StudentFormDialog } from "@/features/students/components/student-form-dialog";
 import {
   archiveStudentAction,
-  inviteStudentAction,
+  provisionStudentAccountAction,
 } from "@/features/students/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,11 @@ type Student = NonNullable<
   React.ComponentProps<typeof StudentFormDialog>["student"]
 > & {
   user_id: string | null;
+  profile: {
+    username: string | null;
+    email: string | null;
+    is_active: boolean;
+  } | null;
 };
 
 export function StudentRowActions({
@@ -44,11 +49,11 @@ export function StudentRowActions({
   student: Student;
   levels: Level[];
 }) {
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const archive = useFormAction(archiveStudentAction, { toastError: true });
-  const invite = useFormAction(inviteStudentAction, {
-    onSuccess: () => setInviteOpen(false),
+  const account = useFormAction(provisionStudentAccountAction, {
+    onSuccess: () => setAccountOpen(false),
     toastError: true,
   });
 
@@ -72,17 +77,19 @@ export function StudentRowActions({
             }
           />
 
-          {!student.user_id && (
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                setInviteOpen(true);
-              }}
-            >
-              <MailPlus className="size-4" aria-hidden />
-              Gửi lời mời tài khoản
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setAccountOpen(true);
+            }}
+          >
+            {student.user_id ? (
+              <KeyRound className="size-4" aria-hidden />
+            ) : (
+              <UserPlus className="size-4" aria-hidden />
+            )}
+            {student.user_id ? "Đặt lại mật khẩu" : "Cấp tài khoản"}
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator />
 
@@ -110,39 +117,74 @@ export function StudentRowActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Gửi lời mời tài khoản</DialogTitle>
+            <DialogTitle>
+              {student.user_id ? "Cập nhật tài khoản" : "Cấp tài khoản"}
+            </DialogTitle>
             <DialogDescription>
-              {student.full_name} sẽ nhận email và tự đặt mật khẩu.
+              Quản trị viên đặt tên đăng nhập và mật khẩu trực tiếp cho{" "}
+              {student.full_name}.
             </DialogDescription>
           </DialogHeader>
 
-          <form action={invite.formAction} className="space-y-4">
+          <form action={account.formAction} className="space-y-4">
             <input type="hidden" name="id" value={student.id} />
 
             <div className="space-y-2">
-              <Label htmlFor={`invite_email_${student.id}`}>Email *</Label>
+              <Label htmlFor={`account_username_${student.id}`}>
+                Tên đăng nhập *
+              </Label>
               <Input
-                id={`invite_email_${student.id}`}
+                id={`account_username_${student.id}`}
+                name="username"
+                required
+                defaultValue={student.profile?.username ?? ""}
+                placeholder="Ví dụ: hv.an"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`account_password_${student.id}`}>
+                Mật khẩu {student.user_id ? "mới" : "ban đầu"} *
+              </Label>
+              <Input
+                id={`account_password_${student.id}`}
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`account_email_${student.id}`}>
+                Email liên hệ
+              </Label>
+              <Input
+                id={`account_email_${student.id}`}
                 name="email"
                 type="email"
-                required
                 defaultValue={student.email ?? ""}
-                placeholder="hocvien@example.com"
               />
+              <p className="text-muted-foreground text-xs">
+                Không bắt buộc và không dùng làm tên đăng nhập.
+              </p>
             </div>
 
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setInviteOpen(false)}
+                onClick={() => setAccountOpen(false)}
               >
                 Hủy
               </Button>
-              <SubmitButton pendingText="Đang gửi…">Gửi lời mời</SubmitButton>
+              <SubmitButton pendingText="Đang cập nhật…">
+                {student.user_id ? "Cập nhật" : "Cấp tài khoản"}
+              </SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

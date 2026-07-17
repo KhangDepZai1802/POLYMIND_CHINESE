@@ -23,23 +23,18 @@ import {
   COURSE_STATUS_TONE,
   COURSE_TYPE_LABELS,
 } from "@/lib/domain/labels";
-import type { Database } from "@/types/database";
 
 export const metadata: Metadata = { title: "Khóa học" };
 
-type CourseType = Database["public"]["Enums"]["course_type"];
 type CourseRow = Awaited<ReturnType<typeof getCourses>>[number];
-
-/** Dòng cốt lõi hiện trước, B2B hiện sau — đúng cách trung tâm nghĩ về danh mục. */
-const CORE_TYPES: CourseType[] = ["hsk", "communication", "kids", "exam_prep"];
 
 export default async function AdminCoursesPage() {
   await requireRole("super_admin");
 
   const [courses, levels] = await Promise.all([getCourses(), getLevels()]);
 
-  const core = courses.filter((c) => CORE_TYPES.includes(c.course_type));
-  const custom = courses.filter((c) => !CORE_TYPES.includes(c.course_type));
+  const core = courses.filter((course) => course.program === "core");
+  const business = courses.filter((course) => course.program === "business");
 
   return (
     <>
@@ -67,9 +62,9 @@ export default async function AdminCoursesPage() {
             courses={core}
           />
           <CourseSection
-            title="Chương trình doanh nghiệp / tùy chỉnh"
+            title="Chương trình doanh nghiệp"
             description="Thiết kế riêng theo yêu cầu đối tác."
-            courses={custom}
+            courses={business}
           />
         </div>
       )}
@@ -133,7 +128,7 @@ function CourseSection({
                       )}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {COURSE_TYPE_LABELS[c.course_type]}
+                      {c.course_type ? COURSE_TYPE_LABELS[c.course_type] : "—"}
                     </TableCell>
                     <TableCell className="text-sm">
                       {c.level?.name ?? "—"}
@@ -187,7 +182,9 @@ function CourseSection({
                     </div>
                     <p className="mt-1 truncate font-medium">{c.title}</p>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                      {COURSE_TYPE_LABELS[c.course_type]}
+                      {c.course_type
+                        ? COURSE_TYPE_LABELS[c.course_type]
+                        : "Doanh nghiệp"}
                       {c.level ? ` · ${c.level.name}` : ""}
                       {` · ${c.classes.length} lớp`}
                     </p>

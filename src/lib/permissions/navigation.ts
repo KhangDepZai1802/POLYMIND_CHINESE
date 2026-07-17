@@ -47,6 +47,7 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: "Lịch học", href: "/admin/schedule", icon: CalendarDays },
     { label: "Học phí", href: "/admin/tuition", icon: Wallet, mobile: true },
     { label: "Báo cáo", href: "/admin/reports", icon: BarChart3 },
+    { label: "Duyệt câu hỏi", href: "/admin/question-bank-review", icon: ClipboardCheck },
     { label: "Thông báo", href: "/admin/notifications", icon: Bell },
     { label: "Quản trị & Audit", href: "/admin/system", icon: ShieldCheck },
   ],
@@ -66,14 +67,14 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
       mobile: true,
     },
     {
-      label: "Bài tập & Chấm bài",
-      href: "/teacher/assignments",
+      label: "Bài tập",
+      href: "/teacher/exercises",
       icon: FileText,
       mobile: true,
     },
     {
-      label: "Kiểm tra & Điểm",
-      href: "/teacher/assessments",
+      label: "Kiểm tra / Thi",
+      href: "/teacher/exams",
       icon: GraduationCap,
     },
     {
@@ -104,9 +105,14 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Bài tập",
-      href: "/student/assignments",
+      href: "/student/exercises",
       icon: FileText,
       mobile: true,
+    },
+    {
+      label: "Kiểm tra / Thi",
+      href: "/student/exams",
+      icon: GraduationCap,
     },
     {
       label: "Kết quả",

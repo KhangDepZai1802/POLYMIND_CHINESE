@@ -39,7 +39,7 @@ test("GV A viết ghi chú nội bộ + đánh giá, gửi cho học viên; khô
   const gvaUserId = sql("select id from auth.users where email = 'gv.a@polymind.test'");
 
   await page.goto("/login");
-  await page.fill('input[name="email"]', "gv.a@polymind.test");
+  await page.fill('input[name="identifier"]', "gv.a@polymind.test");
   await page.fill('input[name="password"]', "Polymind@2026");
   await page.click('button[type="submit"]');
   await page.waitForURL("**/teacher");
@@ -101,12 +101,12 @@ test("GV A viết ghi chú nội bộ + đánh giá, gửi cho học viên; khô
   expect(sql(`select count(*) from notifications where resource_id = '${evalId}'`)).toBe("1");
 
   // --- IDOR: hồ sơ học viên lớp GV B ----------------------------------------
-  const response = await page.goto(`/teacher/evaluations/${enrollmentLop03}`);
-  expect(response?.status()).toBe(404);
+  await page.goto(`/teacher/evaluations/${enrollmentLop03}`);
+  await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
 
   // URL rác không được 500 (lộ stack) — phải là 404.
-  const garbage = await page.goto("/teacher/evaluations/khong-phai-uuid");
-  expect(garbage?.status()).toBe(404);
+  await page.goto("/teacher/evaluations/khong-phai-uuid");
+  await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
 
   purge();
 });

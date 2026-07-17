@@ -132,24 +132,28 @@ export async function getSessionsNeedingAttendance(limit = 10) {
     .slice(0, limit);
 }
 
-/** Bài đã nộp nhưng chưa chấm. */
+/** Lượt bài tập/kỳ thi đang chờ chấm thủ công. */
 export async function getPendingGrading(limit = 10) {
   const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("submissions")
-    .select(
-      `id, submitted_at, is_late, status,
-       assignment:assignments (id, title, class_id, due_at),
-       enrollment:enrollments (id, student:students (id, full_name, student_code))`,
-    )
-    .not("submitted_at", "is", null)
-    .is("graded_at", null)
-    .order("submitted_at")
-    .limit(limit);
-
-  if (error) throw new Error(`Không tải được bài chờ chấm: ${error.message}`);
-  return data;
+  const [exercises, exams] = await Promise.all([
+    supabase
+      .from("exercise_attempts")
+      .select(`id,submitted_at,is_late,enrollment:enrollments(id,student:students(id,full_name,student_code)),delivery:exercise_deliveries(id,title)`)
+      .eq("status", "pending_manual_grading")
+      .order("submitted_at")
+      .limit(limit),
+    supabase
+      .from("exam_attempts")
+      .select(`id,submitted_at,enrollment:enrollments(id,student:students(id,full_name,student_code)),delivery:exam_deliveries(id,title)`)
+      .eq("status", "pending_manual_grading")
+      .order("submitted_at")
+      .limit(limit),
+  ]);
+  if (exercises.error || exams.error) throw new Error(`Không tải được bài chờ chấm: ${exercises.error?.message ?? exams.error?.message}`);
+  return [
+    ...(exercises.data ?? []).map((row) => ({ ...row, kind: "exercise" as const })),
+    ...(exams.data ?? []).map((row) => ({ ...row, kind: "exam" as const, is_late: false })),
+  ].sort((a, b) => (a.submitted_at ?? "").localeCompare(b.submitted_at ?? "")).slice(0, limit);
 }
 
 /** Học viên cần chú ý — trong lớp mình dạy (RLS lo phần "của mình"). */
@@ -157,7 +161,7 @@ export async function getTeacherAtRiskStudents(limit = 6) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("v_at_risk_students")
+    .from("v_at_risk_assessment_students")
     .select("*")
     .order("progress_percent", { nullsFirst: true })
     .limit(limit);

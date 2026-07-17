@@ -14,6 +14,7 @@ export async function getStudents(params?: {
     .from("students")
     .select(
       `*,
+       profile:profiles!fk_students_profile (username, email, is_active),
        current_level:levels!students_current_level_id_fkey (id, code, name),
        enrollments (id, status, class:classes (id, code, name))`,
     )
@@ -29,7 +30,8 @@ export async function getStudents(params?: {
   }
 
   const { data, error } = await query;
-  if (error) throw new Error(`Không tải được danh sách học viên: ${error.message}`);
+  if (error)
+    throw new Error(`Không tải được danh sách học viên: ${error.message}`);
   return data;
 }
 
@@ -65,7 +67,8 @@ export async function getStudentEnrollments(studentId: string) {
     .eq("student_id", studentId)
     .order("enrolled_on", { ascending: false });
 
-  if (error) throw new Error(`Không tải được lớp của học viên: ${error.message}`);
+  if (error)
+    throw new Error(`Không tải được lớp của học viên: ${error.message}`);
   return data;
 }
 
@@ -73,7 +76,7 @@ export async function getStudentProgress(studentId: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("v_enrollment_progress")
+    .from("v_enrollment_assessment_progress")
     .select("*")
     .eq("student_id", studentId);
 
