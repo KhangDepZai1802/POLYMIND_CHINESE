@@ -1,80 +1,187 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import ExcelJS from "exceljs";
+import { z } from "zod";
 
 import {
-  authoringPayload,
-  questionAuthoringSchema,
+  buildStructuredPayload,
+  structuredContentSchema,
+  AUDIO_QUESTION_TYPES,
+  QUESTION_SKILLS,
+  QUESTION_TYPES,
+  type BuiltQuestionPayload,
 } from "@/features/question-builder/domain/questions";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
 import { requireRole } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database";
 
-export async function createQuestionAction(
+const AUDIO_MIME = new Set(["audio/mpeg", "audio/mp4"]);
+const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
+
+const saveQuestionSchema = z.object({
+  mode: z.enum(["create", "version"]),
+  question_id: z.string().uuid().optional(),
+  title: z.string().trim().min(2, "Nhập tiêu đề nội bộ"),
+  skill: z.enum(QUESTION_SKILLS),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  question_type: z.enum(QUESTION_TYPES),
+  prompt_text: z.string().trim().min(1, "Nhập nội dung câu hỏi"),
+  explanation_text: z.string().trim().optional().default(""),
+});
+
+/**
+ * P-B — điểm ghi duy nhất cho wizard soạn câu hỏi (tạo mới + tạo version mới).
+ * Tạo question/version → gắn audio question_media (nếu có) → công bố.
+ */
+export async function saveQuestionAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   const actor = await requireRole("teacher", "super_admin");
-  const parsed = questionAuthoringSchema.safeParse(
-    Object.fromEntries(formData),
-  );
-  if (!parsed.success) return zodToActionState(parsed.error);
 
-  let payload: ReturnType<typeof authoringPayload>;
+  const parsed = saveQuestionSchema.safeParse({
+    mode: formData.get("mode"),
+    question_id: formData.get("question_id") || undefined,
+    title: formData.get("title"),
+    skill: formData.get("skill"),
+    difficulty: formData.get("difficulty"),
+    question_type: formData.get("question_type"),
+    prompt_text: formData.get("prompt_text"),
+    explanation_text: formData.get("explanation_text") ?? "",
+  });
+  if (!parsed.success) return zodToActionState(parsed.error);
+  const input = parsed.data;
+  if (input.mode === "version" && !input.question_id) {
+    return { error: "Thiếu câu hỏi để tạo version." };
+  }
+
+  const rawContent = formData.get("content");
+  if (typeof rawContent !== "string") return { error: "Thiếu nội dung câu hỏi." };
+  let contentJson: unknown;
   try {
-    payload = authoringPayload(parsed.data);
+    contentJson = JSON.parse(rawContent);
+  } catch {
+    return { error: "Nội dung câu hỏi không hợp lệ." };
+  }
+  const contentParsed = structuredContentSchema.safeParse(contentJson);
+  if (!contentParsed.success) return zodToActionState(contentParsed.error);
+  if (contentParsed.data.type !== input.question_type) {
+    return { error: "Dạng câu không khớp nội dung." };
+  }
+
+  let payload: BuiltQuestionPayload;
+  try {
+    payload = buildStructuredPayload(contentParsed.data);
   } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Nội dung không hợp lệ",
-    };
+    return { error: error instanceof Error ? error.message : "Nội dung không hợp lệ" };
+  }
+
+  const audio = formData.get("audio");
+  const needsAudio = AUDIO_QUESTION_TYPES.includes(input.question_type);
+  const audioFile = audio instanceof File && audio.size > 0 ? audio : null;
+  if (needsAudio && !audioFile) {
+    return { error: "Dạng câu Nghe cần một file audio (MP3/M4A)." };
+  }
+  if (audioFile) {
+    if (!AUDIO_MIME.has(audioFile.type)) return { error: "Audio chỉ nhận MP3 hoặc M4A." };
+    if (audioFile.size > MAX_AUDIO_BYTES) return { error: "Audio tối đa 50 MB." };
   }
 
   const supabase = await createClient();
-  const { data: question, error } = await supabase
-    .from("questions")
-    .insert({
-      owner_id: actor.id,
-      created_by: actor.id,
-      title: parsed.data.title,
-      skill: parsed.data.skill,
-      difficulty: parsed.data.difficulty,
-    })
-    .select("id, code")
-    .single();
-  if (error) return { error: "Không tạo được câu hỏi." };
 
-  const { error: versionError } = await supabase.rpc(
-    "create_question_version",
-    {
-      p_question_id: question.id,
-      p_question_type: parsed.data.question_type,
-      p_prompt_text: parsed.data.prompt_text,
-      p_prompt_content: {},
-      p_normalization_config: {},
-      p_explanation_text: parsed.data.explanation_text || undefined,
-      p_options: payload.options,
-      p_answer_key: payload.answerKey,
-      p_grading_config: payload.gradingConfig,
-    },
-  );
-  if (versionError) {
-    await supabase.from("questions").delete().eq("id", question.id);
-    return { error: "Không lưu được phiên bản câu hỏi." };
+  // 1) Xác định question: tạo mới hoặc dùng câu đang sở hữu.
+  let questionId: string;
+  let questionCode: string | null = null;
+  let createdQuestion = false;
+  if (input.mode === "create") {
+    const { data, error } = await supabase
+      .from("questions")
+      .insert({
+        owner_id: actor.id,
+        created_by: actor.id,
+        title: input.title,
+        skill: input.skill,
+        difficulty: input.difficulty,
+      })
+      .select("id, code")
+      .single();
+    if (error || !data) return { error: "Không tạo được câu hỏi." };
+    questionId = data.id;
+    questionCode = data.code;
+    createdQuestion = true;
+  } else {
+    questionId = input.question_id!;
   }
 
-  if (formData.get("publish") === "true") {
-    const { error: publishError } = await supabase.rpc(
-      "publish_question_version",
-      { p_question_id: question.id },
-    );
-    if (publishError) return { error: publishError.message };
+  const rollback = async () => {
+    if (createdQuestion) await supabase.from("questions").delete().eq("id", questionId);
+  };
+
+  // 2) Tạo version bất biến (RPC trả về version id, đồng thời set current_version_id).
+  const { data: versionId, error: versionError } = await supabase.rpc(
+    "create_question_version",
+    {
+      p_question_id: questionId,
+      p_question_type: input.question_type,
+      p_prompt_text: input.prompt_text,
+      p_prompt_content: payload.promptContent as Json,
+      p_normalization_config: {},
+      p_explanation_text: input.explanation_text || undefined,
+      p_options: payload.options as Json,
+      p_answer_key: payload.answerKey as Json,
+      p_grading_config: payload.gradingConfig as Json,
+    },
+  );
+  if (versionError || !versionId) {
+    await rollback();
+    return { error: versionError?.message ?? "Không lưu được phiên bản câu hỏi." };
+  }
+
+  // 3) Gắn audio: upload vào bucket private rồi ghi question_media cho version này.
+  if (audioFile) {
+    const safeName = audioFile.name.normalize("NFC").replace(/[^a-zA-Z0-9._-]/g, "-");
+    const objectPath = `${actor.id}/${String(versionId)}/${crypto.randomUUID()}-${safeName}`;
+    const bytes = new Uint8Array(await audioFile.arrayBuffer());
+    const uploaded = await supabase.storage
+      .from("question-media")
+      .upload(objectPath, bytes, { contentType: audioFile.type, upsert: false });
+    if (uploaded.error) {
+      await rollback();
+      return { error: `Không tải được audio: ${uploaded.error.message}` };
+    }
+    const linked = await supabase.from("question_media").insert({
+      question_version_id: String(versionId),
+      media_role: "prompt_audio",
+      object_path: objectPath,
+      mime_type: audioFile.type,
+      size_bytes: audioFile.size,
+      uploaded_by: actor.id,
+    });
+    if (linked.error) {
+      await supabase.storage.from("question-media").remove([objectPath]);
+      await rollback();
+      return { error: `Không lưu được media: ${linked.error.message}` };
+    }
+  }
+
+  // 4) Công bố version → trạng thái ready.
+  const { error: publishError } = await supabase.rpc("publish_question_version", {
+    p_question_id: questionId,
+  });
+  if (publishError) {
+    await rollback();
+    return { error: publishError.message };
   }
 
   revalidatePath("/teacher/exercises/question-bank");
   revalidatePath("/teacher/exams/question-bank");
-  return { success: `Đã tạo câu hỏi ${question.code}.` };
+  return {
+    success:
+      input.mode === "create"
+        ? `Đã tạo câu hỏi ${questionCode ?? ""}.`.trim()
+        : "Đã tạo và công bố version mới; version cũ vẫn bất biến.",
+  };
 }
 
 export async function archiveQuestionAction(
@@ -168,106 +275,3 @@ export async function reviewQuestionAction(
   return { success: decision === "approve" ? "Đã đưa vào kho chung." : "Đã từ chối yêu cầu." };
 }
 
-export async function importQuestionsAction(
-  _previous: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
-  const rateClient = await createClient();
-  const rate = await rateClient.rpc("consume_rate_limit", { p_scope: "question_import" });
-  if (rate.error || !rate.data) return { error: "Bạn đã vượt giới hạn import. Vui lòng thử lại sau." };
-  const file = formData.get("file");
-  const mode = formData.get("mode");
-  if (!(file instanceof File) || file.size === 0) return { error: "Chọn file Excel .xlsx." };
-  if (file.size > 5 * 1024 * 1024) return { error: "File import tối đa 5 MB." };
-  if (!file.name.toLowerCase().endsWith(".xlsx")) return { error: "Chỉ nhận file .xlsx theo template." };
-
-  const workbook = new ExcelJS.Workbook();
-  try {
-    await workbook.xlsx.load(await file.arrayBuffer());
-  } catch {
-    return { error: "Không đọc được file Excel." };
-  }
-  const sheet = workbook.worksheets[0];
-  if (!sheet) return { error: "File không có worksheet." };
-  const expected = ["title", "question_type", "skill", "difficulty", "prompt_text", "options", "answer", "explanation"];
-  const headers = expected.map((_, index) => sheet.getRow(1).getCell(index + 1).text.trim());
-  if (headers.some((header, index) => header !== expected[index])) {
-    return { error: `Header phải đúng thứ tự: ${expected.join(", ")}.` };
-  }
-
-  const rows: Json[] = [];
-  const errors: string[] = [];
-  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
-    const row = sheet.getRow(rowNumber);
-    if (!row.getCell(1).text.trim()) continue;
-    const candidate = {
-      title: row.getCell(1).text,
-      question_type: row.getCell(2).text,
-      skill: row.getCell(3).text,
-      difficulty: row.getCell(4).text,
-      prompt_text: row.getCell(5).text,
-      options_text: row.getCell(6).text.split("|").join("\n"),
-      answer_text: row.getCell(7).text.split("|").join("\n"),
-      explanation_text: row.getCell(8).text,
-    };
-    const parsed = questionAuthoringSchema.safeParse(candidate);
-    if (!parsed.success) {
-      errors.push(`Dòng ${rowNumber}: ${parsed.error.issues[0]?.message ?? "không hợp lệ"}`);
-      continue;
-    }
-    try {
-      const payload = authoringPayload(parsed.data);
-      rows.push({
-        title: parsed.data.title,
-        question_type: parsed.data.question_type,
-        skill: parsed.data.skill,
-        difficulty: parsed.data.difficulty,
-        prompt_text: parsed.data.prompt_text,
-        prompt_content: {},
-        normalization_config: {},
-        explanation_text: parsed.data.explanation_text,
-        options: payload.options,
-        answer_key: payload.answerKey,
-        grading_config: payload.gradingConfig,
-      });
-    } catch (error) {
-      errors.push(`Dòng ${rowNumber}: ${error instanceof Error ? error.message : "không hợp lệ"}`);
-    }
-  }
-  if (rows.length === 0 && errors.length === 0) return { error: "File không có dòng dữ liệu." };
-  if (errors.length > 0) return { error: `Dry-run có ${errors.length} lỗi. ${errors.slice(0, 8).join(" · ")}` };
-  if (mode === "dry-run") return { success: `Dry-run đạt: ${rows.length} câu hợp lệ, chưa ghi dữ liệu.` };
-
-  const supabase = rateClient;
-  const { data, error } = await supabase.rpc("import_questions", { p_rows: rows as Json });
-  if (error) return { error: `Transaction đã rollback: ${error.message}` };
-  revalidatePath("/teacher/exercises/question-bank");
-  revalidatePath("/teacher/exams/question-bank");
-  const result = data as { count?: number } | null;
-  return { success: `Đã import transaction ${result?.count ?? rows.length} câu.` };
-}
-
-export async function createQuestionVersionAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
-  const parsed = questionAuthoringSchema.safeParse(Object.fromEntries(formData));
-  const questionId = formData.get("question_id");
-  if (!parsed.success) return zodToActionState(parsed.error);
-  if (typeof questionId !== "string") return { error: "Thiếu câu hỏi." };
-  let payload: ReturnType<typeof authoringPayload>;
-  try { payload = authoringPayload(parsed.data); } catch (error) { return { error: error instanceof Error ? error.message : "Nội dung không hợp lệ" }; }
-  const supabase = await createClient();
-  const version = await supabase.rpc("create_question_version", {
-    p_question_id: questionId,
-    p_question_type: parsed.data.question_type,
-    p_prompt_text: parsed.data.prompt_text,
-    p_prompt_content: {}, p_normalization_config: {},
-    p_explanation_text: parsed.data.explanation_text || undefined,
-    p_options: payload.options, p_answer_key: payload.answerKey, p_grading_config: payload.gradingConfig,
-  });
-  if (version.error) return { error: version.error.message };
-  const published = await supabase.rpc("publish_question_version", { p_question_id: questionId });
-  if (published.error) return { error: published.error.message };
-  revalidatePath("/teacher/exercises/question-bank"); revalidatePath("/teacher/exams/question-bank");
-  return { success: "Đã tạo và công bố version mới; version cũ vẫn bất biến." };
-}

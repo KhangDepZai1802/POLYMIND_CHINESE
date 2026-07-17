@@ -57,7 +57,14 @@ test("WCAG AA, keyboard, touch target và responsive cho cả 3 role", async ({ 
     expect(overflow).toBeLessThanOrEqual(1);
 
     if (testInfo.project.name === "mobile") {
-      await expect(page.getByRole("navigation", { name: "Điều hướng chính trên di động" })).toBeVisible();
+      // Menu di động nằm trong drawer: nút hamburger luôn hiện, mở ra mới thấy nav.
+      const menuButton = page.getByRole("button", { name: "Mở menu điều hướng" });
+      await expect(menuButton).toBeVisible();
+      await menuButton.click();
+      await expect(
+        page.getByRole("navigation", { name: "Điều hướng chính trên di động" }),
+      ).toBeVisible();
+      await page.keyboard.press("Escape");
     } else {
       await expect(page.getByRole("navigation", { name: "Điều hướng chính", exact: true })).toBeVisible();
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());

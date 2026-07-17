@@ -23,8 +23,6 @@ export type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Hiện ở bottom nav mobile. Tối đa 5 mục/role — quá đó là không bấm nổi. */
-  mobile?: boolean;
 };
 
 /**
@@ -35,17 +33,13 @@ export type NavItem = {
  */
 export const NAVIGATION: Record<UserRole, NavItem[]> = {
   super_admin: [
-    { label: "Tổng quan", href: "/admin", icon: LayoutDashboard, mobile: true },
-    { label: "Học viên", href: "/admin/students", icon: Users, mobile: true },
-    {
-      label: "Giáo viên",
-      href: "/admin/teachers",
-      icon: GraduationCap,
-    },
+    { label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
+    { label: "Học viên", href: "/admin/students", icon: Users },
+    { label: "Giáo viên", href: "/admin/teachers", icon: GraduationCap },
     { label: "Khóa học", href: "/admin/courses", icon: BookOpen },
-    { label: "Lớp học", href: "/admin/classes", icon: School, mobile: true },
+    { label: "Lớp học", href: "/admin/classes", icon: School },
     { label: "Lịch học", href: "/admin/schedule", icon: CalendarDays },
-    { label: "Học phí", href: "/admin/tuition", icon: Wallet, mobile: true },
+    { label: "Học phí", href: "/admin/tuition", icon: Wallet },
     { label: "Báo cáo", href: "/admin/reports", icon: BarChart3 },
     { label: "Duyệt câu hỏi", href: "/admin/question-bank-review", icon: ClipboardCheck },
     { label: "Thông báo", href: "/admin/notifications", icon: Bell },
@@ -53,84 +47,28 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
   ],
 
   teacher: [
-    { label: "Hôm nay", href: "/teacher", icon: LayoutDashboard, mobile: true },
-    {
-      label: "Lớp của tôi",
-      href: "/teacher/classes",
-      icon: School,
-      mobile: true,
-    },
-    {
-      label: "Điểm danh",
-      href: "/teacher/attendance",
-      icon: ClipboardCheck,
-      mobile: true,
-    },
-    {
-      label: "Bài tập",
-      href: "/teacher/exercises",
-      icon: FileText,
-      mobile: true,
-    },
-    {
-      label: "Kiểm tra / Thi",
-      href: "/teacher/exams",
-      icon: GraduationCap,
-    },
-    {
-      label: "Đánh giá & Ghi chú",
-      href: "/teacher/evaluations",
-      icon: ClipboardPen,
-    },
-    {
-      label: "Báo cáo lớp",
-      href: "/teacher/progress",
-      icon: TrendingUp,
-      mobile: true,
-    },
+    { label: "Hôm nay", href: "/teacher", icon: LayoutDashboard },
+    { label: "Lớp của tôi", href: "/teacher/classes", icon: School },
+    { label: "Điểm danh", href: "/teacher/attendance", icon: ClipboardCheck },
+    { label: "Bài tập", href: "/teacher/exercises", icon: FileText },
+    { label: "Kiểm tra / Thi", href: "/teacher/exams", icon: GraduationCap },
+    { label: "Đánh giá & Ghi chú", href: "/teacher/evaluations", icon: ClipboardPen },
+    { label: "Báo cáo lớp", href: "/teacher/progress", icon: TrendingUp },
   ],
 
   student: [
-    {
-      label: "Tổng quan",
-      href: "/student",
-      icon: LayoutDashboard,
-      mobile: true,
-    },
-    {
-      label: "Lịch học",
-      href: "/student/schedule",
-      icon: CalendarDays,
-      mobile: true,
-    },
-    {
-      label: "Bài tập",
-      href: "/student/exercises",
-      icon: FileText,
-      mobile: true,
-    },
-    {
-      label: "Kiểm tra / Thi",
-      href: "/student/exams",
-      icon: GraduationCap,
-    },
-    {
-      label: "Kết quả",
-      href: "/student/results",
-      icon: BarChart3,
-      mobile: true,
-    },
-    { label: "Học phí", href: "/student/tuition", icon: Wallet, mobile: true },
+    { label: "Tổng quan", href: "/student", icon: LayoutDashboard },
+    { label: "Lịch học", href: "/student/schedule", icon: CalendarDays },
+    { label: "Bài tập", href: "/student/exercises", icon: FileText },
+    { label: "Kiểm tra / Thi", href: "/student/exams", icon: GraduationCap },
+    { label: "Kết quả", href: "/student/results", icon: BarChart3 },
+    { label: "Học phí", href: "/student/tuition", icon: Wallet },
     { label: "Hồ sơ", href: "/student/profile", icon: UserCircle },
   ],
 };
 
 export function getNavigation(role: UserRole): NavItem[] {
   return NAVIGATION[role];
-}
-
-export function getMobileNavigation(role: UserRole): NavItem[] {
-  return NAVIGATION[role].filter((item) => item.mobile);
 }
 
 /**

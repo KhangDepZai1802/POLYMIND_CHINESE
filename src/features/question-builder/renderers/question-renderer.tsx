@@ -1,6 +1,7 @@
 "use client";
 
 import type { QuestionType } from "@/features/question-builder/domain/questions";
+import { SpeakingRecorder } from "@/features/question-builder/renderers/speaking-recorder";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -138,6 +139,7 @@ export function QuestionRenderer({
           rows={5}
         />
       )}
+      {type === "speaking" && <SpeakingRecorder disabled />}
       {type === "essay_translation" && (
         <Textarea
           value={selected}

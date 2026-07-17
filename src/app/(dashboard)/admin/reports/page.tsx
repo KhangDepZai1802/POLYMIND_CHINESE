@@ -6,8 +6,8 @@ import { Download } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { requireRole } from "@/lib/auth/session";
 import {
   INVOICE_STATUS_LABELS,
@@ -59,11 +59,11 @@ export default async function AdminReportsPage({ searchParams }: Props) {
           <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <label className="grid gap-1 text-sm font-medium">
               Từ ngày
-              <Input name="from" type="date" defaultValue={filters.from} />
+              <DatePicker name="from" defaultValue={filters.from} placeholder="Chọn ngày" />
             </label>
             <label className="grid gap-1 text-sm font-medium">
               Đến ngày
-              <Input name="to" type="date" defaultValue={filters.to} />
+              <DatePicker name="to" defaultValue={filters.to} placeholder="Chọn ngày" />
             </label>
             <label className="grid gap-1 text-sm font-medium">
               Lớp

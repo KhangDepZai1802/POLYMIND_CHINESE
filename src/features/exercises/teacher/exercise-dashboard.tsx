@@ -6,6 +6,7 @@ import { useState } from "react";
 import { createExerciseDeliveryAction } from "@/features/exercises/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -60,12 +61,6 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
-        <Button asChild variant="outline">
-          <Link href="/teacher/exercises/question-bank">Ngân hàng câu hỏi</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/teacher/exercises/sets">Bộ bài tập</Link>
-        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>Giao bài tập</Button>
@@ -117,11 +112,11 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Mở từ</Label>
-                  <Input name="available_from" type="datetime-local" required />
+                  <DateTimePicker name="available_from" placeholder="Chọn ngày giờ" />
                 </div>
                 <div className="space-y-2">
                   <Label>Hạn nộp</Label>
-                  <Input name="due_at" type="datetime-local" required />
+                  <DateTimePicker name="due_at" placeholder="Chọn ngày giờ" />
                 </div>
                 <div className="space-y-2">
                   <Label>Điểm tối đa</Label>

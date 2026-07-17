@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 
+import {
+  clearSpeakingAnswer,
+  persistSpeakingAnswer,
+} from "@/features/assessment-results/server/speaking-upload";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
 import { requireRole } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -101,6 +105,20 @@ export async function saveExerciseAnswer(
   });
   if (error) return { ok: false, error: error.message };
   return { ok: true, savedAt: data };
+}
+
+export async function uploadExerciseSpeakingAnswer(
+  attemptId: string,
+  itemId: string,
+  formData: FormData,
+) {
+  const actor = await requireRole("student");
+  return persistSpeakingAnswer("exercise", actor.id, attemptId, itemId, formData);
+}
+
+export async function deleteExerciseSpeakingAnswer(attemptId: string, itemId: string) {
+  await requireRole("student");
+  return clearSpeakingAnswer("exercise", attemptId, itemId);
 }
 
 export async function submitExerciseAttempt(attemptId: string) {

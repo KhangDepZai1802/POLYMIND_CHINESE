@@ -1,15 +1,27 @@
-import { QUESTION_TYPE_LABELS } from "@/features/question-builder/domain/questions";
-import { QuestionForm } from "@/features/question-bank/components/question-form";
+import {
+  QUESTION_TYPE_LABELS,
+  SKILL_QUESTION_TYPES,
+  WIZARD_SKILLS,
+} from "@/features/question-builder/domain/questions";
+import { QuestionWizard } from "@/features/question-bank/components/question-wizard";
 import { QuestionActions } from "@/features/question-bank/components/question-actions";
-import { QuestionImport } from "@/features/question-bank/components/question-import";
-import { QuestionMediaUpload } from "@/features/question-bank/components/question-media-upload";
-import { QuestionVersionForm } from "@/features/question-bank/components/question-version-form";
 import { getQuestions, type QuestionFilters } from "@/features/question-bank/server/queries";
+import { AssessmentTabs } from "@/components/shared/assessment-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+type WizardSkill = (typeof WIZARD_SKILLS)[number];
+
+/** Chỉ mở "Tạo version mới" qua wizard khi kỹ năng + dạng câu được wizard hỗ trợ. */
+function isWizardEditable(skill: string, type: string): skill is WizardSkill {
+  return (
+    (WIZARD_SKILLS as readonly string[]).includes(skill) &&
+    (SKILL_QUESTION_TYPES[skill as WizardSkill] as readonly string[]).includes(type)
+  );
+}
 
 export async function QuestionBankPage({
   kind,
@@ -22,10 +34,13 @@ export async function QuestionBankPage({
   const basePath = `/teacher/${kind === "exercise" ? "exercises" : "exams"}/question-bank`;
   return (
     <>
+      <AssessmentTabs module={kind === "exercise" ? "exercises" : "exams"} />
       <PageHeader
         title="Ngân hàng câu hỏi"
         description="Câu riêng tư, được chia sẻ và kho chung; có phiên bản bất biến sau khi dùng."
-        action={<div className="flex gap-2"><QuestionImport /><QuestionForm /></div>}
+        action={
+          <QuestionWizard trigger={<Button>Tạo câu hỏi</Button>} />
+        }
       />
       <form className="mb-4 grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_10rem_auto]">
         <Input name="q" defaultValue={filters?.q} placeholder="Tìm mã hoặc tiêu đề" />
@@ -68,8 +83,28 @@ export async function QuestionBankPage({
                     </div>
                   </div>
                   <QuestionActions questionId={question.id} isOwner={question.owner_id === currentUserId} visibility={question.visibility} teachers={teachers} />
-                  {question.owner_id === currentUserId && question.current_version && <QuestionVersionForm questionId={question.id} title={question.title} skill={question.skill} difficulty={question.difficulty} current={question.current_version} />}
-                  {question.owner_id === currentUserId && question.current_version && <QuestionMediaUpload versionId={question.current_version.id} />}
+                  {question.owner_id === currentUserId &&
+                    question.current_version &&
+                    isWizardEditable(question.skill, question.current_version.question_type) && (
+                      <QuestionWizard
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            Tạo version mới
+                          </Button>
+                        }
+                        version={{
+                          questionId: question.id,
+                          skill: question.skill as (typeof WIZARD_SKILLS)[number],
+                          type: question.current_version.question_type,
+                          title: question.title,
+                          prompt: question.current_version.prompt_text,
+                          explanation: question.current_version.explanation_text ?? "",
+                          choices: [...question.current_version.question_options]
+                            .sort((a, b) => a.order_index - b.order_index)
+                            .map((option) => option.content),
+                        }}
+                      />
+                    )}
                 </li>
               ))}
             </ul>

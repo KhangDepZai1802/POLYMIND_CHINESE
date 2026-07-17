@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  getMobileNavigation,
   getNavigation,
   isNavItemActive,
 } from "@/lib/permissions/navigation";
@@ -23,10 +22,9 @@ describe("navigation", () => {
     }
   });
 
-  it("bottom nav mobile tối đa 5 mục mỗi role", () => {
+  it("mỗi role có ít nhất một mục điều hướng", () => {
     for (const role of USER_ROLES) {
-      expect(getMobileNavigation(role).length).toBeLessThanOrEqual(5);
-      expect(getMobileNavigation(role).length).toBeGreaterThan(0);
+      expect(getNavigation(role).length).toBeGreaterThan(0);
     }
   });
 

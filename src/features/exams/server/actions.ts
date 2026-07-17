@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 
+import {
+  clearSpeakingAnswer,
+  persistSpeakingAnswer,
+} from "@/features/assessment-results/server/speaking-upload";
 import { isSameVietnamDate } from "@/features/exams/domain/time";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
 import { requireRole } from "@/lib/auth/session";
@@ -101,6 +105,18 @@ export async function saveExamAnswer(
   return error
     ? { ok: false, error: error.message }
     : { ok: true, savedAt: data };
+}
+export async function uploadExamSpeakingAnswer(
+  attemptId: string,
+  itemId: string,
+  formData: FormData,
+) {
+  const actor = await requireRole("student");
+  return persistSpeakingAnswer("exam", actor.id, attemptId, itemId, formData);
+}
+export async function deleteExamSpeakingAnswer(attemptId: string, itemId: string) {
+  await requireRole("student");
+  return clearSpeakingAnswer("exam", attemptId, itemId);
 }
 export async function submitExamAttempt(
   attemptId: string,

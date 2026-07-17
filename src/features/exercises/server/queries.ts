@@ -1,6 +1,10 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  signAttemptPayloadAudio,
+  signGradingAudio,
+} from "@/features/assessment-results/server/audio-signing";
 import { getStudentAssessmentOverview } from "@/features/assessment-results/server/overview";
 
 export async function getExerciseTeacherData() {
@@ -50,7 +54,7 @@ export async function getExerciseAttemptPayload(attemptId: string) {
     p_attempt_id: attemptId,
   });
   if (error || !data) throw new Error("Không tải được lượt làm.");
-  return data;
+  return signAttemptPayloadAudio(supabase, data);
 }
 
 export async function getExerciseGradingData(deliveryId: string) {
@@ -71,5 +75,5 @@ export async function getExerciseGradingData(deliveryId: string) {
     .eq("id", deliveryId)
     .maybeSingle();
   if (error) throw new Error(`Không tải được dữ liệu chấm bài: ${error.message}`);
-  return data;
+  return signGradingAudio(supabase, data);
 }

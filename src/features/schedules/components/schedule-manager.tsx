@@ -41,6 +41,8 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -831,11 +833,19 @@ function ScheduleDialog({ classId }: { classId: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="effective_from">Áp dụng từ</Label>
-              <Input id="effective_from" name="effective_from" type="date" />
+              <DatePicker
+                id="effective_from"
+                name="effective_from"
+                placeholder="Chọn ngày"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="effective_to">Áp dụng đến</Label>
-              <Input id="effective_to" name="effective_to" type="date" />
+              <DatePicker
+                id="effective_to"
+                name="effective_to"
+                placeholder="Chọn ngày"
+              />
               <FieldError message={fe["effective_to"]} />
             </div>
           </div>
@@ -904,18 +914,21 @@ function ManualSessionDialog({
 
           <div className="space-y-2">
             <Label htmlFor="starts_at">Bắt đầu *</Label>
-            <Input
+            <DateTimePicker
               id="starts_at"
               name="starts_at"
-              type="datetime-local"
-              required
+              placeholder="Chọn ngày giờ"
             />
             <FieldError message={fe["starts_at"]} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="ends_at">Kết thúc *</Label>
-            <Input id="ends_at" name="ends_at" type="datetime-local" required />
+            <DateTimePicker
+              id="ends_at"
+              name="ends_at"
+              placeholder="Chọn ngày giờ"
+            />
             <FieldError message={fe["ends_at"]} />
           </div>
 

@@ -10,6 +10,7 @@ import {
   getAuditLogPage,
 } from "@/features/audit/server/queries";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/dates";
@@ -65,11 +66,11 @@ export async function AuditLogView({ searchParams }: Props) {
             </label>
             <label className="grid gap-1 text-sm font-medium">
               Từ ngày
-              <Input name="from" type="date" defaultValue={filters.from} />
+              <DatePicker name="from" defaultValue={filters.from} placeholder="Chọn ngày" />
             </label>
             <label className="grid gap-1 text-sm font-medium">
               Đến ngày
-              <Input name="to" type="date" defaultValue={filters.to} />
+              <DatePicker name="to" defaultValue={filters.to} placeholder="Chọn ngày" />
             </label>
             <div className="flex items-end gap-2">
               <Button type="submit">Áp dụng</Button>

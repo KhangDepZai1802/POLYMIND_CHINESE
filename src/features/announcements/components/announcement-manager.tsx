@@ -15,6 +15,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -311,11 +312,11 @@ function AnnouncementDialog({
             <Label htmlFor={`announcement-expiry-${announcement?.id ?? "new"}`}>
               Hết hiệu lực lúc
             </Label>
-            <Input
+            <DateTimePicker
               id={`announcement-expiry-${announcement?.id ?? "new"}`}
               name="expires_at"
-              type="datetime-local"
               defaultValue={toDateTimeInputValue(announcement?.expires_at)}
+              placeholder="Chọn ngày giờ"
             />
             <p className="text-muted-foreground text-xs">
               Để trống nếu announcement không có hạn tự động.

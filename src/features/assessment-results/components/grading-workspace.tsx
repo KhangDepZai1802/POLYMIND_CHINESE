@@ -24,6 +24,7 @@ import { useFormAction } from "@/lib/use-form-action";
 type Answer = {
   id: string;
   answer_payload: unknown;
+  audio_url?: string | null;
   auto_score: number | null;
   manual_score: number | null;
   final_score: number | null;
@@ -222,9 +223,15 @@ function AnswerGradeForm({
       <CardContent className="space-y-4">
         <div className="bg-muted/50 rounded-lg p-3 text-sm">
           <p className="mb-1 font-medium">Bài làm</p>
-          <pre className="font-sans whitespace-pre-wrap break-words">
-            {JSON.stringify(answer.answer_payload, null, 2)}
-          </pre>
+          {answer.audio_url ? (
+            <audio controls preload="metadata" src={answer.audio_url} className="w-full">
+              <track kind="captions" />
+            </audio>
+          ) : (
+            <pre className="font-sans whitespace-pre-wrap break-words">
+              {JSON.stringify(answer.answer_payload, null, 2)}
+            </pre>
+          )}
         </div>
         <form action={form.formAction} className="grid gap-4 md:grid-cols-2">
           <input type="hidden" name="answer_id" value={answer.id} />

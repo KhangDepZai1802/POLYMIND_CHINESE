@@ -10,6 +10,7 @@ import {
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -182,22 +183,22 @@ export function ClassFormDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="start_date">Ngày khai giảng</Label>
-              <Input
+              <DatePicker
                 id="start_date"
                 name="start_date"
-                type="date"
                 defaultValue={toDateInputValue(classRecord?.start_date)}
+                placeholder="Chọn ngày"
               />
               <FieldError message={fe["start_date"]} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="expected_end_date">Dự kiến kết thúc</Label>
-              <Input
+              <DatePicker
                 id="expected_end_date"
                 name="expected_end_date"
-                type="date"
                 defaultValue={toDateInputValue(classRecord?.expected_end_date)}
+                placeholder="Chọn ngày"
               />
               <FieldError message={fe["expected_end_date"]} />
             </div>

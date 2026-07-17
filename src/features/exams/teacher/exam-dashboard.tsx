@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createExamDeliveryAction } from "@/features/exams/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -56,12 +57,6 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
-        <Button asChild variant="outline">
-          <Link href="/teacher/exams/question-bank">Ngân hàng câu hỏi</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/teacher/exams/sets">Bộ đề</Link>
-        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>Tạo kỳ thi</Button>
@@ -114,11 +109,11 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="exam-opens-at">Mở lúc</Label>
-                  <Input id="exam-opens-at" name="opens_at" type="datetime-local" required />
+                  <DateTimePicker id="exam-opens-at" name="opens_at" placeholder="Chọn ngày giờ" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="exam-closes-at">Đóng lúc</Label>
-                  <Input id="exam-closes-at" name="closes_at" type="datetime-local" required />
+                  <DateTimePicker id="exam-closes-at" name="closes_at" placeholder="Chọn ngày giờ" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="exam-duration">Thời lượng (phút)</Label>

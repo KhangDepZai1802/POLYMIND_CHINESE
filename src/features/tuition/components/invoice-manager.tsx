@@ -16,6 +16,8 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -384,12 +386,11 @@ function PaymentDialog({ invoice }: { invoice: TuitionInvoiceRecord }) {
 
             <div className="space-y-2">
               <Label htmlFor={`payment-at-${invoice.id}`}>Thời điểm *</Label>
-              <Input
+              <DateTimePicker
                 id={`payment-at-${invoice.id}`}
                 name="paid_at"
-                type="datetime-local"
-                required
                 defaultValue={toDateTimeInputValue(new Date())}
+                placeholder="Chọn thời điểm"
               />
               <FieldError message={state.fieldErrors?.paid_at} />
             </div>
@@ -624,12 +625,11 @@ function InvoiceDialog({
               <Label htmlFor={`issue-date-${invoice?.id ?? "new"}`}>
                 Ngày lập *
               </Label>
-              <Input
+              <DatePicker
                 id={`issue-date-${invoice?.id ?? "new"}`}
                 name="issue_date"
-                type="date"
-                required
                 defaultValue={invoice?.issue_date ?? defaultIssueDate}
+                placeholder="Chọn ngày"
               />
               <FieldError message={state.fieldErrors?.issue_date} />
             </div>
@@ -638,11 +638,11 @@ function InvoiceDialog({
               <Label htmlFor={`due-date-${invoice?.id ?? "new"}`}>
                 Hạn thanh toán
               </Label>
-              <Input
+              <DatePicker
                 id={`due-date-${invoice?.id ?? "new"}`}
                 name="due_date"
-                type="date"
                 defaultValue={invoice?.due_date ?? ""}
+                placeholder="Chọn ngày"
               />
               <FieldError message={state.fieldErrors?.due_date} />
             </div>

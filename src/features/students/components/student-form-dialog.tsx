@@ -10,6 +10,7 @@ import {
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -124,11 +125,12 @@ export function StudentFormDialog({
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="dob">Ngày sinh</Label>
-              <Input
+              <DatePicker
                 id="dob"
                 name="dob"
-                type="date"
-                defaultValue={student?.dob ?? ""}
+                defaultValue={student?.dob}
+                placeholder="Chọn ngày sinh"
+                disableFuture
               />
             </div>
 

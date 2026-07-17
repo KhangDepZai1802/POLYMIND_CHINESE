@@ -4,10 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
+  deleteExerciseSpeakingAnswer,
   saveExerciseAnswer,
   submitExerciseAttempt,
+  uploadExerciseSpeakingAnswer,
 } from "@/features/exercises/server/actions";
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
+import { SpeakingRecorder } from "@/features/question-builder/renderers/speaking-recorder";
 import { Button } from "@/components/ui/button";
 import type { QuestionType } from "@/features/question-builder/domain/questions";
 
@@ -41,11 +44,24 @@ type Payload = {
   };
   items: Item[];
 };
+/** Bản ghi Nói đã nộp: server ký signed URL vào answer.audio_url. */
+function audioUrlOf(answer: unknown): string | null {
+  if (answer && typeof answer === "object" && "audio_url" in answer) {
+    const url = (answer as { audio_url?: unknown }).audio_url;
+    return typeof url === "string" ? url : null;
+  }
+  return null;
+}
+
 export function ExerciseAttempt({ payload }: { payload: Payload }) {
   const router = useRouter();
+  // Câu Nói tự lưu qua recorder (RPC riêng) — không đưa vào state chung để
+  // vòng lưu-khi-nộp không ghi đè answer_payload đã có audio_path.
   const [answers, setAnswers] = useState<Record<string, unknown>>(
     Object.fromEntries(
-      payload.items.map((item) => [item.id, item.answer ?? {}]),
+      payload.items
+        .filter((item) => item.question.type !== "speaking")
+        .map((item) => [item.id, item.answer ?? {}]),
     ),
   );
   const [saved, setSaved] = useState("Đã tải câu trả lời đã lưu");
@@ -115,14 +131,34 @@ export function ExerciseAttempt({ payload }: { payload: Payload }) {
             <p className="mb-4 text-sm font-semibold">
               Câu {index + 1} · {item.points} điểm
             </p>
-            <QuestionRenderer
-              type={item.question.type}
-              prompt={item.question.prompt_text}
-              promptContent={item.question.prompt_content}
-              options={item.question.options}
-              value={answers[item.id]}
-              onChange={(value) => change(item.id, value)}
-            />
+            {item.question.type === "speaking" ? (
+              <div className="space-y-4">
+                <p className="text-base font-medium whitespace-pre-wrap">
+                  {item.question.prompt_text}
+                </p>
+                <SpeakingRecorder
+                  existingUrl={audioUrlOf(item.answer)}
+                  onUpload={(blob, durationMs) => {
+                    const fd = new FormData();
+                    fd.set("audio", blob, "speaking");
+                    fd.set("duration_ms", String(durationMs));
+                    return uploadExerciseSpeakingAnswer(payload.attempt.id, item.id, fd);
+                  }}
+                  onDelete={() =>
+                    deleteExerciseSpeakingAnswer(payload.attempt.id, item.id)
+                  }
+                />
+              </div>
+            ) : (
+              <QuestionRenderer
+                type={item.question.type}
+                prompt={item.question.prompt_text}
+                promptContent={item.question.prompt_content}
+                options={item.question.options}
+                value={answers[item.id]}
+                onChange={(value) => change(item.id, value)}
+              />
+            )}
           </section>
         ))}
       </div>

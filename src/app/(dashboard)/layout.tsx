@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { BottomNav } from "@/components/layout/bottom-nav";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -45,6 +45,7 @@ export default async function DashboardLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="bg-card sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b px-4 md:px-6">
           <div className="flex items-center gap-2 md:hidden">
+            <MobileNav role={user.role} />
             <Logo size={32} radius="rounded-lg" priority />
             <span className="text-sm font-semibold">POLYMIND</span>
           </div>
@@ -65,11 +66,9 @@ export default async function DashboardLayout({
           {children}
         </main>
 
-        {/* pb-20 chừa chỗ cho bottom nav trên mobile */}
-        <SiteFooter className="border-t pb-20 md:pb-6" />
+        <SiteFooter className="border-t pb-6" />
       </div>
 
-      <BottomNav role={user.role} />
       <Toaster position="top-center" richColors />
     </div>
   );

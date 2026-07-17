@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -28,7 +29,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -285,35 +285,34 @@ function EvaluationDialog({
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor={`eval-date-${id}`}>Ngày đánh giá *</Label>
-              <Input
+              <DatePicker
                 id={`eval-date-${id}`}
                 name="evaluation_date"
-                type="date"
-                required
                 defaultValue={
                   toDateInputValue(evaluation?.evaluation_date) ||
                   new Date().toISOString().slice(0, 10)
                 }
+                placeholder="Chọn ngày"
               />
               <FieldError message={errors["evaluation_date"]} />
             </div>
             <div className="space-y-2">
               <Label htmlFor={`eval-start-${id}`}>Kỳ từ</Label>
-              <Input
+              <DatePicker
                 id={`eval-start-${id}`}
                 name="period_start"
-                type="date"
                 defaultValue={toDateInputValue(evaluation?.period_start)}
+                placeholder="Chọn ngày"
               />
               <FieldError message={errors["period_start"]} />
             </div>
             <div className="space-y-2">
               <Label htmlFor={`eval-end-${id}`}>Kỳ đến</Label>
-              <Input
+              <DatePicker
                 id={`eval-end-${id}`}
                 name="period_end"
-                type="date"
                 defaultValue={toDateInputValue(evaluation?.period_end)}
+                placeholder="Chọn ngày"
               />
               <FieldError message={errors["period_end"]} />
             </div>

@@ -34,6 +34,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      answer_media: {
+        Row: {
+          attempt_id: string
+          attempt_kind: Database["public"]["Enums"]["question_set_kind"]
+          created_at: string
+          duration_ms: number | null
+          id: string
+          mime_type: string
+          object_path: string
+          set_item_id: string
+          size_bytes: number
+          uploaded_by: string
+        }
+        Insert: {
+          attempt_id: string
+          attempt_kind: Database["public"]["Enums"]["question_set_kind"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          mime_type: string
+          object_path: string
+          set_item_id: string
+          size_bytes: number
+          uploaded_by?: string
+        }
+        Update: {
+          attempt_id?: string
+          attempt_kind?: Database["public"]["Enums"]["question_set_kind"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          mime_type?: string
+          object_path?: string
+          set_item_id?: string
+          size_bytes?: number
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_media_set_item_id_fkey"
+            columns: ["set_item_id"]
+            isOneToOne: false
+            referencedRelation: "question_set_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           body: string
@@ -3152,9 +3199,29 @@ export type Database = {
       }
     }
     Functions: {
+      attach_answer_media: {
+        Args: {
+          p_attempt_id: string
+          p_duration_ms?: number
+          p_kind: Database["public"]["Enums"]["question_set_kind"]
+          p_mime: string
+          p_object_path: string
+          p_set_item_id: string
+          p_size: number
+        }
+        Returns: undefined
+      }
       bulk_mark_attendance: {
         Args: { p_records: Json; p_session_id: string }
         Returns: number
+      }
+      clear_answer_media: {
+        Args: {
+          p_attempt_id: string
+          p_kind: Database["public"]["Enums"]["question_set_kind"]
+          p_set_item_id: string
+        }
+        Returns: undefined
       }
       change_enrollment_status: {
         Args: {
@@ -3562,6 +3629,7 @@ export type Database = {
         | "listening_choice"
         | "dictation"
         | "essay_translation"
+        | "speaking"
       question_visibility:
         | "private"
         | "shared"
@@ -3822,6 +3890,7 @@ export const Constants = {
         "listening_choice",
         "dictation",
         "essay_translation",
+        "speaking",
       ],
       question_visibility: [
         "private",
