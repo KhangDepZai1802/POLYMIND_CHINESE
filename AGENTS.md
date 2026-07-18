@@ -55,6 +55,7 @@ P2-T11 — đang làm — Codex — 2026-07-15
 
 ### Dữ liệu
 - **Migration phải có test.** Đổi schema mà không có pgTAP/integration test → chưa xong.
+- **Có migration mới thì agent phải tự áp lên Supabase cloud trong cùng task** (khi project đã link và credential còn hiệu lực): chạy `db push --dry-run`, chỉ tiếp tục khi đúng release plan, chạy `db push`, rồi xác minh migration history và dry-run trả về `Remote database is up to date`. **Không bàn giao việc áp migration lại cho user.** Nếu cloud/credential thật sự chặn, ghi blocker cụ thể vào `WORKLOG.md` và báo rõ chưa áp.
 - **Không sửa migration đã chạy production.** Sai thì viết migration mới (forward-fix).
 - **Không migration lúc app startup.**
 - **Không hard delete dữ liệu lịch sử.** Dùng status/archive.
@@ -123,6 +124,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 - [ ] Đánh dấu ô trạng thái trong `docs/08-phase-plan.md` (`☐` → `☑` / `◐` / `⛔`)
 - [ ] Có bug/QA → cập nhật `docs/testing/MODULE_QA_BOARD.md`
 - [ ] Có blocker → ghi vào `BLOCKERS`
+- [ ] Có migration mới → đã dry-run, áp cloud và xác minh remote up-to-date (hoặc ghi blocker thật)
 - [ ] Lint / typecheck / test / build xanh (hoặc blocker được ghi rõ)
 - [ ] **Không chạy `git commit`**; bàn giao thay đổi để user tự review và commit
 

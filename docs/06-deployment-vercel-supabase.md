@@ -1,6 +1,6 @@
 # 06 — Deploy: Vercel + Supabase
 
-> **Trạng thái hiện tại (2026-07-16): đã deploy production.** Supabase migration 1–53 và alias Vercel `https://polymind-chinese-one.vercel.app` đã qua health/anonymous/cron-secret smoke; backup trước cleanup nằm ngoài repo tại `C:\tmp\polymind-chinese-backup-20260716`.
+> **Trạng thái hiện tại (2026-07-18): đã deploy production.** Supabase migration 1–59 đã áp lên cloud; alias Vercel `https://polymind-chinese-one.vercel.app` đã qua health/anonymous/cron-secret smoke; backup trước cleanup nằm ngoài repo tại `C:\tmp\polymind-chinese-backup-20260716`.
 > Cho tới khi có credential, trạng thái đúng là **"ready to deploy, blocked by credentials"** — **không được gọi là "đã deploy"**.
 
 ---

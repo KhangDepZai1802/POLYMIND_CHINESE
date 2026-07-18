@@ -37,7 +37,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-18** — Claude — Phiên 35: **bug giao bài tập** (enum CASE→text ở 5 RPC, migration 56); **đảo EX-12** khung thi nhiều ngày (57); nút **Xóa tất cả** buổi (chỉ buổi chưa dạy); **màu cam #FB9518** nhiều hơn (token + hover nút/menu cam + StepHint cam + loading **xanh→cam**); **Chỉnh sửa bộ đề = mở khóa sửa TẠI CHỖ** (migration 59, bỏ hướng clone 58) + nút **Xóa** bộ (đã khóa/giao→lưu trữ). Lint/typecheck sạch · Vitest **100/100** · build xanh · **db reset (59 migration) OK** · pgTAP **33/33**; **chưa smoke trình duyệt**. Role **head_teacher** (đảo D-2) đã chốt hướng, để phiên sau.
+> Cập nhật: **2026-07-18** — Codex — Phiên 36: migration **56–59 đã áp Supabase cloud**; remote history khớp local đến `20260718000059`, dry-run cuối báo `Remote database is up to date`. Migration 56 sửa lỗi enum CASE→text ở `publish_exercise_delivery` và 4 RPC đánh giá liên quan. **Chưa smoke giao bài bằng tài khoản thật trên production.**
 
 - **P-C — hoàn thành (chưa smoke runtime) — Claude — 2026-07-17.** Kỹ năng Nói: thêm question type `speaking` (đề bằng chữ, HV thu âm trả lời, GV chấm tay điểm tự do). Migration 54 (enum `speaking`) + 55 (auto_score coi speaking là chấm tay; bucket private `answer-media`; bảng `answer_media` + RLS + storage policies; RPC `attach_answer_media`/`clear_answer_media`). Recorder web (MediaRecorder, không giới hạn thời lượng — chỉ hiển thị đồng hồ/độ dài bản ghi): thu âm → nghe lại → **nộp** hoặc **xóa & thu lại** (xóa cả file storage + reset payload). Ký signed URL cho `question_media` prompt_audio (trả nợ P-B — HV nghe được audio Nghe/Chép) và cho audio bài Nói ở màn làm bài/chấm. Wizard mở kỹ năng Nói. Lint/typecheck sạch · Vitest **100/100** · build xanh. **Migration 54–55 đã áp lên cloud (2026-07-17)** — remote đã ghi cả hai; còn lại là **smoke runtime** (kiểm mic/upload/nghe lại/xóa/chấm + HV nghe được audio Nghe/Chép) trên trình duyệt thật.
 - **P-B — hoàn thành (chưa smoke runtime) — Claude — 2026-07-17.** Thay dialog "Tạo câu hỏi" bằng wizard nhiều bước kiểu Kahoot: chọn kỹ năng (Nghe/Đọc/Viết/Từ vựng/Ngữ pháp — **hoãn Nói sang P-C**) → chọn dạng câu hợp kỹ năng → editor riêng từng dạng (option đánh dấu đúng, partial-credit cho multi, đáp án chấp nhận, token, rubric) + upload/player audio cho Nghe/Chép + thanh chèn dấu Pinyin → xem trước bằng renderer thật → lưu & công bố. Backend module (migration 38–53) không đổi; chỉ redesign UI authoring + wiring question_media. Lint/typecheck sạch · Vitest **98/98** · build xanh. **Gap đã biết:** `get_*_attempt_payload` chưa ký signed URL cho question_media nên học viên chưa nghe được audio (thuộc delivery/P-C); wizard tạm loại `matching` + `reading_group` vì renderer chưa render được (cần nâng renderer sau).
@@ -48,7 +48,7 @@
 - **P7-T10 — hoàn thành — Codex — 2026-07-16.** Khử request auth/profile trùng trong một render, bỏ profile round-trip ở middleware protected route, song song hóa critical path dashboard và thêm loading overlay accessible.
 - **P7-T9 — chưa triển khai — user chốt 2026-07-16.** Một giáo viên được làm giáo viên chính của nhiều lớp; mỗi lớp chỉ có một giáo viên phụ trách; bỏ hoàn toàn vai trò trợ giảng khỏi hệ thống.
 - **P7-T8 — đang làm — Codex — 2026-07-16.** Thay luồng mời email bằng Super Admin cấp tên đăng nhập + mật khẩu trực tiếp cho giáo viên/học viên trong trang quản trị; email không bắt buộc.
-- **P7-T7 — đang làm — Codex — 2026-07-15.** Supabase cloud đã áp 34 migration + production seed; Vercel project/GitHub đã link.
+- **P7-T7 — đang làm (cloud 1–59 đã đồng bộ; còn smoke authenticated) — Codex — 2026-07-18.** Migration 56–59 đã áp; history local/remote khớp và remote không còn migration pending.
 - **Baseline đã kiểm gần nhất:** 35 migration · 33 bảng public đều RLS · pgTAP **333/333** · lint/typecheck sạch · Vitest **82/82** · production build xanh; Playwright gần nhất **20/20**; Verification Queue trống.
 - **Deploy cloud:** URL production đã chạy và anonymous guard đúng; P7-T7 chưa đóng vì còn migrate/redeploy các task mới và smoke authenticated đủ 3 role.
 
@@ -56,7 +56,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Phiên 35 (mới): áp cloud + smoke.** (1) User áp migration **56–59** lên cloud rồi redeploy (bắt buộc — nếu không, nút Chỉnh sửa bộ đề báo "schema cache"). (2) Smoke UI các thay đổi Phiên 35: giao bài tập (hết lỗi status), tạo kỳ thi khung **nhiều ngày**, nút **Xóa tất cả** buổi (giữ buổi đã điểm danh), **màu cam** (hover nút/menu, StepHint, loading) đúng light/dark, **Chỉnh sửa (mở khóa sửa tại chỗ) + Xóa** bộ đề. (3) **Việc lớn kế tiếp: role `head_teacher`** (Giáo viên trưởng, đảo D-2) — enum `user_role` + helper `is_manager()` + làm lại RLS ~33 bảng (super_admin riêng cho tài khoản/audit) + `my_teacher_id()` nhận head_teacher + nav 2 nhánh (Quản lý / Lớp được phân công) + middleware + provisioning + pgTAP. Tách thành nhiều task nhỏ.
+**Phiên 35: cloud đã đồng bộ, tiếp theo smoke.** (1) Smoke UI các thay đổi Phiên 35: giao bài tập (xác nhận hết lỗi status), tạo kỳ thi khung **nhiều ngày**, nút **Xóa tất cả** buổi (giữ buổi đã điểm danh), **màu cam** (hover nút/menu, StepHint, loading) đúng light/dark, **Chỉnh sửa (mở khóa sửa tại chỗ) + Xóa** bộ đề. (2) **Việc lớn kế tiếp: role `head_teacher`** (Giáo viên trưởng, đảo D-2) — enum `user_role` + helper `is_manager()` + làm lại RLS ~33 bảng (super_admin riêng cho tài khoản/audit) + `my_teacher_id()` nhận head_teacher + nav 2 nhánh (Quản lý / Lớp được phân công) + middleware + provisioning + pgTAP. Tách thành nhiều task nhỏ.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
@@ -109,6 +109,7 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 | D-22 | **BỎ HOÀN TOÀN TRỢ GIẢNG** _(user chốt 2026-07-16 — đảo ngược phần phân công giáo viên của D-10)_. Mỗi lớp chỉ có một giáo viên phụ trách chính; một giáo viên được làm giáo viên chính của nhiều lớp. Phải loại vai trò `assistant` khỏi DB, code, UI, RLS, seed, types, docs và test trong `P7-T9`; chưa được coi hành vi hiện tại đã đổi trước khi forward migration và bộ kiểm tra hoàn tất.                                                                                                                                   |
 | D-23 | **TÁCH DÒNG CHƯƠNG TRÌNH VÀ TỰ SINH MÃ** _(user chốt 2026-07-16)_. Course chọn `core` hoặc `business`; chỉ `core` có Loại (`hsk`, `communication`, `kids`, `exam_prep`, `custom`), còn `business` không có Loại. Người dùng không nhập tay mã khóa học, lớp học, giáo viên hoặc học viên; DB tự sinh mã UNIQUE.                                                                                                                                                                                                  |
 | D-24 | **LỊCH HỌC DỄ ĐỌC CHO GIÁO VIÊN** _(user chốt 2026-07-16)_. Card Buổi học dùng thời khóa biểu tuần làm mặc định, có nút lùi/tiến tuần và chuyển qua lại giữa `Tối giản`, `Tuần`, `Tháng`; danh sách đánh số buổi hiện tại chỉ nằm trong chế độ Tối giản.                                                                                                                                                                                                                                                                  |
+| D-25 | **AGENT TỰ ÁP MIGRATION CLOUD** _(user chốt 2026-07-18)_. Khi task có migration mới và project cloud đã link/credential còn hiệu lực, Claude/Codex phải tự chạy dry-run → áp cloud → xác minh history + remote up-to-date trong cùng task; không để user tự làm. Chỉ được dừng khi có blocker cloud/credential thật và phải ghi rõ chưa áp. |
 | EX-01 | Thay hoàn toàn luồng bài tập cũ bằng assessment engine; không giữ form nộp text/file chung. |
 | EX-02 | Chưa có dữ liệu sử dụng thật; chỉ cleanup dữ liệu demo sau backup/count/smoke. |
 | EX-03 | Bài tập và Thi dùng chung Question Bank + Builder nhưng tách module, delivery và attempt. |
@@ -133,6 +134,15 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-18] Phiên 36 — Codex — Áp migration 56–59 lên Supabase cloud
+
+- **Làm được:** Đối chiếu release plan và 4 migration local; dry-run cloud chỉ liệt kê đúng `20260718000056`–`59`, sau đó áp thật cả 4 lên project đã link `jmrftblsmsusulzwzvtv`.
+- **Xác minh:** `supabase migration list` cho thấy local/remote khớp đến `20260718000059`; dry-run sau cùng trả về `Remote database is up to date`. Migration 56 đã đưa bản ép kiểu enum của `publish_exercise_delivery` và 4 RPC đánh giá liên quan lên cloud.
+- **Gate repo:** `npm run lint` xanh · `npm run typecheck` xanh · Vitest **100/100** · `npm run build` xanh (lần đầu sandbox không tải được Google Font; chạy lại có quyền mạng thì compile thành công).
+- **Quyết định mới:** D-25 — từ nay agent tự dry-run, áp và xác minh migration cloud trong cùng task; không bàn giao bước này lại cho user. Đã bổ sung luật cứng vào `AGENTS.md` (Claude kế thừa qua `CLAUDE.md`).
+- **Rủi ro còn lại:** Chưa smoke thao tác giao bài bằng tài khoản giáo viên thật; cảnh báo cache catalog `pg-delta` của CLI xuất hiện sau push do thiếu certificate tạm, nhưng migration history đã ghi đủ và remote không còn pending.
+- **Next action:** Smoke production luồng giao bài để xác nhận lỗi `exercise_delivery_status` không còn ở request thực.
 
 ### [2026-07-18] Phiên 35 — Claude — Bug giao bài tập + khung thi nhiều ngày + xóa-tất-cả buổi + accent cam + sửa/xóa bộ đề
 
@@ -191,14 +201,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt. Phạm vi P-B do user chốt 2026-07-17: hoãn Nói sang P-C, thay hẳn dialog bằng wizard.
 - **Blocker/rủi ro:** (1) **Audio chưa tới học viên** — `get_exercise_attempt_payload`/`get_exam_attempt_payload` trả `prompt_content` thô, chưa ký signed URL cho `question_media` → player chỉ chạy trong editor GV; cần nâng payload RPC/query (gộp vào P-C). (2) Wizard tạm **loại `matching` + `reading_group`** vì renderer chưa render câu con/nối cặp đáng tin — cần nâng renderer rồi mở lại.
 - **Next action:** P-C (Nói: enum + bucket + recorder + chấm) kèm ký signed URL audio cho payload; song song P7-T8 → P7-T9 → migrate/redeploy → smoke P7-T7.
-
-### [2026-07-17] Phiên 30 — Claude — tab điều hướng Bài tập & Thi + gỡ import Excel
-
-- **Làm được:** (1) Thêm thanh tab dùng chung `AssessmentTabs` cho **cả hai** module: Bài tập (Giao bài tập · Ngân hàng câu hỏi · Bộ bài tập) và Kiểm tra/Thi (Lên lịch thi · Ngân hàng câu hỏi · Bộ đề). Trước đây vào Ngân hàng câu hỏi / Bộ là "kẹt", không có đường qua tab khác; nay 3 màn của mỗi module đều có thanh tab, active theo tiền tố route dài nhất nên trang chi tiết `[deliveryId]` vẫn sáng tab gốc. Gỡ 2 nút link trùng trong exercise-dashboard + exam-dashboard. (2) **Gỡ hẳn import Excel** khỏi Ngân hàng câu hỏi (xóa `question-import.tsx`, `importQuestionsAction`, route `/api/question-import-template`) theo yêu cầu user — đảo EX-16.
-- **File thay đổi:** thêm `src/components/shared/assessment-tabs.tsx`; sửa `src/app/(dashboard)/teacher/{exercises,exams}/page.tsx`, `src/features/{exercises,exams}/teacher/{exercise,exam}-dashboard.tsx`, `src/features/question-bank/components/question-bank-page.tsx`, `src/features/question-builder/components/sets-page.tsx`, `src/features/question-bank/server/actions.ts`; xóa `src/features/question-bank/components/question-import.tsx` + `src/app/api/question-import-template/`.
-- **Migration/data impact:** KHÔNG có migration. RPC DB `import_questions` để nguyên (chỉ gỡ lối vào UI) nên pgTAP không đổi; `exceljs` vẫn dùng ở reports/export nên giữ dependency.
-- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch (sau khi xóa `.next` cache stale) · Vitest **91/91** · `npm run build` xanh, đủ 6 route `/teacher/{exercises,exams}/{,question-bank,sets}`. **CHƯA** smoke trình duyệt.
-- **Quyết định mới:** đảo EX-16 — Ngân hàng câu hỏi không còn import Excel (user chốt 2026-07-17). Redesign soạn câu hỏi theo kỹ năng (Nghe/Nói/Đọc/Viết, wizard kiểu Kahoot, player audio trong editor) đã bàn nhưng **hoãn**: user chỉ chốt làm tab lần này; các lựa chọn cho lần sau: Nói = ghi âm web + upload, chỉ audio (không video mp4).
-- **Blocker/rủi ro:** không có blocker mới; chờ smoke runtime 2 module.
-- **Next action:** khi user duyệt → làm P-B (wizard soạn câu hỏi theo kỹ năng + upload/player trong editor) rồi P-C (kỹ năng Nói: enum + bucket bài nộp + RLS + recorder + chấm).
-
