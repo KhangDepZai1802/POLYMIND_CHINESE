@@ -39,14 +39,14 @@ export function NavLinks({
               "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               active
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                : "text-muted-foreground hover:bg-brand-orange/15 hover:text-foreground",
             )}
           >
             <Icon className="size-5 shrink-0" aria-hidden />
             <span className="truncate">{item.label}</span>
             {active && (
               <span
-                className="bg-brand-orange ml-auto size-1.5 shrink-0 rounded-full"
+                className="bg-brand-orange ml-auto size-2 shrink-0 rounded-full"
                 aria-hidden
               />
             )}

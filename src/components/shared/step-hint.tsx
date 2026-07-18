@@ -23,8 +23,11 @@ const HINTS: Record<Module, Record<Step, string>> = {
 
 export function StepHint({ module, step }: { module: Module; step: Step }) {
   return (
-    <div className="mb-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-      <Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+    <div className="border-brand-orange/30 bg-brand-orange/10 mb-6 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm">
+      <Lightbulb
+        className="text-brand-orange mt-0.5 size-4 shrink-0"
+        aria-hidden
+      />
       <p className="text-foreground/80">
         <span className="font-semibold text-foreground">Bước {step}/3.</span>{" "}
         {HINTS[module][step]}

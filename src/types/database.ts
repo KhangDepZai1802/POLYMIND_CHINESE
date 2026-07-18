@@ -3232,10 +3232,6 @@ export type Database = {
         Returns: undefined
       }
       clone_question: { Args: { p_question_id: string }; Returns: string }
-      clone_question_set_for_edit: {
-        Args: { p_question_set_id: string }
-        Returns: string
-      }
       consume_rate_limit: { Args: { p_scope: string }; Returns: boolean }
       create_exam_delivery: {
         Args: {
@@ -3524,6 +3520,10 @@ export type Database = {
           p_to_class_id: string
         }
         Returns: string
+      }
+      unlock_question_set_for_edit: {
+        Args: { p_question_set_id: string }
+        Returns: undefined
       }
     }
     Enums: {

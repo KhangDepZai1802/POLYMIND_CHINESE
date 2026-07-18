@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import {
-  cloneQuestionSetForEditAction,
   createQuestionSetSectionAction,
   createQuestionSetAction,
   deleteQuestionSetAction,
   lockQuestionSetAction,
   moveQuestionSetItemAction,
   removeQuestionSetItemAction,
+  unlockQuestionSetForEditAction,
 } from "@/features/question-builder/server/actions";
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
 import {
@@ -113,7 +113,7 @@ function SetCard({
 }) {
   const addSection = useFormAction(createQuestionSetSectionAction);
   const lock = useFormAction(lockQuestionSetAction);
-  const cloneEdit = useFormAction(cloneQuestionSetForEditAction, {
+  const unlockEdit = useFormAction(unlockQuestionSetForEditAction, {
     toastError: true,
   });
   const remove = useFormAction(deleteQuestionSetAction, { toastError: true });
@@ -243,13 +243,13 @@ function SetCard({
             <p className="text-sm font-medium text-emerald-700">
               Bộ đã khóa, sẵn sàng để giao.
             </p>
-            {/* Sửa sau khi đã khóa/giao → clone sang bản nháp mới, không đụng bản
-                đã giao. */}
-            <form action={cloneEdit.formAction}>
+            {/* Mở khóa để sửa TẠI CHỖ chính bộ này (không đẻ bản mới). Chặn nếu
+                đã có học viên làm bài — xem migration 59. */}
+            <form action={unlockEdit.formAction}>
               <input type="hidden" name="question_set_id" value={set.id} />
               <SubmitButton variant="outline">
                 <Pencil className="size-4" aria-hidden />
-                Chỉnh sửa (tạo bản mới)
+                Chỉnh sửa
               </SubmitButton>
             </form>
           </div>

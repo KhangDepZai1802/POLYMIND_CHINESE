@@ -9,16 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Xanh khi nghỉ, CAM khi hover — cam là màu tương tác phụ của thương hiệu.
+        default:
+          "bg-primary text-primary-foreground hover:bg-brand-orange hover:text-brand-orange-foreground",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border bg-background shadow-xs hover:border-brand-orange/40 hover:bg-brand-orange/15 hover:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-brand-orange/20",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "hover:bg-brand-orange/15 hover:text-foreground dark:hover:bg-brand-orange/20",
+        link: "text-primary underline-offset-4 hover:text-brand-orange hover:underline",
       },
       size: {
         default: "h-11 px-4 py-2 has-[>svg]:px-3",

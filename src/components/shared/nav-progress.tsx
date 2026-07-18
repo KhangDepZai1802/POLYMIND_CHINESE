@@ -129,7 +129,7 @@ export function NavProgress() {
       aria-label="Đang tải trang"
     >
       <div
-        className="from-primary via-info to-brand-red h-full bg-gradient-to-r transition-[width,opacity] duration-200 ease-out"
+        className="from-primary via-info to-brand-orange h-full bg-gradient-to-r transition-[width,opacity] duration-200 ease-out"
         style={{ width: `${progress}%`, opacity: visible ? 1 : 0 }}
       />
     </div>

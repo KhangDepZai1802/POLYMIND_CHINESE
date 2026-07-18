@@ -1,4 +1,6 @@
--- Regression: clone bộ đã khóa để sửa (migration 58) + xóa/lưu-trữ bộ.
+-- Regression: "Chỉnh sửa" bộ đã khóa = MỞ KHÓA sửa tại chỗ (migration 59).
+-- Mở khóa được khi chưa có ai làm bài; sửa được item sau khi mở; chặn khi đã có
+-- học viên làm bài.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(5);
@@ -31,52 +33,58 @@ update public.questions set current_version_id='77000000-0000-0000-0000-00000000
 insert into public.question_answer_keys(question_version_id,answer_key,created_by) values
 ('77000000-0000-0000-0000-000000000001','{"value":"1"}','70000000-0000-0000-0000-000000000002');
 
--- Bộ đề đã khóa, có 1 section + 1 câu
+-- Set A: đã khóa, CHƯA giao → mở khóa được
 insert into public.question_sets(id,owner_id,kind,title,status) values
-('78000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000002','exam','Bộ Set','ready');
+('78000000-0000-0000-0000-000000000001','70000000-0000-0000-0000-000000000002','exam','Bộ A','ready');
 insert into public.question_set_versions(id,question_set_id,version_no,title_snapshot,raw_max_score,created_by,locked_at) values
-('79000000-0000-0000-0000-000000000001','78000000-0000-0000-0000-000000000001',1,'Bộ Set',10,'70000000-0000-0000-0000-000000000002',now());
+('79000000-0000-0000-0000-000000000001','78000000-0000-0000-0000-000000000001',1,'Bộ A',10,'70000000-0000-0000-0000-000000000002',now());
 update public.question_sets set current_version_id='79000000-0000-0000-0000-000000000001' where id='78000000-0000-0000-0000-000000000001';
 insert into public.question_set_sections(id,set_version_id,title,instructions,order_index) values
 ('7a000000-0000-0000-0000-000000000001','79000000-0000-0000-0000-000000000001','Phần A','Đọc kỹ',0);
 insert into public.question_set_items(id,set_version_id,question_version_id,section_id,order_index,points) values
 ('7b000000-0000-0000-0000-000000000001','79000000-0000-0000-0000-000000000001','77000000-0000-0000-0000-000000000001','7a000000-0000-0000-0000-000000000001',0,10);
 
+-- Set B: đã khóa, ĐÃ giao + có lượt thi → KHÔNG được mở khóa
+insert into public.question_sets(id,owner_id,kind,title,status) values
+('78000000-0000-0000-0000-000000000002','70000000-0000-0000-0000-000000000002','exam','Bộ B','ready');
+insert into public.question_set_versions(id,question_set_id,version_no,title_snapshot,raw_max_score,created_by,locked_at) values
+('79000000-0000-0000-0000-000000000002','78000000-0000-0000-0000-000000000002',1,'Bộ B',10,'70000000-0000-0000-0000-000000000002',now());
+update public.question_sets set current_version_id='79000000-0000-0000-0000-000000000002' where id='78000000-0000-0000-0000-000000000002';
+insert into public.question_set_items(id,set_version_id,question_version_id,order_index,points) values
+('7b000000-0000-0000-0000-000000000002','79000000-0000-0000-0000-000000000002','77000000-0000-0000-0000-000000000001',0,10);
+insert into public.exam_deliveries(id,class_id,set_version_id,title,opens_at,closes_at,duration_minutes,status,published_at,created_by) values
+('7c000000-0000-0000-0000-000000000002','74000000-0000-0000-0000-000000000001','79000000-0000-0000-0000-000000000002','Thi B',now()-interval '1 hour',now()+interval '1 hour',60,'open',now(),'70000000-0000-0000-0000-000000000002');
+insert into public.exam_attempts(id,exam_delivery_id,enrollment_id,status,started_at,deadline_at) values
+('7d000000-0000-0000-0000-000000000002','7c000000-0000-0000-0000-000000000002','75000000-0000-0000-0000-000000000001','in_progress',now(),now()+interval '1 hour');
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','70000000-0000-0000-0000-000000000002',true);
 
--- Clone bản đã khóa để chỉnh sửa
+-- Mở khóa Set A (chưa ai làm)
 select lives_ok(
-  $$select public.clone_question_set_for_edit('78000000-0000-0000-0000-000000000001')$$,
-  'clone bộ đã khóa tạo bản nháp mới không lỗi'
+  $$select public.unlock_question_set_for_edit('78000000-0000-0000-0000-000000000001')$$,
+  'mở khóa bộ chưa giao để chỉnh sửa không lỗi'
 );
 select is(
-  (select version_no from public.question_set_versions v
-    join public.question_sets s on s.current_version_id=v.id
-    where s.id='78000000-0000-0000-0000-000000000001'),
-  2,
-  'current_version chuyển sang bản 2 (nháp)'
+  (select locked_at from public.question_set_versions where id='79000000-0000-0000-0000-000000000001'),
+  null,
+  'bản đã trở về trạng thái mở (locked_at null)'
 );
 select is(
-  (select count(*)::integer from public.question_set_items i
-    join public.question_sets s on s.current_version_id=i.set_version_id
-    where s.id='78000000-0000-0000-0000-000000000001'),
-  1,
-  'bản nháp mới đã copy 1 câu hỏi'
+  (select status from public.question_sets where id='78000000-0000-0000-0000-000000000001'),
+  'draft',
+  'bộ trở về draft để sửa tiếp'
 );
--- Câu trong bản nháp trỏ vào SECTION MỚI (đã ánh xạ lại), không phải section cũ
-select isnt(
-  (select i.section_id from public.question_set_items i
-    join public.question_sets s on s.current_version_id=i.set_version_id
-    where s.id='78000000-0000-0000-0000-000000000001'),
-  '7a000000-0000-0000-0000-000000000001'::uuid,
-  'section của câu trong bản nháp là section mới, không dùng lại id section cũ'
+-- Sau khi mở khóa, sửa câu (đổi điểm) phải chạy được (trước đó trigger chặn)
+select lives_ok(
+  $$update public.question_set_items set points=5 where id='7b000000-0000-0000-0000-000000000001'$$,
+  'sửa được câu trong bộ sau khi mở khóa'
 );
 
--- Bản nháp hiện tại chưa khóa → clone lần nữa phải bị từ chối
+-- Set B đã có học viên làm bài → mở khóa bị chặn
 select throws_ok(
-  $$select public.clone_question_set_for_edit('78000000-0000-0000-0000-000000000001')$$,
-  'P0001',null,'không clone khi bản hiện tại đang mở'
+  $$select public.unlock_question_set_for_edit('78000000-0000-0000-0000-000000000002')$$,
+  'P0001',null,'không mở khóa khi đã có học viên làm bài'
 );
 
 select * from finish();
