@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(24);
 
 select is(
   (select count(*)::integer from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in (
@@ -20,6 +20,14 @@ select ok(has_function_privilege('authenticated','public.share_question(uuid,uui
 select ok(has_function_privilege('authenticated','public.clone_question(uuid)','EXECUTE'),'authenticated có entrypoint clone được kiểm quyền trong RPC');
 select ok(has_function_privilege('authenticated','public.import_questions(jsonb)','EXECUTE'),'authenticated có entrypoint import transaction');
 select ok(has_function_privilege('authenticated','public.get_student_assessment_overview()','EXECUTE'),'authenticated có overview student không lộ điểm sớm');
+select ok(
+  pg_get_functiondef('public.get_student_assessment_overview()'::regprocedure) like '%requires_microphone%',
+  'overview báo trước kỳ thi cần micro'
+);
+select ok(
+  pg_get_functiondef('public.get_student_assessment_overview()'::regprocedure) like '%question_type = ''speaking''%',
+  'cờ micro chỉ dựa trên câu Nói trong bộ đề đã giao'
+);
 select is(
   (select count(*)::integer from pg_class where relname in ('v_enrollment_assessment_progress','v_class_assessment_progress','v_at_risk_assessment_students') and reloptions @> array['security_invoker=true']),
   3,

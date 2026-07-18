@@ -32,20 +32,26 @@ export default async function DashboardLayout({
 
   return (
     <ConfirmationProvider>
-      <div className="bg-muted/30 flex min-h-screen">
+      <div className="bg-muted/30 flex min-h-screen" data-dashboard-shell>
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>
         <a
           href="#noi-dung-chinh"
+          data-dashboard-chrome
           className="bg-background text-foreground focus:ring-ring fixed top-2 left-2 z-50 -translate-y-20 rounded-md px-4 py-3 font-medium shadow-lg focus:translate-y-0 focus:ring-2 focus:outline-none"
         >
           Bỏ qua điều hướng
         </a>
-        <SidebarNav role={user.role} />
+        <div className="contents" data-dashboard-chrome>
+          <SidebarNav role={user.role} />
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="bg-card sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b px-4 md:px-6">
+          <header
+            className="bg-card sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b px-4 md:px-6"
+            data-dashboard-chrome
+          >
             <div className="flex items-center gap-2 md:hidden">
               <MobileNav role={user.role} />
               <Logo size={32} radius="rounded-lg" priority />
@@ -64,11 +70,18 @@ export default async function DashboardLayout({
             </div>
           </header>
 
-          <main id="noi-dung-chinh" tabIndex={-1} className="flex-1 p-4 md:p-6">
+          <main
+            id="noi-dung-chinh"
+            tabIndex={-1}
+            className="flex-1 p-4 md:p-6"
+            data-dashboard-main
+          >
             {children}
           </main>
 
-          <SiteFooter className="border-t pb-6" />
+          <div className="contents" data-dashboard-chrome>
+            <SiteFooter className="border-t pb-6" />
+          </div>
         </div>
 
         <Toaster position="top-center" richColors />

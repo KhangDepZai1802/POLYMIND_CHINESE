@@ -154,7 +154,9 @@ Giáo viên tạo/version câu hỏi → tạo bộ bài tập → thêm section
   → đặt window, số lượt, late penalty, grading/release mode → publish
 
 Học viên mở delivery của lớp mình → start_attempt idempotent
+  → nếu có câu Nói: kiểm tra/cho phép micro ngay trên trang
   → autosave từng câu → resume được → submit idempotent
+  → UI khóa nút + báo đang nộp → thành công chuyển sang tab Đã nộp
   → DB chấm tự động phần objective, chuyển phần rubric/essay sang chờ chấm
 
 Giáo viên chấm phần thủ công → DB tính lại tổng
@@ -186,7 +188,8 @@ Giáo viên chấm phần thủ công → DB tính lại tổng
 Giáo viên tạo và khóa bộ đề thi → tick chọn một hoặc nhiều lớp phụ trách
   → tạo kỳ thi riêng cho từng lớp trong một transaction → lên lịch window (có thể nhiều ngày, EX-12 đã đảo)
   → duration không vượt window → publish
-Học viên vào phòng chờ → kiểm tra audio + xác nhận quy định → start
+Học viên vào phòng chờ → kiểm tra audio; nếu đề có câu Nói thì kiểm tra micro → xác nhận quy định → start
+  → bật chế độ tập trung (ẩn dashboard, thử fullscreen, cảnh báo rời/tải lại)
   → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút
   → nộp chủ động hoặc pg_cron finalize khi hết hạn/browser đóng
 Giáo viên chấm phần thủ công → khóa kết quả → công bố

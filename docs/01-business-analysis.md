@@ -78,7 +78,7 @@ Các thuật ngữ khác:
 | 7   | Ghi danh               | Ghi danh, tạm dừng, chuyển lớp, rút học, hoàn thành khóa (giữ lịch sử)                  |
 | 8   | Điểm danh              | Có mặt / Đi muộn / Vắng / Có phép; thao tác hàng loạt theo roster                       |
 | 9   | Bài tập                | Ngân hàng câu hỏi, bộ có version, làm trực tiếp/autosave, chấm auto + thủ công, release |
-| 10  | Kiểm tra & đánh giá    | Thi cùng ngày có timer/finalizer, điểm 0–100, xếp loại; nhận xét định kỳ giữ riêng       |
+| 10  | Kiểm tra & đánh giá    | Thi cùng ngày có timer/finalizer, điểm 0–100, xếp loại; nhận xét định kỳ giữ riêng      |
 | 11  | Tiến độ                | Tổng hợp từ bài học hoàn thành + chuyên cần + bài tập + điểm; điều kiện hoàn thành khóa |
 | 12  | Học phí cơ bản         | Hóa đơn, khoản mục, thanh toán, phiếu thu, số dư còn phải thu                           |
 | 13  | Thông báo              | In-app một chiều + announcement toàn hệ thống/lớp                                       |
@@ -110,31 +110,31 @@ AI hỗ trợ soạn bài và nhận xét · Email notification nghiệp vụ ·
 
 Ký hiệu: **C** tạo · **R** đọc · **U** sửa · **D** xóa/hủy · **—** không truy cập · **(own)** chỉ dữ liệu của chính mình · **(assigned)** chỉ lớp được phân công.
 
-| Tài nguyên                               | Super Admin        | Teacher                               | Student                                                            |
-| ---------------------------------------- | ------------------ | ------------------------------------- | ------------------------------------------------------------------ |
-| Tài khoản, role, invite, khóa/mở         | CRUD               | —                                     | —                                                                  |
-| Hồ sơ giáo viên                          | CRUD               | R (own)                               | —                                                                  |
-| Hồ sơ học viên                           | CRUD               | R (assigned: học viên trong lớp mình) | R (own)                                                            |
-| Level, Course, Module, Lesson            | CRUD               | R (assigned: course của lớp mình)     | R (course của lớp mình)                                            |
-| Tài liệu khóa học                        | CRUD               | R (assigned)                          | R (assigned + đã publish)                                          |
-| Lớp học                                  | CRUD               | R (assigned)                          | R (lớp mình học)                                                   |
-| Phân công giáo viên vào lớp              | CRUD               | — (không tự gán mình vào lớp)         | —                                                                  |
-| Lịch lặp                                 | CRUD               | R (assigned)                          | R (lớp mình học)                                                   |
-| Buổi học                                 | CRUD               | R + U (assigned: nhật ký, trạng thái) | R (lớp mình học)                                                   |
-| Ghi danh / chuyển lớp / rút học          | CRUD               | R (assigned)                          | R (own)                                                            |
-| Điểm danh                                | CRUD               | CRU (assigned)                        | R (own)                                                            |
-| Tiến độ bài học                          | CRUD               | CRU (assigned)                        | R (own)                                                            |
+| Tài nguyên                               | Super Admin         | Teacher                               | Student                                                            |
+| ---------------------------------------- | ------------------- | ------------------------------------- | ------------------------------------------------------------------ |
+| Tài khoản, role, invite, khóa/mở         | CRUD                | —                                     | —                                                                  |
+| Hồ sơ giáo viên                          | CRUD                | R (own)                               | —                                                                  |
+| Hồ sơ học viên                           | CRUD                | R (assigned: học viên trong lớp mình) | R (own)                                                            |
+| Level, Course, Module, Lesson            | CRUD                | R (assigned: course của lớp mình)     | R (course của lớp mình)                                            |
+| Tài liệu khóa học                        | CRUD                | R (assigned)                          | R (assigned + đã publish)                                          |
+| Lớp học                                  | CRUD                | R (assigned)                          | R (lớp mình học)                                                   |
+| Phân công giáo viên vào lớp              | CRUD                | — (không tự gán mình vào lớp)         | —                                                                  |
+| Lịch lặp                                 | CRUD                | R (assigned)                          | R (lớp mình học)                                                   |
+| Buổi học                                 | CRUD                | R + U (assigned: nhật ký, trạng thái) | R (lớp mình học)                                                   |
+| Ghi danh / chuyển lớp / rút học          | CRUD                | R (assigned)                          | R (own)                                                            |
+| Điểm danh                                | CRUD                | CRU (assigned)                        | R (own)                                                            |
+| Tiến độ bài học                          | CRUD                | CRU (assigned)                        | R (own)                                                            |
 | Câu hỏi/bộ bài tập/bộ đề                 | CRUD + duyệt global | CRUD own/share                        | DENY                                                               |
-| Delivery/attempt/answer bài tập           | CRUD + chấm         | CRUD + chấm (assigned)                | Làm/nộp own; không sửa điểm/feedback                               |
+| Delivery/attempt/answer bài tập          | CRUD + chấm         | CRUD + chấm (assigned)                | Làm/nộp own; không sửa điểm/feedback                               |
 | Kỳ thi/attempt/kết quả                   | CRUD + regrade      | CRUD + chấm (assigned)                | Làm own; chỉ xem kết quả đã công bố                                |
-| Thang xếp loại                           | CRUD               | R                                     | R                                                                  |
-| Đánh giá định kỳ                         | CRUD               | CRUD (assigned)                       | R (own + đã publish + `visible_to_student`)                        |
-| Ghi chú học viên                         | CRUD               | CRUD (assigned)                       | R (own + `student_visible`) — **tuyệt đối không đọc `staff_only`** |
-| Học phí (hóa đơn, thanh toán, phiếu thu) | CRUD               | **—** (không đọc)                     | R (own); **không** tự ghi nhận thanh toán                          |
-| Thông báo                                | CRUD               | R (own)                               | R (own)                                                            |
-| Announcement                             | CRUD               | R                                     | R                                                                  |
-| Báo cáo                                  | R (toàn trung tâm) | R (assigned)                          | R (own)                                                            |
-| Audit log                                | R                  | **—**                                 | **—**                                                              |
+| Thang xếp loại                           | CRUD                | R                                     | R                                                                  |
+| Đánh giá định kỳ                         | CRUD                | CRUD (assigned)                       | R (own + đã publish + `visible_to_student`)                        |
+| Ghi chú học viên                         | CRUD                | CRUD (assigned)                       | R (own + `student_visible`) — **tuyệt đối không đọc `staff_only`** |
+| Học phí (hóa đơn, thanh toán, phiếu thu) | CRUD                | **—** (không đọc)                     | R (own); **không** tự ghi nhận thanh toán                          |
+| Thông báo                                | CRUD                | R (own)                               | R (own)                                                            |
+| Announcement                             | CRUD                | R                                     | R                                                                  |
+| Báo cáo                                  | R (toàn trung tâm)  | R (assigned)                          | R (own)                                                            |
+| Audit log                                | R                   | **—**                                 | **—**                                                              |
 
 Nguyên tắc bất di bất dịch:
 
@@ -195,15 +195,19 @@ Nguyên tắc bất di bất dịch:
 ### BR-6 — Bài tập
 
 - Câu hỏi và bộ dùng version; version đã khóa/được giao là bất biến. Có đủ 11 dạng Q1–Q11, không có hint ở v1.
+- Giáo viên thao tác bằng nút **Chỉnh sửa** trên cùng câu hỏi; hệ thống vẫn tạo version bất biến ở tầng dữ liệu để đề đã giao không đổi nội dung.
 - Một bộ giao nhiều lớp tạo delivery riêng; giáo viên chỉ giao lớp mình phụ trách.
 - Học viên chỉ start/save/submit attempt cho enrollment của chính mình, trong window và còn lượt; autosave/submit idempotent.
+- Khi nộp, UI phải khóa nút, báo đang xử lý, báo kết quả và chuyển thẳng sang nhóm **Đã nộp**; lỗi lưu cuối phải chặn submit và cho thử lại.
+- Lượt làm có câu Nói phải có bước xin/kiểm tra quyền micro ngay trên trang; ứng dụng không được giả định có thể tự vượt quyền bảo mật của trình duyệt.
 - Điểm objective do DB chấm, essay/rubric chờ giáo viên; late penalty, grading method và release mode được cưỡng chế ở DB.
 - Answer key không xuất hiện trong client payload hoặc quyền student trước thời điểm release.
 
 ### BR-7 — Kiểm tra, xếp loại và đánh giá
 
-- Khung thi bắt buộc cùng ngày `Asia/Ho_Chi_Minh`; deadline = `min(started_at + duration, closes_at)`. `pg_cron` finalize attempt hết hạn kể cả browser đóng.
+- Khung thi có thể kéo dài nhiều ngày; deadline = `min(started_at + duration, closes_at)`. `pg_cron` finalize attempt hết hạn kể cả browser đóng.
 - Điểm thi thang **0–100**; kết quả chỉ hiện sau khóa/công bố. Copy/cut/paste/drop bị chặn nhưng không phá Chinese IME.
+- Phòng chờ phải kiểm tra micro trước khi timer chạy nếu bộ đề có câu Nói. Trong lượt thi, dashboard ẩn điều hướng, cảnh báo khi rời/tải lại trang và ghi integrity event; không tuyên bố có thể khóa tuyệt đối tab, hệ điều hành hay trình duyệt của học viên.
 - **Xếp loại được tính từ `grading_scale_rules`**, không hard-code label rải rác trong UI và không cho client tự gửi lên. Các ngưỡng **không chồng lấn** và phủ kín 0–100.
 - Lưu draft và **publish là hai hành động tách biệt**. Học viên chỉ thấy bản ghi có `published_at IS NOT NULL`.
 - Đánh giá định kỳ có thêm cờ `visible_to_student` — giáo viên chủ động chọn nhận xét nào cho học viên xem.

@@ -1,13 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { MicrophoneCheck } from "@/components/shared/microphone-check";
 import { startExamAction } from "@/features/exams/server/actions";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-export function ExamWaitingRoom({ deliveryId, canStart }: { deliveryId: string; canStart: boolean }) {
+export function ExamWaitingRoom({
+  deliveryId,
+  canStart,
+  requiresMicrophone,
+}: {
+  deliveryId: string;
+  canStart: boolean;
+  requiresMicrophone: boolean;
+}) {
   const [audioChecked, setAudioChecked] = useState(false);
+  const [microphoneReady, setMicrophoneReady] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const testAudio = () => {
     const AudioContextClass = window.AudioContext;
@@ -21,19 +39,64 @@ export function ExamWaitingRoom({ deliveryId, canStart }: { deliveryId: string; 
     oscillator.stop(context.currentTime + 0.35);
     setAudioChecked(true);
   };
+  const enterFocusMode = () => {
+    if (!document.fullscreenElement) {
+      void document.documentElement
+        .requestFullscreen?.()
+        .catch(() => undefined);
+    }
+  };
   return (
     <Dialog>
-      <DialogTrigger asChild><Button disabled={!canStart}>{canStart ? "Vào phòng chờ" : "Chưa đến giờ"}</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button disabled={!canStart}>
+          {canStart ? "Vào phòng chờ" : "Chưa đến giờ"}
+        </Button>
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Phòng chờ kỳ thi</DialogTitle><DialogDescription>Kiểm tra thiết bị trước khi bắt đầu. Timer chỉ chạy sau khi DB tạo lượt thi.</DialogDescription></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Phòng chờ kỳ thi</DialogTitle>
+          <DialogDescription>
+            Kiểm tra thiết bị trước khi bắt đầu. Timer chỉ chạy sau khi DB tạo
+            lượt thi.
+          </DialogDescription>
+        </DialogHeader>
         <div className="space-y-4 text-sm">
-          <Button type="button" variant="outline" onClick={testAudio}>{audioChecked ? "✓ Đã phát âm thanh kiểm tra" : "Phát âm thanh kiểm tra"}</Button>
-          <Label className="flex items-start gap-3"><input type="checkbox" className="mt-1 size-4" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} /><span>Tôi hiểu bài thi không cho copy/cut/paste/drop; sự kiện chỉ được ghi để tham khảo và không tự động kết luận gian lận.</span></Label>
+          <Button type="button" variant="outline" onClick={testAudio}>
+            {audioChecked
+              ? "✓ Đã phát âm thanh kiểm tra"
+              : "Phát âm thanh kiểm tra"}
+          </Button>
+          {requiresMicrophone && (
+            <MicrophoneCheck onReadyChange={setMicrophoneReady} />
+          )}
+          <Label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 size-4"
+              checked={accepted}
+              onChange={(event) => setAccepted(event.target.checked)}
+            />
+            <span>
+              Tôi hiểu bài thi không cho copy/cut/paste/drop; sự kiện chỉ được
+              ghi để tham khảo và không tự động kết luận gian lận.
+            </span>
+          </Label>
         </div>
         <DialogFooter>
           <form action={startExamAction}>
             <input type="hidden" name="delivery_id" value={deliveryId} />
-            <Button type="submit" disabled={!audioChecked || !accepted}>Bắt đầu thi</Button>
+            <Button
+              type="submit"
+              disabled={
+                !audioChecked ||
+                !accepted ||
+                (requiresMicrophone && !microphoneReady)
+              }
+              onClick={enterFocusMode}
+            >
+              Bắt đầu thi
+            </Button>
           </form>
         </DialogFooter>
       </DialogContent>

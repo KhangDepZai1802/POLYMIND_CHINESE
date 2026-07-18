@@ -5,7 +5,10 @@ import {
 } from "@/features/question-builder/domain/questions";
 import { QuestionWizard } from "@/features/question-bank/components/question-wizard";
 import { QuestionActions } from "@/features/question-bank/components/question-actions";
-import { getQuestions, type QuestionFilters } from "@/features/question-bank/server/queries";
+import {
+  getQuestions,
+  type QuestionFilters,
+} from "@/features/question-bank/server/queries";
 import { AssessmentTabs } from "@/components/shared/assessment-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { StepHint } from "@/components/shared/step-hint";
@@ -24,11 +27,13 @@ const VISIBILITY_LABELS: Record<string, string> = {
   pending_global_review: "Chờ duyệt",
 };
 
-/** Chỉ mở "Tạo version mới" qua wizard khi kỹ năng + dạng câu được wizard hỗ trợ. */
+/** Chỉ mở "Chỉnh sửa" qua wizard khi kỹ năng + dạng câu được wizard hỗ trợ. */
 function isWizardEditable(skill: string, type: string): skill is WizardSkill {
   return (
     (WIZARD_SKILLS as readonly string[]).includes(skill) &&
-    (SKILL_QUESTION_TYPES[skill as WizardSkill] as readonly string[]).includes(type)
+    (SKILL_QUESTION_TYPES[skill as WizardSkill] as readonly string[]).includes(
+      type,
+    )
   );
 }
 
@@ -39,7 +44,8 @@ export async function QuestionBankPage({
   kind: "exercise" | "exam";
   filters?: QuestionFilters;
 }) {
-  const { questions, teachers, currentUserId, count, page } = await getQuestions(kind, filters);
+  const { questions, teachers, currentUserId, count, page } =
+    await getQuestions(kind, filters);
   const basePath = `/teacher/${kind === "exercise" ? "exercises" : "exams"}/question-bank`;
   return (
     <>
@@ -47,16 +53,42 @@ export async function QuestionBankPage({
       <PageHeader
         title="Ngân hàng câu hỏi"
         description="Nơi tạo và quản lý từng câu hỏi. Sau khi đã có câu, sang bước ② Bộ bài tập để ghép thành bài."
-        action={
-          <QuestionWizard trigger={<Button>Tạo câu hỏi</Button>} />
-        }
+        action={<QuestionWizard trigger={<Button>Tạo câu hỏi</Button>} />}
       />
       <StepHint module={kind === "exercise" ? "exercises" : "exams"} step={1} />
       <form className="mb-4 grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_10rem_auto]">
-        <Input name="q" defaultValue={filters?.q} placeholder="Tìm mã hoặc tiêu đề" />
-        <select name="skill" defaultValue={filters?.skill ?? ""} className="bg-background h-9 rounded-md border px-3 text-sm"><option value="">Mọi kỹ năng</option><option value="listening">Nghe</option><option value="speaking">Nói</option><option value="reading">Đọc</option><option value="writing">Viết</option><option value="vocabulary">Từ vựng</option><option value="grammar">Ngữ pháp</option></select>
-        <select name="visibility" defaultValue={filters?.visibility ?? ""} className="bg-background h-9 rounded-md border px-3 text-sm"><option value="">Mọi phạm vi</option><option value="private">Riêng tư</option><option value="shared">Được chia sẻ</option><option value="global">Kho chung</option><option value="pending_global_review">Chờ duyệt</option></select>
-        <Button type="submit" variant="outline">Lọc</Button>
+        <Input
+          name="q"
+          defaultValue={filters?.q}
+          placeholder="Tìm mã hoặc tiêu đề"
+        />
+        <select
+          name="skill"
+          defaultValue={filters?.skill ?? ""}
+          className="bg-background h-9 rounded-md border px-3 text-sm"
+        >
+          <option value="">Mọi kỹ năng</option>
+          <option value="listening">Nghe</option>
+          <option value="speaking">Nói</option>
+          <option value="reading">Đọc</option>
+          <option value="writing">Viết</option>
+          <option value="vocabulary">Từ vựng</option>
+          <option value="grammar">Ngữ pháp</option>
+        </select>
+        <select
+          name="visibility"
+          defaultValue={filters?.visibility ?? ""}
+          className="bg-background h-9 rounded-md border px-3 text-sm"
+        >
+          <option value="">Mọi phạm vi</option>
+          <option value="private">Riêng tư</option>
+          <option value="shared">Được chia sẻ</option>
+          <option value="global">Kho chung</option>
+          <option value="pending_global_review">Chờ duyệt</option>
+        </select>
+        <Button type="submit" variant="outline">
+          Lọc
+        </Button>
       </form>
       <Card>
         <CardContent className="p-0">
@@ -105,12 +137,13 @@ export async function QuestionBankPage({
                         <QuestionWizard
                           trigger={
                             <Button size="xs" variant="outline">
-                              Tạo version mới
+                              Chỉnh sửa
                             </Button>
                           }
                           version={{
                             questionId: question.id,
-                            skill: question.skill as (typeof WIZARD_SKILLS)[number],
+                            skill:
+                              question.skill as (typeof WIZARD_SKILLS)[number],
                             type: question.current_version.question_type,
                             title: question.title,
                             prompt: question.current_version.prompt_text,
@@ -137,7 +170,22 @@ export async function QuestionBankPage({
           )}
         </CardContent>
       </Card>
-      <div className="mt-4 flex items-center justify-between text-sm"><span>{count} câu hỏi</span><div className="flex gap-2"><Button asChild size="sm" variant="outline" disabled={page <= 1}><Link href={`${basePath}?page=${page - 1}`}>Trang trước</Link></Button><Button asChild size="sm" variant="outline" disabled={page * 20 >= count}><Link href={`${basePath}?page=${page + 1}`}>Trang sau</Link></Button></div></div>
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <span>{count} câu hỏi</span>
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline" disabled={page <= 1}>
+            <Link href={`${basePath}?page=${page - 1}`}>Trang trước</Link>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            disabled={page * 20 >= count}
+          >
+            <Link href={`${basePath}?page=${page + 1}`}>Trang sau</Link>
+          </Button>
+        </div>
+      </div>
     </>
   );
 }

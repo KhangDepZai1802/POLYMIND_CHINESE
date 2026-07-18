@@ -3,6 +3,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Lượt thi đang chạy chỉ hiển thị đề và đồng hồ, không cho chuyển module từ dashboard. */
+html[data-exam-active="true"] [data-dashboard-chrome] {
+  display: none !important;
+}
+
+html[data-exam-active="true"] [data-dashboard-main] {
+  padding: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  html[data-exam-active="true"] [data-dashboard-main] {
+    padding: 1.5rem;
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * POLYMIND CHINESE — design tokens
  *
@@ -185,8 +200,9 @@
 
 /* Chữ Hán — ưu tiên font CJK, cỡ chữ lớn hơn một chút cho dễ đọc */
 .font-hanzi {
-  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC",
-    "Hiragino Sans GB", sans-serif;
+  font-family:
+    "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Hiragino Sans GB",
+    sans-serif;
   font-size: 1.08em;
 }
 

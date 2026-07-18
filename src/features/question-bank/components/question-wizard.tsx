@@ -115,7 +115,8 @@ export function QuestionWizard({
     setOpen(next);
   }
 
-  const patch = (next: Partial<WizardState>) => setS((prev) => ({ ...prev, ...next }));
+  const patch = (next: Partial<WizardState>) =>
+    setS((prev) => ({ ...prev, ...next }));
 
   const needsAudio = s.type ? AUDIO_QUESTION_TYPES.includes(s.type) : false;
   const audioUrl = useMemo(
@@ -153,7 +154,10 @@ export function QuestionWizard({
         return { type: "true_false", correct: s.trueValue };
       case "fill_blank":
       case "short_text":
-        return { type: s.type, accepted: s.accepted.map((a) => a.trim()).filter(Boolean) };
+        return {
+          type: s.type,
+          accepted: s.accepted.map((a) => a.trim()).filter(Boolean),
+        };
       case "dictation":
         return {
           type: "dictation",
@@ -161,11 +165,17 @@ export function QuestionWizard({
           maxPlays: s.maxPlays,
         };
       case "ordering":
-        return { type: "ordering", tokens: s.tokens.map((t) => t.trim()).filter(Boolean) };
+        return {
+          type: "ordering",
+          tokens: s.tokens.map((t) => t.trim()).filter(Boolean),
+        };
       case "essay_translation":
         return {
           type: "essay_translation",
-          rubric: s.rubric.map((r) => ({ criterion: r.criterion.trim(), points: r.points })),
+          rubric: s.rubric.map((r) => ({
+            criterion: r.criterion.trim(),
+            points: r.points,
+          })),
         };
       case "speaking":
         return { type: "speaking" };
@@ -194,7 +204,8 @@ export function QuestionWizard({
   };
 
   const previewOptions =
-    s.type && ["single_choice", "multiple_choice", "listening_choice"].includes(s.type)
+    s.type &&
+    ["single_choice", "multiple_choice", "listening_choice"].includes(s.type)
       ? s.choices
           .map((c, i) => ({ option_key: String(i + 1), content: c.trim() }))
           .filter((o) => o.content)
@@ -209,10 +220,12 @@ export function QuestionWizard({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{version ? "Tạo version mới" : "Soạn câu hỏi"}</DialogTitle>
+          <DialogTitle>
+            {version ? "Chỉnh sửa câu hỏi" : "Soạn câu hỏi"}
+          </DialogTitle>
           <DialogDescription>
             {version
-              ? "Version cũ vẫn bất biến; nhập lại đáp án và audio cho phiên bản mới."
+              ? "Nội dung đã giao trước đây vẫn được giữ nguyên; bản chỉnh sửa này sẽ dùng cho những lần chọn và giao tiếp theo."
               : "Chọn kỹ năng → dạng câu → nội dung → xem trước. Đáp án lưu riêng, không gửi cho học viên."}
           </DialogDescription>
         </DialogHeader>
@@ -235,11 +248,15 @@ export function QuestionWizard({
                   key={skill}
                   type="button"
                   onClick={() => patch({ skill, type: null, step: 2 })}
-                  className={`rounded-lg border p-4 text-left transition hover:border-primary ${
-                    s.skill === skill ? "border-primary ring-1 ring-primary" : ""
+                  className={`hover:border-primary rounded-lg border p-4 text-left transition ${
+                    s.skill === skill
+                      ? "border-primary ring-primary ring-1"
+                      : ""
                   }`}
                 >
-                  <span className="font-medium">{QUESTION_SKILL_LABELS[skill]}</span>
+                  <span className="font-medium">
+                    {QUESTION_SKILL_LABELS[skill]}
+                  </span>
                   <span className="text-muted-foreground block text-xs">
                     {SKILL_QUESTION_TYPES[skill].length} dạng câu
                   </span>
@@ -261,13 +278,15 @@ export function QuestionWizard({
                   key={type}
                   type="button"
                   onClick={() => patch({ type, step: 3 })}
-                  className={`rounded-lg border p-3 text-left transition hover:border-primary ${
-                    s.type === type ? "border-primary ring-1 ring-primary" : ""
+                  className={`hover:border-primary rounded-lg border p-3 text-left transition ${
+                    s.type === type ? "border-primary ring-primary ring-1" : ""
                   }`}
                 >
                   {QUESTION_TYPE_LABELS[type]}
                   {AUDIO_QUESTION_TYPES.includes(type) && (
-                    <span className="text-muted-foreground ml-2 text-xs">· cần audio</span>
+                    <span className="text-muted-foreground ml-2 text-xs">
+                      · cần audio
+                    </span>
                   )}
                 </button>
               ))}
@@ -293,7 +312,9 @@ export function QuestionWizard({
                   id="w-diff"
                   value={s.difficulty}
                   onChange={(e) =>
-                    patch({ difficulty: e.target.value as WizardState["difficulty"] })
+                    patch({
+                      difficulty: e.target.value as WizardState["difficulty"],
+                    })
                   }
                   className="bg-background h-11 w-full rounded-md border px-3 text-sm"
                 >
@@ -381,8 +402,16 @@ export function QuestionWizard({
               Tiếp tục
             </Button>
           ) : (
-            <Button type="button" disabled={Boolean(contentError) || pending} onClick={submit}>
-              {pending ? "Đang lưu…" : "Lưu & công bố"}
+            <Button
+              type="button"
+              disabled={Boolean(contentError) || pending}
+              onClick={submit}
+            >
+              {pending
+                ? "Đang lưu…"
+                : version
+                  ? "Lưu chỉnh sửa"
+                  : "Lưu & công bố"}
             </Button>
           )}
         </div>
@@ -394,7 +423,8 @@ export function QuestionWizard({
 function canAdvance(s: WizardState): boolean {
   if (s.step === 1) return Boolean(s.skill);
   if (s.step === 2) return Boolean(s.type);
-  if (s.step === 3) return s.title.trim().length >= 2 && s.prompt.trim().length >= 1;
+  if (s.step === 3)
+    return s.title.trim().length >= 2 && s.prompt.trim().length >= 1;
   return true;
 }
 
@@ -427,7 +457,8 @@ function validate(s: WizardState, needsAudio: boolean): string | null {
         return "Cần ít nhất một đáp án chấp nhận.";
       return null;
     case "ordering":
-      if (s.tokens.filter((t) => t.trim()).length < 2) return "Cần ít nhất hai token.";
+      if (s.tokens.filter((t) => t.trim()).length < 2)
+        return "Cần ít nhất hai token.";
       return null;
     case "essay_translation":
       if (s.rubric.filter((r) => r.criterion.trim()).length < 1)
@@ -502,7 +533,9 @@ function AudioEditor({
             min={1}
             max={20}
             value={maxPlays}
-            onChange={(e) => onMaxPlays(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+            onChange={(e) =>
+              onMaxPlays(Math.max(1, Math.min(20, Number(e.target.value) || 1)))
+            }
             className="h-11 w-20"
           />
         </div>
@@ -514,7 +547,9 @@ function AudioEditor({
       ) : (
         <p className="text-muted-foreground text-xs">Chưa có audio.</p>
       )}
-      {fileName && <p className="text-muted-foreground text-xs">Đã chọn: {fileName}</p>}
+      {fileName && (
+        <p className="text-muted-foreground text-xs">Đã chọn: {fileName}</p>
+      )}
     </div>
   );
 }
@@ -528,7 +563,9 @@ function TypeEditor({
 }) {
   if (!s.type) return null;
 
-  if (["single_choice", "listening_choice", "multiple_choice"].includes(s.type)) {
+  if (
+    ["single_choice", "listening_choice", "multiple_choice"].includes(s.type)
+  ) {
     const multi = s.type === "multiple_choice";
     return (
       <div className="space-y-2">
@@ -540,7 +577,9 @@ function TypeEditor({
               name="w-correct"
               aria-label={`Đáp án đúng ${index + 1}`}
               checked={
-                multi ? s.correctIndexes.includes(index) : s.correctIndex === index
+                multi
+                  ? s.correctIndexes.includes(index)
+                  : s.correctIndex === index
               }
               onChange={(e) => {
                 if (multi) {
@@ -601,14 +640,17 @@ function TypeEditor({
                 checked={s.partialCredit}
                 onChange={(e) => patch({ partialCredit: e.target.checked })}
               />
-              Chấm một phần (partial credit) — điểm theo tỉ lệ đáp án đúng đã chọn
+              Chấm một phần (partial credit) — điểm theo tỉ lệ đáp án đúng đã
+              chọn
             </label>
             {s.partialCredit && (
               <label className="text-muted-foreground flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={s.wrongSelectionZero}
-                  onChange={(e) => patch({ wrongSelectionZero: e.target.checked })}
+                  onChange={(e) =>
+                    patch({ wrongSelectionZero: e.target.checked })
+                  }
                 />
                 Chọn sai bất kỳ đáp án nào → 0 điểm toàn câu
               </label>
@@ -664,7 +706,9 @@ function TypeEditor({
               size="sm"
               variant="ghost"
               disabled={s.accepted.length <= 1}
-              onClick={() => patch({ accepted: s.accepted.filter((_, i) => i !== index) })}
+              onClick={() =>
+                patch({ accepted: s.accepted.filter((_, i) => i !== index) })
+              }
             >
               Xóa
             </Button>
@@ -688,7 +732,9 @@ function TypeEditor({
         <Label>Token theo đúng thứ tự</Label>
         {s.tokens.map((token, index) => (
           <div key={index} className="flex items-center gap-2">
-            <span className="text-muted-foreground w-6 text-sm">{index + 1}.</span>
+            <span className="text-muted-foreground w-6 text-sm">
+              {index + 1}.
+            </span>
             <div className="flex-1">
               <PinyinField
                 value={token}
@@ -705,7 +751,9 @@ function TypeEditor({
               size="sm"
               variant="ghost"
               disabled={s.tokens.length <= 2}
-              onClick={() => patch({ tokens: s.tokens.filter((_, i) => i !== index) })}
+              onClick={() =>
+                patch({ tokens: s.tokens.filter((_, i) => i !== index) })
+              }
             >
               Xóa
             </Button>
@@ -750,7 +798,9 @@ function TypeEditor({
               onChange={(e) =>
                 patch({
                   rubric: s.rubric.map((r, i) =>
-                    i === index ? { ...r, points: Number(e.target.value) || 0 } : r,
+                    i === index
+                      ? { ...r, points: Number(e.target.value) || 0 }
+                      : r,
                   ),
                 })
               }
@@ -760,7 +810,9 @@ function TypeEditor({
               size="sm"
               variant="ghost"
               disabled={s.rubric.length <= 1}
-              onClick={() => patch({ rubric: s.rubric.filter((_, i) => i !== index) })}
+              onClick={() =>
+                patch({ rubric: s.rubric.filter((_, i) => i !== index) })
+              }
             >
               Xóa
             </Button>
@@ -783,8 +835,8 @@ function TypeEditor({
   if (s.type === "speaking") {
     return (
       <p className="text-muted-foreground rounded-lg border p-3 text-sm">
-        Học viên đọc đề rồi thu âm trả lời ngay trên web (không giới hạn thời lượng);
-        giáo viên nghe và chấm tay.
+        Học viên đọc đề rồi thu âm trả lời ngay trên web (không giới hạn thời
+        lượng); giáo viên nghe và chấm tay.
       </p>
     );
   }

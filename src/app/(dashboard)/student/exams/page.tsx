@@ -27,7 +27,9 @@ export default async function StudentExamsPage() {
           const result = exam.results_published_at
             ? exam.attempts[0]
             : undefined;
-          const submitted = exam.attempts.some((attempt) => attempt.submitted_at);
+          const submitted = exam.attempts.some(
+            (attempt) => attempt.submitted_at,
+          );
           return (
             <Card key={exam.id}>
               <CardHeader>
@@ -65,7 +67,11 @@ export default async function StudentExamsPage() {
                 ) : submitted ? (
                   <Button disabled>Đã nộp — chờ chấm</Button>
                 ) : (
-                  <ExamWaitingRoom deliveryId={exam.id} canStart={canStart && !result} />
+                  <ExamWaitingRoom
+                    deliveryId={exam.id}
+                    canStart={canStart && !result}
+                    requiresMicrophone={exam.requires_microphone}
+                  />
                 )}
               </CardContent>
             </Card>

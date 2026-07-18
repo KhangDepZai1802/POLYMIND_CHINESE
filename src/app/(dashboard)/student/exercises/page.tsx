@@ -2,16 +2,32 @@ import { getStudentExerciseDeliveries } from "@/features/exercises/server/querie
 import { StudentExerciseList } from "@/features/exercises/student/exercise-list";
 import { PageHeader } from "@/components/shared/page-header";
 import { requireRole } from "@/lib/auth/session";
-export default async function StudentExercisesPage() {
+export default async function StudentExercisesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   await requireRole("student");
-  const deliveries = await getStudentExerciseDeliveries();
+  const [deliveries, query] = await Promise.all([
+    getStudentExerciseDeliveries(),
+    searchParams,
+  ]);
+  const initialTab = [
+    "todo",
+    "doing",
+    "submitted",
+    "graded",
+    "overdue",
+  ].includes(query.tab ?? "")
+    ? (query.tab as "todo" | "doing" | "submitted" | "graded" | "overdue")
+    : "todo";
   return (
     <>
       <PageHeader
         title="Bài tập"
         description="Cần làm · Đang làm · Đã nộp · Đã chấm · Quá hạn"
       />
-      <StudentExerciseList deliveries={deliveries} />
+      <StudentExerciseList deliveries={deliveries} initialTab={initialTab} />
     </>
   );
 }

@@ -99,8 +99,15 @@ export function SpeakingRecorder({
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setError("Không truy cập được micro. Kiểm tra quyền của trình duyệt.");
+    } catch (caught) {
+      const blocked =
+        caught instanceof DOMException &&
+        ["NotAllowedError", "SecurityError"].includes(caught.name);
+      setError(
+        blocked
+          ? "Micro đang bị chặn. Bấm biểu tượng ổ khóa hoặc micro cạnh thanh địa chỉ, chọn Cho phép, rồi bấm Thu âm lại."
+          : "Không mở được micro. Hãy đóng ứng dụng khác đang dùng micro rồi thử lại.",
+      );
       setStatus("error");
       return;
     }
@@ -203,7 +210,12 @@ export function SpeakingRecorder({
             </span>
           </>
         ) : (
-          <Button type="button" variant="outline" onClick={startRecording}>
+          <Button
+            type="button"
+            variant={status === "error" ? "default" : "outline"}
+            onClick={startRecording}
+            disabled={status === "uploading"}
+          >
             🎙️ {status === "idle" ? "Bắt đầu thu âm" : "Thu âm lại"}
           </Button>
         )}

@@ -11,6 +11,7 @@ export function ExamIntegrityBoundary({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    document.documentElement.dataset.examActive = "true";
     const block = (event: Event, type: string) => {
       const input = event as InputEvent;
       if (input.isComposing) return;
@@ -38,6 +39,14 @@ export function ExamIntegrityBoundary({
     const blur = () => void logExamEvent(attemptId, "window_blurred");
     const online = () => void logExamEvent(attemptId, "network_online");
     const offline = () => void logExamEvent(attemptId, "network_offline");
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const preventBackNavigation = () => {
+      window.history.forward();
+      void logExamEvent(attemptId, "navigation_blocked");
+    };
     document.addEventListener("copy", copy);
     document.addEventListener("cut", cut);
     document.addEventListener("paste", paste);
@@ -48,7 +57,10 @@ export function ExamIntegrityBoundary({
     window.addEventListener("blur", blur);
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
+    window.addEventListener("beforeunload", beforeUnload);
+    window.addEventListener("popstate", preventBackNavigation);
     return () => {
+      delete document.documentElement.dataset.examActive;
       document.removeEventListener("copy", copy);
       document.removeEventListener("cut", cut);
       document.removeEventListener("paste", paste);
@@ -59,6 +71,11 @@ export function ExamIntegrityBoundary({
       window.removeEventListener("blur", blur);
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
+      window.removeEventListener("beforeunload", beforeUnload);
+      window.removeEventListener("popstate", preventBackNavigation);
+      if (document.fullscreenElement) {
+        void document.exitFullscreen?.().catch(() => undefined);
+      }
     };
   }, [attemptId]);
   return <div className="select-none">{children}</div>;

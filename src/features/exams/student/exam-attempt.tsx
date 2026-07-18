@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { MicrophoneCheck } from "@/components/shared/microphone-check";
 import { ExamIntegrityBoundary } from "@/features/exams/integrity/exam-integrity-boundary";
 import {
   deleteExamSpeakingAnswer,
@@ -76,6 +79,7 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
   );
   const [saved, setSaved] = useState("Đã tải dữ liệu");
   const [error, setError] = useState<string>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const answersRef = useRef(answers);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const submitted = useRef(false);
@@ -83,20 +87,49 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
     async (reason: "manual" | "duration_expired" = "manual") => {
       if (submitted.current) return;
       submitted.current = true;
-      await Promise.all(
-        Object.entries(answersRef.current).map(([id, value]) =>
-          saveExamAnswer(payload.attempt.id, id, value),
-        ),
-      );
-      const result = await submitExamAttempt(payload.attempt.id, reason);
-      if (!result.ok) {
+      setIsSubmitting(true);
+      setError(undefined);
+      setSaved("Đang lưu lần cuối và nộp bài thi…");
+      Object.values(timers.current).forEach(clearTimeout);
+      timers.current = {};
+      try {
+        const saveResults = await Promise.all(
+          Object.entries(answersRef.current).map(([id, value]) =>
+            saveExamAnswer(payload.attempt.id, id, value),
+          ),
+        );
+        const failedSave = saveResults.find((result) => !result.ok);
+        if (failedSave) {
+          submitted.current = false;
+          setIsSubmitting(false);
+          setSaved("Chưa nộp — có câu trả lời chưa lưu được");
+          setError(failedSave.error ?? "Không lưu được câu trả lời cuối cùng.");
+          return;
+        }
+        const result = await submitExamAttempt(payload.attempt.id, reason);
+        if (!result.ok) {
+          submitted.current = false;
+          setIsSubmitting(false);
+          setSaved("Chưa nộp bài thi");
+          setError(result.error);
+          return;
+        }
+        setSaved("Đã nộp bài thi thành công");
+        toast.success(
+          reason === "duration_expired"
+            ? "Đã hết giờ và hệ thống đã nộp bài thi."
+            : "Đã nộp bài thi thành công.",
+        );
+        window.dispatchEvent(new Event("navstart"));
+        router.replace("/student/exams");
+      } catch {
         submitted.current = false;
-        setError(result.error);
-        return;
+        setIsSubmitting(false);
+        setSaved("Chưa nộp bài thi");
+        setError(
+          "Mất kết nối khi nộp bài thi. Câu trả lời vẫn được giữ để bạn thử lại.",
+        );
       }
-      window.dispatchEvent(new Event("navstart"));
-      router.push("/student/exams");
-      router.refresh();
     },
     [payload.attempt.id, router],
   );
@@ -135,6 +168,9 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
   };
   const minutes = Math.floor(remaining / 60),
     seconds = remaining % 60;
+  const requiresMicrophone = payload.items.some(
+    (item) => item.question.type === "speaking",
+  );
   return (
     <ExamIntegrityBoundary attemptId={payload.attempt.id}>
       <div className="space-y-6">
@@ -152,6 +188,7 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
             </p>
             <Button
               size="sm"
+              disabled={isSubmitting}
               onClick={async () => {
                 const accepted = await confirm({
                   title: "Nộp bài thi sớm?",
@@ -162,13 +199,21 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
                 if (accepted) void finish();
               }}
             >
-              Nộp bài
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Đang nộp…
+                </>
+              ) : (
+                "Nộp bài"
+              )}
             </Button>
           </div>
         </div>
         {error && (
           <p className="text-destructive rounded border p-3">{error}</p>
         )}
+        {requiresMicrophone && <MicrophoneCheck />}
         {payload.items.map((item, index) => (
           <section key={item.id} className="bg-card rounded-xl border p-5">
             <p className="mb-4 text-sm font-semibold">

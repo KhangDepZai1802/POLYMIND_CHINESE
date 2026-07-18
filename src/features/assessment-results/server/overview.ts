@@ -31,6 +31,7 @@ export type StudentExamOverview = {
   opens_at: string;
   closes_at: string;
   duration_minutes: number;
+  requires_microphone: boolean;
   results_published_at: string | null;
   class: { code: string; name: string };
   attempts: Array<{
@@ -46,7 +47,8 @@ export type StudentExamOverview = {
 export async function getStudentAssessmentOverview() {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_student_assessment_overview");
-  if (error || !data) throw new Error("Không tải được tổng quan bài tập và kỳ thi.");
+  if (error || !data)
+    throw new Error("Không tải được tổng quan bài tập và kỳ thi.");
   return data as unknown as {
     exercises: StudentExerciseOverview[];
     exams: StudentExamOverview[];

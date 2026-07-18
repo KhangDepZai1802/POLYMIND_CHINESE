@@ -31,7 +31,7 @@ const saveQuestionSchema = z.object({
 });
 
 /**
- * P-B — điểm ghi duy nhất cho wizard soạn câu hỏi (tạo mới + tạo version mới).
+ * P-B — điểm ghi duy nhất cho wizard soạn câu hỏi (tạo mới + chỉnh sửa).
  * Tạo question/version → gắn audio question_media (nếu có) → công bố.
  */
 export async function saveQuestionAction(
@@ -57,7 +57,8 @@ export async function saveQuestionAction(
   }
 
   const rawContent = formData.get("content");
-  if (typeof rawContent !== "string") return { error: "Thiếu nội dung câu hỏi." };
+  if (typeof rawContent !== "string")
+    return { error: "Thiếu nội dung câu hỏi." };
   let contentJson: unknown;
   try {
     contentJson = JSON.parse(rawContent);
@@ -74,7 +75,9 @@ export async function saveQuestionAction(
   try {
     payload = buildStructuredPayload(contentParsed.data);
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Nội dung không hợp lệ" };
+    return {
+      error: error instanceof Error ? error.message : "Nội dung không hợp lệ",
+    };
   }
 
   const audio = formData.get("audio");
@@ -84,8 +87,10 @@ export async function saveQuestionAction(
     return { error: "Dạng câu Nghe cần một file audio (MP3/M4A)." };
   }
   if (audioFile) {
-    if (!AUDIO_MIME.has(audioFile.type)) return { error: "Audio chỉ nhận MP3 hoặc M4A." };
-    if (audioFile.size > MAX_AUDIO_BYTES) return { error: "Audio tối đa 50 MB." };
+    if (!AUDIO_MIME.has(audioFile.type))
+      return { error: "Audio chỉ nhận MP3 hoặc M4A." };
+    if (audioFile.size > MAX_AUDIO_BYTES)
+      return { error: "Audio tối đa 50 MB." };
   }
 
   const supabase = await createClient();
@@ -115,7 +120,8 @@ export async function saveQuestionAction(
   }
 
   const rollback = async () => {
-    if (createdQuestion) await supabase.from("questions").delete().eq("id", questionId);
+    if (createdQuestion)
+      await supabase.from("questions").delete().eq("id", questionId);
   };
 
   // 2) Tạo version bất biến (RPC trả về version id, đồng thời set current_version_id).
@@ -135,17 +141,24 @@ export async function saveQuestionAction(
   );
   if (versionError || !versionId) {
     await rollback();
-    return { error: versionError?.message ?? "Không lưu được phiên bản câu hỏi." };
+    return {
+      error: versionError?.message ?? "Không lưu được phiên bản câu hỏi.",
+    };
   }
 
   // 3) Gắn audio: upload vào bucket private rồi ghi question_media cho version này.
   if (audioFile) {
-    const safeName = audioFile.name.normalize("NFC").replace(/[^a-zA-Z0-9._-]/g, "-");
+    const safeName = audioFile.name
+      .normalize("NFC")
+      .replace(/[^a-zA-Z0-9._-]/g, "-");
     const objectPath = `${actor.id}/${String(versionId)}/${crypto.randomUUID()}-${safeName}`;
     const bytes = new Uint8Array(await audioFile.arrayBuffer());
     const uploaded = await supabase.storage
       .from("question-media")
-      .upload(objectPath, bytes, { contentType: audioFile.type, upsert: false });
+      .upload(objectPath, bytes, {
+        contentType: audioFile.type,
+        upsert: false,
+      });
     if (uploaded.error) {
       await rollback();
       return { error: `Không tải được audio: ${uploaded.error.message}` };
@@ -166,9 +179,12 @@ export async function saveQuestionAction(
   }
 
   // 4) Công bố version → trạng thái ready.
-  const { error: publishError } = await supabase.rpc("publish_question_version", {
-    p_question_id: questionId,
-  });
+  const { error: publishError } = await supabase.rpc(
+    "publish_question_version",
+    {
+      p_question_id: questionId,
+    },
+  );
   if (publishError) {
     await rollback();
     return { error: publishError.message };
@@ -180,7 +196,7 @@ export async function saveQuestionAction(
     success:
       input.mode === "create"
         ? `Đã tạo câu hỏi ${questionCode ?? ""}.`.trim()
-        : "Đã tạo và công bố version mới; version cũ vẫn bất biến.",
+        : "Đã cập nhật câu hỏi. Những đề đã giao vẫn giữ nguyên nội dung cũ.",
   };
 }
 
@@ -214,7 +230,8 @@ export async function shareQuestionAction(
   await requireRole("teacher", "super_admin");
   const questionId = formData.get("question_id");
   const teacherId = formData.get("teacher_id");
-  if (typeof questionId !== "string" || typeof teacherId !== "string") return { error: "Thiếu câu hỏi hoặc giáo viên." };
+  if (typeof questionId !== "string" || typeof teacherId !== "string")
+    return { error: "Thiếu câu hỏi hoặc giáo viên." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("share_question", {
     p_question_id: questionId,
@@ -233,7 +250,9 @@ export async function cloneQuestionAction(
   const questionId = formData.get("question_id");
   if (typeof questionId !== "string") return { error: "Thiếu câu hỏi." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("clone_question", { p_question_id: questionId });
+  const { error } = await supabase.rpc("clone_question", {
+    p_question_id: questionId,
+  });
   if (error) return { error: error.message };
   revalidatePath("/teacher/exercises/question-bank");
   revalidatePath("/teacher/exams/question-bank");
@@ -248,7 +267,9 @@ export async function submitQuestionReviewAction(
   const questionId = formData.get("question_id");
   if (typeof questionId !== "string") return { error: "Thiếu câu hỏi." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("submit_question_for_global_review", { p_question_id: questionId });
+  const { error } = await supabase.rpc("submit_question_for_global_review", {
+    p_question_id: questionId,
+  });
   if (error) return { error: error.message };
   revalidatePath("/teacher/exercises/question-bank");
   revalidatePath("/teacher/exams/question-bank");
@@ -263,7 +284,11 @@ export async function reviewQuestionAction(
   const requestId = formData.get("request_id");
   const decision = formData.get("decision");
   const reason = formData.get("reason");
-  if (typeof requestId !== "string" || (decision !== "approve" && decision !== "reject")) return { error: "Thiếu quyết định duyệt." };
+  if (
+    typeof requestId !== "string" ||
+    (decision !== "approve" && decision !== "reject")
+  )
+    return { error: "Thiếu quyết định duyệt." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("review_global_question", {
     p_request_id: requestId,
@@ -272,6 +297,8 @@ export async function reviewQuestionAction(
   });
   if (error) return { error: error.message };
   revalidatePath("/admin/question-bank-review");
-  return { success: decision === "approve" ? "Đã đưa vào kho chung." : "Đã từ chối yêu cầu." };
+  return {
+    success:
+      decision === "approve" ? "Đã đưa vào kho chung." : "Đã từ chối yêu cầu.",
+  };
 }
-

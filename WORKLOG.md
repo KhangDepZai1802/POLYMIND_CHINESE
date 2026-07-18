@@ -37,20 +37,21 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-18** — Codex — Phiên 37: hoàn thành code QA/UX Bài tập + Kiểm tra/thi theo yêu cầu user; migration **60** đã áp local/cloud, history khớp và remote up to date. **Chưa smoke giao diện bằng trình duyệt/tài khoản thật.**
+> Cập nhật: **2026-07-18** — Codex — Phiên 38: hoàn thành code UX học viên nộp bài/micro/chế độ tập trung khi thi và thao tác Chỉnh sửa câu hỏi; migration **61** đã áp local/cloud. **Chưa smoke bằng trình duyệt và thiết bị thật.**
 
-- **P13-T3 — ◐ một phần — Codex — 2026-07-18.** Đã sửa builder/delivery/dialog confirmation và test tự động; chưa đạt toàn bộ DoD P13-T3 vì chưa smoke mobile/IME trên thiết bị thật.
+- **P13-T3 — ◐ một phần — Codex — 2026-07-18.** Đã sửa code và test tự động UX nộp bài, micro, chế độ tập trung khi thi và chỉnh sửa câu hỏi; chưa đạt toàn bộ DoD vì chưa smoke mobile/IME/micro trên thiết bị thật.
 - **UX-M11-M12-001 — Fixed, chờ Claude xác minh độc lập.** Preview modal cuộn, ghi chú câu đã chọn, điểm bắt buộc, điểm giao đồng bộ, thi chọn nhiều lớp, dialog theo theme.
-- **P-C — hoàn thành code, chưa smoke runtime.** Câu Nói + recorder + signed URL audio; migration 54–55 đã ở cloud.
+- **UX-M11-M12-002 — Fixed, chờ Claude xác minh độc lập.** Nộp bài có loading/toast/chuyển tab; preflight micro; thi ẩn dashboard/cảnh báo rời trang; chỉnh sửa câu hỏi giữ lịch sử.
+- **P-C — hoàn thành code, chưa smoke runtime.** Câu Nói + recorder + signed URL + preflight micro; migration 54–55 và 61 đã ở cloud.
 - **P7-T8/P7-T9 — còn nợ rà trạng thái runtime; role `head_teacher` chưa triển khai.** Không tự coi các task này hoàn tất trong phiên 37.
-- **P7-T7 — đang làm (cloud 1–60 đã đồng bộ; còn smoke authenticated).** Migration history local/remote khớp đến `20260718000060`.
-- **Baseline phiên 37:** 51 bảng public đều RLS · 58 RPC · 7 bucket private · pgTAP **283/283** · lint/typecheck sạch · Vitest **103/103** · production build xanh.
+- **P7-T7 — đang làm (cloud 1–61 đã đồng bộ; còn smoke authenticated).** Migration history local/remote khớp đến `20260718000061`.
+- **Baseline phiên 38:** 51 bảng public đều RLS · 58 RPC · 7 bucket private · pgTAP **285/285** · lint/typecheck sạch · Vitest **107/107** · production build xanh.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) Claude xác minh độc lập `UX-M11-M12-001` và smoke bằng tài khoản giáo viên: câu đã chọn (kể cả vừa sửa version), điểm trống bị chặn, preview cuộn, xóa bộ, giao bài lấy đúng tổng điểm, thi tick nhiều lớp; rà dialog xác nhận ở light/dark/mobile. (2) Sau smoke, tiếp tục **role `head_teacher`** (Giáo viên trưởng, đảo D-2) thành các task migration/RLS/nav/provisioning nhỏ có pgTAP.
+**Tiếp theo:** (1) Claude xác minh độc lập `UX-M11-M12-001/002`; smoke tài khoản học viên trên Chrome/Safari/mobile: nộp bài chuyển tab Đã nộp, allow/deny/retry micro, thu âm thật, tiếp tục lượt thi, menu bị ẩn, Back/reload/fullscreen; smoke tài khoản giáo viên nút Chỉnh sửa và lịch sử đề đã giao. (2) Sau smoke, tiếp tục **role `head_teacher`** (Giáo viên trưởng, đảo D-2) thành các task migration/RLS/nav/provisioning nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
@@ -129,6 +130,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-18] Phiên 38 — Codex — UX học viên nộp bài, micro, khóa điều hướng thi và chỉnh sửa câu hỏi
+
+- **Làm được:** Nộp bài tập khóa nút + spinner, hủy autosave đang chờ, kiểm lỗi mọi lần lưu cuối, báo lỗi/thành công và `replace` thẳng sang tab **Đã nộp**. Thêm bước kiểm tra micro dùng chung: xin quyền từ thao tác học viên, đóng stream kiểm tra ngay, hướng dẫn retry theo lỗi; phòng chờ chỉ bắt buộc micro khi bộ thi có câu Nói và không cho start trước khi sẵn sàng. Lượt thi ẩn sidebar/header/footer, thử fullscreen từ nút bắt đầu, cảnh báo unload, chặn Back và ghi integrity event. Ngân hàng câu hỏi đổi toàn bộ ngôn ngữ người dùng từ “Tạo version mới” sang **Chỉnh sửa**; tầng DB vẫn tạo version để giữ đề đã giao.
+- **File thay đổi:** student exercise/exam attempt/list/waiting room, `microphone-check`, speaking recorder, exam integrity + dashboard layout/CSS, question bank wizard/action, overview type, unit/pgTAP test, docs/WORKLOG/QA board.
+- **Migration/data impact:** thêm `20260718000061_assessment_microphone_preflight.sql`, bổ sung `requires_microphone` an toàn vào overview student. Đã áp local và Supabase cloud; history local/remote khớp đến 61; dry-run cuối trả `Remote database is up to date`. Push có cảnh báo cache catalog pg-delta thiếu certificate tạm nhưng migration đã áp và history đã xác minh.
+- **Đã test:** lint xanh · typecheck xanh · Vitest **107/107** (lần chạy song song đầu có 1 timeout test course cũ; chạy lại riêng toàn suite xanh) · pgTAP **285/285** · production build xanh (lần đầu sandbox không tải được Google Font, chạy lại có quyền mạng thành công).
+- **Quyết định mới:** không đổi quyết định đã chốt. Quyền micro không thể bị ứng dụng tự vượt; UX chuẩn hóa thành một bước cho phép/kiểm tra trong sản phẩm. Chế độ thi ngăn điều hướng dashboard và cảnh báo rời trang, không tuyên bố khóa được tuyệt đối OS/trình duyệt.
+- **Blocker/rủi ro:** chưa smoke micro/fullscreen/Back/reload trên trình duyệt và thiết bị thật; P13-T3 vẫn `◐`, `UX-M11-M12-002` chờ Claude xác minh độc lập.
+- **Next action:** smoke + independent verification `UX-M11-M12-001/002`, đặc biệt allow/deny micro và lượt thi đang chạy; sau đó role `head_teacher`.
+
 ### [2026-07-18] Phiên 37 — Codex — P13-T3 (QA/UX Bài tập + Kiểm tra/thi)
 
 - **Làm được:** Dùng chung cho Bài tập/Thi: picker ghi chú và khóa câu đã nằm trong bộ theo `question_id` (không mất dấu khi câu có version mới); điểm mỗi câu để trống và bắt buộc nhập; preview mở modal riêng có vùng cuộn; xóa bộ dùng dialog theo theme. Giao bài tự lấy `raw_max_score` của bộ đã khóa làm `max_score`, không còn ô tổng điểm độc lập. Tạo kỳ thi tick nhiều lớp như giao bài và tạo một delivery/lớp trong transaction. Thay toàn bộ `window.confirm`/`window.alert` trong source bằng confirmation dialog dùng chung.
@@ -184,14 +195,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt. User chốt 2026-07-17: giao hàng dạng SQL seed để user tự đẩy cloud + redeploy; câu hỏi thuộc **1 giáo viên** (private), không để global.
 - **Blocker/rủi ro:** chưa áp lên cloud (không có credential DB cloud trong repo). Ordering lưu option theo đúng thứ tự đáp án — renderer tự xáo khi hiển thị (giống output wizard); nếu renderer không xáo thì đáp án lộ, cần kiểm khi smoke.
 - **Next action:** user áp `supabase/seed.questions.banking.sql` lên cloud (SQL editor với quyền postgres/service_role) → mở Ngân hàng câu hỏi bằng tài khoản GV để xác minh 32 câu hiện đúng. Song song: smoke P-C, P7-T8 → P7-T9 → smoke P7-T7.
-
-### [2026-07-17] Phiên 32 — Claude — P-C Kỹ năng Nói (speaking + recorder + chấm + signed URL)
-
-- **Làm được:** Mở kỹ năng **Nói** (`speaking`) end-to-end. (1) Dạng câu `speaking`: đề bằng chữ, HV thu âm trả lời, GV **chấm tay điểm tự do** (auto_score coi như essay → `pending_manual_grading`). (2) Recorder web (MediaRecorder, ưu tiên webm/opus, rơi về mp4): thu âm hiển thị đồng hồ đếm lên, **không giới hạn/không auto-dừng** (HV tự bấm Dừng) → **nghe lại** (kèm độ dài bản ghi) → **Nộp** hoặc **Xóa & thu lại** (xóa cả object storage + reset answer_payload qua RPC). (3) Bucket private `answer-media` + bảng `answer_media` (ánh xạ object_path→lượt→lớp) + RLS (HV sở hữu, GV dạy lớp/super_admin đọc) + storage policies; RPC `attach_answer_media` (tái dùng `save_*` để kiểm chủ lượt/hạn giờ, fail-closed) và `clear_answer_media`. (4) **Trả nợ P-B:** ký signed URL cho `question_media` prompt_audio trong payload lượt làm/thi → HV **nghe được** audio Nghe/Chép; ký cả audio bài Nói ở màn làm bài (nghe lại) và màn chấm (GV nghe). Wizard: mở thẻ Nói (bỏ nhãn "Sắp có").
-- **File thay đổi:** migration `20260717000054_question_type_speaking.sql`, `20260717000055_speaking_answer_media.sql`; thêm `src/features/question-builder/renderers/speaking-recorder.tsx`, `src/features/assessment-results/server/{speaking-upload,audio-signing}.ts`; sửa `question-builder/domain/questions.ts`, `question-builder/renderers/question-renderer.tsx`, `question-bank/components/question-wizard.tsx`, `exercises/server/{actions,queries}.ts`, `exams/server/{actions,queries}.ts`, `exercises/student/exercise-attempt.tsx`, `exams/student/exam-attempt.tsx`, `assessment-results/components/grading-workspace.tsx`, `src/types/database.ts`; test `tests/unit/domain/assessment-engine.test.ts`; `WORKLOG.md`, `docs/09-*.md`.
-- **Migration/data impact:** 2 migration mới (54 enum tách riêng để commit trước; 55 phần còn lại). Bucket mới `answer-media` (25 MB, private). Không đụng dữ liệu cũ; module assessment (38–53) giữ nguyên, chỉ mở rộng.
-- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · Vitest **100/100** (thêm 2, sửa 2 test P-B cũ) · `npm run build` xanh. **CHƯA** smoke trình duyệt (Docker/dev tắt) → chưa áp migration 54–55, chưa kiểm mic/upload/nghe lại/xóa/chấm/signed-URL thật.
-- **Quyết định mới:** không đổi quyết định đã chốt. Phạm vi P-C do user chốt 2026-07-17: câu Nói = đề chữ (không audio mẫu), chấm tay điểm tự do; recorder phải có nghe lại + xóa & thu lại.
-- **Hotfix prod (cùng phiên):** Deploy đầu tiên sau Phiên 29–32 làm **mọi trang dashboard 500** với `Error: Functions cannot be passed directly to Client Components` (digest 1621801304, thấy ở Vercel runtime log `/teacher`, `/teacher/exercises`). Nguyên nhân: `sidebar-nav.tsx` là **Server Component** truyền `items` (mỗi item có `icon` là component Lucide/forwardRef) sang client `NavLinks` → RSC không serialize được (chỉ lộ ở prod, `next build` không bắt vì route động render theo request). **Không liên quan P-C** — là hồi quy từ refactor nav Phiên 29. Sửa: thêm `"use client"` vào `sidebar-nav.tsx` (giống `mobile-nav.tsx` vốn đã an toàn). Lint/typecheck/Vitest/build vẫn xanh. **Cần commit + push để Vercel redeploy.**
-- **Blocker/rủi ro:** (1) Chưa smoke runtime — cần bật Docker, `db reset`, kiểm quyền micro trên trình duyệt thật. (2) `matching` + `reading_group` vẫn tạm loại khỏi wizard (nợ từ P-B, renderer chưa render câu con/nối cặp).
-- **Next action:** smoke P-C đủ luồng → migrate/redeploy cloud; song song P7-T8 → P7-T9 → smoke P7-T7.
