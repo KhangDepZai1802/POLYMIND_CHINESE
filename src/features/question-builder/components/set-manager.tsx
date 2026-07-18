@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import {
-  addQuestionSetItemAction,
   createQuestionSetSectionAction,
   createQuestionSetAction,
   lockQuestionSetAction,
@@ -11,19 +10,15 @@ import {
   removeQuestionSetItemAction,
 } from "@/features/question-builder/server/actions";
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
-import { QUESTION_TYPE_LABELS } from "@/features/question-builder/domain/questions";
+import {
+  QuestionPicker,
+  type PickerQuestion,
+} from "@/features/question-builder/components/question-picker";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useFormAction } from "@/lib/use-form-action";
 import type { QuestionType } from "@/features/question-builder/domain/questions";
 
@@ -57,15 +52,7 @@ type SetRecord = {
     question_set_sections: Array<{ id: string; title: string; instructions: string | null; order_index: number }>;
   } | null;
 };
-type QuestionOption = {
-  id: string;
-  title: string;
-  current_version: {
-    id: string;
-    question_type: QuestionType;
-    prompt_text: string;
-  } | null;
-};
+type QuestionOption = PickerQuestion;
 
 export function SetManager({
   kind,
@@ -121,7 +108,6 @@ function SetCard({
   set: SetRecord;
   questions: QuestionOption[];
 }) {
-  const add = useFormAction(addQuestionSetItemAction);
   const addSection = useFormAction(createQuestionSetSectionAction);
   const lock = useFormAction(lockQuestionSetAction);
   const [preview, setPreview] = useState(false);
@@ -133,9 +119,9 @@ function SetCard({
           <div>
             <CardTitle>{set.title}</CardTitle>
             <p className="text-muted-foreground text-sm">
-              Version {version?.version_no ?? "—"} ·{" "}
+              Bản {version?.version_no ?? "—"} ·{" "}
               {version?.question_set_items.length ?? 0} câu ·{" "}
-              {version?.raw_max_score ?? 0} điểm thô
+              {version?.raw_max_score ?? 0} điểm
             </p>
           </div>
           <Button
@@ -178,57 +164,26 @@ function SetCard({
           </form>
         )}
         {!version?.locked_at && version && (
-          <form
-            action={add.formAction}
-            className="grid gap-3 sm:grid-cols-[1fr_8rem_auto] sm:items-end"
-          >
-            <input type="hidden" name="set_version_id" value={version.id} />
-            <div className="space-y-2">
-              <Label htmlFor={`question-${version.id}`}>Câu hỏi</Label>
-              <Select name="question_version_id" required>
-                <SelectTrigger id={`question-${version.id}`}>
-                  <SelectValue placeholder="Chọn câu hỏi" />
-                </SelectTrigger>
-                <SelectContent>
-                  {questions
-                    .filter((q) => q.current_version)
-                    .map((q) => (
-                      <SelectItem key={q.id} value={q.current_version!.id}>
-                        {q.title} —{" "}
-                        {QUESTION_TYPE_LABELS[q.current_version!.question_type]}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {version.question_set_sections.length > 0 && <div className="space-y-2"><Label htmlFor={`section-${version.id}`}>Section</Label><Select name="section_id"><SelectTrigger id={`section-${version.id}`}><SelectValue placeholder="Không section" /></SelectTrigger><SelectContent>{[...version.question_set_sections].sort((a,b)=>a.order_index-b.order_index).map((section)=><SelectItem key={section.id} value={section.id}>{section.title}</SelectItem>)}</SelectContent></Select></div>}
-            <div className="space-y-2">
-              <Label htmlFor={`points-${version.id}`}>Điểm</Label>
-              <Input
-                id={`points-${version.id}`}
-                name="points"
-                type="number"
-                min="0.25"
-                step="0.25"
-                defaultValue="1"
-                required
-              />
-            </div>
-            <SubmitButton>Thêm câu</SubmitButton>
-          </form>
+          <QuestionPicker
+            setVersionId={version.id}
+            sections={[...version.question_set_sections]
+              .sort((a, b) => a.order_index - b.order_index)
+              .map((section) => ({ id: section.id, title: section.title }))}
+            questions={questions}
+          />
         )}
         {version && !version.locked_at && version.question_set_items.length > 0 && <div className="space-y-2">{[...version.question_set_items].sort((a,b)=>a.order_index-b.order_index).map((item,index)=><SetItemControls key={item.id} itemId={item.id} label={`Câu ${index+1}`} first={index===0} last={index===version.question_set_items.length-1} />)}</div>}
         {version && !version.locked_at && (
           <form action={lock.formAction}>
             <input type="hidden" name="set_version_id" value={version.id} />
             <SubmitButton variant="outline">
-              Kiểm tra & chốt version
+              Kiểm tra & khóa bộ (sẵn sàng giao)
             </SubmitButton>
           </form>
         )}
         {version?.locked_at && (
           <p className="text-sm font-medium text-emerald-700">
-            Version đã khóa, sẵn sàng để giao.
+            Bộ đã khóa, sẵn sàng để giao.
           </p>
         )}
       </CardContent>

@@ -19,6 +19,12 @@ const itemSchema = z.object({
   section_id: z.union([z.literal(""), z.uuid()]).default(""),
 });
 const sectionSchema = z.object({ set_version_id: z.uuid(), title: z.string().trim().min(1), instructions: z.string().trim().default("") });
+const itemsBatchSchema = z.object({
+  set_version_id: z.uuid(),
+  points: z.coerce.number().positive(),
+  section_id: z.union([z.literal(""), z.uuid()]).default(""),
+  question_version_ids: z.array(z.uuid()).min(1, "Chọn ít nhất một câu hỏi"),
+});
 
 export async function createQuestionSetAction(
   _previous: ActionState,
@@ -73,6 +79,46 @@ export async function addQuestionSetItemAction(
   revalidatePath("/teacher/exercises/sets");
   revalidatePath("/teacher/exams/sets");
   return { success: "Đã thêm câu hỏi vào bộ." };
+}
+
+/** Thêm nhiều câu hỏi vào bộ một lần (từ bảng chọn có tìm kiếm). */
+export async function addQuestionSetItemsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const parsed = itemsBatchSchema.safeParse({
+    set_version_id: formData.get("set_version_id"),
+    points: formData.get("points"),
+    section_id: formData.get("section_id") ?? "",
+    question_version_ids: formData.getAll("question_version_ids"),
+  });
+  if (!parsed.success) return zodToActionState(parsed.error);
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("question_set_items")
+    .select("id", { count: "exact", head: true })
+    .eq("set_version_id", parsed.data.set_version_id);
+  const start = count ?? 0;
+  const rows = parsed.data.question_version_ids.map((questionVersionId, index) => ({
+    set_version_id: parsed.data.set_version_id,
+    question_version_id: questionVersionId,
+    points: parsed.data.points,
+    section_id: parsed.data.section_id || null,
+    order_index: start + index,
+  }));
+  const { error } = await supabase.from("question_set_items").insert(rows);
+  if (error)
+    return {
+      error: error.message.includes("khóa")
+        ? error.message
+        : "Không thêm được câu hỏi.",
+    };
+  revalidatePath("/teacher/exercises/sets");
+  revalidatePath("/teacher/exams/sets");
+  return {
+    success: `Đã thêm ${rows.length} câu hỏi vào bộ.`,
+  };
 }
 
 export async function createQuestionSetSectionAction(_previous: ActionState, formData: FormData): Promise<ActionState> {

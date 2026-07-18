@@ -15,7 +15,7 @@ export async function getQuestionSets(kind: "exercise" | "exam") {
     supabase
       .from("questions")
       .select(
-        "id,title,current_version:question_versions!fk_questions_current_version(id,question_type,prompt_text)",
+        "id,code,title,skill,current_version:question_versions!fk_questions_current_version(id,question_type,prompt_text)",
       )
       .eq("status", "ready")
       .order("title"),

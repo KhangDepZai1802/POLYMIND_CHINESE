@@ -8,16 +8,19 @@ import { cn } from "@/lib/utils";
 
 type Module = "exercises" | "exams";
 
+// Thứ tự tab = đúng luồng làm việc: ① tạo câu hỏi → ② ghép thành bộ → ③ giao.
+// (Trước đây tab "Giao" đứng đầu nên giáo viên vào là thấy màn trống, không biết
+// phải làm 2 bước trước.)
 const TABS: Record<Module, Array<{ label: string; href: string; icon: typeof Send }>> = {
   exercises: [
-    { label: "Giao bài tập", href: "/teacher/exercises", icon: Send },
     { label: "Ngân hàng câu hỏi", href: "/teacher/exercises/question-bank", icon: Database },
     { label: "Bộ bài tập", href: "/teacher/exercises/sets", icon: Layers },
+    { label: "Giao cho lớp", href: "/teacher/exercises", icon: Send },
   ],
   exams: [
-    { label: "Lên lịch thi", href: "/teacher/exams", icon: Send },
     { label: "Ngân hàng câu hỏi", href: "/teacher/exams/question-bank", icon: Database },
     { label: "Bộ đề", href: "/teacher/exams/sets", icon: Layers },
+    { label: "Lên lịch thi", href: "/teacher/exams", icon: Send },
   ],
 };
 
@@ -44,7 +47,7 @@ export function AssessmentTabs({ module }: { module: Module }) {
       aria-label={module === "exercises" ? "Khu vực bài tập" : "Khu vực kiểm tra / thi"}
       className="bg-muted mb-6 inline-flex flex-wrap gap-1 rounded-lg p-1"
     >
-      {tabs.map((tab) => {
+      {tabs.map((tab, index) => {
         const isActive = tab.href === activeHref;
         return (
           <Link
@@ -60,6 +63,17 @@ export function AssessmentTabs({ module }: { module: Module }) {
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            <span
+              aria-hidden
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background/70 text-muted-foreground",
+              )}
+            >
+              {index + 1}
+            </span>
             <tab.icon className="size-4" aria-hidden />
             {tab.label}
           </Link>
