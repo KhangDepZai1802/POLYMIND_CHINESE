@@ -13,6 +13,7 @@ vi.mock("@/features/schedules/server/actions", () => ({
 }));
 
 import { ScheduleManager } from "@/features/schedules/components/schedule-manager";
+import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
 
 const SESSIONS = [
   {
@@ -40,14 +41,16 @@ describe("ScheduleManager — chuyển kiểu thời khóa biểu", () => {
     const user = userEvent.setup();
 
     render(
-      <ScheduleManager
-        classId="33333333-3333-4333-8333-333333333333"
-        plannedSessionCount={35}
-        hasStartDate
-        schedules={[]}
-        sessions={SESSIONS}
-        lessons={[]}
-      />,
+      <ConfirmationProvider>
+        <ScheduleManager
+          classId="33333333-3333-4333-8333-333333333333"
+          plannedSessionCount={35}
+          hasStartDate
+          schedules={[]}
+          sessions={SESSIONS}
+          lessons={[]}
+        />
+      </ConfirmationProvider>,
     );
 
     const weekButton = screen.getByRole("button", { name: "Tuần" });

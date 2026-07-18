@@ -30,6 +30,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -122,9 +123,9 @@ export function MaterialsManager({
         <div>
           <h2 className="font-semibold">Tài liệu</h2>
           <p className="text-muted-foreground text-sm">
-            Tệp nằm trong kho riêng tư. Học viên chỉ tải được tài liệu đặt ở phạm
-            vi “{MATERIAL_VISIBILITY_LABELS.enrolled_students}”, và chỉ khi đang
-            học khóa này.
+            Tệp nằm trong kho riêng tư. Học viên chỉ tải được tài liệu đặt ở
+            phạm vi “{MATERIAL_VISIBILITY_LABELS.enrolled_students}”, và chỉ khi
+            đang học khóa này.
           </p>
         </div>
         <UploadDialog courseId={courseId} modules={modules} />
@@ -592,20 +593,15 @@ function DeleteButton({
   const { formAction } = useFormAction(deleteMaterialAction, {
     toastError: true,
   });
+  const confirmDelete = useConfirmSubmit({
+    title: `Xóa tài liệu “${material.title}”?`,
+    description: "Tệp sẽ bị xóa khỏi kho và không thể khôi phục.",
+    confirmLabel: "Xóa tài liệu",
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (
-          !window.confirm(
-            `Xóa tài liệu “${material.title}”? Tệp bị xóa khỏi kho, không khôi phục được.`,
-          )
-        ) {
-          e.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmDelete}>
       <input type="hidden" name="id" value={material.id} />
       <input type="hidden" name="course_id" value={courseId} />
       <Button

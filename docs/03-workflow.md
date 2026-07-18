@@ -170,20 +170,21 @@ Giáo viên chấm phần thủ công → DB tính lại tổng
 
 **Failure path:**
 
-| Tình huống                                                    | Xử lý                                                                  |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Học viên đọc answer key trước release                         | RPC payload loại field + RLS answer key trả 0 dòng                     |
-| Start đồng thời                                               | Unique attempt + RPC khóa hàng → đúng một lượt                         |
-| Save/nộp sau deadline                                         | RPC fail-closed; không tin đồng hồ client                              |
-| Giáo viên chấm bài lớp khác                                   | RLS/RPC `app.teaches_class` chặn                                      |
-| Bấm Nộp 2 lần                                                 | RPC idempotent, không chấm hoặc notification trùng                     |
+| Tình huống                            | Xử lý                                              |
+| ------------------------------------- | -------------------------------------------------- |
+| Học viên đọc answer key trước release | RPC payload loại field + RLS answer key trả 0 dòng |
+| Start đồng thời                       | Unique attempt + RPC khóa hàng → đúng một lượt     |
+| Save/nộp sau deadline                 | RPC fail-closed; không tin đồng hồ client          |
+| Giáo viên chấm bài lớp khác           | RLS/RPC `app.teaches_class` chặn                   |
+| Bấm Nộp 2 lần                         | RPC idempotent, không chấm hoặc notification trùng |
 
 ---
 
 ## 6. Kiểm tra/thi và đánh giá tiến độ
 
 ```text
-Giáo viên tạo và khóa bộ đề thi → lên lịch window (có thể nhiều ngày, EX-12 đã đảo)
+Giáo viên tạo và khóa bộ đề thi → tick chọn một hoặc nhiều lớp phụ trách
+  → tạo kỳ thi riêng cho từng lớp trong một transaction → lên lịch window (có thể nhiều ngày, EX-12 đã đảo)
   → duration không vượt window → publish
 Học viên vào phòng chờ → kiểm tra audio + xác nhận quy định → start
   → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút

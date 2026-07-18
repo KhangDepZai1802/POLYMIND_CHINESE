@@ -6,7 +6,7 @@
 -- Bug user gặp khi "giao bài tập". Test này lái luồng thật của cả 5 hàm dính lỗi.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(8);
 
 -- --- Fixtures: 1 admin, 1 GV, 1 HV, 1 lớp; 1 bộ bài tập + 1 bộ đề đã khóa ---
 insert into auth.users(id,email) values
@@ -24,9 +24,11 @@ insert into public.students(id,user_id,student_code,full_name) values
 insert into public.courses(id,code,title,program,course_type,status,created_by) values
 ('53000000-0000-0000-0000-000000000001','KH-CASE','Course Case','core','custom','active','50000000-0000-0000-0000-000000000001');
 insert into public.classes(id,code,course_id,name,capacity,planned_session_count,session_duration_minutes,start_date,delivery_mode,status,created_by) values
-('54000000-0000-0000-0000-000000000001','LOP-CASE','53000000-0000-0000-0000-000000000001','Class Case',10,10,90,'2026-07-20','offline','planned','50000000-0000-0000-0000-000000000001');
+('54000000-0000-0000-0000-000000000001','LOP-CASE','53000000-0000-0000-0000-000000000001','Class Case',10,10,90,'2026-07-20','offline','planned','50000000-0000-0000-0000-000000000001'),
+('54000000-0000-0000-0000-000000000002','LOP-CASE-2','53000000-0000-0000-0000-000000000001','Class Case 2',10,10,90,'2026-07-20','offline','planned','50000000-0000-0000-0000-000000000001');
 insert into public.class_teachers(class_id,teacher_id) values
-('54000000-0000-0000-0000-000000000001','51000000-0000-0000-0000-000000000001');
+('54000000-0000-0000-0000-000000000001','51000000-0000-0000-0000-000000000001'),
+('54000000-0000-0000-0000-000000000002','51000000-0000-0000-0000-000000000001');
 insert into public.enrollments(id,student_id,class_id,status,created_by) values
 ('55000000-0000-0000-0000-000000000001','52000000-0000-0000-0000-000000000001','54000000-0000-0000-0000-000000000001','active','50000000-0000-0000-0000-000000000001');
 -- Câu hỏi trắc nghiệm 1 đáp án (chấm tự động → status 'graded' khi nộp)
@@ -77,14 +79,21 @@ select is(
 
 -- Giáo viên lên lịch thi (publish_exam_delivery dùng literal — kiểm luôn cho chắc)
 select lives_ok(
-  $$do $inner$
-    declare v_exam uuid;
-    begin
-      v_exam := public.create_exam_delivery('54000000-0000-0000-0000-000000000001','59000000-0000-0000-0000-000000000002','Thi Case','final',
-        now()-interval '1 hour', now()+interval '1 hour', 60, 50);
-      perform public.publish_exam_delivery(v_exam);
-    end $inner$;$$,
-  'lên lịch + publish bài thi chạy được'
+  $$select public.create_multi_class_exam_deliveries(
+      array['54000000-0000-0000-0000-000000000001','54000000-0000-0000-0000-000000000002']::uuid[],
+      '59000000-0000-0000-0000-000000000002','Thi Case','final',
+      now()-interval '1 hour',now()+interval '1 hour',60,50,'with_results',true)$$,
+  'lên lịch + publish bài thi nhiều lớp chạy được trong một RPC'
+);
+select is(
+  (select count(*)::integer from public.exam_deliveries where title='Thi Case'),
+  2,
+  'mỗi lớp được tạo đúng một kỳ thi riêng'
+);
+select is(
+  (select count(*)::integer from public.exam_deliveries where title='Thi Case' and status='scheduled' and answer_release_mode='with_results'),
+  2,
+  'cấu hình và trạng thái publish đồng bộ cho mọi lớp'
 );
 
 -- === Học viên nộp bài tập (submit_exercise_attempt) =========================

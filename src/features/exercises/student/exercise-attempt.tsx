@@ -12,6 +12,7 @@ import {
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
 import { SpeakingRecorder } from "@/features/question-builder/renderers/speaking-recorder";
 import { Button } from "@/components/ui/button";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import type { QuestionType } from "@/features/question-builder/domain/questions";
 
 type Item = {
@@ -54,6 +55,7 @@ function audioUrlOf(answer: unknown): string | null {
 }
 
 export function ExerciseAttempt({ payload }: { payload: Payload }) {
+  const confirm = useConfirmation();
   const router = useRouter();
   // Câu Nói tự lưu qua recorder (RPC riêng) — không đưa vào state chung để
   // vòng lưu-khi-nộp không ghi đè answer_payload đã có audio_path.
@@ -93,10 +95,12 @@ export function ExerciseAttempt({ payload }: { payload: Payload }) {
     }, 1000);
   };
   const submit = async () => {
-    if (
-      !window.confirm("Nộp bài ngay? Bạn không thể sửa lượt này sau khi nộp.")
-    )
-      return;
+    const accepted = await confirm({
+      title: "Nộp bài ngay?",
+      description: "Bạn không thể sửa lượt làm này sau khi nộp.",
+      confirmLabel: "Nộp bài",
+    });
+    if (!accepted) return;
     await Promise.all(
       Object.entries(answers).map(([itemId, value]) =>
         saveExerciseAnswer(payload.attempt.id, itemId, value),
@@ -142,7 +146,11 @@ export function ExerciseAttempt({ payload }: { payload: Payload }) {
                     const fd = new FormData();
                     fd.set("audio", blob, "speaking");
                     fd.set("duration_ms", String(durationMs));
-                    return uploadExerciseSpeakingAnswer(payload.attempt.id, item.id, fd);
+                    return uploadExerciseSpeakingAnswer(
+                      payload.attempt.id,
+                      item.id,
+                      fd,
+                    );
                   }}
                   onDelete={() =>
                     deleteExerciseSpeakingAnswer(payload.attempt.id, item.id)

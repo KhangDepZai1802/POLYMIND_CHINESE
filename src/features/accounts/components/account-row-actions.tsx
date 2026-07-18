@@ -9,6 +9,7 @@ import {
   updateAccountCredentialsAction,
 } from "@/features/accounts/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,6 +49,15 @@ export function AccountRowActions({
     onSuccess: () => setCredentialsOpen(false),
     toastError: true,
   });
+  const confirmToggle = useConfirmSubmit(
+    {
+      title: "Khóa tài khoản?",
+      description: `Khóa tài khoản của ${account.full_name}? Họ sẽ không đăng nhập được nữa.`,
+      confirmLabel: "Khóa tài khoản",
+      variant: "destructive",
+    },
+    account.is_active,
+  );
 
   const fe = credentials.state.fieldErrors ?? {};
 
@@ -74,19 +84,7 @@ export function AccountRowActions({
           {!isSelf && (
             <>
               <DropdownMenuSeparator />
-              <form
-                action={toggle.formAction}
-                onSubmit={(e) => {
-                  if (
-                    account.is_active &&
-                    !window.confirm(
-                      `Khóa tài khoản của ${account.full_name}? Họ sẽ không đăng nhập được nữa.`,
-                    )
-                  ) {
-                    e.preventDefault();
-                  }
-                }}
-              >
+              <form action={toggle.formAction} onSubmit={confirmToggle}>
                 <input type="hidden" name="user_id" value={account.id} />
                 <input
                   type="hidden"
@@ -120,8 +118,9 @@ export function AccountRowActions({
           <DialogHeader>
             <DialogTitle>Đổi thông tin đăng nhập</DialogTitle>
             <DialogDescription>
-              Đặt tên đăng nhập và mật khẩu mới cho {account.full_name}. Mật khẩu
-              cũ không hiển thị lại được — nhập mật khẩu mới rồi đưa cho họ.
+              Đặt tên đăng nhập và mật khẩu mới cho {account.full_name}. Mật
+              khẩu cũ không hiển thị lại được — nhập mật khẩu mới rồi đưa cho
+              họ.
             </DialogDescription>
           </DialogHeader>
           <form action={credentials.formAction} className="space-y-4">

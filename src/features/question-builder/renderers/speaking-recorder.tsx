@@ -3,13 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 
-type Status = "idle" | "recording" | "recorded" | "uploading" | "saved" | "error";
+type Status =
+  "idle" | "recording" | "recorded" | "uploading" | "saved" | "error";
 
 /** Chọn mime MediaRecorder hỗ trợ; ưu tiên webm/opus, rơi về mp4 cho Safari. */
 function pickMime(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined;
-  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/ogg",
+  ];
   return candidates.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
@@ -33,14 +40,20 @@ export function SpeakingRecorder({
 }: {
   existingUrl?: string | null;
   disabled?: boolean;
-  onUpload?: (blob: Blob, durationMs: number) => Promise<{ ok: boolean; error?: string }>;
+  onUpload?: (
+    blob: Blob,
+    durationMs: number,
+  ) => Promise<{ ok: boolean; error?: string }>;
   onDelete?: () => Promise<{ ok: boolean; error?: string }>;
 }) {
+  const confirm = useConfirmation();
   const [status, setStatus] = useState<Status>(existingUrl ? "saved" : "idle");
   const [error, setError] = useState<string>();
   const [elapsed, setElapsed] = useState(0);
   const [recordedSec, setRecordedSec] = useState<number | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(existingUrl ?? null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    existingUrl ?? null,
+  );
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -75,7 +88,10 @@ export function SpeakingRecorder({
 
   const startRecording = async () => {
     setError(undefined);
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getUserMedia
+    ) {
       setError("Trình duyệt không hỗ trợ thu âm.");
       setStatus("error");
       return;
@@ -89,7 +105,10 @@ export function SpeakingRecorder({
       return;
     }
     const mimeType = pickMime();
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const recorder = new MediaRecorder(
+      stream,
+      mimeType ? { mimeType } : undefined,
+    );
     recorderRef.current = recorder;
     chunksRef.current = [];
     recorder.ondataavailable = (event) => {
@@ -145,7 +164,13 @@ export function SpeakingRecorder({
   // Xóa bản thu chưa nộp = chỉ dọn cục bộ. Xóa bản đã nộp = gọi server rồi dọn.
   const discard = async () => {
     if (status === "saved" && onDelete) {
-      if (!window.confirm("Xóa bản ghi đã nộp để thu âm lại từ đầu?")) return;
+      const accepted = await confirm({
+        title: "Xóa bản ghi đã nộp?",
+        description: "Bản ghi hiện tại sẽ bị xóa để bạn thu âm lại từ đầu.",
+        confirmLabel: "Xóa & thu lại",
+        variant: "destructive",
+      });
+      if (!accepted) return;
       setStatus("uploading");
       const result = await onDelete();
       if (!result.ok) {
@@ -188,9 +213,17 @@ export function SpeakingRecorder({
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs">
             Nghe lại bản ghi
-            {recordedSec !== null ? ` · độ dài ${formatClock(recordedSec)}` : ""}:
+            {recordedSec !== null
+              ? ` · độ dài ${formatClock(recordedSec)}`
+              : ""}
+            :
           </p>
-          <audio controls preload="metadata" src={previewUrl} className="w-full">
+          <audio
+            controls
+            preload="metadata"
+            src={previewUrl}
+            className="w-full"
+          >
             <track kind="captions" />
           </audio>
         </div>

@@ -20,13 +20,17 @@ const deliverySchema = z.object({
   title: z.string().trim().min(2),
   available_from: z.string().min(1),
   due_at: z.string().min(1),
-  max_score: z.coerce.number().positive(),
   attempt_limit: z.coerce.number().int().min(1).max(20),
   allow_late: z.string().optional(),
   late_penalty: z.coerce.number().min(0).max(100).default(0),
   grading_method: z.enum(["first", "latest", "highest"]),
   result_release_mode: z.enum(["manual", "after_graded", "after_due"]),
-  answer_release_mode: z.enum(["never", "after_submit", "after_due", "with_results"]),
+  answer_release_mode: z.enum([
+    "never",
+    "after_submit",
+    "after_due",
+    "with_results",
+  ]),
 });
 const gradeSchema = z.object({
   answer_id: z.uuid(),
@@ -47,36 +51,53 @@ export async function createExerciseDeliveryAction(
   });
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_multi_class_exercise_deliveries", {
-    p_class_ids: parsed.data.class_ids,
-    p_set_version_id: parsed.data.set_version_id,
-    p_title: parsed.data.title,
-    p_available_from: fromZonedTime(
-      parsed.data.available_from,
-      "Asia/Ho_Chi_Minh",
-    ).toISOString(),
-    p_due_at: fromZonedTime(
-      parsed.data.due_at,
-      "Asia/Ho_Chi_Minh",
-    ).toISOString(),
-    p_max_score: parsed.data.max_score,
-    p_attempt_limit: parsed.data.attempt_limit,
-    p_allow_late: parsed.data.allow_late === "on",
-    p_late_penalty: parsed.data.late_penalty,
-    p_publish: formData.get("publish") === "true",
-  });
+  const { data: setVersion, error: setVersionError } = await supabase
+    .from("question_set_versions")
+    .select("raw_max_score")
+    .eq("id", parsed.data.set_version_id)
+    .not("locked_at", "is", null)
+    .single();
+  if (setVersionError || !setVersion || setVersion.raw_max_score <= 0) {
+    return { error: "Bộ bài tập chưa khóa hoặc chưa có tổng điểm hợp lệ." };
+  }
+  const { data, error } = await supabase.rpc(
+    "create_multi_class_exercise_deliveries",
+    {
+      p_class_ids: parsed.data.class_ids,
+      p_set_version_id: parsed.data.set_version_id,
+      p_title: parsed.data.title,
+      p_available_from: fromZonedTime(
+        parsed.data.available_from,
+        "Asia/Ho_Chi_Minh",
+      ).toISOString(),
+      p_due_at: fromZonedTime(
+        parsed.data.due_at,
+        "Asia/Ho_Chi_Minh",
+      ).toISOString(),
+      p_max_score: setVersion.raw_max_score,
+      p_attempt_limit: parsed.data.attempt_limit,
+      p_allow_late: parsed.data.allow_late === "on",
+      p_late_penalty: parsed.data.late_penalty,
+      p_publish: formData.get("publish") === "true",
+    },
+  );
   if (error) return { error: error.message };
   const ids = data ?? [];
   if (ids.length > 0) {
-    const configured = await supabase.from("exercise_deliveries").update({
-      grading_method: parsed.data.grading_method,
-      result_release_mode: parsed.data.result_release_mode,
-      answer_release_mode: parsed.data.answer_release_mode,
-    }).in("id", ids);
+    const configured = await supabase
+      .from("exercise_deliveries")
+      .update({
+        grading_method: parsed.data.grading_method,
+        result_release_mode: parsed.data.result_release_mode,
+        answer_release_mode: parsed.data.answer_release_mode,
+      })
+      .in("id", ids);
     if (configured.error) return { error: configured.error.message };
   }
   revalidatePath("/teacher/exercises");
-  return { success: `Đã tạo ${ids.length || parsed.data.class_ids.length} lần giao riêng.` };
+  return {
+    success: `Đã tạo ${ids.length || parsed.data.class_ids.length} lần giao riêng.`,
+  };
 }
 
 export async function startExerciseAction(formData: FormData) {
@@ -113,10 +134,19 @@ export async function uploadExerciseSpeakingAnswer(
   formData: FormData,
 ) {
   const actor = await requireRole("student");
-  return persistSpeakingAnswer("exercise", actor.id, attemptId, itemId, formData);
+  return persistSpeakingAnswer(
+    "exercise",
+    actor.id,
+    attemptId,
+    itemId,
+    formData,
+  );
 }
 
-export async function deleteExerciseSpeakingAnswer(attemptId: string, itemId: string) {
+export async function deleteExerciseSpeakingAnswer(
+  attemptId: string,
+  itemId: string,
+) {
   await requireRole("student");
   return clearSpeakingAnswer("exercise", attemptId, itemId);
 }

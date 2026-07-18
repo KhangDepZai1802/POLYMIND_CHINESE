@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +51,15 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
     onSuccess: () => setCredentialsOpen(false),
     toastError: true,
   });
+  const confirmToggle = useConfirmSubmit(
+    {
+      title: "Khóa tài khoản giáo viên?",
+      description: `Khóa tài khoản của ${teacher.profile?.full_name}? Họ sẽ không đăng nhập được nữa.`,
+      confirmLabel: "Khóa tài khoản",
+      variant: "destructive",
+    },
+    teacher.is_active,
+  );
 
   return (
     <>
@@ -82,19 +92,7 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
 
           <DropdownMenuSeparator />
 
-          <form
-            action={toggle.formAction}
-            onSubmit={(e) => {
-              if (
-                teacher.is_active &&
-                !window.confirm(
-                  `Khóa tài khoản của ${teacher.profile?.full_name}? Họ sẽ không đăng nhập được nữa.`,
-                )
-              ) {
-                e.preventDefault();
-              }
-            }}
-          >
+          <form action={toggle.formAction} onSubmit={confirmToggle}>
             <input type="hidden" name="id" value={teacher.id} />
             <input
               type="hidden"

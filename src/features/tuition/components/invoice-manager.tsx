@@ -14,6 +14,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -781,20 +782,14 @@ function IssueInvoiceButton({ invoice }: { invoice: TuitionInvoiceRecord }) {
   const { formAction } = useFormAction(issueTuitionInvoiceAction, {
     toastError: true,
   });
+  const confirmIssue = useConfirmSubmit({
+    title: `Phát hành ${invoice.invoice_code}?`,
+    description: "Sau bước này hóa đơn sẽ khóa chỉnh sửa.",
+    confirmLabel: "Phát hành hóa đơn",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (
-          !window.confirm(
-            `Phát hành ${invoice.invoice_code}? Sau bước này hóa đơn sẽ khóa chỉnh sửa.`,
-          )
-        ) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmIssue}>
       <input type="hidden" name="invoice_id" value={invoice.id} />
       <SubmitButton
         size="icon"
@@ -813,16 +808,15 @@ function DeleteDraftButton({ invoice }: { invoice: TuitionInvoiceRecord }) {
   const { formAction } = useFormAction(deleteTuitionInvoiceDraftAction, {
     toastError: true,
   });
+  const confirmDelete = useConfirmSubmit({
+    title: `Xóa bản nháp ${invoice.invoice_code}?`,
+    description: "Bản nháp hóa đơn này sẽ bị xóa và không thể khôi phục.",
+    confirmLabel: "Xóa bản nháp",
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (!window.confirm(`Xóa bản nháp ${invoice.invoice_code}?`)) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmDelete}>
       <input type="hidden" name="invoice_id" value={invoice.id} />
       <SubmitButton
         size="icon"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 
 import {
   createQuestionSetSectionAction,
@@ -18,8 +18,16 @@ import {
   type PickerQuestion,
 } from "@/features/question-builder/components/question-picker";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormAction } from "@/lib/use-form-action";
@@ -42,6 +50,7 @@ type SetRecord = {
       order_index: number;
       question_version: {
         id: string;
+        question_id: string;
         question_type: QuestionType;
         prompt_text: string;
         question_options: Array<{
@@ -52,7 +61,12 @@ type SetRecord = {
         }>;
       } | null;
     }>;
-    question_set_sections: Array<{ id: string; title: string; instructions: string | null; order_index: number }>;
+    question_set_sections: Array<{
+      id: string;
+      title: string;
+      instructions: string | null;
+      order_index: number;
+    }>;
   } | null;
 };
 type QuestionOption = PickerQuestion;
@@ -117,10 +131,14 @@ function SetCard({
     toastError: true,
   });
   const remove = useFormAction(deleteQuestionSetAction, { toastError: true });
-  const [preview, setPreview] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
+  const confirm = useConfirmation();
   const version = set.current_version;
   const sectionCount = version?.question_set_sections.length ?? 0;
+  const selectedQuestionIds = (version?.question_set_items ?? [])
+    .map((item) => item.question_version?.question_id)
+    .filter((id): id is string => Boolean(id));
   return (
     <Card>
       <CardHeader>
@@ -137,57 +155,72 @@ function SetCard({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setPreview((value) => !value)}
+              onClick={() => setPreviewOpen(true)}
             >
-              {preview ? "Đóng preview" : "Preview"}
+              <Eye className="size-4" aria-hidden />
+              Preview
             </Button>
-            <form
-              action={remove.formAction}
-              onSubmit={(e) => {
-                if (
-                  !window.confirm(
-                    `Xóa bộ "${set.title}"? Nếu bộ đã từng được giao, hệ thống sẽ lưu trữ thay vì xóa hẳn để giữ lịch sử.`,
-                  )
-                ) {
-                  e.preventDefault();
-                }
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={`Xóa bộ ${set.title}`}
+              onClick={async () => {
+                const accepted = await confirm({
+                  title: `Xóa bộ “${set.title}”?`,
+                  description:
+                    "Nếu bộ đã từng được giao, hệ thống sẽ lưu trữ thay vì xóa hẳn để giữ lịch sử.",
+                  confirmLabel: "Xóa bộ",
+                  variant: "destructive",
+                });
+                if (!accepted) return;
+                const data = new FormData();
+                data.set("question_set_id", set.id);
+                await remove.formAction(data);
               }}
             >
-              <input type="hidden" name="question_set_id" value={set.id} />
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon"
-                aria-label={`Xóa bộ ${set.title}`}
-              >
-                <Trash2 className="text-destructive size-4" aria-hidden />
-              </Button>
-            </form>
+              <Trash2 className="text-destructive size-4" aria-hidden />
+            </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
-        {preview && (
-          <div className="space-y-6 rounded-xl border p-4">
-            {version?.question_set_items
-              .sort((a, b) => a.order_index - b.order_index)
-              .map((item, index) => (
-                <div key={item.id}>
-                  <p className="mb-2 text-sm font-semibold">
-                    Câu {index + 1} · {item.points} điểm
-                  </p>
-                  {item.question_version && (
-                    <QuestionRenderer
-                      type={item.question_version.question_type}
-                      prompt={item.question_version.prompt_text}
-                      options={item.question_version.question_options}
-                      disabled
-                    />
-                  )}
-                </div>
-              ))}
-          </div>
-        )}
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Preview · {set.title}</DialogTitle>
+              <DialogDescription>
+                Toàn bộ đề học viên sẽ nhìn thấy · {version?.raw_max_score ?? 0}{" "}
+                điểm
+              </DialogDescription>
+            </DialogHeader>
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-2">
+              {version?.question_set_items.length ? (
+                [...version.question_set_items]
+                  .sort((a, b) => a.order_index - b.order_index)
+                  .map((item, index) => (
+                    <section key={item.id} className="rounded-xl border p-4">
+                      <p className="mb-3 text-sm font-semibold">
+                        Câu {index + 1} · {item.points} điểm
+                      </p>
+                      {item.question_version && (
+                        <QuestionRenderer
+                          type={item.question_version.question_type}
+                          prompt={item.question_version.prompt_text}
+                          options={item.question_version.question_options}
+                          disabled
+                        />
+                      )}
+                    </section>
+                  ))
+              ) : (
+                <p className="text-muted-foreground py-8 text-center text-sm">
+                  Bộ này chưa có câu hỏi để preview.
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
         {!version?.locked_at && version && (
           <div className="space-y-3">
             <QuestionPicker
@@ -196,6 +229,7 @@ function SetCard({
                 .sort((a, b) => a.order_index - b.order_index)
                 .map((section) => ({ id: section.id, title: section.title }))}
               questions={questions}
+              selectedQuestionIds={selectedQuestionIds}
             />
             {/* Chia section là tùy chọn — ẩn form đi cho gọn, chỉ mở khi cần
                 (đa số bài không cần section). */}
@@ -206,12 +240,23 @@ function SetCard({
               >
                 <input type="hidden" name="set_version_id" value={version.id} />
                 <div className="space-y-2">
-                  <Label htmlFor={`section-title-${version.id}`}>Tên section</Label>
-                  <Input id={`section-title-${version.id}`} name="title" required />
+                  <Label htmlFor={`section-title-${version.id}`}>
+                    Tên section
+                  </Label>
+                  <Input
+                    id={`section-title-${version.id}`}
+                    name="title"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`section-instructions-${version.id}`}>Hướng dẫn</Label>
-                  <Input id={`section-instructions-${version.id}`} name="instructions" />
+                  <Label htmlFor={`section-instructions-${version.id}`}>
+                    Hướng dẫn
+                  </Label>
+                  <Input
+                    id={`section-instructions-${version.id}`}
+                    name="instructions"
+                  />
                 </div>
                 <SubmitButton variant="outline">Thêm section</SubmitButton>
               </form>
@@ -229,7 +274,23 @@ function SetCard({
             )}
           </div>
         )}
-        {version && !version.locked_at && version.question_set_items.length > 0 && <div className="space-y-2">{[...version.question_set_items].sort((a,b)=>a.order_index-b.order_index).map((item,index)=><SetItemControls key={item.id} itemId={item.id} label={`Câu ${index+1}`} first={index===0} last={index===version.question_set_items.length-1} />)}</div>}
+        {version &&
+          !version.locked_at &&
+          version.question_set_items.length > 0 && (
+            <div className="space-y-2">
+              {[...version.question_set_items]
+                .sort((a, b) => a.order_index - b.order_index)
+                .map((item, index) => (
+                  <SetItemControls
+                    key={item.id}
+                    itemId={item.id}
+                    label={`Câu ${index + 1}`}
+                    first={index === 0}
+                    last={index === version.question_set_items.length - 1}
+                  />
+                ))}
+            </div>
+          )}
         {version && !version.locked_at && (
           <form action={lock.formAction}>
             <input type="hidden" name="set_version_id" value={version.id} />
@@ -259,7 +320,51 @@ function SetCard({
   );
 }
 
-function SetItemControls({ itemId, label, first, last }: { itemId: string; label: string; first: boolean; last: boolean }) {
-  const move=useFormAction(moveQuestionSetItemAction); const remove=useFormAction(removeQuestionSetItemAction);
-  return <div className="flex items-center gap-2 rounded border px-3 py-2 text-sm"><span className="flex-1">{label}</span><form action={move.formAction}><input type="hidden" name="item_id" value={itemId}/><Button type="submit" name="direction" value="-1" size="sm" variant="ghost" disabled={first}>↑</Button><Button type="submit" name="direction" value="1" size="sm" variant="ghost" disabled={last}>↓</Button></form><form action={remove.formAction}><input type="hidden" name="item_id" value={itemId}/><Button type="submit" size="sm" variant="destructive">Xóa</Button></form></div>;
+function SetItemControls({
+  itemId,
+  label,
+  first,
+  last,
+}: {
+  itemId: string;
+  label: string;
+  first: boolean;
+  last: boolean;
+}) {
+  const move = useFormAction(moveQuestionSetItemAction);
+  const remove = useFormAction(removeQuestionSetItemAction);
+  return (
+    <div className="flex items-center gap-2 rounded border px-3 py-2 text-sm">
+      <span className="flex-1">{label}</span>
+      <form action={move.formAction}>
+        <input type="hidden" name="item_id" value={itemId} />
+        <Button
+          type="submit"
+          name="direction"
+          value="-1"
+          size="sm"
+          variant="ghost"
+          disabled={first}
+        >
+          ↑
+        </Button>
+        <Button
+          type="submit"
+          name="direction"
+          value="1"
+          size="sm"
+          variant="ghost"
+          disabled={last}
+        >
+          ↓
+        </Button>
+      </form>
+      <form action={remove.formAction}>
+        <input type="hidden" name="item_id" value={itemId} />
+        <Button type="submit" size="sm" variant="destructive">
+          Xóa
+        </Button>
+      </form>
+    </div>
+  );
 }

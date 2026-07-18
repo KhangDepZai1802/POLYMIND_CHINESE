@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -139,6 +140,7 @@ export function SessionLogForm({
 
 function SessionSubmitActions({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
+  const confirm = useConfirmation();
 
   return (
     <div className="flex flex-wrap justify-end gap-3 border-t pt-5">
@@ -163,14 +165,16 @@ function SessionSubmitActions({ disabled }: { disabled: boolean }) {
         value="complete"
         disabled={pending || disabled}
         className="h-11"
-        onClick={(event) => {
-          if (
-            !window.confirm(
-              "Hoàn tất buổi sẽ khóa nhật ký và cập nhật tiến độ học viên. Bạn chắc chắn chứ?",
-            )
-          ) {
-            event.preventDefault();
-          }
+        onClick={async (event) => {
+          event.preventDefault();
+          const button = event.currentTarget;
+          const accepted = await confirm({
+            title: "Hoàn tất buổi học?",
+            description:
+              "Nhật ký sẽ bị khóa và tiến độ học viên được cập nhật sau thao tác này.",
+            confirmLabel: "Hoàn tất buổi",
+          });
+          if (accepted) button.form?.requestSubmit(button);
         }}
       >
         {pending ? (

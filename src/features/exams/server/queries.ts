@@ -11,24 +11,23 @@ export async function getExamTeacherData() {
     { data: deliveries, error },
     { data: classes, error: classesError },
     { data: sets, error: setsError },
-  ] =
-    await Promise.all([
-      supabase
-        .from("exam_deliveries")
-        .select(
-          "id,title,exam_type,status,opens_at,closes_at,duration_minutes,results_published_at,class:classes(id,code,name),attempts:exam_attempts(id,status,started_at,submitted_at,final_score_100)",
-        )
-        .order("opens_at", { ascending: false }),
-      supabase
-        .from("class_teachers")
-        .select("class:classes(id,code,name,status)"),
-      supabase
-        .from("question_set_versions")
-        .select(
-          "id,version_no,title_snapshot,question_set:question_sets!question_set_versions_question_set_id_fkey!inner(id,title,kind,status)",
-        )
-        .not("locked_at", "is", null),
-    ]);
+  ] = await Promise.all([
+    supabase
+      .from("exam_deliveries")
+      .select(
+        "id,title,exam_type,status,opens_at,closes_at,duration_minutes,results_published_at,class:classes(id,code,name),attempts:exam_attempts(id,status,started_at,submitted_at,final_score_100)",
+      )
+      .order("opens_at", { ascending: false }),
+    supabase
+      .from("class_teachers")
+      .select("class:classes(id,code,name,status)"),
+    supabase
+      .from("question_set_versions")
+      .select(
+        "id,version_no,title_snapshot,raw_max_score,question_set:question_sets!question_set_versions_question_set_id_fkey!inner(id,title,kind,status)",
+      )
+      .not("locked_at", "is", null),
+  ]);
   if (error || classesError || setsError) {
     throw new Error(
       `Không tải được kỳ thi: ${error?.message ?? classesError?.message ?? setsError?.message}`,
@@ -74,6 +73,7 @@ export async function getExamGradingData(deliveryId: string) {
     )
     .eq("id", deliveryId)
     .maybeSingle();
-  if (error) throw new Error(`Không tải được dữ liệu chấm thi: ${error.message}`);
+  if (error)
+    throw new Error(`Không tải được dữ liệu chấm thi: ${error.message}`);
   return signGradingAudio(supabase, data);
 }

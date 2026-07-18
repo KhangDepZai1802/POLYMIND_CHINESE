@@ -15,13 +15,21 @@ const setSchema = z.object({
 const itemSchema = z.object({
   set_version_id: z.uuid(),
   question_version_id: z.uuid(),
-  points: z.coerce.number().positive(),
+  points: z.coerce
+    .number()
+    .positive("Phải nhập số điểm lớn hơn 0 cho câu hỏi."),
   section_id: z.union([z.literal(""), z.uuid()]).default(""),
 });
-const sectionSchema = z.object({ set_version_id: z.uuid(), title: z.string().trim().min(1), instructions: z.string().trim().default("") });
+const sectionSchema = z.object({
+  set_version_id: z.uuid(),
+  title: z.string().trim().min(1),
+  instructions: z.string().trim().default(""),
+});
 const itemsBatchSchema = z.object({
   set_version_id: z.uuid(),
-  points: z.coerce.number().positive(),
+  points: z.coerce
+    .number()
+    .positive("Phải nhập số điểm lớn hơn 0 cho các câu hỏi đã chọn."),
   section_id: z.union([z.literal(""), z.uuid()]).default(""),
   question_version_ids: z.array(z.uuid()).min(1, "Chọn ít nhất một câu hỏi"),
 });
@@ -69,7 +77,11 @@ export async function addQuestionSetItemAction(
     .eq("set_version_id", parsed.data.set_version_id);
   const { error } = await supabase
     .from("question_set_items")
-    .insert({ ...parsed.data, section_id: parsed.data.section_id || null, order_index: count ?? 0 });
+    .insert({
+      ...parsed.data,
+      section_id: parsed.data.section_id || null,
+      order_index: count ?? 0,
+    });
   if (error)
     return {
       error: error.message.includes("khóa")
@@ -95,18 +107,51 @@ export async function addQuestionSetItemsAction(
   });
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
+  const [
+    { data: selectedVersions, error: selectedError },
+    { data: existingItems, error: existingError },
+  ] = await Promise.all([
+    supabase
+      .from("question_versions")
+      .select("id,question_id")
+      .in("id", parsed.data.question_version_ids),
+    supabase
+      .from("question_set_items")
+      .select("question_version:question_versions(question_id)")
+      .eq("set_version_id", parsed.data.set_version_id),
+  ]);
+  if (selectedError || existingError) {
+    return { error: "Không kiểm tra được các câu đã có trong bộ." };
+  }
+  const existingQuestionIds = new Set(
+    (existingItems ?? [])
+      .map((item) => item.question_version?.question_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  if (
+    (selectedVersions ?? []).some((version) =>
+      existingQuestionIds.has(version.question_id),
+    )
+  ) {
+    return {
+      error:
+        "Có câu hỏi đã được chọn vào bộ này. Hãy bỏ chọn câu có ghi chú rồi thử lại.",
+    };
+  }
   const { count } = await supabase
     .from("question_set_items")
     .select("id", { count: "exact", head: true })
     .eq("set_version_id", parsed.data.set_version_id);
   const start = count ?? 0;
-  const rows = parsed.data.question_version_ids.map((questionVersionId, index) => ({
-    set_version_id: parsed.data.set_version_id,
-    question_version_id: questionVersionId,
-    points: parsed.data.points,
-    section_id: parsed.data.section_id || null,
-    order_index: start + index,
-  }));
+  const rows = parsed.data.question_version_ids.map(
+    (questionVersionId, index) => ({
+      set_version_id: parsed.data.set_version_id,
+      question_version_id: questionVersionId,
+      points: parsed.data.points,
+      section_id: parsed.data.section_id || null,
+      order_index: start + index,
+    }),
+  );
   const { error } = await supabase.from("question_set_items").insert(rows);
   if (error)
     return {
@@ -121,30 +166,66 @@ export async function addQuestionSetItemsAction(
   };
 }
 
-export async function createQuestionSetSectionAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+export async function createQuestionSetSectionAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   await requireRole("teacher", "super_admin");
   const parsed = sectionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
-  const { count } = await supabase.from("question_set_sections").select("id", { count: "exact", head: true }).eq("set_version_id", parsed.data.set_version_id);
-  const { error } = await supabase.from("question_set_sections").insert({ ...parsed.data, instructions: parsed.data.instructions || null, order_index: count ?? 0 });
+  const { count } = await supabase
+    .from("question_set_sections")
+    .select("id", { count: "exact", head: true })
+    .eq("set_version_id", parsed.data.set_version_id);
+  const { error } = await supabase
+    .from("question_set_sections")
+    .insert({
+      ...parsed.data,
+      instructions: parsed.data.instructions || null,
+      order_index: count ?? 0,
+    });
   if (error) return { error: error.message };
-  revalidatePath("/teacher/exercises/sets"); revalidatePath("/teacher/exams/sets");
+  revalidatePath("/teacher/exercises/sets");
+  revalidatePath("/teacher/exams/sets");
   return { success: "Đã thêm section." };
 }
 
-export async function moveQuestionSetItemAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
+export async function moveQuestionSetItemAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   await requireRole("teacher", "super_admin");
-  const id=formData.get("item_id"), direction=Number(formData.get("direction"));
-  if(typeof id!=="string" || ![-1,1].includes(direction)) return { error: "Thao tác sắp xếp không hợp lệ." };
-  const supabase=await createClient(); const { error }=await supabase.rpc("move_question_set_item",{p_item_id:id,p_direction:direction});
-  if(error) return {error:error.message}; revalidatePath("/teacher/exercises/sets"); revalidatePath("/teacher/exams/sets"); return {success:"Đã đổi thứ tự."};
+  const id = formData.get("item_id"),
+    direction = Number(formData.get("direction"));
+  if (typeof id !== "string" || ![-1, 1].includes(direction))
+    return { error: "Thao tác sắp xếp không hợp lệ." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("move_question_set_item", {
+    p_item_id: id,
+    p_direction: direction,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/teacher/exercises/sets");
+  revalidatePath("/teacher/exams/sets");
+  return { success: "Đã đổi thứ tự." };
 }
 
-export async function removeQuestionSetItemAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole("teacher", "super_admin"); const id=formData.get("item_id"); if(typeof id!=="string") return {error:"Thiếu item."};
-  const supabase=await createClient(); const {error}=await supabase.rpc("remove_question_set_item",{p_item_id:id}); if(error)return{error:error.message};
-  revalidatePath("/teacher/exercises/sets"); revalidatePath("/teacher/exams/sets"); return{success:"Đã xóa item khỏi bản nháp."};
+export async function removeQuestionSetItemAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const id = formData.get("item_id");
+  if (typeof id !== "string") return { error: "Thiếu item." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_question_set_item", {
+    p_item_id: id,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/teacher/exercises/sets");
+  revalidatePath("/teacher/exams/sets");
+  return { success: "Đã xóa item khỏi bản nháp." };
 }
 
 /**

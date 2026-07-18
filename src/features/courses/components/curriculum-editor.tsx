@@ -11,6 +11,7 @@ import {
 } from "@/features/courses/server/actions";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -342,12 +343,7 @@ function LessonDialog({
   );
 }
 
-/**
- * Nút xóa có xác nhận.
- *
- * `confirm()` chặn luồng nên không bị race với submit — đủ cho thao tác xóa
- * trong giáo trình. Các mutation nặng hơn (rút học, chuyển lớp) dùng dialog riêng.
- */
+/** Nút xóa dùng dialog xác nhận chung theo theme hệ thống. */
 function DeleteButton({
   action,
   id,
@@ -364,14 +360,15 @@ function DeleteButton({
   className?: string;
 }) {
   const { formAction } = useFormAction(action, { toastError: true });
+  const confirmDelete = useConfirmSubmit({
+    title: "Xác nhận xóa",
+    description: confirmMessage,
+    confirmLabel: "Xóa",
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (!window.confirm(confirmMessage)) e.preventDefault();
-      }}
-    >
+    <form action={formAction} onSubmit={confirmDelete}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="course_id" value={courseId} />
       <Button

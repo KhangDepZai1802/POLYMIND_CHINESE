@@ -8,7 +8,7 @@ export async function getQuestionSets(kind: "exercise" | "exam") {
     supabase
       .from("question_sets")
       .select(
-        "id,title,description,status,current_version:question_set_versions!fk_question_sets_current_version(id,version_no,raw_max_score,locked_at,question_set_sections(id,title,instructions,order_index),question_set_items(id,section_id,points,order_index,question_version:question_versions(id,question_type,prompt_text,question_options(id,option_key,content,order_index))))",
+        "id,title,description,status,current_version:question_set_versions!fk_question_sets_current_version(id,version_no,raw_max_score,locked_at,question_set_sections(id,title,instructions,order_index),question_set_items(id,section_id,points,order_index,question_version:question_versions(id,question_id,question_type,prompt_text,question_options(id,option_key,content,order_index))))",
       )
       .eq("kind", kind)
       .neq("status", "archived")

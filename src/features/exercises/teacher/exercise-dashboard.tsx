@@ -51,17 +51,20 @@ type Props = {
     id: string;
     version_no: number;
     title_snapshot: string;
+    raw_max_score: number;
     question_set: { id: string; title: string; kind: string; status: string };
   }>;
 };
 export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
   const [open, setOpen] = useState(false);
+  const [selectedSetId, setSelectedSetId] = useState("");
   const form = useFormAction(createExerciseDeliveryAction, {
     onSuccess: () => setOpen(false),
     toastError: true,
   });
   const noSets = sets.length === 0;
   const noClasses = classes.length === 0;
+  const selectedSet = sets.find((set) => set.id === selectedSetId);
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -94,7 +97,12 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
               )}
               <div className="space-y-2">
                 <Label>Bộ bài tập đã khóa</Label>
-                <Select name="set_version_id" required>
+                <Select
+                  name="set_version_id"
+                  value={selectedSetId}
+                  onValueChange={setSelectedSetId}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn bộ" />
                   </SelectTrigger>
@@ -108,16 +116,58 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
                 </Select>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2"><Label>Cách chọn điểm</Label><select name="grading_method" defaultValue="latest" className="bg-background h-9 w-full rounded-md border px-3 text-sm"><option value="first">Lượt đầu</option><option value="latest">Lượt cuối</option><option value="highest">Lượt cao nhất</option></select></div>
-                <div className="space-y-2"><Label>Công bố điểm</Label><select name="result_release_mode" defaultValue="manual" className="bg-background h-9 w-full rounded-md border px-3 text-sm"><option value="manual">Thủ công</option><option value="after_graded">Ngay sau chấm</option><option value="after_due">Sau hạn</option></select></div>
-                <div className="space-y-2"><Label>Công bố đáp án</Label><select name="answer_release_mode" defaultValue="with_results" className="bg-background h-9 w-full rounded-md border px-3 text-sm"><option value="never">Không công bố</option><option value="after_submit">Sau khi nộp</option><option value="after_due">Sau hạn</option><option value="with_results">Cùng kết quả</option></select></div>
+                <div className="space-y-2">
+                  <Label>Cách chọn điểm</Label>
+                  <select
+                    name="grading_method"
+                    defaultValue="latest"
+                    className="bg-background h-9 w-full rounded-md border px-3 text-sm"
+                  >
+                    <option value="first">Lượt đầu</option>
+                    <option value="latest">Lượt cuối</option>
+                    <option value="highest">Lượt cao nhất</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Công bố điểm</Label>
+                  <select
+                    name="result_release_mode"
+                    defaultValue="manual"
+                    className="bg-background h-9 w-full rounded-md border px-3 text-sm"
+                  >
+                    <option value="manual">Thủ công</option>
+                    <option value="after_graded">Ngay sau chấm</option>
+                    <option value="after_due">Sau hạn</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Công bố đáp án</Label>
+                  <select
+                    name="answer_release_mode"
+                    defaultValue="with_results"
+                    className="bg-background h-9 w-full rounded-md border px-3 text-sm"
+                  >
+                    <option value="never">Không công bố</option>
+                    <option value="after_submit">Sau khi nộp</option>
+                    <option value="after_due">Sau hạn</option>
+                    <option value="with_results">Cùng kết quả</option>
+                  </select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Lớp (có thể chọn nhiều)</Label>
                 <div className="grid gap-2 rounded-lg border p-3">
                   {classes.map((c) => (
-                    <Label key={c.id} className="flex items-center gap-2 font-normal">
-                      <input type="checkbox" name="class_ids" value={c.id} className="size-4" />
+                    <Label
+                      key={c.id}
+                      className="flex items-center gap-2 font-normal"
+                    >
+                      <input
+                        type="checkbox"
+                        name="class_ids"
+                        value={c.id}
+                        className="size-4"
+                      />
                       {c.code} — {c.name}
                     </Label>
                   ))}
@@ -130,21 +180,26 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Mở từ</Label>
-                  <DateTimePicker name="available_from" placeholder="Chọn ngày giờ" />
+                  <DateTimePicker
+                    name="available_from"
+                    placeholder="Chọn ngày giờ"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Hạn nộp</Label>
                   <DateTimePicker name="due_at" placeholder="Chọn ngày giờ" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Điểm tối đa</Label>
+                  <Label>Điểm tối đa (theo bộ đã chọn)</Label>
                   <Input
-                    name="max_score"
                     type="number"
-                    min="1"
-                    defaultValue="10"
-                    required
+                    value={selectedSet?.raw_max_score ?? ""}
+                    placeholder="Chọn bộ bài tập"
+                    readOnly
                   />
+                  <p className="text-muted-foreground text-xs">
+                    Tự động bằng tổng điểm giáo viên đã đặt cho các câu hỏi.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Số lượt</Label>
@@ -213,7 +268,9 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
                   <span>{d.attempts.filter((a) => a.is_late).length} trễ</span>
                 </div>
                 <Button asChild size="sm" variant="outline">
-                  <Link href={`/teacher/exercises/${d.id}`}>Theo dõi & chấm</Link>
+                  <Link href={`/teacher/exercises/${d.id}`}>
+                    Theo dõi & chấm
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

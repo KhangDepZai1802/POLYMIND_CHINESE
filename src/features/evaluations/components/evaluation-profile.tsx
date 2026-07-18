@@ -16,6 +16,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -162,7 +163,8 @@ function EvaluationCard({
               {evaluation.period_start || evaluation.period_end
                 ? `Kỳ ${formatDate(evaluation.period_start)} – ${formatDate(evaluation.period_end)}`
                 : "Không đặt kỳ đánh giá"}
-              {isPublished && ` · Đã gửi ${formatDateTime(evaluation.published_at)}`}
+              {isPublished &&
+                ` · Đã gửi ${formatDateTime(evaluation.published_at)}`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1">
@@ -399,20 +401,15 @@ function PublishEvaluationButton({
     toastError: true,
     onSuccess: () => router.refresh(),
   });
+  const confirmPublish = useConfirmSubmit({
+    title: "Gửi đánh giá cho học viên?",
+    description:
+      "Học viên sẽ đọc được bản đánh giá này và nhận thông báo trong hệ thống.",
+    confirmLabel: "Gửi cho học viên",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (
-          !window.confirm(
-            "Gửi bản đánh giá này cho học viên? Học viên sẽ đọc được và nhận thông báo.",
-          )
-        ) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmPublish}>
       <input type="hidden" name="id" value={evaluation.id} />
       <input type="hidden" name="enrollment_id" value={enrollmentId} />
       <Button type="submit" size="sm">
@@ -433,16 +430,15 @@ function DeleteEvaluationButton({
   const { formAction } = useFormAction(deleteEvaluationAction, {
     toastError: true,
   });
+  const confirmDelete = useConfirmSubmit({
+    title: "Xóa bản đánh giá nháp?",
+    description: "Bản nháp này sẽ bị xóa và không thể khôi phục.",
+    confirmLabel: "Xóa bản nháp",
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (!window.confirm("Xóa bản đánh giá nháp này?")) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmDelete}>
       <input type="hidden" name="id" value={evaluation.id} />
       <input type="hidden" name="enrollment_id" value={enrollmentId} />
       <Button
@@ -475,8 +471,8 @@ function NotesPanel({
       <div>
         <h2 className="font-semibold">Ghi chú về học viên</h2>
         <p className="text-muted-foreground text-sm">
-          Ghi chú <strong>nội bộ</strong> học viên không đọc được — kể cả khi gọi
-          thẳng API. Ghi chú chia sẻ thì học viên đọc được ngay.
+          Ghi chú <strong>nội bộ</strong> học viên không đọc được — kể cả khi
+          gọi thẳng API. Ghi chú chia sẻ thì học viên đọc được ngay.
         </p>
       </div>
 
@@ -549,14 +545,14 @@ function NotesPanel({
   );
 }
 
-function NoteRow({
-  note,
-  enrollmentId,
-}: {
-  note: Note;
-  enrollmentId: string;
-}) {
+function NoteRow({ note, enrollmentId }: { note: Note; enrollmentId: string }) {
   const { formAction } = useFormAction(deleteNoteAction, { toastError: true });
+  const confirmDelete = useConfirmSubmit({
+    title: "Xóa ghi chú?",
+    description: "Ghi chú này sẽ bị xóa và không thể khôi phục.",
+    confirmLabel: "Xóa ghi chú",
+    variant: "destructive",
+  });
   const isInternal = note.visibility === "staff_only";
 
   return (
@@ -572,14 +568,7 @@ function NoteRow({
               <span className="text-muted-foreground text-xs">
                 {formatDateTime(note.created_at)}
               </span>
-              <form
-                action={formAction}
-                onSubmit={(event) => {
-                  if (!window.confirm("Xóa ghi chú này?")) {
-                    event.preventDefault();
-                  }
-                }}
-              >
+              <form action={formAction} onSubmit={confirmDelete}>
                 <input type="hidden" name="id" value={note.id} />
                 <input
                   type="hidden"

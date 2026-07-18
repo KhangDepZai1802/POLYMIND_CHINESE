@@ -12,6 +12,7 @@ import {
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
 import { SpeakingRecorder } from "@/features/question-builder/renderers/speaking-recorder";
 import { Button } from "@/components/ui/button";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import type { QuestionType } from "@/features/question-builder/domain/questions";
 type Item = {
   id: string;
@@ -52,6 +53,7 @@ function audioUrlOf(answer: unknown): string | null {
 }
 
 export function ExamAttempt({ payload }: { payload: Payload }) {
+  const confirm = useConfirmation();
   const router = useRouter();
   // Câu Nói tự lưu qua recorder (RPC riêng) — không đưa vào state chung để
   // vòng lưu-khi-nộp không ghi đè answer_payload đã có audio_path.
@@ -77,24 +79,27 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
   const answersRef = useRef(answers);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const submitted = useRef(false);
-  const finish = useCallback(async (reason: "manual" | "duration_expired" = "manual") => {
-    if (submitted.current) return;
-    submitted.current = true;
-    await Promise.all(
-      Object.entries(answersRef.current).map(([id, value]) =>
-        saveExamAnswer(payload.attempt.id, id, value),
-      ),
-    );
-    const result = await submitExamAttempt(payload.attempt.id, reason);
-    if (!result.ok) {
-      submitted.current = false;
-      setError(result.error);
-      return;
-    }
-    window.dispatchEvent(new Event("navstart"));
-    router.push("/student/exams");
-    router.refresh();
-  }, [payload.attempt.id, router]);
+  const finish = useCallback(
+    async (reason: "manual" | "duration_expired" = "manual") => {
+      if (submitted.current) return;
+      submitted.current = true;
+      await Promise.all(
+        Object.entries(answersRef.current).map(([id, value]) =>
+          saveExamAnswer(payload.attempt.id, id, value),
+        ),
+      );
+      const result = await submitExamAttempt(payload.attempt.id, reason);
+      if (!result.ok) {
+        submitted.current = false;
+        setError(result.error);
+        return;
+      }
+      window.dispatchEvent(new Event("navstart"));
+      router.push("/student/exams");
+      router.refresh();
+    },
+    [payload.attempt.id, router],
+  );
   useEffect(() => {
     const timer = setInterval(
       () =>
@@ -147,8 +152,14 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
             </p>
             <Button
               size="sm"
-              onClick={() => {
-                if (window.confirm("Nộp bài thi sớm?")) void finish();
+              onClick={async () => {
+                const accepted = await confirm({
+                  title: "Nộp bài thi sớm?",
+                  description:
+                    "Lượt thi sẽ kết thúc ngay và bạn không thể sửa câu trả lời sau khi nộp.",
+                  confirmLabel: "Nộp bài thi",
+                });
+                if (accepted) void finish();
               }}
             >
               Nộp bài
@@ -174,9 +185,15 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
                     const fd = new FormData();
                     fd.set("audio", blob, "speaking");
                     fd.set("duration_ms", String(durationMs));
-                    return uploadExamSpeakingAnswer(payload.attempt.id, item.id, fd);
+                    return uploadExamSpeakingAnswer(
+                      payload.attempt.id,
+                      item.id,
+                      fd,
+                    );
                   }}
-                  onDelete={() => deleteExamSpeakingAnswer(payload.attempt.id, item.id)}
+                  onDelete={() =>
+                    deleteExamSpeakingAnswer(payload.attempt.id, item.id)
+                  }
                 />
               </div>
             ) : (

@@ -3262,6 +3262,21 @@ export type Database = {
         }
         Returns: string
       }
+      create_multi_class_exam_deliveries: {
+        Args: {
+          p_answer_release_mode?: Database["public"]["Enums"]["answer_release_mode"]
+          p_class_ids: string[]
+          p_closes_at: string
+          p_duration_minutes: number
+          p_exam_type: Database["public"]["Enums"]["assessment_type"]
+          p_opens_at: string
+          p_passing_score?: number
+          p_publish?: boolean
+          p_set_version_id: string
+          p_title: string
+        }
+        Returns: string[]
+      }
       create_multi_class_exercise_deliveries: {
         Args: {
           p_allow_late: boolean

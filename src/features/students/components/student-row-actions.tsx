@@ -9,6 +9,7 @@ import {
   provisionStudentAccountAction,
 } from "@/features/students/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,6 +57,13 @@ export function StudentRowActions({
     onSuccess: () => setAccountOpen(false),
     toastError: true,
   });
+  const confirmArchive = useConfirmSubmit({
+    title: `Lưu trữ hồ sơ “${student.full_name}”?`,
+    description:
+      "Dữ liệu học tập được giữ nguyên, hồ sơ chỉ bị ẩn khỏi danh sách đang học.",
+    confirmLabel: "Lưu trữ hồ sơ",
+    variant: "destructive",
+  });
 
   return (
     <>
@@ -93,18 +101,7 @@ export function StudentRowActions({
 
           <DropdownMenuSeparator />
 
-          <form
-            action={archive.formAction}
-            onSubmit={(e) => {
-              if (
-                !window.confirm(
-                  `Lưu trữ hồ sơ "${student.full_name}"? Dữ liệu học tập được giữ nguyên, chỉ ẩn khỏi danh sách đang học.`,
-                )
-              ) {
-                e.preventDefault();
-              }
-            }}
-          >
+          <form action={archive.formAction} onSubmit={confirmArchive}>
             <input type="hidden" name="id" value={student.id} />
             <button
               type="submit"

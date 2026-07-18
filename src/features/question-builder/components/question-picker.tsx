@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { CheckCircle2, Plus, Search } from "lucide-react";
 
 import { addQuestionSetItemsAction } from "@/features/question-builder/server/actions";
 import {
@@ -46,15 +46,21 @@ export function QuestionPicker({
   setVersionId,
   sections,
   questions,
+  selectedQuestionIds,
 }: {
   setVersionId: string;
   sections: Array<{ id: string; title: string }>;
   questions: PickerQuestion[];
+  selectedQuestionIds: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [skill, setSkill] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const alreadySelected = useMemo(
+    () => new Set(selectedQuestionIds),
+    [selectedQuestionIds],
+  );
 
   const form = useFormAction(addQuestionSetItemsAction, {
     toastError: true,
@@ -109,8 +115,8 @@ export function QuestionPicker({
         <DialogHeader>
           <DialogTitle>Thêm câu hỏi vào bộ</DialogTitle>
           <DialogDescription>
-            Tìm theo mã hoặc tiêu đề, lọc theo kỹ năng, rồi tick chọn các câu bạn
-            muốn thêm.
+            Tìm theo mã hoặc tiêu đề, lọc theo kỹ năng, rồi tick chọn các câu
+            bạn muốn thêm.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,12 +154,20 @@ export function QuestionPicker({
               {filtered.map((q) => {
                 const versionId = q.current_version!.id;
                 const checked = selected.has(versionId);
+                const isAlreadySelected = alreadySelected.has(q.id);
                 return (
                   <li key={q.id}>
-                    <label className="hover:bg-accent/50 flex cursor-pointer items-start gap-3 p-3">
+                    <label
+                      className={`flex items-start gap-3 p-3 ${
+                        isAlreadySelected
+                          ? "bg-muted/40 cursor-default"
+                          : "hover:bg-accent/50 cursor-pointer"
+                      }`}
+                    >
                       <Checkbox
                         checked={checked}
                         onCheckedChange={() => toggle(versionId)}
+                        disabled={isAlreadySelected}
                         className="mt-0.5"
                       />
                       <div className="min-w-0 flex-1">
@@ -163,11 +177,19 @@ export function QuestionPicker({
                               {q.code}
                             </code>
                           )}
-                          <span className="truncate font-medium">{q.title}</span>
+                          <span className="truncate font-medium">
+                            {q.title}
+                          </span>
                         </div>
                         <p className="text-muted-foreground mt-0.5 line-clamp-1 text-sm">
                           {q.current_version!.prompt_text}
                         </p>
+                        {isAlreadySelected && (
+                          <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                            <CheckCircle2 className="size-3.5" aria-hidden />
+                            Câu này đã được chọn vào bộ này rồi
+                          </p>
+                        )}
                       </div>
                       <Badge variant="outline" className="shrink-0 font-normal">
                         {QUESTION_TYPE_LABELS[q.current_version!.question_type]}
@@ -186,25 +208,40 @@ export function QuestionPicker({
         >
           <input type="hidden" name="set_version_id" value={setVersionId} />
           {[...selected].map((id) => (
-            <input key={id} type="hidden" name="question_version_ids" value={id} />
+            <input
+              key={id}
+              type="hidden"
+              name="question_version_ids"
+              value={id}
+            />
           ))}
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
-              <Label htmlFor={`picker-points-${setVersionId}`}>Điểm mỗi câu</Label>
+              <Label htmlFor={`picker-points-${setVersionId}`}>
+                Điểm mỗi câu
+              </Label>
               <Input
                 id={`picker-points-${setVersionId}`}
                 name="points"
                 type="number"
                 min="0.25"
                 step="0.25"
-                defaultValue="1"
+                placeholder="Chưa nhập"
                 className="w-28"
+                aria-invalid={Boolean(form.state.fieldErrors?.points)}
                 required
               />
+              {form.state.fieldErrors?.points && (
+                <p className="text-destructive max-w-56 text-xs">
+                  {form.state.fieldErrors.points}
+                </p>
+              )}
             </div>
             {sections.length > 0 && (
               <div className="space-y-1">
-                <Label htmlFor={`picker-section-${setVersionId}`}>Section</Label>
+                <Label htmlFor={`picker-section-${setVersionId}`}>
+                  Section
+                </Label>
                 <select
                   id={`picker-section-${setVersionId}`}
                   name="section_id"

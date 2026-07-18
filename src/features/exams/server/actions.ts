@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database";
 
 const schema = z.object({
-  class_id: z.uuid(),
+  class_ids: z.array(z.uuid()).min(1, "Chọn ít nhất một lớp"),
   set_version_id: z.uuid(),
   title: z.string().trim().min(2),
   exam_type: z.enum([
@@ -46,36 +46,39 @@ export async function createExamDeliveryAction(
   formData: FormData,
 ): Promise<ActionState> {
   await requireRole("teacher", "super_admin");
-  const parsed = schema.safeParse(Object.fromEntries(formData));
+  const parsed = schema.safeParse({
+    ...Object.fromEntries(formData),
+    class_ids: formData.getAll("class_ids"),
+  });
   if (!parsed.success) return zodToActionState(parsed.error);
   const opens = fromZonedTime(parsed.data.opens_at, "Asia/Ho_Chi_Minh"),
     closes = fromZonedTime(parsed.data.closes_at, "Asia/Ho_Chi_Minh");
   // Khung thi có thể kéo dài nhiều ngày (EX-12 đã đảo); chỉ cần mở trước đóng.
-  if (opens >= closes)
-    return { error: "Giờ mở phải trước giờ đóng." };
+  if (opens >= closes) return { error: "Giờ mở phải trước giờ đóng." };
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_exam_delivery", {
-    p_class_id: parsed.data.class_id,
-    p_set_version_id: parsed.data.set_version_id,
-    p_title: parsed.data.title,
-    p_exam_type: parsed.data.exam_type,
-    p_opens_at: opens.toISOString(),
-    p_closes_at: closes.toISOString(),
-    p_duration_minutes: parsed.data.duration_minutes,
-    p_passing_score:
-      parsed.data.passing_score === "" ? undefined : parsed.data.passing_score,
-  });
+  const { data, error } = await supabase.rpc(
+    "create_multi_class_exam_deliveries",
+    {
+      p_class_ids: parsed.data.class_ids,
+      p_set_version_id: parsed.data.set_version_id,
+      p_title: parsed.data.title,
+      p_exam_type: parsed.data.exam_type,
+      p_opens_at: opens.toISOString(),
+      p_closes_at: closes.toISOString(),
+      p_duration_minutes: parsed.data.duration_minutes,
+      p_passing_score:
+        parsed.data.passing_score === ""
+          ? undefined
+          : parsed.data.passing_score,
+      p_answer_release_mode: parsed.data.answer_release_mode,
+      p_publish: true,
+    },
+  );
   if (error) return { error: error.message };
-  if (data) {
-    const publish = await supabase.rpc("publish_exam_delivery", {
-      p_delivery_id: data,
-    });
-    if (publish.error) return { error: publish.error.message };
-    const configured = await supabase.from("exam_deliveries").update({ answer_release_mode: parsed.data.answer_release_mode }).eq("id", data);
-    if (configured.error) return { error: configured.error.message };
-  }
   revalidatePath("/teacher/exams");
-  return { success: "Đã lên lịch kỳ thi." };
+  return {
+    success: `Đã lên lịch ${data?.length || parsed.data.class_ids.length} kỳ thi riêng.`,
+  };
 }
 export async function startExamAction(formData: FormData) {
   await requireRole("student");
@@ -114,7 +117,10 @@ export async function uploadExamSpeakingAnswer(
   const actor = await requireRole("student");
   return persistSpeakingAnswer("exam", actor.id, attemptId, itemId, formData);
 }
-export async function deleteExamSpeakingAnswer(attemptId: string, itemId: string) {
+export async function deleteExamSpeakingAnswer(
+  attemptId: string,
+  itemId: string,
+) {
   await requireRole("student");
   return clearSpeakingAnswer("exam", attemptId, itemId);
 }
@@ -187,10 +193,20 @@ export async function publishExamResultsAction(
   return { success: `Đã công bố kết quả (${data ?? 0}).` };
 }
 
-export async function lockExamResultsAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole("teacher", "super_admin"); const id=formData.get("delivery_id"); if(typeof id!=="string") return{error:"Thiếu kỳ thi."};
-  const supabase=await createClient(); const {error}=await supabase.rpc("lock_exam_results",{p_delivery_id:id}); if(error)return{error:error.message};
-  revalidatePath(`/teacher/exams/${id}`); return{success:"Đã khóa điểm. Có thể công bố kết quả."};
+export async function lockExamResultsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const id = formData.get("delivery_id");
+  if (typeof id !== "string") return { error: "Thiếu kỳ thi." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("lock_exam_results", {
+    p_delivery_id: id,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/teacher/exams/${id}`);
+  return { success: "Đã khóa điểm. Có thể công bố kết quả." };
 }
 
 export async function runExamRegradeAction(

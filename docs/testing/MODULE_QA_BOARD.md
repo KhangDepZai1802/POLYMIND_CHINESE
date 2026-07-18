@@ -34,7 +34,7 @@
 | 9 | M09 | Enrollments | Ghi danh (**capacity race**), tạm dừng, **chuyển lớp giữ lịch sử**, rút, hoàn thành | P3 | **High** | Pending | Not Required | Not Started |
 | 10 | M10 | Attendance | Bulk upsert (**không sinh trùng**), class-match trigger, attribution actor thật | P4 | **High** | Pending | Not Required | Not Started |
 | 11 | M11 | Assignments & Submissions | Draft/publish, hạn nộp, nộp text/file, chấm điểm, **HV không sửa được score** | P4, P5 | **High** | **Bugs Found** | **Fixed** | Not Started |
-| 12 | M12 | Assessments & Evaluations | Điểm 0–100 + 6 kỹ năng, **draft ≠ publish**, xếp loại từ grading scale, `student_notes` staff_only | P4 | **High** | Pending | Not Required | Not Started |
+| 12 | M12 | Assessments & Evaluations | Điểm 0–100 + 6 kỹ năng, **draft ≠ publish**, xếp loại từ grading scale, `student_notes` staff_only | P4 | **High** | **Bugs Found** | **Fixed** | Not Started |
 | 13 | M13 | Progress & Completion | View tiến độ (tính, không nhập tay), readiness, xác nhận hoàn thành có audit | P4, P5 | Medium | Pending | Not Required | Not Started |
 | 14 | M14 | Tuition | Invoice/payment/**receipt duy nhất**, số dư = tính ra, **teacher DENY toàn bộ** | P6 | **High** | Pending | Not Required | Not Started |
 | 15 | M15 | Notifications & Announcements | In-app một chiều, **dedupe cron**, link có authorization | P6 | Medium | Pending | Not Required | Not Started |
@@ -62,7 +62,7 @@
 
 | Bug ID | Module | Fix của Codex | Trạng thái |
 |---|---|---|---|
-| — | — | — | *(trống)* |
+| UX-M11-M12-001 | M11, M12 | Đồng bộ builder Bài tập/Thi: đánh dấu câu đã chọn theo câu gốc, bắt buộc nhập điểm, preview modal cuộn, tổng điểm giao bài lấy từ bộ; kỳ thi tick nhiều lớp qua RPC transaction; thay toàn bộ native confirm bằng dialog theo theme. | ⏳ Chờ Claude xác minh UI độc lập |
 
 ### Đã xác minh độc lập
 

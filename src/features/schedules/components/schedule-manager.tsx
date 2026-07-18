@@ -40,6 +40,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -672,14 +673,15 @@ function SessionActionButton({
   confirmMessage: string;
 }) {
   const { formAction } = useFormAction(action, { toastError: true });
+  const confirmAction = useConfirmSubmit({
+    title: "Xác nhận thao tác",
+    description: confirmMessage,
+    confirmLabel: label,
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (!window.confirm(confirmMessage)) e.preventDefault();
-      }}
-    >
+    <form action={formAction} onSubmit={confirmAction}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="class_id" value={classId} />
       <Button type="submit" variant="ghost" size="icon" aria-label={label}>
@@ -721,20 +723,16 @@ function DeleteAllSessionsButton({ classId }: { classId: string }) {
   const { formAction } = useFormAction(deleteAllSessionsAction, {
     toastError: true,
   });
+  const confirmDeleteAll = useConfirmSubmit({
+    title: "Xóa tất cả buổi chưa dạy?",
+    description:
+      "Buổi đã dạy hoặc đã điểm danh sẽ được giữ lại. Các buổi chưa dạy sẽ bị xóa.",
+    confirmLabel: "Xóa tất cả",
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (
-          !window.confirm(
-            "Xóa tất cả buổi học chưa dạy của lớp này? Buổi đã dạy hoặc đã điểm danh sẽ được giữ lại.",
-          )
-        ) {
-          e.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmDeleteAll}>
       <input type="hidden" name="class_id" value={classId} />
       <Button type="submit" variant="outline" size="sm">
         <Trash2 className="text-destructive size-4" aria-hidden />
@@ -756,20 +754,15 @@ function DeleteScheduleButton({
   const { formAction } = useFormAction(deleteScheduleAction, {
     toastError: true,
   });
+  const confirmDelete = useConfirmSubmit({
+    title: `Xóa lịch lặp “${label}”?`,
+    description: "Các buổi đã sinh từ lịch này vẫn được giữ nguyên.",
+    confirmLabel: "Xóa lịch lặp",
+    variant: "destructive",
+  });
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (
-          !window.confirm(
-            `Xóa lịch lặp "${label}"? Các buổi đã sinh từ lịch này vẫn được giữ nguyên.`,
-          )
-        ) {
-          e.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} onSubmit={confirmDelete}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="class_id" value={classId} />
       <Button

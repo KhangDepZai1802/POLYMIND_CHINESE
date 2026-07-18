@@ -300,7 +300,7 @@
 |---|---|---|---|
 | P13-T1 | Full pgTAP matrix | Mọi bảng/RPC/Storage mới | ☐ |
 | P13-T2 | Full Playwright 3 role | Exercise + exam + negative | ☐ |
-| P13-T3 | A11y/mobile/IME | 44px, keyboard, Chinese input real devices | ☐ |
+| P13-T3 | A11y/mobile/IME | 44px, keyboard, Chinese input real devices | ◐ |
 | P13-T4 | Performance test | Có số thật, không đoán | ☐ |
 | P13-T5 | Security review | Answer key/XSS/IDOR/rate limit/import | ☐ |
 | P13-T6 | Staging rehearsal | Migration A → app → cleanup | ☐ |

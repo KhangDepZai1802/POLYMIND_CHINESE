@@ -47,17 +47,20 @@ type Props = {
     id: string;
     version_no: number;
     title_snapshot: string;
+    raw_max_score: number;
     question_set: { id: string; title: string; kind: string; status: string };
   }>;
 };
 export function ExamDashboard({ deliveries, classes, sets }: Props) {
   const [open, setOpen] = useState(false);
+  const [selectedSetId, setSelectedSetId] = useState("");
   const form = useFormAction(createExamDeliveryAction, {
     onSuccess: () => setOpen(false),
     toastError: true,
   });
   const noSets = sets.length === 0;
   const noClasses = classes.length === 0;
+  const selectedSet = sets.find((set) => set.id === selectedSetId);
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
@@ -65,12 +68,13 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
           <DialogTrigger asChild>
             <Button>Tạo kỳ thi</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Lên lịch kỳ thi</DialogTitle>
               <DialogDescription>
-                Khung mở/đóng có thể kéo dài nhiều ngày — học viên vào làm lúc nào
-                cũng được trong khung; mỗi lượt vẫn bị giới hạn bởi thời lượng.
+                Khung mở/đóng có thể kéo dài nhiều ngày — học viên vào làm lúc
+                nào cũng được trong khung; mỗi lượt vẫn bị giới hạn bởi thời
+                lượng.
               </DialogDescription>
             </DialogHeader>
             {noSets && (
@@ -90,7 +94,12 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
               )}
               <div className="space-y-2">
                 <Label htmlFor="exam-set-version">Bộ đề đã khóa</Label>
-                <Select name="set_version_id" required>
+                <Select
+                  name="set_version_id"
+                  value={selectedSetId}
+                  onValueChange={setSelectedSetId}
+                  required
+                >
                   <SelectTrigger id="exam-set-version">
                     <SelectValue placeholder="Chọn bộ đề" />
                   </SelectTrigger>
@@ -104,34 +113,65 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="exam-class">Lớp</Label>
-                <Select name="class_id" required>
-                  <SelectTrigger id="exam-class">
-                    <SelectValue placeholder="Chọn lớp" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.code} — {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Lớp (có thể chọn nhiều)</Label>
+                <div className="grid gap-2 rounded-lg border p-3">
+                  {classes.map((c) => (
+                    <Label
+                      key={c.id}
+                      className="flex items-center gap-2 font-normal"
+                    >
+                      <input
+                        type="checkbox"
+                        name="class_ids"
+                        value={c.id}
+                        className="size-4"
+                      />
+                      {c.code} — {c.name}
+                    </Label>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-lg border p-3 text-sm">
+                <p className="font-medium">
+                  Tổng điểm câu hỏi: {selectedSet?.raw_max_score ?? "—"}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Kết quả bài thi được hệ thống tự quy đổi về thang 100.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="exam-title">Tiêu đề</Label>
                 <Input id="exam-title" name="title" required />
               </div>
               <input type="hidden" name="exam_type" value="custom" />
-              <div className="space-y-2"><Label htmlFor="exam-answer-release">Công bố đáp án</Label><select id="exam-answer-release" name="answer_release_mode" defaultValue="never" className="bg-background h-9 w-full rounded-md border px-3 text-sm"><option value="never">Không công bố</option><option value="with_results">Cùng kết quả</option></select></div>
+              <div className="space-y-2">
+                <Label htmlFor="exam-answer-release">Công bố đáp án</Label>
+                <select
+                  id="exam-answer-release"
+                  name="answer_release_mode"
+                  defaultValue="never"
+                  className="bg-background h-9 w-full rounded-md border px-3 text-sm"
+                >
+                  <option value="never">Không công bố</option>
+                  <option value="with_results">Cùng kết quả</option>
+                </select>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="exam-opens-at">Mở lúc</Label>
-                  <DateTimePicker id="exam-opens-at" name="opens_at" placeholder="Chọn ngày giờ" />
+                  <DateTimePicker
+                    id="exam-opens-at"
+                    name="opens_at"
+                    placeholder="Chọn ngày giờ"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="exam-closes-at">Đóng lúc</Label>
-                  <DateTimePicker id="exam-closes-at" name="closes_at" placeholder="Chọn ngày giờ" />
+                  <DateTimePicker
+                    id="exam-closes-at"
+                    name="closes_at"
+                    placeholder="Chọn ngày giờ"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="exam-duration">Thời lượng (phút)</Label>
