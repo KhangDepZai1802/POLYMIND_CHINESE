@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import {
+  cloneQuestionSetForEditAction,
   createQuestionSetSectionAction,
   createQuestionSetAction,
+  deleteQuestionSetAction,
   lockQuestionSetAction,
   moveQuestionSetItemAction,
   removeQuestionSetItemAction,
@@ -111,6 +113,10 @@ function SetCard({
 }) {
   const addSection = useFormAction(createQuestionSetSectionAction);
   const lock = useFormAction(lockQuestionSetAction);
+  const cloneEdit = useFormAction(cloneQuestionSetForEditAction, {
+    toastError: true,
+  });
+  const remove = useFormAction(deleteQuestionSetAction, { toastError: true });
   const [preview, setPreview] = useState(false);
   const [showSectionForm, setShowSectionForm] = useState(false);
   const version = set.current_version;
@@ -127,13 +133,37 @@ function SetCard({
               {version?.raw_max_score ?? 0} điểm
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setPreview((value) => !value)}
-          >
-            {preview ? "Đóng preview" : "Preview"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPreview((value) => !value)}
+            >
+              {preview ? "Đóng preview" : "Preview"}
+            </Button>
+            <form
+              action={remove.formAction}
+              onSubmit={(e) => {
+                if (
+                  !window.confirm(
+                    `Xóa bộ "${set.title}"? Nếu bộ đã từng được giao, hệ thống sẽ lưu trữ thay vì xóa hẳn để giữ lịch sử.`,
+                  )
+                ) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <input type="hidden" name="question_set_id" value={set.id} />
+              <Button
+                type="submit"
+                variant="ghost"
+                size="icon"
+                aria-label={`Xóa bộ ${set.title}`}
+              >
+                <Trash2 className="text-destructive size-4" aria-hidden />
+              </Button>
+            </form>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -209,9 +239,20 @@ function SetCard({
           </form>
         )}
         {version?.locked_at && (
-          <p className="text-sm font-medium text-emerald-700">
-            Bộ đã khóa, sẵn sàng để giao.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-emerald-700">
+              Bộ đã khóa, sẵn sàng để giao.
+            </p>
+            {/* Sửa sau khi đã khóa/giao → clone sang bản nháp mới, không đụng bản
+                đã giao. */}
+            <form action={cloneEdit.formAction}>
+              <input type="hidden" name="question_set_id" value={set.id} />
+              <SubmitButton variant="outline">
+                <Pencil className="size-4" aria-hidden />
+                Chỉnh sửa (tạo bản mới)
+              </SubmitButton>
+            </form>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -32,6 +32,7 @@ import {
   cancelSessionAction,
   createManualSessionAction,
   createScheduleAction,
+  deleteAllSessionsAction,
   deleteScheduleAction,
   deleteSessionAction,
   generateSessionsAction,
@@ -227,7 +228,10 @@ export function ScheduleManager({
               Giờ hiển thị theo múi giờ Việt Nam.
             </p>
           </div>
-          <ManualSessionDialog classId={classId} lessons={lessons} />
+          <div className="flex shrink-0 items-center gap-2">
+            {generated > 0 && <DeleteAllSessionsButton classId={classId} />}
+            <ManualSessionDialog classId={classId} lessons={lessons} />
+          </div>
         </CardHeader>
 
         <CardContent className="p-0">
@@ -709,6 +713,33 @@ function GenerateButton({
           thêm buổi thủ công nếu đây là lớp linh hoạt.
         </p>
       )}
+    </form>
+  );
+}
+
+function DeleteAllSessionsButton({ classId }: { classId: string }) {
+  const { formAction } = useFormAction(deleteAllSessionsAction, {
+    toastError: true,
+  });
+
+  return (
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (
+          !window.confirm(
+            "Xóa tất cả buổi học chưa dạy của lớp này? Buổi đã dạy hoặc đã điểm danh sẽ được giữ lại.",
+          )
+        ) {
+          e.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="class_id" value={classId} />
+      <Button type="submit" variant="outline" size="sm">
+        <Trash2 className="text-destructive size-4" aria-hidden />
+        Xóa tất cả
+      </Button>
     </form>
   );
 }

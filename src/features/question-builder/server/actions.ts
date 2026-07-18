@@ -147,6 +147,65 @@ export async function removeQuestionSetItemAction(_previous: ActionState, formDa
   revalidatePath("/teacher/exercises/sets"); revalidatePath("/teacher/exams/sets"); return{success:"Đã xóa item khỏi bản nháp."};
 }
 
+/**
+ * Chỉnh sửa bộ đã khóa/đã giao → tạo BẢN NHÁP MỚI (clone) để sửa tiếp.
+ * Bản đã giao trước vẫn bất biến; xem migration 58.
+ */
+export async function cloneQuestionSetForEditAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const id = formData.get("question_set_id");
+  if (typeof id !== "string") return { error: "Thiếu bộ câu hỏi." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("clone_question_set_for_edit", {
+    p_question_set_id: id,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/teacher/exercises/sets");
+  revalidatePath("/teacher/exams/sets");
+  return {
+    success:
+      "Đã mở bản nháp mới để chỉnh sửa. Bản đã giao trước đó vẫn được giữ nguyên.",
+  };
+}
+
+/**
+ * Xóa bộ câu hỏi. Bộ chưa từng được giao → xóa hẳn (cascade version/câu). Bộ đã
+ * từng được giao bị FK RESTRICT chặn → chuyển sang LƯU TRỮ (ẩn khỏi danh sách),
+ * giữ lịch sử các lượt đã làm.
+ */
+export async function deleteQuestionSetAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const id = formData.get("question_set_id");
+  if (typeof id !== "string") return { error: "Thiếu bộ câu hỏi." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("question_sets").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      const { error: archiveError } = await supabase
+        .from("question_sets")
+        .update({ status: "archived" })
+        .eq("id", id);
+      if (archiveError) return { error: "Không xóa/lưu trữ được bộ." };
+      revalidatePath("/teacher/exercises/sets");
+      revalidatePath("/teacher/exams/sets");
+      return {
+        success:
+          "Bộ đã từng được giao nên không xóa hẳn — đã chuyển sang lưu trữ và ẩn khỏi danh sách.",
+      };
+    }
+    return { error: "Không xóa được bộ." };
+  }
+  revalidatePath("/teacher/exercises/sets");
+  revalidatePath("/teacher/exams/sets");
+  return { success: "Đã xóa bộ." };
+}
+
 export async function lockQuestionSetAction(
   _previous: ActionState,
   formData: FormData,

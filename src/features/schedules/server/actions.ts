@@ -209,6 +209,74 @@ export async function createManualSessionAction(
   return { success: "Đã thêm buổi học." };
 }
 
+/**
+ * Xóa TẤT CẢ buổi học sinh nhầm của một lớp — CHỈ buổi chưa dạy & chưa điểm danh.
+ *
+ * Giữ nguyên luật "không hard delete lịch sử": buổi `completed` và buổi đã có
+ * điểm danh được GIỮ LẠI. Ta lọc sẵn danh sách xóa được ở app để lệnh delete
+ * không bị trigger `prevent_session_delete_with_history` (migration 22) làm hỏng
+ * cả mẻ (delete là một câu lệnh — một buổi vướng lịch sử thì cả mẻ rollback).
+ */
+export async function deleteAllSessionsAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("super_admin");
+
+  const classId = formData.get("class_id");
+  if (typeof classId !== "string") return { error: "Thiếu mã lớp." };
+
+  const supabase = await createClient();
+
+  // Ứng viên xóa: buổi `scheduled` (chưa dạy). Buổi completed/cancelled không đụng.
+  const { data: candidates, error: fetchError } = await supabase
+    .from("class_sessions")
+    .select("id")
+    .eq("class_id", classId)
+    .eq("status", "scheduled");
+  if (fetchError) return { error: dbErrorToMessage(fetchError) };
+
+  const candidateIds = (candidates ?? []).map((s) => s.id);
+  if (candidateIds.length === 0) {
+    return { success: "Không có buổi nào chưa dạy để xóa." };
+  }
+
+  // Trong số đó, bỏ ra các buổi đã có điểm danh (giữ lại lịch sử).
+  const { data: attended, error: attendedError } = await supabase
+    .from("attendance_records")
+    .select("session_id")
+    .in("session_id", candidateIds);
+  if (attendedError) return { error: dbErrorToMessage(attendedError) };
+
+  const keepIds = new Set((attended ?? []).map((a) => a.session_id));
+  const deletableIds = candidateIds.filter((id) => !keepIds.has(id));
+
+  if (deletableIds.length === 0) {
+    return {
+      success:
+        "Mọi buổi chưa dạy đều đã có điểm danh — giữ lại toàn bộ, không xóa buổi nào.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("class_sessions")
+    .delete()
+    .in("id", deletableIds);
+  if (error) return { error: dbErrorToMessage(error) };
+
+  await logAudit(supabase, {
+    action: "class.session.delete_all",
+    resourceType: "class",
+    resourceId: classId,
+    after: { deleted: deletableIds.length, kept: keepIds.size },
+  });
+
+  revalidateClass(classId);
+  const keptNote =
+    keepIds.size > 0 ? ` Giữ lại ${keepIds.size} buổi đã có điểm danh.` : "";
+  return { success: `Đã xóa ${deletableIds.length} buổi chưa dạy.${keptNote}` };
+}
+
 /** Hủy buổi — GIỮ lại vết. Đây là cách đúng để bỏ một buổi đã có lịch sử. */
 export async function cancelSessionAction(
   _prev: ActionState,

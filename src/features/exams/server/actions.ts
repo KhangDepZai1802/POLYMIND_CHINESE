@@ -9,7 +9,6 @@ import {
   clearSpeakingAnswer,
   persistSpeakingAnswer,
 } from "@/features/assessment-results/server/speaking-upload";
-import { isSameVietnamDate } from "@/features/exams/domain/time";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
 import { requireRole } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -51,8 +50,9 @@ export async function createExamDeliveryAction(
   if (!parsed.success) return zodToActionState(parsed.error);
   const opens = fromZonedTime(parsed.data.opens_at, "Asia/Ho_Chi_Minh"),
     closes = fromZonedTime(parsed.data.closes_at, "Asia/Ho_Chi_Minh");
-  if (!isSameVietnamDate(opens, closes))
-    return { error: "Giờ mở và đóng phải trong cùng một ngày Việt Nam." };
+  // Khung thi có thể kéo dài nhiều ngày (EX-12 đã đảo); chỉ cần mở trước đóng.
+  if (opens >= closes)
+    return { error: "Giờ mở phải trước giờ đóng." };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_exam_delivery", {
     p_class_id: parsed.data.class_id,

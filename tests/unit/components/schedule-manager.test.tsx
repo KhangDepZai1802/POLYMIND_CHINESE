@@ -6,6 +6,7 @@ vi.mock("@/features/schedules/server/actions", () => ({
   cancelSessionAction: vi.fn(),
   createManualSessionAction: vi.fn(),
   createScheduleAction: vi.fn(),
+  deleteAllSessionsAction: vi.fn(),
   deleteScheduleAction: vi.fn(),
   deleteSessionAction: vi.fn(),
   generateSessionsAction: vi.fn(),

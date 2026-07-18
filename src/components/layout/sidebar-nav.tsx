@@ -18,6 +18,11 @@ export function SidebarNav({ role }: { role: UserRole }) {
         <Logo size={40} priority />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">POLYMIND</p>
+          {/* Điểm nhấn cam thương hiệu — dùng tiết chế bên cạnh xanh chủ đạo. */}
+          <span
+            className="bg-brand-orange my-1 block h-0.5 w-6 rounded-full"
+            aria-hidden
+          />
           <p className="text-muted-foreground truncate text-xs">
             {ROLE_LABELS[role]}
           </p>

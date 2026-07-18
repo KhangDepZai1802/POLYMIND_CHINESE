@@ -69,8 +69,8 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
             <DialogHeader>
               <DialogTitle>Lên lịch kỳ thi</DialogTitle>
               <DialogDescription>
-                Khung mở/đóng bắt buộc cùng một ngày Việt Nam; deadline do DB
-                quyết định.
+                Khung mở/đóng có thể kéo dài nhiều ngày — học viên vào làm lúc nào
+                cũng được trong khung; mỗi lượt vẫn bị giới hạn bởi thời lượng.
               </DialogDescription>
             </DialogHeader>
             {noSets && (

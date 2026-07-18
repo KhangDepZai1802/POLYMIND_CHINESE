@@ -183,7 +183,7 @@ Giáo viên chấm phần thủ công → DB tính lại tổng
 ## 6. Kiểm tra/thi và đánh giá tiến độ
 
 ```text
-Giáo viên tạo và khóa bộ đề thi → lên lịch window cùng ngày Việt Nam
+Giáo viên tạo và khóa bộ đề thi → lên lịch window (có thể nhiều ngày, EX-12 đã đảo)
   → duration không vượt window → publish
 Học viên vào phòng chờ → kiểm tra audio + xác nhận quy định → start
   → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút

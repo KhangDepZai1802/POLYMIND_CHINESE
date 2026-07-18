@@ -48,6 +48,11 @@
   --brand-red-foreground: #ffffff;
   --brand-navy: #0d3f78;
 
+  /* Cam thương hiệu #FB9518 — điểm nhấn PHỤ, dùng ít; xanh #1A5FA8 vẫn là chính.
+   * Chữ trên nền cam dùng navy đậm cho đủ tương phản (cam sáng + trắng bị chói). */
+  --brand-orange: #fb9518;
+  --brand-orange-foreground: #10243f;
+
   /* Màu trạng thái — luôn đi kèm icon/chữ, KHÔNG dùng màu làm tín hiệu duy nhất */
   --success: #166534;
   --success-foreground: #ffffff;
@@ -95,6 +100,9 @@
   --brand-red-foreground: #ffffff;
   --brand-navy: #1e3a8a;
 
+  --brand-orange: #fb9518;
+  --brand-orange-foreground: #0b1220;
+
   --success: #22c55e;
   --warning: #f59e0b;
   --info: #38bdf8;
@@ -124,6 +132,9 @@
   --color-brand-red: var(--brand-red);
   --color-brand-red-foreground: var(--brand-red-foreground);
   --color-brand-navy: var(--brand-navy);
+
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-foreground: var(--brand-orange-foreground);
 
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);

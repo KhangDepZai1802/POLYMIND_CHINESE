@@ -34,53 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      answer_media: {
-        Row: {
-          attempt_id: string
-          attempt_kind: Database["public"]["Enums"]["question_set_kind"]
-          created_at: string
-          duration_ms: number | null
-          id: string
-          mime_type: string
-          object_path: string
-          set_item_id: string
-          size_bytes: number
-          uploaded_by: string
-        }
-        Insert: {
-          attempt_id: string
-          attempt_kind: Database["public"]["Enums"]["question_set_kind"]
-          created_at?: string
-          duration_ms?: number | null
-          id?: string
-          mime_type: string
-          object_path: string
-          set_item_id: string
-          size_bytes: number
-          uploaded_by?: string
-        }
-        Update: {
-          attempt_id?: string
-          attempt_kind?: Database["public"]["Enums"]["question_set_kind"]
-          created_at?: string
-          duration_ms?: number | null
-          id?: string
-          mime_type?: string
-          object_path?: string
-          set_item_id?: string
-          size_bytes?: number
-          uploaded_by?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answer_media_set_item_id_fkey"
-            columns: ["set_item_id"]
-            isOneToOne: false
-            referencedRelation: "question_set_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       announcements: {
         Row: {
           body: string
@@ -129,6 +82,53 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_class_assessment_progress"
             referencedColumns: ["class_id"]
+          },
+        ]
+      }
+      answer_media: {
+        Row: {
+          attempt_id: string
+          attempt_kind: Database["public"]["Enums"]["question_set_kind"]
+          created_at: string
+          duration_ms: number | null
+          id: string
+          mime_type: string
+          object_path: string
+          set_item_id: string
+          size_bytes: number
+          uploaded_by: string
+        }
+        Insert: {
+          attempt_id: string
+          attempt_kind: Database["public"]["Enums"]["question_set_kind"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          mime_type: string
+          object_path: string
+          set_item_id: string
+          size_bytes: number
+          uploaded_by?: string
+        }
+        Update: {
+          attempt_id?: string
+          attempt_kind?: Database["public"]["Enums"]["question_set_kind"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          mime_type?: string
+          object_path?: string
+          set_item_id?: string
+          size_bytes?: number
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_media_set_item_id_fkey"
+            columns: ["set_item_id"]
+            isOneToOne: false
+            referencedRelation: "question_set_items"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3215,14 +3215,6 @@ export type Database = {
         Args: { p_records: Json; p_session_id: string }
         Returns: number
       }
-      clear_answer_media: {
-        Args: {
-          p_attempt_id: string
-          p_kind: Database["public"]["Enums"]["question_set_kind"]
-          p_set_item_id: string
-        }
-        Returns: undefined
-      }
       change_enrollment_status: {
         Args: {
           p_enrollment_id: string
@@ -3231,7 +3223,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      clear_answer_media: {
+        Args: {
+          p_attempt_id: string
+          p_kind: Database["public"]["Enums"]["question_set_kind"]
+          p_set_item_id: string
+        }
+        Returns: undefined
+      }
       clone_question: { Args: { p_question_id: string }; Returns: string }
+      clone_question_set_for_edit: {
+        Args: { p_question_set_id: string }
+        Returns: string
+      }
       consume_rate_limit: { Args: { p_scope: string }; Returns: boolean }
       create_exam_delivery: {
         Args: {

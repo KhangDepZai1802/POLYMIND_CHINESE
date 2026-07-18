@@ -327,7 +327,7 @@ Chi tiết field, enum, state machine và rule từng dạng câu nằm tại [`
 ### 4.6 Bài tập và kiểm tra/thi
 
 - Bài tập: `exercise_deliveries`, `exercise_attempts`, `exercise_answers`. Mỗi lớp nhận delivery riêng; nhiều lượt được khóa bằng unique `(delivery_id, enrollment_id, attempt_no)`; DB chấm tự động, giữ phần thủ công, phạt trễ và công bố điểm/đáp án theo mode.
-- Kiểm tra/thi: `exam_deliveries`, `exam_attempts`, `exam_answers`, `exam_integrity_events`, `exam_regrade_runs`. Window phải cùng ngày Việt Nam; deadline là `min(started_at + duration, closes_at)`; submit/finalize idempotent.
+- Kiểm tra/thi: `exam_deliveries`, `exam_attempts`, `exam_answers`, `exam_integrity_events`, `exam_regrade_runs`. Window có thể kéo dài nhiều ngày (EX-12 đã đảo 2026-07-18, chỉ còn `opens_at < closes_at`); deadline là `min(started_at + duration, closes_at)`; submit/finalize idempotent.
 - Kết quả chỉ hiện sau công bố. Regrade và override có actor/lý do/audit; integrity event là tín hiệu tham khảo, không tự kết luận gian lận.
 - `pg_cron` gọi `finalize_assessment_attempts()` mỗi phút để xử lý browser đã đóng và công bố kết quả bài tập đến hạn.
 

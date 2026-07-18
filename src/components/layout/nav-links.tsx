@@ -44,6 +44,12 @@ export function NavLinks({
           >
             <Icon className="size-5 shrink-0" aria-hidden />
             <span className="truncate">{item.label}</span>
+            {active && (
+              <span
+                className="bg-brand-orange ml-auto size-1.5 shrink-0 rounded-full"
+                aria-hidden
+              />
+            )}
           </Link>
         );
       })}

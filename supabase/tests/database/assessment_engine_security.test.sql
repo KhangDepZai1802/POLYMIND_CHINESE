@@ -85,10 +85,10 @@ insert into public.exercise_attempts(id,delivery_id,enrollment_id,attempt_no,sta
 ('4c000000-0000-0000-0000-000000000001','4b000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000001',1,'in_progress'),
 ('4c000000-0000-0000-0000-000000000002','4b000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000002',1,'in_progress');
 
-select throws_ok(
+select lives_ok(
   $$insert into public.exam_deliveries(class_id,set_version_id,title,opens_at,closes_at,duration_minutes,created_by)
-    values('44000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001','Sai ngày','2026-07-25 15:00+00','2026-07-26 16:00+00',45,'40000000-0000-0000-0000-000000000002')$$,
-  '23514',null,'DB từ chối khung thi khác ngày Việt Nam'
+    values('44000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001','Khung 2 ngày','2026-07-25 15:00+00','2026-07-26 16:00+00',45,'40000000-0000-0000-0000-000000000002')$$,
+  'DB cho phép khung thi kéo dài nhiều ngày (EX-12 đã đảo)'
 );
 select throws_ok(
   $$update public.question_versions set prompt_text='Bị sửa' where id='47000000-0000-0000-0000-000000000001'$$,
