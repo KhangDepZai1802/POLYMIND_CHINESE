@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Send, Share2 } from "lucide-react";
+import { MoreHorizontal, Send, Share2, Trash2 } from "lucide-react";
 
 import {
+  archiveQuestionAction,
   cloneQuestionAction,
   shareQuestionAction,
   submitQuestionReviewAction,
@@ -52,7 +53,9 @@ export function QuestionActions({
   const share = useFormAction(shareQuestionAction, { toastError: true });
   const clone = useFormAction(cloneQuestionAction, { toastError: true });
   const review = useFormAction(submitQuestionReviewAction, { toastError: true });
+  const archive = useFormAction(archiveQuestionAction, { toastError: true });
   const [shareOpen, setShareOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   if (!isOwner) {
     return (
@@ -92,6 +95,46 @@ export function QuestionActions({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        aria-label="Lưu trữ câu hỏi"
+        className="text-muted-foreground hover:text-destructive"
+        onClick={() => setArchiveOpen(true)}
+      >
+        <Trash2 />
+      </Button>
+
+      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Lưu trữ câu hỏi?</DialogTitle>
+            <DialogDescription>
+              Câu hỏi sẽ được ẩn khỏi ngân hàng. Các bộ bài tập đã dùng phiên bản
+              cũ vẫn giữ nguyên vì bản đó bất biến.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            action={async (fd) => {
+              await archive.formAction(fd);
+              setArchiveOpen(false);
+            }}
+          >
+            <input type="hidden" name="id" value={questionId} />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setArchiveOpen(false)}
+              >
+                Hủy
+              </Button>
+              <SubmitButton variant="destructive">Lưu trữ</SubmitButton>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent className="sm:max-w-md">

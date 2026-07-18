@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { createExerciseDeliveryAction } from "@/features/exercises/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +58,10 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
   const [open, setOpen] = useState(false);
   const form = useFormAction(createExerciseDeliveryAction, {
     onSuccess: () => setOpen(false),
+    toastError: true,
   });
+  const noSets = sets.length === 0;
+  const noClasses = classes.length === 0;
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -69,13 +73,27 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
             <DialogHeader>
               <DialogTitle>Giao bộ bài tập</DialogTitle>
               <DialogDescription>
-                Mỗi lớp tạo một delivery riêng; chỉ hiện lớp bạn phụ trách.
+                Mỗi lớp tạo một lần giao riêng; chỉ hiện lớp bạn phụ trách.
               </DialogDescription>
             </DialogHeader>
+            {noSets && (
+              <Alert>
+                <AlertDescription>
+                  Chưa có bộ bài tập nào được khóa. Hãy sang bước ②{" "}
+                  <strong>Bộ bài tập</strong>, tạo một bộ rồi bấm{" "}
+                  <strong>Kiểm tra &amp; khóa bộ</strong> trước khi giao.
+                </AlertDescription>
+              </Alert>
+            )}
             <form action={form.formAction} className="space-y-4">
               <input type="hidden" name="publish" value="true" />
+              {form.state.error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{form.state.error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
-                <Label>Bộ đã chốt</Label>
+                <Label>Bộ bài tập đã khóa</Label>
                 <Select name="set_version_id" required>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn bộ" />
@@ -155,7 +173,9 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
                 />
               </div>
               <DialogFooter>
-                <SubmitButton>Giao & công bố</SubmitButton>
+                <SubmitButton disabled={noSets || noClasses}>
+                  Giao & công bố
+                </SubmitButton>
               </DialogFooter>
             </form>
           </DialogContent>

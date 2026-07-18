@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { createExamDeliveryAction } from "@/features/exams/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +54,10 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
   const [open, setOpen] = useState(false);
   const form = useFormAction(createExamDeliveryAction, {
     onSuccess: () => setOpen(false),
+    toastError: true,
   });
+  const noSets = sets.length === 0;
+  const noClasses = classes.length === 0;
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
@@ -69,7 +73,21 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
                 quyết định.
               </DialogDescription>
             </DialogHeader>
+            {noSets && (
+              <Alert>
+                <AlertDescription>
+                  Chưa có bộ đề nào được khóa. Hãy sang bước ②{" "}
+                  <strong>Bộ đề</strong>, tạo một đề rồi bấm{" "}
+                  <strong>Kiểm tra &amp; khóa bộ</strong> trước khi lên lịch.
+                </AlertDescription>
+              </Alert>
+            )}
             <form action={form.formAction} className="space-y-4">
+              {form.state.error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{form.state.error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="exam-set-version">Bộ đề đã khóa</Label>
                 <Select name="set_version_id" required>
@@ -139,7 +157,9 @@ export function ExamDashboard({ deliveries, classes, sets }: Props) {
                 </div>
               </div>
               <DialogFooter>
-                <SubmitButton>Lên lịch</SubmitButton>
+                <SubmitButton disabled={noSets || noClasses}>
+                  Lên lịch
+                </SubmitButton>
               </DialogFooter>
             </form>
           </DialogContent>

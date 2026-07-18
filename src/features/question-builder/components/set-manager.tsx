@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 
 import {
   createQuestionSetSectionAction,
@@ -111,7 +112,9 @@ function SetCard({
   const addSection = useFormAction(createQuestionSetSectionAction);
   const lock = useFormAction(lockQuestionSetAction);
   const [preview, setPreview] = useState(false);
+  const [showSectionForm, setShowSectionForm] = useState(false);
   const version = set.current_version;
+  const sectionCount = version?.question_set_sections.length ?? 0;
   return (
     <Card>
       <CardHeader>
@@ -156,21 +159,45 @@ function SetCard({
           </div>
         )}
         {!version?.locked_at && version && (
-          <form action={addSection.formAction} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-            <input type="hidden" name="set_version_id" value={version.id} />
-            <div className="space-y-2"><Label htmlFor={`section-title-${version.id}`}>Tên section</Label><Input id={`section-title-${version.id}`} name="title" required /></div>
-            <div className="space-y-2"><Label htmlFor={`section-instructions-${version.id}`}>Hướng dẫn</Label><Input id={`section-instructions-${version.id}`} name="instructions" /></div>
-            <SubmitButton variant="outline">Thêm section</SubmitButton>
-          </form>
-        )}
-        {!version?.locked_at && version && (
-          <QuestionPicker
-            setVersionId={version.id}
-            sections={[...version.question_set_sections]
-              .sort((a, b) => a.order_index - b.order_index)
-              .map((section) => ({ id: section.id, title: section.title }))}
-            questions={questions}
-          />
+          <div className="space-y-3">
+            <QuestionPicker
+              setVersionId={version.id}
+              sections={[...version.question_set_sections]
+                .sort((a, b) => a.order_index - b.order_index)
+                .map((section) => ({ id: section.id, title: section.title }))}
+              questions={questions}
+            />
+            {/* Chia section là tùy chọn — ẩn form đi cho gọn, chỉ mở khi cần
+                (đa số bài không cần section). */}
+            {showSectionForm ? (
+              <form
+                action={addSection.formAction}
+                className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+              >
+                <input type="hidden" name="set_version_id" value={version.id} />
+                <div className="space-y-2">
+                  <Label htmlFor={`section-title-${version.id}`}>Tên section</Label>
+                  <Input id={`section-title-${version.id}`} name="title" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`section-instructions-${version.id}`}>Hướng dẫn</Label>
+                  <Input id={`section-instructions-${version.id}`} name="instructions" />
+                </div>
+                <SubmitButton variant="outline">Thêm section</SubmitButton>
+              </form>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => setShowSectionForm(true)}
+              >
+                <Plus /> Chia section (tùy chọn)
+                {sectionCount > 0 ? ` · đã có ${sectionCount}` : ""}
+              </Button>
+            )}
+          </div>
         )}
         {version && !version.locked_at && version.question_set_items.length > 0 && <div className="space-y-2">{[...version.question_set_items].sort((a,b)=>a.order_index-b.order_index).map((item,index)=><SetItemControls key={item.id} itemId={item.id} label={`Câu ${index+1}`} first={index===0} last={index===version.question_set_items.length-1} />)}</div>}
         {version && !version.locked_at && (

@@ -139,8 +139,10 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Migration/data impact:** KHÔNG có migration — thuần UI + 1 server action batch trên bảng `question_set_items` sẵn có (cùng luật RLS như `addQuestionSetItemAction`).
 - **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · Vitest **100/100** · `npm run build` xanh (đủ 6 route exercises/exams). **CHƯA** smoke trình duyệt (Docker/dev chưa bật) — cần kiểm mắt: thứ tự tab, kebab mở Chia sẻ/Gửi duyệt, picker tìm+tick nhiều+thêm đúng thứ tự, khóa bộ + giao.
 - **Quyết định mới:** user chốt 2026-07-18: 3 tab đánh số theo luồng · chọn câu bằng bảng tìm kiếm + chọn nhiều · mỗi tab có thanh bước + gợi ý.
-- **Blocker/rủi ro:** picker lọc phía client trên danh sách đã tải (`getQuestionSets` tải mọi câu `ready`) — quy mô cực lớn nên chuyển tìm server-side sau (ngoài scope).
-- **Next action:** smoke runtime luồng 3 tab; song song smoke P-C, P7-T8 → P7-T9 → smoke P7-T7.
+- **Sửa tiếp (cùng phiên, sau phản hồi user):** (a) **Bug giao bài không hiện** — dialog "Giao bài tập"/"Lên lịch thi" **nuốt lỗi im lặng** (`useFormAction` không có `toastError`, dashboard không render `state.error`): nếu chưa chọn ngày (DateTimePicker rỗng → zod `.min(1)` fail) hoặc chưa có bộ đã khóa thì giao **thất bại mà GV không thấy gì** → tưởng đã giao. Sửa cả hai dashboard: bật `toastError`, render Alert lỗi trong dialog, thêm cảnh báo khi chưa có bộ khóa/khóa nào phụ trách và **khóa nút submit**. (b) Form "Thêm section" luôn hiện gây rối → ẩn sau nút **"Chia section (tùy chọn)"**, đưa picker lên trước. (c) Thêm **nút thùng rác nhỏ** (có xác nhận) ở cuối mỗi card câu hỏi để lưu trữ.
+- **File sửa thêm:** `src/features/exercises/teacher/exercise-dashboard.tsx`, `src/features/exams/teacher/exam-dashboard.tsx`, `src/features/question-builder/components/set-manager.tsx`, `src/features/question-bank/components/question-actions.tsx`. Lint/typecheck sạch · Vitest **100/100** · build xanh.
+- **Blocker/rủi ro:** picker lọc phía client trên danh sách đã tải (`getQuestionSets` tải mọi câu `ready`) — quy mô cực lớn nên chuyển tìm server-side sau (ngoài scope). **Chưa smoke** nên chưa xác nhận nguyên nhân giao-bài thất bại là ngày trống hay bộ chưa khóa — nhưng giờ GV sẽ thấy thông báo lỗi cụ thể.
+- **Next action:** smoke runtime luồng 3 tab + thử giao bài (xem thông báo lỗi cụ thể); song song smoke P-C, P7-T8 → P7-T9 → smoke P7-T7.
 
 ### [2026-07-17] Phiên 33 — Claude — Seed ngân hàng câu hỏi chủ đề ngân hàng (32 câu, 4 kỹ năng)
 
