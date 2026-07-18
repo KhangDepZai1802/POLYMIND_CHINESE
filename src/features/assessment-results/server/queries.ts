@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { signPublishedResultAudio } from "@/features/assessment-results/server/audio-signing";
 
 export async function getMyAssessmentResult(
   kind: "exercise" | "exam",
@@ -12,5 +13,5 @@ export async function getMyAssessmentResult(
     p_attempt_id: attemptId,
   });
   if (error || !data) throw new Error("Kết quả chưa được công bố.");
-  return data;
+  return signPublishedResultAudio(supabase, data);
 }

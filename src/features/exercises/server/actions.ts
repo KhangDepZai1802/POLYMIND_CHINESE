@@ -40,6 +40,18 @@ const gradeSchema = z.object({
   delivery_id: z.uuid(),
 });
 
+const bulkGradeSchema = z.object({
+  delivery_id: z.uuid(),
+  grades: z.array(
+    z.object({
+      answer_id: z.uuid(),
+      score: z.number().min(0),
+      feedback: z.string().trim().max(2000).default(""),
+      override_reason: z.string().trim().max(500).default(""),
+    }),
+  ).min(1, "Chưa có điểm nào để lưu."),
+});
+
 export async function createExerciseDeliveryAction(
   _previous: ActionState,
   formData: FormData,
@@ -196,4 +208,33 @@ export async function gradeExerciseAnswerAction(
   revalidatePath(`/teacher/exercises/${parsed.data.delivery_id}`);
   revalidatePath("/teacher/exercises");
   return { success: "Đã lưu điểm câu trả lời." };
+}
+
+export async function gradeExerciseAnswersBulkAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const rawGrades = formData.get("grades");
+  let grades: unknown;
+  try {
+    grades = typeof rawGrades === "string" ? JSON.parse(rawGrades) : null;
+  } catch {
+    return { error: "Danh sách điểm không hợp lệ. Vui lòng tải lại trang." };
+  }
+  const parsed = bulkGradeSchema.safeParse({
+    delivery_id: formData.get("delivery_id"),
+    grades,
+  });
+  if (!parsed.success) return zodToActionState(parsed.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("grade_exercise_answers_bulk", {
+    p_delivery_id: parsed.data.delivery_id,
+    p_grades: parsed.data.grades as Json,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/teacher/exercises/${parsed.data.delivery_id}`);
+  revalidatePath("/teacher/exercises");
+  return { success: `Đã lưu ${data ?? parsed.data.grades.length} câu đã chấm.` };
 }

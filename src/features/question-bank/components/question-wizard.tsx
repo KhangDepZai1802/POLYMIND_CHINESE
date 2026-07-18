@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 import { saveQuestionAction } from "@/features/question-bank/server/actions";
 import {
@@ -41,10 +43,42 @@ type VersionInitial = {
   skill: WizardSkill;
   type: QuestionType;
   title: string;
+  difficulty: "easy" | "medium" | "hard";
   prompt: string;
   explanation: string;
-  choices: string[];
+  choices: Array<{ key: string; content: string }>;
+  answerKey: unknown;
+  gradingConfig: unknown;
+  promptContent: unknown;
+  hasAudio: boolean;
+  sourceVersionId: string;
 };
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function rubricRows(
+  value: unknown,
+): Array<{ criterion: string; points: number }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((row) => {
+    const item = asRecord(row);
+    return typeof item.criterion === "string" &&
+      typeof item.points === "number" &&
+      item.points > 0
+      ? [{ criterion: item.criterion, points: item.points }]
+      : [];
+  });
+}
 
 function emptyState() {
   return {
@@ -83,12 +117,15 @@ export function QuestionWizard({
   trigger: React.ReactNode;
   version?: VersionInitial;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const form = useFormAction(saveQuestionAction, {
     onSuccess: () => {
       setOpen(false);
+      router.refresh();
     },
+    toastError: true,
   });
   const [s, setS] = useState<WizardState>(emptyState);
 
@@ -96,17 +133,53 @@ export function QuestionWizard({
   function initialState(): WizardState {
     const base = emptyState();
     if (!version) return base;
-    const choices = version.choices.length >= 2 ? version.choices : ["", ""];
+    const choices =
+      version.choices.length >= 2
+        ? version.choices.map((choice) => choice.content)
+        : ["", ""];
+    const answerKey = asRecord(version.answerKey);
+    const gradingConfig = asRecord(version.gradingConfig);
+    const promptContent = asRecord(version.promptContent);
+    const correctKeys = stringArray(answerKey.values);
+    const correctIndex = Math.max(
+      0,
+      version.choices.findIndex((choice) => choice.key === answerKey.value),
+    );
+    const correctIndexes = correctKeys.flatMap((key) => {
+      const index = version.choices.findIndex((choice) => choice.key === key);
+      return index >= 0 ? [index] : [];
+    });
+    const storedTokens = stringArray(answerKey.value);
+    const storedRubric = rubricRows(gradingConfig.rubric);
     return {
       ...base,
       step: 3,
       skill: version.skill,
       type: version.type,
       title: version.title,
+      difficulty: version.difficulty,
       prompt: version.prompt,
       explanation: version.explanation,
       choices,
-      tokens: version.type === "ordering" ? choices : base.tokens,
+      correctIndex,
+      correctIndexes,
+      partialCredit: gradingConfig.scoring_mode === "partial_credit",
+      wrongSelectionZero: gradingConfig.wrong_selection_zero === true,
+      trueValue: answerKey.value === true || answerKey.value === "true",
+      accepted: stringArray(answerKey.accepted).length
+        ? stringArray(answerKey.accepted)
+        : base.accepted,
+      tokens:
+        version.type === "ordering"
+          ? storedTokens.length >= 2
+            ? storedTokens
+            : choices
+          : base.tokens,
+      rubric: storedRubric.length ? storedRubric : base.rubric,
+      maxPlays:
+        typeof promptContent.max_plays === "number"
+          ? promptContent.max_plays
+          : base.maxPlays,
     };
   }
 
@@ -129,7 +202,10 @@ export function QuestionWizard({
     };
   }, [audioUrl]);
 
-  const contentError = validate(s, needsAudio);
+  const contentError = validate(
+    s,
+    needsAudio && !s.audioFile && !version?.hasAudio,
+  );
 
   const buildContent = (): StructuredContent | null => {
     if (!s.type) return null;
@@ -197,10 +273,14 @@ export function QuestionWizard({
     fd.set("prompt_text", s.prompt.trim());
     fd.set("explanation_text", s.explanation.trim());
     fd.set("content", JSON.stringify(content));
+    if (version?.hasAudio) fd.set("source_version_id", version.sourceVersionId);
     if (s.audioFile) fd.set("audio", s.audioFile);
     setPending(true);
-    await form.formAction(fd);
-    setPending(false);
+    try {
+      await form.formAction(fd);
+    } finally {
+      setPending(false);
+    }
   };
 
   const previewOptions =
@@ -225,7 +305,7 @@ export function QuestionWizard({
           </DialogTitle>
           <DialogDescription>
             {version
-              ? "Nội dung đã giao trước đây vẫn được giữ nguyên; bản chỉnh sửa này sẽ dùng cho những lần chọn và giao tiếp theo."
+              ? "Bạn đang sửa câu hỏi trong ngân hàng. Bài tập/đề đã dùng câu này không bị thay đổi; lần chọn sau sẽ dùng nội dung mới."
               : "Chọn kỹ năng → dạng câu → nội dung → xem trước. Đáp án lưu riêng, không gửi cho học viên."}
           </DialogDescription>
         </DialogHeader>
@@ -407,11 +487,16 @@ export function QuestionWizard({
               disabled={Boolean(contentError) || pending}
               onClick={submit}
             >
-              {pending
-                ? "Đang lưu…"
-                : version
-                  ? "Lưu chỉnh sửa"
-                  : "Lưu & công bố"}
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Đang lưu…
+                </>
+              ) : version ? (
+                "Lưu chỉnh sửa"
+              ) : (
+                "Lưu & công bố"
+              )}
             </Button>
           )}
         </div>

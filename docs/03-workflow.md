@@ -159,7 +159,10 @@ Học viên mở delivery của lớp mình → start_attempt idempotent
   → UI khóa nút + báo đang nộp → thành công chuyển sang tab Đã nộp
   → DB chấm tự động phần objective, chuyển phần rubric/essay sang chờ chấm
 
-Giáo viên chấm phần thủ công → DB tính lại tổng
+Giáo viên mở từng học viên → câu thủ công chưa có điểm hiện "Chưa chấm"
+  → nhập điểm/nhận xét cho nhiều câu → bấm một nút lưu toàn bộ phần đã nhập
+  → nếu còn sót: cảnh báo, giữ các câu đó ở "Chưa chấm" và chặn công bố
+  → RPC bulk lưu atomic → DB tính lại tổng → giáo viên vẫn ở học viên hiện tại để kiểm tra
   → công bố theo manual / after_graded / after_due
   → answer key chỉ xuất hiện đúng answer_release_mode
 ```
@@ -192,12 +195,14 @@ Học viên vào phòng chờ → kiểm tra audio; nếu đề có câu Nói th
   → bật chế độ tập trung (ẩn dashboard, thử fullscreen, cảnh báo rời/tải lại)
   → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút
   → nộp chủ động hoặc pg_cron finalize khi hết hạn/browser đóng
-Giáo viên chấm phần thủ công → khóa kết quả → công bố
+Giáo viên chấm phần thủ công bằng một lần lưu atomic → chấm đủ → hoàn tất điểm → công bố
   → điểm 0–100 + classification + notification dedupe
   → regrade bắt buộc lý do và audit trước/sau
 ```
 
 **Draft, khóa version, publish delivery, khóa kết quả và publish result là các bước tách biệt.** Học viên chỉ thấy điểm sau release; xếp loại do DB tính từ `grading_scale_rules`. Integrity event chỉ để tham khảo, không tự động kết luận gian lận.
+
+Danh sách delivery của giáo viên luôn chia theo lớp và dùng dòng gọn. Trang kết quả học viên chuyển payload lựa chọn thành nội dung đáp án đọc được; tuyệt đối không lộ JSON, enum tiếng Anh hoặc thuật ngữ nội bộ. Nếu câu Nói cần micro, header website phải cho phép chính origin dùng micro; quyền site, quyền trình duyệt và quyền hệ điều hành vẫn là ba lớp độc lập.
 
 ```text
 Đánh giá định kỳ (tuần/tháng):

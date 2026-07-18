@@ -64,6 +64,7 @@ _(trống — chưa có code)_
 | -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
 | UX-M11-M12-001 | M11, M12 | Đồng bộ builder Bài tập/Thi: đánh dấu câu đã chọn theo câu gốc, bắt buộc nhập điểm, preview modal cuộn, tổng điểm giao bài lấy từ bộ; kỳ thi tick nhiều lớp qua RPC transaction; thay toàn bộ native confirm bằng dialog theo theme. | ⏳ Chờ Claude xác minh UI độc lập             |
 | UX-M11-M12-002 | M11, M12 | Nộp bài có loading + kiểm lỗi lưu cuối + toast + chuyển tab Đã nộp; preflight micro theo câu Nói; chế độ tập trung khi thi ẩn dashboard/cảnh báo rời trang; ngân hàng câu hỏi dùng thao tác Chỉnh sửa nhưng vẫn giữ version lịch sử. | ⏳ Chờ Claude xác minh UI và thiết bị độc lập |
+| UX-M11-M12-003 | M11, M12 | Màn chấm bỏ JSON/enum/thuật ngữ kỹ thuật; câu trống là Chưa chấm, cảnh báo sót và một nút lưu bulk atomic; delivery gọn theo lớp; kết quả học viên hiển thị nội dung dễ đọc; sửa header `microphone=(self)` và chẩn đoán policy. | ⏳ Chờ Claude xác minh UI, bulk save và micro trên bản deploy |
 
 ### Đã xác minh độc lập
 

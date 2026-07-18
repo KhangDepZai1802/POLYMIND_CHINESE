@@ -123,3 +123,25 @@ export async function signGradingAudio<T extends GradingDelivery>(
   );
   return delivery;
 }
+
+type PublishedResult = {
+  answers?: Array<{ question_type?: string; answer?: unknown; audio_url?: string | null }> | null;
+} | null;
+
+/** Ký URL nghe lại bài Nói trên trang kết quả của chính học viên. */
+export async function signPublishedResultAudio<T>(
+  supabase: Supabase,
+  result: T,
+): Promise<T> {
+  const publishedResult = result as PublishedResult;
+  await Promise.all(
+    (publishedResult?.answers ?? [])
+      .filter((answer) => answer.question_type === "speaking")
+      .map(async (answer) => {
+        const path = audioPathOf(answer.answer);
+        if (!path) return;
+        answer.audio_url = await sign(supabase, "answer-media", path);
+      }),
+  );
+  return result;
+}

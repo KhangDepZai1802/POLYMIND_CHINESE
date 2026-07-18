@@ -7,6 +7,15 @@ import { Button } from "@/components/ui/button";
 
 type CheckStatus = "idle" | "checking" | "ready" | "blocked";
 
+function websiteAllowsMicrophone(): boolean {
+  const policyDocument = document as Document & {
+    permissionsPolicy?: { allowsFeature: (feature: string) => boolean };
+    featurePolicy?: { allowsFeature: (feature: string) => boolean };
+  };
+  const policy = policyDocument.permissionsPolicy ?? policyDocument.featurePolicy;
+  return policy ? policy.allowsFeature("microphone") : true;
+}
+
 function microphoneError(error: unknown): string {
   if (error instanceof DOMException) {
     if (error.name === "NotAllowedError" || error.name === "SecurityError") {
@@ -41,6 +50,14 @@ export function MicrophoneCheck({
       setStatus("blocked");
       setError(
         "Trình duyệt này không hỗ trợ thu âm hoặc trang chưa dùng kết nối HTTPS an toàn. Hãy mở bằng Chrome, Edge hoặc Safari phiên bản mới.",
+      );
+      return;
+    }
+
+    if (!websiteAllowsMicrophone()) {
+      setStatus("blocked");
+      setError(
+        "Website đang bị cấu hình chặn micro. Đây không phải lỗi cài đặt của bạn; vui lòng báo cho trung tâm để được hỗ trợ.",
       );
       return;
     }

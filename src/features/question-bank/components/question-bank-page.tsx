@@ -146,6 +146,7 @@ export async function QuestionBankPage({
                               question.skill as (typeof WIZARD_SKILLS)[number],
                             type: question.current_version.question_type,
                             title: question.title,
+                            difficulty: question.difficulty,
                             prompt: question.current_version.prompt_text,
                             explanation:
                               question.current_version.explanation_text ?? "",
@@ -153,7 +154,22 @@ export async function QuestionBankPage({
                               ...question.current_version.question_options,
                             ]
                               .sort((a, b) => a.order_index - b.order_index)
-                              .map((option) => option.content),
+                              .map((option) => ({
+                                key: option.option_key,
+                                content: option.content,
+                              })),
+                            answerKey:
+                              question.current_version.answer_key?.answer_key ??
+                              {},
+                            gradingConfig:
+                              question.current_version.answer_key
+                                ?.grading_config ?? {},
+                            promptContent:
+                              question.current_version.prompt_content,
+                            hasAudio: question.current_version.media.some(
+                              (media) => media.media_role === "prompt_audio",
+                            ),
+                            sourceVersionId: question.current_version.id,
                           }}
                         />
                       )}

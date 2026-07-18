@@ -13,6 +13,10 @@ describe("MicrophoneCheck", () => {
       configurable: true,
       value: { getUserMedia },
     });
+    Object.defineProperty(document, "permissionsPolicy", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it("xin quyền một lần, đóng stream kiểm tra và báo micro sẵn sàng", async () => {
@@ -49,5 +53,21 @@ describe("MicrophoneCheck", () => {
     expect(
       screen.getByRole("button", { name: "Kiểm tra lại" }),
     ).toBeInTheDocument();
+  });
+
+  it("phân biệt lỗi cấu hình website với quyền người dùng", async () => {
+    Object.defineProperty(document, "permissionsPolicy", {
+      configurable: true,
+      value: { allowsFeature: () => false },
+    });
+    const user = userEvent.setup();
+    render(<MicrophoneCheck />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Cho phép & kiểm tra micro" }),
+    );
+
+    expect(screen.getByText(/Website đang bị cấu hình chặn micro/)).toBeInTheDocument();
+    expect(getUserMedia).not.toHaveBeenCalled();
   });
 });

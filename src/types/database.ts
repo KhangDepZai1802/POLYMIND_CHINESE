@@ -3359,6 +3359,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      grade_exam_answers_bulk: {
+        Args: { p_delivery_id: string; p_grades: Json }
+        Returns: number
+      }
       grade_exercise_answer: {
         Args: {
           p_answer_id: string
@@ -3367,6 +3371,10 @@ export type Database = {
           p_score: number
         }
         Returns: undefined
+      }
+      grade_exercise_answers_bulk: {
+        Args: { p_delivery_id: string; p_grades: Json }
+        Returns: number
       }
       import_questions: { Args: { p_rows: Json }; Returns: Json }
       invalidate_exam_attempt: {
@@ -3931,4 +3939,3 @@ export const Constants = {
     },
   },
 } as const
-

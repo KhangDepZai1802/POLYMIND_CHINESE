@@ -22,6 +22,7 @@ const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
 const saveQuestionSchema = z.object({
   mode: z.enum(["create", "version"]),
   question_id: z.string().uuid().optional(),
+  source_version_id: z.string().uuid().optional(),
   title: z.string().trim().min(2, "Nhập tiêu đề nội bộ"),
   skill: z.enum(QUESTION_SKILLS),
   difficulty: z.enum(["easy", "medium", "hard"]),
@@ -43,6 +44,7 @@ export async function saveQuestionAction(
   const parsed = saveQuestionSchema.safeParse({
     mode: formData.get("mode"),
     question_id: formData.get("question_id") || undefined,
+    source_version_id: formData.get("source_version_id") || undefined,
     title: formData.get("title"),
     skill: formData.get("skill"),
     difficulty: formData.get("difficulty"),
@@ -83,7 +85,9 @@ export async function saveQuestionAction(
   const audio = formData.get("audio");
   const needsAudio = AUDIO_QUESTION_TYPES.includes(input.question_type);
   const audioFile = audio instanceof File && audio.size > 0 ? audio : null;
-  if (needsAudio && !audioFile) {
+  const canReuseAudio =
+    input.mode === "version" && Boolean(input.source_version_id);
+  if (needsAudio && !audioFile && !canReuseAudio) {
     return { error: "Dạng câu Nghe cần một file audio (MP3/M4A)." };
   }
   if (audioFile) {
@@ -99,6 +103,13 @@ export async function saveQuestionAction(
   let questionId: string;
   let questionCode: string | null = null;
   let createdQuestion = false;
+  let previousQuestion: {
+    current_version_id: string | null;
+    title: string;
+    skill: (typeof QUESTION_SKILLS)[number];
+    difficulty: "easy" | "medium" | "hard";
+    status: string;
+  } | null = null;
   if (input.mode === "create") {
     const { data, error } = await supabase
       .from("questions")
@@ -117,15 +128,75 @@ export async function saveQuestionAction(
     createdQuestion = true;
   } else {
     questionId = input.question_id!;
+    const { data, error } = await supabase
+      .from("questions")
+      .select("current_version_id,title,skill,difficulty,status")
+      .eq("id", questionId)
+      .maybeSingle();
+    if (error || !data)
+      return { error: "Không tìm thấy câu hỏi để chỉnh sửa." };
+    previousQuestion = data;
   }
 
+  let versionId: string | null = null;
+  let uploadedObjectPath: string | null = null;
   const rollback = async () => {
-    if (createdQuestion)
+    if (versionId && uploadedObjectPath) {
+      await supabase
+        .from("question_media")
+        .delete()
+        .eq("question_version_id", versionId);
+      await supabase.storage
+        .from("question-media")
+        .remove([uploadedObjectPath]);
+    }
+    if (createdQuestion) {
       await supabase.from("questions").delete().eq("id", questionId);
+    } else if (previousQuestion && versionId) {
+      await supabase
+        .from("questions")
+        .update({
+          current_version_id: previousQuestion.current_version_id,
+          title: previousQuestion.title,
+          skill: previousQuestion.skill,
+          difficulty: previousQuestion.difficulty,
+          status: previousQuestion.status as "draft" | "ready",
+        })
+        .eq("id", questionId);
+      await supabase.from("question_versions").delete().eq("id", versionId);
+    }
   };
 
+  let reusableMedia: {
+    object_path: string;
+    mime_type: string;
+    size_bytes: number;
+    duration_ms: number | null;
+  } | null = null;
+  if (needsAudio && !audioFile && input.source_version_id) {
+    const { data: sourceVersion } = await supabase
+      .from("question_versions")
+      .select("id")
+      .eq("id", input.source_version_id)
+      .eq("question_id", questionId)
+      .maybeSingle();
+    if (!sourceVersion) {
+      return { error: "Audio cũ không thuộc câu hỏi đang chỉnh sửa." };
+    }
+    const { data: sourceMedia, error: sourceMediaError } = await supabase
+      .from("question_media")
+      .select("object_path,mime_type,size_bytes,duration_ms")
+      .eq("question_version_id", sourceVersion.id)
+      .eq("media_role", "prompt_audio")
+      .maybeSingle();
+    if (sourceMediaError || !sourceMedia) {
+      return { error: "Không tìm thấy audio cũ. Hãy chọn lại file audio." };
+    }
+    reusableMedia = sourceMedia;
+  }
+
   // 2) Tạo version bất biến (RPC trả về version id, đồng thời set current_version_id).
-  const { data: versionId, error: versionError } = await supabase.rpc(
+  const { data: createdVersionId, error: versionError } = await supabase.rpc(
     "create_question_version",
     {
       p_question_id: questionId,
@@ -139,40 +210,60 @@ export async function saveQuestionAction(
       p_grading_config: payload.gradingConfig as Json,
     },
   );
-  if (versionError || !versionId) {
+  if (versionError || !createdVersionId) {
     await rollback();
     return {
       error: versionError?.message ?? "Không lưu được phiên bản câu hỏi.",
     };
   }
+  versionId = String(createdVersionId);
 
   // 3) Gắn audio: upload vào bucket private rồi ghi question_media cho version này.
-  if (audioFile) {
-    const safeName = audioFile.name
+  if (audioFile || reusableMedia) {
+    const sourceName =
+      audioFile?.name ?? reusableMedia!.object_path.split("/").at(-1)!;
+    const safeName = sourceName
       .normalize("NFC")
       .replace(/[^a-zA-Z0-9._-]/g, "-");
-    const objectPath = `${actor.id}/${String(versionId)}/${crypto.randomUUID()}-${safeName}`;
-    const bytes = new Uint8Array(await audioFile.arrayBuffer());
+    const objectPath = `${actor.id}/${versionId}/${crypto.randomUUID()}-${safeName}`;
+    let body: Uint8Array | Blob;
+    if (audioFile) {
+      body = new Uint8Array(await audioFile.arrayBuffer());
+    } else {
+      const downloaded = await supabase.storage
+        .from("question-media")
+        .download(reusableMedia!.object_path);
+      if (downloaded.error || !downloaded.data) {
+        await rollback();
+        return { error: "Không đọc được audio cũ. Hãy chọn lại file audio." };
+      }
+      body = downloaded.data;
+    }
+    const mimeType = audioFile?.type ?? reusableMedia!.mime_type;
+    const sizeBytes = audioFile?.size ?? reusableMedia!.size_bytes;
     const uploaded = await supabase.storage
       .from("question-media")
-      .upload(objectPath, bytes, {
-        contentType: audioFile.type,
+      .upload(objectPath, body, {
+        contentType: mimeType,
         upsert: false,
       });
     if (uploaded.error) {
       await rollback();
       return { error: `Không tải được audio: ${uploaded.error.message}` };
     }
+    uploadedObjectPath = objectPath;
     const linked = await supabase.from("question_media").insert({
-      question_version_id: String(versionId),
+      question_version_id: versionId,
       media_role: "prompt_audio",
       object_path: objectPath,
-      mime_type: audioFile.type,
-      size_bytes: audioFile.size,
+      mime_type: mimeType,
+      size_bytes: sizeBytes,
+      duration_ms: reusableMedia?.duration_ms,
       uploaded_by: actor.id,
     });
     if (linked.error) {
       await supabase.storage.from("question-media").remove([objectPath]);
+      uploadedObjectPath = null;
       await rollback();
       return { error: `Không lưu được media: ${linked.error.message}` };
     }
@@ -190,13 +281,30 @@ export async function saveQuestionAction(
     return { error: publishError.message };
   }
 
+  if (input.mode === "version") {
+    const { data: updatedQuestion, error: updateQuestionError } = await supabase
+      .from("questions")
+      .update({
+        title: input.title,
+        skill: input.skill,
+        difficulty: input.difficulty,
+      })
+      .eq("id", questionId)
+      .select("id")
+      .maybeSingle();
+    if (updateQuestionError || !updatedQuestion) {
+      await rollback();
+      return { error: "Không cập nhật được thông tin câu hỏi." };
+    }
+  }
+
   revalidatePath("/teacher/exercises/question-bank");
   revalidatePath("/teacher/exams/question-bank");
   return {
     success:
       input.mode === "create"
         ? `Đã tạo câu hỏi ${questionCode ?? ""}.`.trim()
-        : "Đã cập nhật câu hỏi. Những đề đã giao vẫn giữ nguyên nội dung cũ.",
+        : "Đã lưu chỉnh sửa. Câu hỏi trong ngân hàng đã được cập nhật.",
   };
 }
 

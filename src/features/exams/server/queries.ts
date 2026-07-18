@@ -66,7 +66,7 @@ export async function getExamGradingData(deliveryId: string) {
          enrollment:enrollments(id,student:students(id,student_code,full_name)),
          answers:exam_answers(
            id,set_item_id,answer_payload,auto_score,manual_score,final_score,feedback,override_reason,
-           item:question_set_items(points,order_index,question_version:question_versions(question_type,prompt_text))
+           item:question_set_items(points,order_index,question_version:question_versions(question_type,prompt_text,options:question_options(option_key,content,order_index)))
          ),
          integrity_events:exam_integrity_events(id,event_type,occurred_at)
        )`,

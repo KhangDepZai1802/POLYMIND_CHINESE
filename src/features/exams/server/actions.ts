@@ -41,6 +41,17 @@ const gradeSchema = z.object({
   override_reason: z.string().trim().max(500).default(""),
   delivery_id: z.uuid(),
 });
+const bulkGradeSchema = z.object({
+  delivery_id: z.uuid(),
+  grades: z.array(
+    z.object({
+      answer_id: z.uuid(),
+      score: z.number().min(0),
+      feedback: z.string().trim().max(2000).default(""),
+      override_reason: z.string().trim().max(500).default(""),
+    }),
+  ).min(1, "Chưa có điểm nào để lưu."),
+});
 export async function createExamDeliveryAction(
   _previous: ActionState,
   formData: FormData,
@@ -176,6 +187,35 @@ export async function gradeExamAnswerAction(
   return { success: "Đã lưu điểm câu trả lời." };
 }
 
+export async function gradeExamAnswersBulkAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("teacher", "super_admin");
+  const rawGrades = formData.get("grades");
+  let grades: unknown;
+  try {
+    grades = typeof rawGrades === "string" ? JSON.parse(rawGrades) : null;
+  } catch {
+    return { error: "Danh sách điểm không hợp lệ. Vui lòng tải lại trang." };
+  }
+  const parsed = bulkGradeSchema.safeParse({
+    delivery_id: formData.get("delivery_id"),
+    grades,
+  });
+  if (!parsed.success) return zodToActionState(parsed.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("grade_exam_answers_bulk", {
+    p_delivery_id: parsed.data.delivery_id,
+    p_grades: parsed.data.grades as Json,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/teacher/exams/${parsed.data.delivery_id}`);
+  revalidatePath("/teacher/exams");
+  return { success: `Đã lưu ${data ?? parsed.data.grades.length} câu đã chấm.` };
+}
+
 export async function publishExamResultsAction(
   _previous: ActionState,
   formData: FormData,
@@ -227,5 +267,5 @@ export async function runExamRegradeAction(
   });
   if (error) return { error: error.message };
   revalidatePath(`/teacher/exams/${id}`);
-  return { success: "Đã chấm lại và ghi audit trước/sau." };
+  return { success: "Đã tính lại điểm và lưu đầy đủ lịch sử thay đổi." };
 }

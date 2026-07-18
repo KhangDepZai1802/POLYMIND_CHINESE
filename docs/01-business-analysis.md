@@ -201,6 +201,8 @@ Nguyên tắc bất di bất dịch:
 - Khi nộp, UI phải khóa nút, báo đang xử lý, báo kết quả và chuyển thẳng sang nhóm **Đã nộp**; lỗi lưu cuối phải chặn submit và cho thử lại.
 - Lượt làm có câu Nói phải có bước xin/kiểm tra quyền micro ngay trên trang; ứng dụng không được giả định có thể tự vượt quyền bảo mật của trình duyệt.
 - Điểm objective do DB chấm, essay/rubric chờ giáo viên; late penalty, grading method và release mode được cưỡng chế ở DB.
+- Màn chấm dành cho giáo viên phải dùng ngôn ngữ nghiệp vụ tiếng Việt, không lộ JSON/trạng thái kỹ thuật. Câu thủ công chưa nhập điểm hiển thị **Chưa chấm**; giáo viên lưu toàn bộ điểm đã nhập bằng một nút, được cảnh báo nếu còn sót và không thể công bố khi chưa chấm đủ.
+- Danh sách bài tập đã giao được chia theo lớp và trình bày dạng dòng gọn. Kết quả học viên phải hiển thị câu hỏi, bài làm, đáp án và nhận xét ở dạng đọc được, không hiển thị khóa lựa chọn hay dữ liệu kỹ thuật.
 - Answer key không xuất hiện trong client payload hoặc quyền student trước thời điểm release.
 
 ### BR-7 — Kiểm tra, xếp loại và đánh giá
@@ -208,6 +210,7 @@ Nguyên tắc bất di bất dịch:
 - Khung thi có thể kéo dài nhiều ngày; deadline = `min(started_at + duration, closes_at)`. `pg_cron` finalize attempt hết hạn kể cả browser đóng.
 - Điểm thi thang **0–100**; kết quả chỉ hiện sau khóa/công bố. Copy/cut/paste/drop bị chặn nhưng không phá Chinese IME.
 - Phòng chờ phải kiểm tra micro trước khi timer chạy nếu bộ đề có câu Nói. Trong lượt thi, dashboard ẩn điều hướng, cảnh báo khi rời/tải lại trang và ghi integrity event; không tuyên bố có thể khóa tuyệt đối tab, hệ điều hành hay trình duyệt của học viên.
+- Website chỉ cấp quyền micro cho chính origin (`microphone=(self)`); không được gửi Permissions Policy chặn toàn bộ micro. Danh sách kỳ thi đã giao và màn chấm/kết quả dùng cùng quy tắc UX như Bài tập.
 - **Xếp loại được tính từ `grading_scale_rules`**, không hard-code label rải rác trong UI và không cho client tự gửi lên. Các ngưỡng **không chồng lấn** và phủ kín 0–100.
 - Lưu draft và **publish là hai hành động tách biệt**. Học viên chỉ thấy bản ghi có `published_at IS NOT NULL`.
 - Đánh giá định kỳ có thêm cờ `visible_to_student` — giáo viên chủ động chọn nhận xét nào cho học viên xem.

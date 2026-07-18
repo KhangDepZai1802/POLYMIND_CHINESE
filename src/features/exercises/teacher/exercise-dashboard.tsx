@@ -8,7 +8,6 @@ import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +64,24 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
   const noSets = sets.length === 0;
   const noClasses = classes.length === 0;
   const selectedSet = sets.find((set) => set.id === selectedSetId);
+  const deliveryGroups = deliveries.reduce<
+    Array<{ key: string; label: string; items: Props["deliveries"] }>
+  >((groups, delivery) => {
+    const key = delivery.class?.code ?? "unassigned";
+    let group = groups.find((item) => item.key === key);
+    if (!group) {
+      group = {
+        key,
+        label: delivery.class
+          ? `${delivery.class.code} — ${delivery.class.name}`
+          : "Chưa xác định lớp",
+        items: [],
+      };
+      groups.push(group);
+    }
+    group.items.push(delivery);
+    return groups;
+  }, []);
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -241,39 +258,37 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
           Chưa có lần giao bài tập.
         </p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {deliveries.map((d) => (
-            <Card key={d.id}>
-              <CardHeader>
-                <CardTitle>{d.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>
-                  {d.class?.code} — {d.class?.name}
-                </p>
-                <p className="text-muted-foreground">
-                  {new Date(d.available_from).toLocaleString("vi-VN")} →{" "}
-                  {new Date(d.due_at).toLocaleString("vi-VN")}
-                </p>
-                <div className="flex gap-4">
-                  <span>{d.attempts.length} lượt</span>
-                  <span>
-                    {
-                      d.attempts.filter(
-                        (a) => a.status === "pending_manual_grading",
-                      ).length
-                    }{" "}
-                    chờ chấm
-                  </span>
-                  <span>{d.attempts.filter((a) => a.is_late).length} trễ</span>
-                </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/teacher/exercises/${d.id}`}>
-                    Theo dõi & chấm
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="space-y-5">
+          {deliveryGroups.map((group) => (
+            <section key={group.key} className="overflow-hidden rounded-xl border bg-card">
+              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-3">
+                <h2 className="font-semibold">{group.label}</h2>
+                <span className="text-muted-foreground text-sm">{group.items.length} bài tập</span>
+              </div>
+              <div className="divide-y">
+                {group.items.map((delivery) => {
+                  const waiting = delivery.attempts.filter(
+                    (attempt) => attempt.status === "pending_manual_grading",
+                  ).length;
+                  const late = delivery.attempts.filter((attempt) => attempt.is_late).length;
+                  return (
+                    <div key={delivery.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{delivery.title}</p>
+                        <p className="text-muted-foreground text-xs">
+                          Hạn {new Date(delivery.due_at).toLocaleString("vi-VN")} · {delivery.attempts.length} bài nộp
+                          {waiting > 0 ? ` · ${waiting} chờ chấm` : ""}
+                          {late > 0 ? ` · ${late} nộp trễ` : ""}
+                        </p>
+                      </div>
+                      <Button asChild size="sm" variant={waiting > 0 ? "default" : "outline"}>
+                        <Link href={`/teacher/exercises/${delivery.id}`}>Mở lớp & chấm bài</Link>
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           ))}
         </div>
       )}

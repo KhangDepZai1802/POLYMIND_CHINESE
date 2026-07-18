@@ -82,8 +82,8 @@ select is(
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'),
-  58,
-  'catalog có đúng 58 RPC public đã review'
+  60,
+  'catalog có đúng 60 RPC public đã review'
 );
 select is(
   (select count(*)::integer

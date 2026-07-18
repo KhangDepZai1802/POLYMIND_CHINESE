@@ -19,7 +19,7 @@ export default async function ExerciseResultPage({
   }
   return (
     <>
-      <PageHeader title="Kết quả bài tập" description="Điểm, feedback và đáp án theo chế độ công bố của giáo viên." />
+      <PageHeader title="Kết quả bài tập" description="Xem điểm, nhận xét và đáp án theo lựa chọn công bố của giáo viên." />
       <AssessmentResultView kind="exercise" result={result as never} />
     </>
   );

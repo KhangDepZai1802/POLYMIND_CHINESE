@@ -37,25 +37,26 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-18** — Codex — Phiên 38: hoàn thành code UX học viên nộp bài/micro/chế độ tập trung khi thi và thao tác Chỉnh sửa câu hỏi; migration **61** đã áp local/cloud. **Chưa smoke bằng trình duyệt và thiết bị thật.**
+> Cập nhật: **2026-07-18** — Codex — đã hoàn tất code P13-T3/UX chấm bài–kết quả–micro; còn chờ smoke thiết bị và xác minh độc lập trên bản deploy.
 
-- **P13-T3 — ◐ một phần — Codex — 2026-07-18.** Đã sửa code và test tự động UX nộp bài, micro, chế độ tập trung khi thi và chỉnh sửa câu hỏi; chưa đạt toàn bộ DoD vì chưa smoke mobile/IME/micro trên thiết bị thật.
+- **P13-T3 — ◐ — Codex — 2026-07-18.** Lưu chỉnh sửa câu hỏi đã sửa và smoke production local thành công; UX chấm/kết quả/micro đã có test, nhưng chưa đạt DoD thiết bị thật.
 - **UX-M11-M12-001 — Fixed, chờ Claude xác minh độc lập.** Preview modal cuộn, ghi chú câu đã chọn, điểm bắt buộc, điểm giao đồng bộ, thi chọn nhiều lớp, dialog theo theme.
 - **UX-M11-M12-002 — Fixed, chờ Claude xác minh độc lập.** Nộp bài có loading/toast/chuyển tab; preflight micro; thi ẩn dashboard/cảnh báo rời trang; chỉnh sửa câu hỏi giữ lịch sử.
+- **UX-M11-M12-003 — Fixed, chờ Claude xác minh độc lập.** Chấm bulk atomic + Chưa chấm/cảnh báo; delivery gọn theo lớp; kết quả học viên dễ đọc; header micro cho phép self.
 - **P-C — hoàn thành code, chưa smoke runtime.** Câu Nói + recorder + signed URL + preflight micro; migration 54–55 và 61 đã ở cloud.
 - **P7-T8/P7-T9 — còn nợ rà trạng thái runtime; role `head_teacher` chưa triển khai.** Không tự coi các task này hoàn tất trong phiên 37.
-- **P7-T7 — đang làm (cloud 1–61 đã đồng bộ; còn smoke authenticated).** Migration history local/remote khớp đến `20260718000061`.
-- **Baseline phiên 38:** 51 bảng public đều RLS · 58 RPC · 7 bucket private · pgTAP **285/285** · lint/typecheck sạch · Vitest **107/107** · production build xanh.
+- **P7-T7 — đang làm (cloud 1–62 đã đồng bộ; còn smoke authenticated).** Migration history local/remote khớp đến `20260718000062`.
+- **Baseline phiên 39:** 51 bảng public đều RLS · 60 RPC · 7 bucket private · pgTAP **291/291** · lint/typecheck sạch · Vitest **112/112** · production build xanh.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) Claude xác minh độc lập `UX-M11-M12-001/002`; smoke tài khoản học viên trên Chrome/Safari/mobile: nộp bài chuyển tab Đã nộp, allow/deny/retry micro, thu âm thật, tiếp tục lượt thi, menu bị ẩn, Back/reload/fullscreen; smoke tài khoản giáo viên nút Chỉnh sửa và lịch sử đề đã giao. (2) Sau smoke, tiếp tục **role `head_teacher`** (Giáo viên trưởng, đảo D-2) thành các task migration/RLS/nav/provisioning nhỏ có pgTAP.
+**Tiếp theo:** (1) User review/commit để Vercel redeploy header `microphone=(self)`. (2) Claude xác minh độc lập `UX-M11-M12-001/002/003`; smoke giáo viên lưu nhiều điểm/cảnh báo Chưa chấm/danh sách theo lớp và học viên xem kết quả; smoke Chrome/Safari/mobile allow/deny/retry/thu âm micro thật. (3) Sau smoke, tiếp tục role `head_teacher` thành các task nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
-⏳ **Verification Queue:** `UX-M11-M12-001` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `UX-M11-M12-001/002/003` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -125,10 +126,23 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 | EX-18 | Điểm thô quy đổi bài tập về `max_score`, bài thi về thang 100.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | EX-19 | AI authoring/grading/speaking/fraud detection ngoài phạm vi.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | EX-20 | Giữ nguyên `grading_scale_rules`, `learning_evaluations`, `student_notes`; thay sáu bảng assignment/assessment cũ.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| EX-21 | Màn chấm Bài tập/Thi dùng tiếng Việt nghiệp vụ, không lộ JSON/enum; câu thủ công chưa nhập điểm là **Chưa chấm**, cảnh báo sót và lưu toàn bộ điểm đã nhập bằng một transaction. |
+| EX-22 | Delivery giáo viên được chia theo lớp và thu gọn; kết quả học viên phải hiển thị bài làm/đáp án/nhận xét ở dạng đọc được, không lộ payload kỹ thuật. |
+| EX-23 | Header website phải cho phép chính origin dùng micro (`microphone=(self)`); ứng dụng kiểm tra và báo đúng lớp lỗi nhưng không tự vượt quyền của browser/OS. |
 
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-18] Phiên 39 — Codex — P13-T3 / UX-M11-M12-003
+
+- **Làm được:** Sửa dứt điểm Lưu chỉnh sửa câu hỏi: nạp đủ đáp án/cấu hình/audio, hiện loading/lỗi/thành công và cập nhật câu hiện tại cho lần chọn sau (đề đã giao vẫn giữ snapshot). Làm lại màn chấm Bài tập/Thi bằng tiếng Việt nghiệp vụ: bỏ JSON/enum/Feedback/override/integrity, câu thủ công để trống **Chưa chấm**, cảnh báo sót và một nút lưu toàn bộ phần đã nhập; tải bảng điểm dùng nhãn Việt. Thu gọn delivery và chia theo lớp. Làm lại kết quả học viên với câu hỏi/bài làm/đáp án/nhận xét dễ đọc và audio Nói signed URL. Tìm đúng gốc micro là header `microphone=()` chặn toàn site, đổi thành `microphone=(self)` và thêm chẩn đoán policy.
+- **File thay đổi:** question bank wizard/action/query; assessment grading/result/audio; exercise/exam dashboard/action/query; `next.config.ts`, migration/test/types, docs/QA/WORKLOG và unit test.
+- **Migration/data impact:** thêm migration 62 (`grade_exercise_answers_bulk`, `grade_exam_answers_bulk`, payload kết quả thân thiện), authenticated-only/fail-closed theo delivery. Đã reset/apply local, dry-run → push cloud → history local/remote khớp đến 62; dry-run cuối `Remote database is up to date`. Cảnh báo cache pg-delta thiếu certificate xuất hiện sau push nhưng không ảnh hưởng migration history.
+- **Đã test:** smoke production local nút Lưu chỉnh sửa câu hỏi thành công và khôi phục dữ liệu; lint xanh · typecheck xanh · Vitest **112/112** · pgTAP **291/291** · production build xanh. Lần pgTAP đầu dính dữ liệu smoke cũ nên reset local rồi chạy sạch; build sandbox đầu không tải Google Font, chạy lại có quyền mạng thành công.
+- **Quyết định mới:** EX-21/22/23 — chấm bulk một lần + Chưa chấm; delivery theo lớp/kết quả không lộ payload; Permissions Policy cho phép micro của chính origin.
+- **Blocker/rủi ro:** header micro chỉ có hiệu lực trên `polymind-chinese-one.vercel.app` sau khi user commit/redeploy; chưa smoke UI mới trên thiết bị thật và chưa được Claude xác minh độc lập.
+- **Next action:** redeploy rồi verify `UX-M11-M12-001/002/003` trên Chrome/Safari/mobile; sau đó role `head_teacher`.
 
 ### [2026-07-18] Phiên 38 — Codex — UX học viên nộp bài, micro, khóa điều hướng thi và chỉnh sửa câu hỏi
 
@@ -185,13 +199,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **File sửa thêm:** `src/features/exercises/teacher/exercise-dashboard.tsx`, `src/features/exams/teacher/exam-dashboard.tsx`, `src/features/question-builder/components/set-manager.tsx`, `src/features/question-bank/components/question-actions.tsx`. Lint/typecheck sạch · Vitest **100/100** · build xanh.
 - **Blocker/rủi ro:** picker lọc phía client trên danh sách đã tải (`getQuestionSets` tải mọi câu `ready`) — quy mô cực lớn nên chuyển tìm server-side sau (ngoài scope). **Chưa smoke** nên chưa xác nhận nguyên nhân giao-bài thất bại là ngày trống hay bộ chưa khóa — nhưng giờ GV sẽ thấy thông báo lỗi cụ thể.
 - **Next action:** smoke runtime luồng 3 tab + thử giao bài (xem thông báo lỗi cụ thể); song song smoke P-C, P7-T8 → P7-T9 → smoke P7-T7.
-
-### [2026-07-17] Phiên 33 — Claude — Seed ngân hàng câu hỏi chủ đề ngân hàng (32 câu, 4 kỹ năng)
-
-- **Làm được:** Soạn **32 câu** chủ đề ngân hàng (Tiếng Trung ngân hàng) và tạo file seed idempotent, phủ đủ 4 kỹ năng theo yêu cầu user: **Đọc** (single/multiple_choice, true_false, short_text) · **Viết** (essay_translation, fill_blank, short_text) · **Từ vựng** (single/multiple_choice, fill_blank, short_text) · **Ngữ pháp** (single/multiple_choice, true_false, fill_blank, ordering) — 2 câu/dạng. Chèn thẳng vào `questions`/`question_versions`/`question_options`/`question_answer_keys` (payload shape khớp hệt `create_question_version` + `buildStructuredPayload`), set `status='ready'`, `visibility='private'`. Chủ sở hữu chọn động: ưu tiên GV "Quách Duy Khang", nếu không có thì GV tạo sớm nhất (local rơi về "Giáo viên Demo A"), cuối cùng mới super_admin. Idempotent theo (owner_id, title) — chạy lại không nhân đôi.
-- **File thay đổi:** thêm `supabase/seed.questions.banking.sql`; `WORKLOG.md`.
-- **Migration/data impact:** KHÔNG có migration — chỉ dữ liệu nội dung. File seed đứng riêng (không nhét vào `seed.sql`), user tự áp lên cloud qua SQL editor/psql rồi redeploy.
-- **Đã test:** Áp `seed.questions.banking.sql` lên DB local (docker cp byte thô, không pipe PowerShell) → 32 câu `ready`, 62 option, 32 answer_key, UTF-8 sạch (Hán+Việt không mojibake). Chạy **harness chấm tự động** (13 case, transaction rollback) trên `app.auto_score_answer`: single_choice ✓, MC all-or-nothing (đủ→2/thiếu→0) ✓, MC partial_credit (đủ→2/nửa→1.0) ✓, true_false ✓, fill_blank (khớp/khoảng trắng bị strip/sai) ✓, ordering (đúng/xáo) ✓, essay→manual=true score null ✓. Không đổi code app (thuần SQL data) → lint/typecheck/build không ảnh hưởng.
-- **Quyết định mới:** không đổi quyết định đã chốt. User chốt 2026-07-17: giao hàng dạng SQL seed để user tự đẩy cloud + redeploy; câu hỏi thuộc **1 giáo viên** (private), không để global.
-- **Blocker/rủi ro:** chưa áp lên cloud (không có credential DB cloud trong repo). Ordering lưu option theo đúng thứ tự đáp án — renderer tự xáo khi hiển thị (giống output wizard); nếu renderer không xáo thì đáp án lộ, cần kiểm khi smoke.
-- **Next action:** user áp `supabase/seed.questions.banking.sql` lên cloud (SQL editor với quyền postgres/service_role) → mở Ngân hàng câu hỏi bằng tài khoản GV để xác minh 32 câu hiện đúng. Song song: smoke P-C, P7-T8 → P7-T9 → smoke P7-T7.

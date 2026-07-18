@@ -36,7 +36,15 @@ export function useFormAction(
   const [state, setState] = useState<ActionState>(EMPTY_ACTION_STATE);
 
   async function formAction(formData: FormData) {
-    const result = await action(EMPTY_ACTION_STATE, formData);
+    let result: ActionState;
+    try {
+      result = await action(EMPTY_ACTION_STATE, formData);
+    } catch {
+      result = {
+        error:
+          "Không thể kết nối để xử lý yêu cầu. Vui lòng kiểm tra mạng và thử lại.",
+      };
+    }
 
     if (result.success) {
       toast.success(result.success);
