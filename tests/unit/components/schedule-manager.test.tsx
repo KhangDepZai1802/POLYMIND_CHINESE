@@ -12,7 +12,10 @@ vi.mock("@/features/schedules/server/actions", () => ({
   generateSessionsAction: vi.fn(),
 }));
 
-import { ScheduleManager } from "@/features/schedules/components/schedule-manager";
+import {
+  ScheduleManager,
+  SessionCalendar,
+} from "@/features/schedules/components/schedule-manager";
 import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
 
 const SESSIONS = [
@@ -68,5 +71,37 @@ describe("ScheduleManager — chuyển kiểu thời khóa biểu", () => {
     await user.click(screen.getByRole("button", { name: "Tháng" }));
     expect(screen.getByText("Tháng 7 năm 2099")).toBeInTheDocument();
     expect(screen.getByTitle("Buổi 1 · Đã lên lịch")).toBeInTheDocument();
+  });
+
+  it("giữ đủ ba kiểu xem và mở nhật ký trong chế độ giáo viên", async () => {
+    const user = userEvent.setup();
+
+    render(<SessionCalendar mode="teacher" sessions={SESSIONS} />);
+
+    expect(screen.getByRole("button", { name: "Tối giản" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tuần" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tháng" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Nhật ký" })[0]).toHaveAttribute(
+      "href",
+      `/teacher/sessions/${SESSIONS[0]!.id}`,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Tối giản" }));
+    expect(screen.getAllByRole("link", { name: "Nhật ký" })).toHaveLength(2);
+  });
+
+  it("chỉ hiện kết quả điểm danh đã có trong chế độ học viên", () => {
+    render(
+      <SessionCalendar
+        mode="student"
+        sessions={[
+          { ...SESSIONS[0]!, myAttendance: { status: "absent" as const } },
+          SESSIONS[1]!,
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Vắng")).toBeInTheDocument();
+    expect(screen.queryByText("Nhật ký")).not.toBeInTheDocument();
   });
 });

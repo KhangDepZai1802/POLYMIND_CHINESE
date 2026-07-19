@@ -172,7 +172,7 @@ Nguyên tắc bất di bất dịch:
 - Sinh buổi học từ lịch lặp phải **idempotent**: chạy lại không tạo buổi trùng, và dừng đúng ở `planned_session_count`.
 - Nghỉ/đổi lịch/học bù là **override trên session** (`status` + `original_session_id`), không xóa hay sửa đè làm mất lịch sử.
 - Mọi thời điểm lưu **UTC**. Hiển thị và sinh recurrence theo `Asia/Ho_Chi_Minh`.
-- Card Buổi học mặc định hiển thị **thời khóa biểu tuần** (Thứ Hai → Chủ Nhật), có lùi/tiến tuần và về hôm nay. Người dùng chuyển được giữa `Tối giản` (danh sách đánh số buổi), `Tuần` và `Tháng`; tuần/tháng gom buổi theo ngày Việt Nam, không theo múi giờ máy người dùng.
+- Card Buổi học mặc định hiển thị **thời khóa biểu tuần** (Thứ Hai → Chủ Nhật), có lùi/tiến tuần và về hôm nay. Admin, giáo viên trong tab `Lịch / Buổi` của lớp và học viên tại `Lịch học` đều chuyển được giữa `Tối giản` (danh sách đánh số buổi), `Tuần` và `Tháng`; tuần/tháng gom buổi theo ngày Việt Nam, không theo múi giờ máy người dùng.
 
 ### BR-4 — Ghi danh
 
@@ -188,6 +188,7 @@ Nguyên tắc bất di bất dịch:
 ### BR-5 — Điểm danh
 
 - Trạng thái: `present | late | absent | excused`.
+- Điểm chuyên cần cá nhân bắt đầu từ **10** và được tính từ dữ liệu điểm danh: mỗi buổi `absent` trừ **0,5 điểm**; `present`, `late`, `excused` không làm giảm điểm; kết quả không thấp hơn 0. Đây là giá trị tính ra, không phải ô điểm nhập tay.
 - UNIQUE `(session_id, enrollment_id)` → điểm danh hàng loạt phải **upsert theo key này**, chạy 2 lần không sinh bản ghi trùng.
 - Chỉ tạo được điểm danh cho enrollment **thuộc đúng lớp của session đó** (chặn ở DB, không chỉ ở app).
 - `marked_by` phải là **actor đang đăng nhập thật**, không phải "user đầu tiên tìm thấy" (lỗi attribution đã gặp ở hệ cũ).
@@ -199,10 +200,12 @@ Nguyên tắc bất di bất dịch:
 - Một bộ giao nhiều lớp tạo delivery riêng; giáo viên chỉ giao lớp mình phụ trách.
 - Học viên chỉ start/save/submit attempt cho enrollment của chính mình, trong window và còn lượt; autosave/submit idempotent.
 - Khi nộp, UI phải khóa nút, báo đang xử lý, báo kết quả và chuyển thẳng sang nhóm **Đã nộp**; lỗi lưu cuối phải chặn submit và cho thử lại.
+- Bản ghi câu Nói phải tự tải lên ngay khi học viên dừng thu; nút nộp toàn bài/toàn bài thi bị khóa cho tới khi server xác nhận đã lưu. MIME có tham số codec (ví dụ `audio/webm;codecs=opus`) phải được chuẩn hóa trước khi whitelist.
 - Lượt làm có câu Nói phải có bước xin/kiểm tra quyền micro ngay trên trang; ứng dụng không được giả định có thể tự vượt quyền bảo mật của trình duyệt.
 - Điểm objective do DB chấm, essay/rubric chờ giáo viên; late penalty, grading method và release mode được cưỡng chế ở DB.
 - Màn chấm dành cho giáo viên phải dùng ngôn ngữ nghiệp vụ tiếng Việt, không lộ JSON/trạng thái kỹ thuật. Câu thủ công chưa nhập điểm hiển thị **Chưa chấm**; giáo viên lưu toàn bộ điểm đã nhập bằng một nút, được cảnh báo nếu còn sót và không thể công bố khi chưa chấm đủ.
 - Danh sách bài tập đã giao được chia theo lớp và trình bày dạng dòng gọn. Kết quả học viên phải hiển thị câu hỏi, bài làm, đáp án và nhận xét ở dạng đọc được, không hiển thị khóa lựa chọn hay dữ liệu kỹ thuật.
+- Preview bộ bài tập/bộ đề phải dùng signed URL của media private như renderer học viên. Trang kết quả và trang chấm phải có lối quay lại danh sách nguồn; phân trang ngân hàng câu hỏi không được tạo link vượt trang cuối và phải giữ bộ lọc hiện tại.
 - Answer key không xuất hiện trong client payload hoặc quyền student trước thời điểm release.
 
 ### BR-7 — Kiểm tra, xếp loại và đánh giá

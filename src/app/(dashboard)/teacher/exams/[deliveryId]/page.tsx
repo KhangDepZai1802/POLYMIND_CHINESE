@@ -1,7 +1,10 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { GradingWorkspace } from "@/features/assessment-results/components/grading-workspace";
 import { getExamGradingData } from "@/features/exams/server/queries";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/session";
 
 export default async function ExamGradingPage({
@@ -15,7 +18,18 @@ export default async function ExamGradingPage({
   if (!delivery) notFound();
   return (
     <>
-      <PageHeader title="Chấm kỳ thi" description="Sự kiện integrity chỉ để tham khảo, không tự động kết luận gian lận." />
+      <PageHeader
+        title="Chấm kỳ thi"
+        description="Sự kiện integrity chỉ để tham khảo, không tự động kết luận gian lận."
+        action={
+          <Button asChild variant="outline">
+            <Link href="/teacher/exams">
+              <ArrowLeft className="size-4" aria-hidden />
+              Quay lại trang kỳ thi
+            </Link>
+          </Button>
+        }
+      />
       <GradingWorkspace kind="exam" delivery={delivery as never} />
     </>
   );

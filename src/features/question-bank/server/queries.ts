@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  clampQuestionPage,
+  QUESTION_PAGE_SIZE,
+} from "@/features/question-bank/domain/pagination";
 import { createClient } from "@/lib/supabase/server";
 
 export type QuestionFilters = {
@@ -13,7 +17,26 @@ export async function getQuestions(
   filters: QuestionFilters = {},
 ) {
   const supabase = await createClient();
-  const page = Math.max(1, Number(filters.page) || 1);
+  let countQuery = supabase
+    .from("questions")
+    .select("id", { count: "exact", head: true })
+    .neq("status", "archived");
+  if (filters.q?.trim())
+    countQuery = countQuery.or(
+      `title.ilike.%${filters.q.trim()}%,code.ilike.%${filters.q.trim()}%`,
+    );
+  if (filters.skill)
+    countQuery = countQuery.eq("skill", filters.skill as never);
+  if (filters.visibility)
+    countQuery = countQuery.eq("visibility", filters.visibility as never);
+  const { count, error: countError } = await countQuery;
+  if (countError) throw new Error("Không tải được số lượng câu hỏi.");
+
+  const normalizedCount = count ?? 0;
+  const { page, totalPages } = clampQuestionPage(
+    filters.page,
+    normalizedCount,
+  );
   let questionQuery = supabase
     .from("questions")
     .select(
@@ -23,11 +46,13 @@ export async function getQuestions(
           answer_key:question_answer_keys(answer_key,grading_config),
           media:question_media(id,media_role)
         )`,
-      { count: "exact" },
     )
     .neq("status", "archived")
     .order("created_at", { ascending: false })
-    .range((page - 1) * 20, page * 20 - 1);
+    .range(
+      (page - 1) * QUESTION_PAGE_SIZE,
+      page * QUESTION_PAGE_SIZE - 1,
+    );
   if (filters.q?.trim())
     questionQuery = questionQuery.or(
       `title.ilike.%${filters.q.trim()}%,code.ilike.%${filters.q.trim()}%`,
@@ -36,7 +61,7 @@ export async function getQuestions(
     questionQuery = questionQuery.eq("skill", filters.skill as never);
   if (filters.visibility)
     questionQuery = questionQuery.eq("visibility", filters.visibility as never);
-  const [{ data, error, count }, { data: teachers }, { data: auth }] =
+  const [{ data, error }, { data: teachers }, { data: auth }] =
     await Promise.all([
       questionQuery,
       supabase
@@ -57,8 +82,9 @@ export async function getQuestions(
       full_name: teacher.profile.full_name,
     })),
     currentUserId: auth.user?.id,
-    count: count ?? 0,
+    count: normalizedCount,
     page,
+    totalPages,
     kind,
   };
 }

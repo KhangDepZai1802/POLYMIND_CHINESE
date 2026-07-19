@@ -50,11 +50,9 @@
 
 ## Handoff Queue (bug đang chờ fix)
 
-_(trống — chưa có code)_
-
-| #   | Bug ID | Module | Severity | Khu vực nghi ngờ | Trạng thái |
-| --- | ------ | ------ | -------- | ---------------- | ---------- |
-| —   | —      | —      | —        | —                | —          |
+| # | Bug ID | Module | Severity | Khu vực nghi ngờ | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+_Không còn bug chờ fix._
 
 ---
 
@@ -65,6 +63,11 @@ _(trống — chưa có code)_
 | UX-M11-M12-001 | M11, M12 | Đồng bộ builder Bài tập/Thi: đánh dấu câu đã chọn theo câu gốc, bắt buộc nhập điểm, preview modal cuộn, tổng điểm giao bài lấy từ bộ; kỳ thi tick nhiều lớp qua RPC transaction; thay toàn bộ native confirm bằng dialog theo theme. | ⏳ Chờ Claude xác minh UI độc lập             |
 | UX-M11-M12-002 | M11, M12 | Nộp bài có loading + kiểm lỗi lưu cuối + toast + chuyển tab Đã nộp; preflight micro theo câu Nói; chế độ tập trung khi thi ẩn dashboard/cảnh báo rời trang; ngân hàng câu hỏi dùng thao tác Chỉnh sửa nhưng vẫn giữ version lịch sử. | ⏳ Chờ Claude xác minh UI và thiết bị độc lập |
 | UX-M11-M12-003 | M11, M12 | Màn chấm bỏ JSON/enum/thuật ngữ kỹ thuật; câu trống là Chưa chấm, cảnh báo sót và một nút lưu bulk atomic; delivery gọn theo lớp; kết quả học viên hiển thị nội dung dễ đọc; sửa header `microphone=(self)` và chẩn đoán policy. | ⏳ Chờ Claude xác minh UI, bulk save và micro trên bản deploy |
+| UX-M11-M12-004 | M11, M12 | Thêm nút quay lại đúng danh sách ở kết quả học viên và màn chấm giáo viên; phân trang kẹp trang vượt giới hạn, giữ filter, không bọc Link trong nút disabled. | ⏳ Chờ Claude xác minh UI và URL `page=3` độc lập |
+| BUG-M11-M12-003 | M11, M12, M18 | Query preview bộ lấy `prompt_content` + `question_media`, tạo signed URL private 5 phút và truyền vào cùng renderer học viên. | ⏳ Chờ Claude xác minh MP3 thật ở preview bộ bài tập/bộ đề |
+| BUG-M11-004 | M11, M18 | Dừng thu thì tự upload; chuẩn hóa MIME Chrome `audio/webm;codecs=opus`; chặn nộp khi đang thu/tải/lỗi và cho retry. RPC/answer_media giữ nguyên, pgTAP 291/291. | ⏳ Chờ Claude xác minh Chrome/Safari/mobile và màn chấm |
+| BR-M10-M13-001 | M10, M13 | Thêm công thức thuần `max(0, 10 - absent_count × 0,5)`; hiện điểm `/10` ở dashboard/lịch học viên và các màn tiến độ giáo viên, vẫn giữ tỉ lệ chuyên cần riêng cho điều kiện hoàn thành khóa. | ⏳ Chờ Claude xác minh nghiệp vụ độc lập |
+| UX-M08-005 | M08 | Dùng chung `SessionCalendar` ba chế độ Tối giản/Tuần/Tháng cho admin, tab Lịch/Buổi giáo viên và Lịch học học viên; hành động/badge thay đổi đúng vai trò. | ⏳ Chờ Claude xác minh UI responsive độc lập |
 
 ### Đã xác minh độc lập
 

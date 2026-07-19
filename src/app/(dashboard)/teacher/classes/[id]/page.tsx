@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
-  BookOpenCheck,
   CalendarDays,
   ClipboardCheck,
   Clock3,
@@ -31,6 +30,7 @@ import {
   getCourseCurriculum,
   getCourseMaterials,
 } from "@/features/courses/server/queries";
+import { SessionCalendar } from "@/features/schedules/components/schedule-manager";
 import { requireRole } from "@/lib/auth/session";
 import {
   formatClock,
@@ -40,6 +40,7 @@ import {
   formatScore,
   weekdayLabel,
 } from "@/lib/dates";
+import { formatAttendanceScore } from "@/lib/domain/attendance";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
   CLASS_STATUS_LABELS,
@@ -47,8 +48,6 @@ import {
   DELIVERY_MODE_LABELS,
   ENROLLMENT_STATUS_LABELS,
   ENROLLMENT_STATUS_TONE,
-  SESSION_STATUS_LABELS,
-  SESSION_STATUS_TONE,
 } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Chi tiết lớp học" };
@@ -87,6 +86,16 @@ export default async function TeacherClassDetailPage({
   const progressByEnrollment = new Map(
     progressRows.map((progress) => [progress.enrollment_id, progress]),
   );
+  const absentCountsByEnrollment = new Map<string, number>();
+  for (const session of sessions) {
+    for (const record of session.attendance_records) {
+      if (record.status !== "absent") continue;
+      absentCountsByEnrollment.set(
+        record.enrollment_id,
+        (absentCountsByEnrollment.get(record.enrollment_id) ?? 0) + 1,
+      );
+    }
+  }
 
   return (
     <>
@@ -287,38 +296,7 @@ export default async function TeacherClassDetailPage({
                   description="Quản trị viên chưa sinh hoặc thêm buổi học cho lớp này."
                 />
               ) : (
-                <ul className="divide-y">
-                  {sessions.map((session) => (
-                    <li
-                      key={session.id}
-                      className="flex flex-wrap items-center gap-3 px-5 py-3"
-                    >
-                      <span className="w-16 shrink-0 text-sm font-medium">
-                        Buổi {session.session_number}
-                      </span>
-                      <div className="min-w-48 flex-1">
-                        <p className="text-sm">
-                          {formatDateTime(session.starts_at)}
-                        </p>
-                        <p className="text-muted-foreground truncate text-xs">
-                          {session.topic ??
-                            session.lesson_log ??
-                            "Chưa ghi nội dung"}
-                        </p>
-                      </div>
-                      <StatusBadge
-                        label={SESSION_STATUS_LABELS[session.status]}
-                        tone={SESSION_STATUS_TONE[session.status]}
-                      />
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={`/teacher/sessions/${session.id}`}>
-                          <BookOpenCheck className="size-4" aria-hidden />
-                          Nhật ký
-                        </Link>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
+                <SessionCalendar mode="teacher" sessions={sessions} />
               )}
             </CardContent>
           </Card>
@@ -601,8 +579,15 @@ export default async function TeacherClassDetailPage({
                         </div>
                         <div className="text-muted-foreground grid gap-1 text-xs sm:grid-cols-4">
                           <span>
-                            Chuyên cần:{" "}
-                            {formatPercent(progress.attendance_rate)}
+                            Điểm chuyên cần:{" "}
+                            {formatAttendanceScore(
+                              progress.enrollment_id
+                                ? absentCountsByEnrollment.get(
+                                    progress.enrollment_id,
+                                  )
+                                : undefined,
+                            )}
+                            /10
                           </span>
                           <span>
                             Bài học: {progress.completed_lessons ?? 0}/

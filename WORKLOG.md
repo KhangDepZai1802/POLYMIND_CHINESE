@@ -37,8 +37,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-18** — Codex — đã hoàn tất code P13-T3/UX chấm bài–kết quả–micro; còn chờ smoke thiết bị và xác minh độc lập trên bản deploy.
+> Cập nhật: **2026-07-18** — Codex — đã bổ sung điểm chuyên cần thang 10 và lịch ba chế độ cho giáo viên/học viên; còn chờ xác minh UI/nghiệp vụ độc lập.
 
+- **P13-T3 / BR-M10-M13-001 / UX-M08-005 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Điểm chuyên cần = `max(0, 10 - absent_count × 0,5)`; dashboard/lịch học viên và tiến độ giáo viên hiện `/10`. Giáo viên/học viên dùng chung lịch Tối giản/Tuần/Tháng với hành động đúng vai trò.
+- **P13-T3 / UX-M11-M12-004 / BUG-M11-M12-003 / BUG-M11-004 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Có test hồi quy; chưa smoke MP3/micro thật trên Chrome/Safari/mobile và bản deploy.
 - **P13-T3 — ◐ — Codex — 2026-07-18.** Lưu chỉnh sửa câu hỏi đã sửa và smoke production local thành công; UX chấm/kết quả/micro đã có test, nhưng chưa đạt DoD thiết bị thật.
 - **UX-M11-M12-001 — Fixed, chờ Claude xác minh độc lập.** Preview modal cuộn, ghi chú câu đã chọn, điểm bắt buộc, điểm giao đồng bộ, thi chọn nhiều lớp, dialog theo theme.
 - **UX-M11-M12-002 — Fixed, chờ Claude xác minh độc lập.** Nộp bài có loading/toast/chuyển tab; preflight micro; thi ẩn dashboard/cảnh báo rời trang; chỉnh sửa câu hỏi giữ lịch sử.
@@ -52,11 +54,11 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) User review/commit để Vercel redeploy header `microphone=(self)`. (2) Claude xác minh độc lập `UX-M11-M12-001/002/003`; smoke giáo viên lưu nhiều điểm/cảnh báo Chưa chấm/danh sách theo lớp và học viên xem kết quả; smoke Chrome/Safari/mobile allow/deny/retry/thu âm micro thật. (3) Sau smoke, tiếp tục role `head_teacher` thành các task nhỏ có pgTAP.
+**Tiếp theo:** (1) User review/commit để Vercel redeploy. (2) Claude xác minh độc lập `BR-M10-M13-001`, `UX-M08-005` và các fix assessment đang chờ: công thức chuyên cần, lịch responsive ba chế độ, URL question bank `page=3`, nút quay lại, MP3 preview/thu âm/chấm trên thiết bị thật. (3) Sau smoke, tiếp tục role `head_teacher` thành các task nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
-⏳ **Verification Queue:** `UX-M11-M12-001/002/003` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -134,6 +136,26 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-18] Phiên 41 — Codex — P13-T3 / BR-M10-M13-001 / UX-M08-005
+
+- **Làm được:** Thêm công thức điểm chuyên cần thang 10, mỗi buổi `absent` trừ 0,5 và chặn đáy 0; `late`/`excused` không bị trừ. Hiện điểm `/10` ở dashboard và tab Chuyên cần của học viên, chi tiết/ báo cáo tiến độ giáo viên; tách rõ tỉ lệ chuyên cần dùng cho điều kiện hoàn thành khóa. Tái sử dụng lịch admin cho tab Lịch/Buổi giáo viên và Lịch học học viên với đủ Tối giản/Tuần/Tháng, điều hướng kỳ và hành động/badge đúng vai trò.
+- **File chính:** `src/lib/domain/attendance.ts`; dashboard/lịch học viên; chi tiết lớp/báo cáo tiến độ giáo viên; `schedule-manager.tsx`; test attendance/calendar; docs 01/03, QA board và WORKLOG.
+- **Migration/data impact:** không có migration; không đổi schema/data/RLS. Điểm chuyên cần là giá trị tính từ `absent_count`, không lưu thêm cột điểm dễ lệch dữ liệu.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **122/122** · production build xanh · `git diff --check` sạch. Test mới bao phủ công thức 10/9,5/8/0, ba chế độ lịch, link Nhật ký giáo viên và badge điểm danh học viên.
+- **Quyết định mới:** chỉ `absent` trừ điểm; điểm tối thiểu 0. Tỉ lệ chuyên cần hiện hữu tiếp tục phục vụ readiness, không bị thay bằng thang 10.
+- **Blocker/rủi ro:** chưa smoke responsive bằng tài khoản thật và chưa deploy; người fix không tự đánh dấu Verified.
+- **Next action:** user review/commit/redeploy; Claude xác minh độc lập công thức và UI Tối giản/Tuần/Tháng trên desktop/mobile.
+
+### [2026-07-18] Phiên 40 — Codex — P13-T3 / điều hướng, phân trang và media assessment
+
+- **Làm được:** (1) thêm nút quay lại đúng nguồn cho kết quả bài tập/kỳ thi của học viên và màn chấm bài/chấm thi giáo viên; (2) làm lại phân trang ngân hàng câu hỏi: count trước, kẹp `page` vượt trang cuối, giữ filter, link chỉ render khi còn trang; (3) preview bộ lấy `prompt_content` + `question_media`, ký URL bucket private 5 phút và truyền vào `QuestionRenderer`; (4) câu Nói tự upload khi bấm Dừng, khóa nút nộp khi đang thu/tải/lỗi, có retry; (5) chuẩn hóa MIME có codec suffix của Chrome (`audio/webm;codecs=opus`) và MIME MP3/M4A phổ biến.
+- **Nguyên nhân gốc:** `Button asChild disabled` không vô hiệu hóa `Link`; query range ngoài count có thể trả lỗi server. Preview set không query/truyền media. Recorder chỉ preview blob cục bộ và đòi nút nộp phụ; submit toàn bài không biết trạng thái đó. Server whitelist MIME exact nên từ chối MIME Chrome có `;codecs=opus`.
+- **File chính:** 4 route result/grading; `question-bank/{domain/pagination,server/queries,components/question-bank-page}`; `question-builder/{server/queries,components/set-manager,renderers/speaking-recorder}`; `assessment-results/{domain/speaking-audio,server/speaking-upload}`; attempt bài tập/thi; 4 test hồi quy; docs 01/03 + QA board.
+- **Migration/data impact:** không có migration; không đổi schema/data/RLS. Signed URL media câu hỏi TTL 5 phút; answer audio vẫn đi qua RPC `attach_answer_media` và bucket private.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **118/118** · build production xanh · pgTAP **291/291** · `git diff --check` sạch. Build lần đầu bị sandbox chặn Google Fonts, chạy lại có network thì xanh.
+- **Chưa xác minh:** chưa smoke trình duyệt với MP3/micro thật và chưa deploy; người fix không tự đánh dấu Verified.
+- **Next action:** user review/commit/redeploy; Claude smoke độc lập ba bug mới trên Chrome/Safari/mobile và bản production.
+
 ### [2026-07-18] Phiên 39 — Codex — P13-T3 / UX-M11-M12-003
 
 - **Làm được:** Sửa dứt điểm Lưu chỉnh sửa câu hỏi: nạp đủ đáp án/cấu hình/audio, hiện loading/lỗi/thành công và cập nhật câu hiện tại cho lần chọn sau (đề đã giao vẫn giữ snapshot). Làm lại màn chấm Bài tập/Thi bằng tiếng Việt nghiệp vụ: bỏ JSON/enum/Feedback/override/integrity, câu thủ công để trống **Chưa chấm**, cảnh báo sót và một nút lưu toàn bộ phần đã nhập; tải bảng điểm dùng nhãn Việt. Thu gọn delivery và chia theo lớp. Làm lại kết quả học viên với câu hỏi/bài làm/đáp án/nhận xét dễ đọc và audio Nói signed URL. Tìm đúng gốc micro là header `microphone=()` chặn toàn site, đổi thành `microphone=(self)` và thêm chẩn đoán policy.
@@ -172,30 +194,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** D-25 — từ nay agent tự dry-run, áp và xác minh migration cloud trong cùng task; không bàn giao bước này lại cho user. Đã bổ sung luật cứng vào `AGENTS.md` (Claude kế thừa qua `CLAUDE.md`).
 - **Rủi ro còn lại:** Chưa smoke thao tác giao bài bằng tài khoản giáo viên thật; cảnh báo cache catalog `pg-delta` của CLI xuất hiện sau push do thiếu certificate tạm, nhưng migration history đã ghi đủ và remote không còn pending.
 - **Next action:** Smoke production luồng giao bài để xác nhận lỗi `exercise_delivery_status` không còn ở request thực.
-
-### [2026-07-18] Phiên 35 — Claude — Bug giao bài tập + khung thi nhiều ngày + xóa-tất-cả buổi + accent cam + sửa/xóa bộ đề
-
-- **Làm được (4 việc user + 2 bug):**
-  1. **Bug A — giao bài tập lỗi `column "status" ... is of type ... but expression is of type text`:** gốc là CASE gán cột enum với **mọi nhánh là literal unknown** → Postgres giải kiểu về `text`, không có implicit cast text→enum. Dính **5 RPC** (đều luồng đánh giá chưa smoke): `publish_exercise_delivery` (lỗi user gặp), `submit_exercise_attempt`, `grade_exercise_answer`, `submit_exam_attempt`, `app.recalculate_exam_attempt`. Sửa bằng ép `(case … end)::enum` (migration **56**). Đã chứng minh cơ chế bằng temp-table test + regression pgTAP lái luồng thật 6/6.
-  2. **Bug B — tạo kỳ thi báo "cùng một ngày Việt Nam":** không phải nhập sai — là CHECK cùng-ngày (EX-12). User chốt **đảo EX-12**: cho khung nhiều ngày. Bỏ `exam_deliveries_check1` (migration **57**), gỡ `isSameVietnamDate` ở `exams/server/actions.ts` (thay bằng `opens < closes`), đổi text form, sửa pgTAP security (throws→lives).
-  3. **YC1 — Xóa tất cả buổi học:** `deleteAllSessionsAction` chỉ xóa buổi `scheduled` **chưa có điểm danh** (lọc sẵn ở app để không vướng trigger migration 22), giữ buổi đã dạy/điểm danh; nút trong card Buổi học.
-  4. **YC2 — màu cam #FB9518 (làm NHIỀU hơn theo phản hồi user):** token `--brand-orange`(+fg) light/dark + map `@theme`. Đưa cam vào lớp tương tác tần suất cao: **nút default hover → nền cam** (chữ navy), outline/ghost/nav **hover → nền cam nhạt**, `link` hover cam; **StepHint** (dải gợi ý 6 trang Bài tập/Thi) nền cam nhạt; **loading bar xanh→cam** (trước là xanh→đỏ); gạch dưới wordmark + chấm active menu (đậm hơn). Cam dùng làm NỀN/mark (không làm chữ trên nền trắng vì tương phản thấp). Xanh #1A5FA8 vẫn chủ đạo.
-  5. **YC4 — sửa/xóa bộ đề (đổi hướng theo phản hồi user):** ban đầu làm clone bản mới (migration 58) nhưng user muốn **sửa thẳng bộ vừa tạo**. Đổi: **Chỉnh sửa = mở khóa sửa TẠI CHỖ** — RPC `unlock_question_set_for_edit` (migration **59**) đưa `locked_at→null`, `status→draft`; trigger bất biến được nới để cho phép RIÊNG thao tác mở khóa; **chặn nếu đã có học viên làm bài** (có exercise/exam attempt) để không đổi đề giữa chừng. Bỏ `clone_question_set_for_edit`. Nút **thùng rác** xóa bộ — xóa hẳn nếu chưa khóa/chưa giao, ngược lại (trigger khóa hoặc FK RESTRICT) → **lưu trữ** (ẩn qua `.neq status archived`).
-- **File thay đổi:** migration `20260718000056/57/58/59`; test DB `assessment_enum_case_regression.test.sql` (mới), `question_set_edit_delete.test.sql` (mới, test unlock), sửa `assessment_engine_security.test.sql`; `src/features/schedules/{server/actions.ts,components/schedule-manager.tsx}`; `src/features/exams/{server/actions.ts,teacher/exam-dashboard.tsx}`; `src/features/question-builder/{server/actions.ts,server/queries.ts,components/set-manager.tsx}`; `src/app/globals.css`; `src/components/ui/button.tsx`; `src/components/shared/{step-hint,nav-progress}.tsx`; `src/components/layout/{sidebar-nav,nav-links}.tsx`; `src/types/database.ts` (gen types: +unlock RPC, −clone); `tests/unit/components/schedule-manager.test.tsx`; `WORKLOG.md`, `docs/02,03,09`.
-- **Migration/data impact:** 4 migration mới, forward-fix an toàn (create-or-replace hàm; drop 1 CHECK; nới 1 trigger; thêm/bỏ hàm). Không đụng dữ liệu. **Chưa áp cloud** — user tự đẩy 56–59 + redeploy (lỗi "schema cache" của user là do cloud chưa có hàm).
-- **Đã test:** `npm run typecheck` sạch · `npm run lint` sạch · Vitest **100/100** · `npm run build` xanh · `npx supabase db reset` chạy hết **59 migration** + seed OK · pgTAP **33/33** (6 regression enum + 22 security + 5 unlock/xóa). **CHƯA** smoke trình duyệt.
-- **Quyết định mới:** **đảo EX-12** (khung thi nhiều ngày) và **đang đảo D-2** (thêm role `head_teacher` — chốt hướng, chưa code). Xem bảng QUYẾT ĐỊNH.
-- **Blocker/rủi ro:** đường archive khi xóa bộ đã-giao chưa chạy runtime (chỉ suy luận từ FK RESTRICT + cơ chế đã rõ). Chưa smoke UI các nút mới.
-- **Next action:** smoke trình duyệt Phiên 35; rồi làm **role `head_teacher`** (enum + RLS ~33 bảng + nav 2 nhánh + middleware + provisioning + pgTAP) — việc lớn, tách task.
-
-### [2026-07-18] Phiên 34 — Claude — Làm lại luồng nghiệp vụ 3 tab Bài tập/Thi (dễ dùng cho giáo viên)
-
-- **Làm được:** Theo yêu cầu user (giáo viên có thể không rành công nghệ). (1) **Sắp lại + đánh số 3 tab** đúng luồng làm việc cho cả Bài tập và Thi: `① Ngân hàng câu hỏi → ② Bộ bài tập → ③ Giao cho lớp` (trước đây tab "Giao" đứng đầu nên vào là màn trống). Mỗi pill có badge số bước. (2) **StepHint** — dải gợi ý "Bước X/3 — làm gì ở đây, tiếp theo là gì" đặt dưới thanh tab ở cả 6 trang. (3) **Card câu hỏi gọn lại** (hình 1): 2 dòng (mã+tiêu đề, prompt `line-clamp-1`), gom thao tác vào **menu kebab ⋯** (Chia sẻ qua dialog · Gửi duyệt kho chung), **bỏ hẳn nút "Lưu trữ"** khỏi UI (action archive vẫn còn ở server), phạm vi hiện nhãn tiếng Việt (Riêng tư/Được chia sẻ/Kho chung/Chờ duyệt). (4) **Bảng chọn câu hỏi** (hình 2): thay dropdown đổ toàn bộ câu bằng `QuestionPicker` — dialog có ô tìm theo mã/tiêu đề + lọc kỹ năng + **tick chọn nhiều câu** rồi thêm một lần (điểm/section áp chung); dùng được khi ngân hàng có hàng nghìn câu. (5) Làm dịu jargon: "điểm thô"→"điểm", "Version"→"Bản", "chốt version"→"Kiểm tra & khóa bộ (sẵn sàng giao)".
-- **File thay đổi:** thêm `src/components/shared/step-hint.tsx`, `src/features/question-builder/components/question-picker.tsx`; sửa `src/components/shared/assessment-tabs.tsx`, `src/features/question-bank/components/{question-actions,question-bank-page}.tsx`, `src/features/question-builder/components/{set-manager,sets-page}.tsx`, `src/features/question-builder/server/{queries,actions}.ts` (thêm `code`/`skill` vào query + action batch `addQuestionSetItemsAction`), `src/app/(dashboard)/teacher/{exercises,exams}/page.tsx`; `WORKLOG.md`.
-- **Migration/data impact:** KHÔNG có migration — thuần UI + 1 server action batch trên bảng `question_set_items` sẵn có (cùng luật RLS như `addQuestionSetItemAction`).
-- **Đã test:** `npm run lint` sạch · `npm run typecheck` sạch · Vitest **100/100** · `npm run build` xanh (đủ 6 route exercises/exams). **CHƯA** smoke trình duyệt (Docker/dev chưa bật) — cần kiểm mắt: thứ tự tab, kebab mở Chia sẻ/Gửi duyệt, picker tìm+tick nhiều+thêm đúng thứ tự, khóa bộ + giao.
-- **Quyết định mới:** user chốt 2026-07-18: 3 tab đánh số theo luồng · chọn câu bằng bảng tìm kiếm + chọn nhiều · mỗi tab có thanh bước + gợi ý.
-- **Sửa tiếp (cùng phiên, sau phản hồi user):** (a) **Bug giao bài không hiện** — dialog "Giao bài tập"/"Lên lịch thi" **nuốt lỗi im lặng** (`useFormAction` không có `toastError`, dashboard không render `state.error`): nếu chưa chọn ngày (DateTimePicker rỗng → zod `.min(1)` fail) hoặc chưa có bộ đã khóa thì giao **thất bại mà GV không thấy gì** → tưởng đã giao. Sửa cả hai dashboard: bật `toastError`, render Alert lỗi trong dialog, thêm cảnh báo khi chưa có bộ khóa/khóa nào phụ trách và **khóa nút submit**. (b) Form "Thêm section" luôn hiện gây rối → ẩn sau nút **"Chia section (tùy chọn)"**, đưa picker lên trước. (c) Thêm **nút thùng rác nhỏ** (có xác nhận) ở cuối mỗi card câu hỏi để lưu trữ.
-- **File sửa thêm:** `src/features/exercises/teacher/exercise-dashboard.tsx`, `src/features/exams/teacher/exam-dashboard.tsx`, `src/features/question-builder/components/set-manager.tsx`, `src/features/question-bank/components/question-actions.tsx`. Lint/typecheck sạch · Vitest **100/100** · build xanh.
-- **Blocker/rủi ro:** picker lọc phía client trên danh sách đã tải (`getQuestionSets` tải mọi câu `ready`) — quy mô cực lớn nên chuyển tìm server-side sau (ngoài scope). **Chưa smoke** nên chưa xác nhận nguyên nhân giao-bài thất bại là ngày trống hay bộ chưa khóa — nhưng giờ GV sẽ thấy thông báo lỗi cụ thể.
-- **Next action:** smoke runtime luồng 3 tab + thử giao bài (xem thông báo lỗi cụ thể); song song smoke P-C, P7-T8 → P7-T9 → smoke P7-T7.

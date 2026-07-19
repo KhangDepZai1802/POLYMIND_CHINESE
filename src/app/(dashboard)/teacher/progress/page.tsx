@@ -20,6 +20,7 @@ import { getTeacherClassReport } from "@/features/reports/server/teacher-queries
 import { ClassPicker } from "@/features/schedules/components/class-picker";
 import { requireRole } from "@/lib/auth/session";
 import { formatPercent, formatScore } from "@/lib/dates";
+import { formatAttendanceScore } from "@/lib/domain/attendance";
 import {
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
@@ -93,7 +94,7 @@ export default async function TeacherProgressPage({
             />
             <Stat
               icon={CalendarCheck}
-              label="Chuyên cần TB"
+              label="Tỉ lệ chuyên cần TB"
               value={formatPercent(report.summary?.avg_attendance_rate)}
               hint="Trên các buổi đã điểm danh"
             />
@@ -139,7 +140,7 @@ export default async function TeacherProgressPage({
                           {student.full_name}
                         </p>
                         <p className="text-muted-foreground text-xs">
-                          {student.student_code} · Chuyên cần{" "}
+                          {student.student_code} · Tỉ lệ chuyên cần{" "}
                           {formatPercent(student.attendance_rate)} · Tiến độ{" "}
                           {formatPercent(student.progress_percent)}
                           {student.missing_exercises
@@ -189,7 +190,9 @@ export default async function TeacherProgressPage({
                     <thead className="text-muted-foreground border-b text-left text-xs">
                       <tr>
                         <th className="px-5 py-2 font-medium">Học viên</th>
-                        <th className="px-3 py-2 font-medium">Chuyên cần</th>
+                        <th className="px-3 py-2 font-medium">
+                          Điểm chuyên cần
+                        </th>
                         <th className="px-3 py-2 font-medium">
                           Có mặt / Muộn / Vắng
                         </th>
@@ -215,7 +218,10 @@ export default async function TeacherProgressPage({
                             </p>
                           </td>
                           <td className="px-3 py-3">
-                            {formatPercent(row.attendance?.attendance_rate)}
+                            {formatAttendanceScore(
+                              row.attendance?.absent_count,
+                            )}
+                            /10
                           </td>
                           <td className="text-muted-foreground px-3 py-3 text-xs">
                             {row.attendance?.present_count ?? 0} /{" "}

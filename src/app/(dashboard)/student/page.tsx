@@ -23,9 +23,9 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
-  formatPercent,
   formatScore,
 } from "@/lib/dates";
+import { formatAttendanceScore } from "@/lib/domain/attendance";
 
 export const metadata: Metadata = { title: "Tổng quan" };
 
@@ -96,8 +96,8 @@ export default async function StudentDashboardPage() {
         />
         <Stat
           icon={ClipboardList}
-          label="Chuyên cần"
-          value={formatPercent(attendance?.attendance_rate)}
+          label="Điểm chuyên cần"
+          value={`${formatAttendanceScore(attendance?.absent_count)}/10`}
           hint={`${attendance?.present_count ?? 0} có mặt · ${attendance?.absent_count ?? 0} vắng`}
         />
         <Stat

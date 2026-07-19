@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SessionCalendar } from "@/features/schedules/components/schedule-manager";
 import { MaterialList } from "@/features/student/components/material-list";
 import {
   getMyAttendanceSummary,
@@ -15,11 +16,10 @@ import {
 } from "@/features/student/server/queries";
 import { requireRole } from "@/lib/auth/session";
 import { formatDateTime, formatPercent } from "@/lib/dates";
+import { formatAttendanceScore } from "@/lib/domain/attendance";
 import {
   ATTENDANCE_STATUS_LABELS,
   ATTENDANCE_STATUS_TONE,
-  SESSION_STATUS_LABELS,
-  SESSION_STATUS_TONE,
 } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Lịch học" };
@@ -82,42 +82,7 @@ export default async function StudentSchedulePage() {
                   description="Khi trung tâm xếp lịch, các buổi học sẽ hiện ở đây."
                 />
               ) : (
-                <ul className="divide-y">
-                  {sessions.map((session) => (
-                    <li
-                      key={session.id}
-                      className="flex flex-wrap items-center gap-3 px-5 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">
-                          Buổi {session.session_number} ·{" "}
-                          {formatDateTime(session.starts_at)}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {session.lesson?.title ??
-                            session.topic ??
-                            "Chưa có chủ đề"}
-                        </p>
-                      </div>
-                      <StatusBadge
-                        label={SESSION_STATUS_LABELS[session.status]}
-                        tone={SESSION_STATUS_TONE[session.status]}
-                      />
-                      {/* Buổi chưa điểm danh thì KHÔNG hiện gì — hiện "Vắng" khi
-                          giáo viên chưa điểm danh là vu oan cho học viên. */}
-                      {session.myAttendance && (
-                        <StatusBadge
-                          label={
-                            ATTENDANCE_STATUS_LABELS[session.myAttendance.status]
-                          }
-                          tone={
-                            ATTENDANCE_STATUS_TONE[session.myAttendance.status]
-                          }
-                        />
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <SessionCalendar mode="student" sessions={sessions} />
               )}
             </CardContent>
           </Card>
@@ -142,7 +107,11 @@ export default async function StudentSchedulePage() {
 
         {/* --- Chuyên cần --- */}
         <TabsContent value="attendance" className="mt-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+            <AttendanceStat
+              label="Điểm chuyên cần"
+              value={`${formatAttendanceScore(attendance?.absent_count)}/10`}
+            />
             <AttendanceStat
               label="Tỉ lệ chuyên cần"
               value={formatPercent(attendance?.attendance_rate)}

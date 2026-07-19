@@ -1,15 +1,8 @@
 import "server-only";
 
+import { speakingAudioFormat } from "@/features/assessment-results/domain/speaking-audio";
 import { createClient } from "@/lib/supabase/server";
 
-/** MIME cho phép ↔ đuôi file. MediaRecorder thường xuất webm/opus hoặc mp4. */
-const AUDIO_EXT: Record<string, string> = {
-  "audio/webm": "webm",
-  "audio/ogg": "ogg",
-  "audio/mp4": "m4a",
-  "audio/mpeg": "mp3",
-  "audio/aac": "aac",
-};
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
 /**
@@ -28,8 +21,8 @@ export async function persistSpeakingAnswer(
   if (!(audio instanceof File) || audio.size === 0) {
     return { ok: false, error: "Thiếu bản ghi âm." };
   }
-  const ext = AUDIO_EXT[audio.type];
-  if (!ext) return { ok: false, error: "Định dạng âm thanh không được hỗ trợ." };
+  const format = speakingAudioFormat(audio.type);
+  if (!format) return { ok: false, error: "Định dạng âm thanh không được hỗ trợ." };
   if (audio.size > MAX_AUDIO_BYTES) return { ok: false, error: "Bản ghi tối đa 25 MB." };
 
   const durationRaw = Number(formData.get("duration_ms"));
@@ -38,11 +31,11 @@ export async function persistSpeakingAnswer(
 
   const supabase = await createClient();
   // Path bắt đầu bằng uid → storage policy chỉ cho HV ghi vào thư mục của mình.
-  const objectPath = `${actorId}/${attemptId}/${itemId}/${crypto.randomUUID()}.${ext}`;
+  const objectPath = `${actorId}/${attemptId}/${itemId}/${crypto.randomUUID()}.${format.extension}`;
   const bytes = new Uint8Array(await audio.arrayBuffer());
   const uploaded = await supabase.storage
     .from("answer-media")
-    .upload(objectPath, bytes, { contentType: audio.type, upsert: false });
+    .upload(objectPath, bytes, { contentType: format.mimeType, upsert: false });
   if (uploaded.error) {
     return { ok: false, error: `Không tải được bản ghi: ${uploaded.error.message}` };
   }
@@ -61,7 +54,7 @@ export async function persistSpeakingAnswer(
     p_attempt_id: attemptId,
     p_set_item_id: itemId,
     p_object_path: objectPath,
-    p_mime: audio.type,
+    p_mime: format.mimeType,
     p_size: audio.size,
     p_duration_ms: durationMs,
   });

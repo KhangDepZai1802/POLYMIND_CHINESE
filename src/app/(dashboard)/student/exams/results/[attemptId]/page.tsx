@@ -1,7 +1,10 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { AssessmentResultView } from "@/features/assessment-results/components/result-view";
 import { getMyAssessmentResult } from "@/features/assessment-results/server/queries";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/session";
 
 export default async function ExamResultPage({
@@ -19,7 +22,18 @@ export default async function ExamResultPage({
   }
   return (
     <>
-      <PageHeader title="Kết quả kỳ thi" description="Kết quả chỉ hiển thị sau khi giáo viên công bố." />
+      <PageHeader
+        title="Kết quả kỳ thi"
+        description="Kết quả chỉ hiển thị sau khi giáo viên công bố."
+        action={
+          <Button asChild variant="outline">
+            <Link href="/student/results">
+              <ArrowLeft className="size-4" aria-hidden />
+              Quay lại danh sách kết quả
+            </Link>
+          </Button>
+        }
+      />
       <AssessmentResultView kind="exam" result={result as never} />
     </>
   );

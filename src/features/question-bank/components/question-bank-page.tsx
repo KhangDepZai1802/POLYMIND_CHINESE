@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   QUESTION_TYPE_LABELS,
   SKILL_QUESTION_TYPES,
@@ -9,6 +11,7 @@ import {
   getQuestions,
   type QuestionFilters,
 } from "@/features/question-bank/server/queries";
+import { questionPageHref } from "@/features/question-bank/domain/pagination";
 import { AssessmentTabs } from "@/components/shared/assessment-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { StepHint } from "@/components/shared/step-hint";
@@ -44,7 +47,7 @@ export async function QuestionBankPage({
   kind: "exercise" | "exam";
   filters?: QuestionFilters;
 }) {
-  const { questions, teachers, currentUserId, count, page } =
+  const { questions, teachers, currentUserId, count, page, totalPages } =
     await getQuestions(kind, filters);
   const basePath = `/teacher/${kind === "exercise" ? "exercises" : "exams"}/question-bank`;
   return (
@@ -186,23 +189,40 @@ export async function QuestionBankPage({
           )}
         </CardContent>
       </Card>
-      <div className="mt-4 flex items-center justify-between text-sm">
-        <span>{count} câu hỏi</span>
-        <div className="flex gap-2">
-          <Button asChild size="sm" variant="outline" disabled={page <= 1}>
-            <Link href={`${basePath}?page=${page - 1}`}>Trang trước</Link>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-            disabled={page * 20 >= count}
-          >
-            <Link href={`${basePath}?page=${page + 1}`}>Trang sau</Link>
-          </Button>
-        </div>
-      </div>
+      {count > 0 && (
+        <nav
+          aria-label="Phân trang ngân hàng câu hỏi"
+          className="mt-4 flex flex-wrap items-center justify-between gap-3"
+        >
+          <p className="text-muted-foreground text-sm">
+            Trang {page}/{totalPages} · {count} câu hỏi
+          </p>
+          <div className="flex gap-2">
+            {page > 1 ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href={questionPageHref(basePath, filters ?? {}, page - 1)}>
+                  Trang trước
+                </Link>
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" disabled>
+                Trang trước
+              </Button>
+            )}
+            {page < totalPages ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href={questionPageHref(basePath, filters ?? {}, page + 1)}>
+                  Trang sau
+                </Link>
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" disabled>
+                Trang sau
+              </Button>
+            )}
+          </div>
+        </nav>
+      )}
     </>
   );
 }
-import Link from "next/link";

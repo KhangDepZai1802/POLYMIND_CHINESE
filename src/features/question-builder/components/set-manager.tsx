@@ -53,6 +53,7 @@ type SetRecord = {
         question_id: string;
         question_type: QuestionType;
         prompt_text: string;
+        prompt_content: unknown;
         question_options: Array<{
           id: string;
           option_key: string;
@@ -70,6 +71,12 @@ type SetRecord = {
   } | null;
 };
 type QuestionOption = PickerQuestion;
+
+function promptContentOf(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 export function SetManager({
   kind,
@@ -207,6 +214,9 @@ function SetCard({
                         <QuestionRenderer
                           type={item.question_version.question_type}
                           prompt={item.question_version.prompt_text}
+                          promptContent={promptContentOf(
+                            item.question_version.prompt_content,
+                          )}
                           options={item.question_version.question_options}
                           disabled
                         />

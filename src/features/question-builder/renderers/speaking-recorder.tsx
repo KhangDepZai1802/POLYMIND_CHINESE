@@ -5,8 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useConfirmation } from "@/components/shared/confirmation-provider";
 
-type Status =
-  "idle" | "recording" | "recorded" | "uploading" | "saved" | "error";
+export type SpeakingRecorderStatus =
+  | "idle"
+  | "recording"
+  | "recorded"
+  | "uploading"
+  | "saved"
+  | "device_error"
+  | "upload_error";
 
 /** Chọn mime MediaRecorder hỗ trợ; ưu tiên webm/opus, rơi về mp4 cho Safari. */
 function pickMime(): string | undefined {
@@ -37,6 +43,7 @@ export function SpeakingRecorder({
   disabled = false,
   onUpload,
   onDelete,
+  onStatusChange,
 }: {
   existingUrl?: string | null;
   disabled?: boolean;
@@ -45,9 +52,12 @@ export function SpeakingRecorder({
     durationMs: number,
   ) => Promise<{ ok: boolean; error?: string }>;
   onDelete?: () => Promise<{ ok: boolean; error?: string }>;
+  onStatusChange?: (status: SpeakingRecorderStatus) => void;
 }) {
   const confirm = useConfirmation();
-  const [status, setStatus] = useState<Status>(existingUrl ? "saved" : "idle");
+  const [status, setStatus] = useState<SpeakingRecorderStatus>(
+    existingUrl ? "saved" : "idle",
+  );
   const [error, setError] = useState<string>();
   const [elapsed, setElapsed] = useState(0);
   const [recordedSec, setRecordedSec] = useState<number | null>(null);
@@ -80,6 +90,23 @@ export function SpeakingRecorder({
     };
   }, []);
 
+  useEffect(() => {
+    onStatusChange?.(status);
+  }, [onStatusChange, status]);
+
+  const uploadBlob = async (blob: Blob, durationMs: number) => {
+    if (!onUpload) return;
+    setStatus("uploading");
+    setError(undefined);
+    const result = await onUpload(blob, durationMs);
+    if (result.ok) {
+      setStatus("saved");
+    } else {
+      setError(result.error ?? "Không nộp được bản ghi.");
+      setStatus("upload_error");
+    }
+  };
+
   const stop = () => {
     clearTick();
     const recorder = recorderRef.current;
@@ -93,7 +120,7 @@ export function SpeakingRecorder({
       !navigator.mediaDevices?.getUserMedia
     ) {
       setError("Trình duyệt không hỗ trợ thu âm.");
-      setStatus("error");
+      setStatus("device_error");
       return;
     }
     let stream: MediaStream;
@@ -108,7 +135,7 @@ export function SpeakingRecorder({
           ? "Micro đang bị chặn. Bấm biểu tượng ổ khóa hoặc micro cạnh thanh địa chỉ, chọn Cho phép, rồi bấm Thu âm lại."
           : "Không mở được micro. Hãy đóng ứng dụng khác đang dùng micro rồi thử lại.",
       );
-      setStatus("error");
+      setStatus("device_error");
       return;
     }
     const mimeType = pickMime();
@@ -134,6 +161,7 @@ export function SpeakingRecorder({
       objectUrlRef.current = url;
       setPreviewUrl(url);
       setStatus("recorded");
+      if (onUpload) void uploadBlob(blob, durationRef.current);
     };
     startedAtRef.current = Date.now();
     setElapsed(0);
@@ -146,15 +174,7 @@ export function SpeakingRecorder({
 
   const upload = async () => {
     if (!blobRef.current || !onUpload) return;
-    setStatus("uploading");
-    setError(undefined);
-    const result = await onUpload(blobRef.current, durationRef.current);
-    if (result.ok) {
-      setStatus("saved");
-    } else {
-      setError(result.error ?? "Không nộp được bản ghi.");
-      setStatus("error");
-    }
+    await uploadBlob(blobRef.current, durationRef.current);
   };
 
   const resetLocal = () => {
@@ -182,7 +202,7 @@ export function SpeakingRecorder({
       const result = await onDelete();
       if (!result.ok) {
         setError(result.error ?? "Không xóa được bản ghi.");
-        setStatus("error");
+        setStatus("upload_error");
         return;
       }
     }
@@ -212,7 +232,7 @@ export function SpeakingRecorder({
         ) : (
           <Button
             type="button"
-            variant={status === "error" ? "default" : "outline"}
+            variant={status.endsWith("_error") ? "default" : "outline"}
             onClick={startRecording}
             disabled={status === "uploading"}
           >
@@ -243,11 +263,7 @@ export function SpeakingRecorder({
 
       {status === "recorded" && (
         <div className="flex flex-wrap gap-2">
-          {onUpload && (
-            <Button type="button" onClick={upload}>
-              Nộp bản ghi này
-            </Button>
-          )}
+          {onUpload && <p className="text-muted-foreground text-sm">Đang chuẩn bị tải bản ghi…</p>}
           <Button type="button" variant="outline" onClick={discard}>
             🗑 Xóa & thu lại
           </Button>
@@ -263,6 +279,11 @@ export function SpeakingRecorder({
             🗑 Xóa & thu lại
           </Button>
         </div>
+      )}
+      {status === "upload_error" && previewUrl && onUpload && (
+        <Button type="button" variant="outline" onClick={upload}>
+          Thử tải lại bản ghi
+        </Button>
       )}
       {error && <p className="text-destructive text-sm">{error}</p>}
     </div>

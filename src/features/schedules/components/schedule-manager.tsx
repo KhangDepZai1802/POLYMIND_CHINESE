@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   AlertCircle,
+  BookOpenCheck,
   CalendarClock,
   CalendarDays,
   CalendarPlus,
@@ -77,6 +79,8 @@ import {
   weekdayLabel,
 } from "@/lib/dates";
 import {
+  ATTENDANCE_STATUS_LABELS,
+  ATTENDANCE_STATUS_TONE,
   SESSION_STATUS_LABELS,
   SESSION_STATUS_TONE,
 } from "@/lib/domain/labels";
@@ -94,15 +98,22 @@ type Schedule = {
   effective_to: string | null;
 };
 
-type Session = {
+export type SessionCalendarRecord = {
   id: string;
   session_number: number;
   starts_at: string;
   ends_at: string;
   status: SessionStatus;
   topic: string | null;
-  lesson: { id: string; title: string } | null;
+  lesson?: { id: string; title: string } | null;
+  lesson_log?: string | null;
+  myAttendance?: {
+    status: "present" | "late" | "absent" | "excused";
+    note?: string | null;
+  } | null;
 };
+
+type SessionCalendarMode = "admin" | "teacher" | "student";
 
 type LessonOption = { id: string; label: string };
 
@@ -123,7 +134,7 @@ export function ScheduleManager({
   plannedSessionCount: number | null;
   hasStartDate: boolean;
   schedules: Schedule[];
-  sessions: Session[];
+  sessions: SessionCalendarRecord[];
   lessons: LessonOption[];
 }) {
   const isFlexible = schedules.length === 0;
@@ -247,7 +258,7 @@ export function ScheduleManager({
               }
             />
           ) : (
-            <SessionCalendar classId={classId} sessions={sessions} />
+            <SessionCalendar mode="admin" classId={classId} sessions={sessions} />
           )}
         </CardContent>
       </Card>
@@ -255,12 +266,14 @@ export function ScheduleManager({
   );
 }
 
-function SessionCalendar({
+export function SessionCalendar({
   classId,
   sessions,
+  mode = "admin",
 }: {
-  classId: string;
-  sessions: Session[];
+  classId?: string;
+  sessions: SessionCalendarRecord[];
+  mode?: SessionCalendarMode;
 }) {
   const currentDateKey = todayISO();
   const [view, setView] = useState<CalendarView>("week");
@@ -271,7 +284,7 @@ function SessionCalendar({
     ),
   );
 
-  const sessionsByDate = new Map<string, Session[]>();
+  const sessionsByDate = new Map<string, SessionCalendarRecord[]>();
   for (const session of sessions) {
     const dateKey = dateKeyInVN(session.starts_at);
     const dateSessions = sessionsByDate.get(dateKey) ?? [];
@@ -360,7 +373,12 @@ function SessionCalendar({
       {view === "compact" && (
         <ul className="divide-y border-t">
           {sessions.map((session) => (
-            <SessionRow key={session.id} classId={classId} session={session} />
+            <SessionRow
+              key={session.id}
+              classId={classId}
+              session={session}
+              mode={mode}
+            />
           ))}
         </ul>
       )}
@@ -368,6 +386,7 @@ function SessionCalendar({
       {view === "week" && (
         <WeekCalendar
           classId={classId}
+          mode={mode}
           anchorKey={anchorKey}
           currentDateKey={currentDateKey}
           sessionsByDate={sessionsByDate}
@@ -413,14 +432,16 @@ function ViewButton({
 
 function WeekCalendar({
   classId,
+  mode,
   anchorKey,
   currentDateKey,
   sessionsByDate,
 }: {
-  classId: string;
+  classId?: string;
+  mode: SessionCalendarMode;
   anchorKey: string;
   currentDateKey: string;
-  sessionsByDate: Map<string, Session[]>;
+  sessionsByDate: Map<string, SessionCalendarRecord[]>;
 }) {
   const days = getWeekDateKeys(anchorKey);
 
@@ -460,6 +481,7 @@ function WeekCalendar({
                     <WeekSessionCard
                       key={session.id}
                       classId={classId}
+                      mode={mode}
                       session={session}
                     />
                   ))
@@ -475,10 +497,12 @@ function WeekCalendar({
 
 function WeekSessionCard({
   classId,
+  mode,
   session,
 }: {
-  classId: string;
-  session: Session;
+  classId?: string;
+  mode: SessionCalendarMode;
+  session: SessionCalendarRecord;
 }) {
   return (
     <article
@@ -495,14 +519,14 @@ function WeekSessionCard({
         Buổi {session.session_number}
       </p>
       <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
-        {session.lesson?.title ?? session.topic ?? "Chưa gắn bài học"}
+        {sessionTitle(session)}
       </p>
       <div className="mt-2 flex items-end justify-between gap-1">
         <StatusBadge
           label={SESSION_STATUS_LABELS[session.status]}
           tone={SESSION_STATUS_TONE[session.status]}
         />
-        <SessionActions classId={classId} session={session} />
+        <SessionTrailing classId={classId} mode={mode} session={session} />
       </div>
     </article>
   );
@@ -515,7 +539,7 @@ function MonthCalendar({
 }: {
   anchorKey: string;
   currentDateKey: string;
-  sessionsByDate: Map<string, Session[]>;
+  sessionsByDate: Map<string, SessionCalendarRecord[]>;
 }) {
   const days = getMonthGridDateKeys(anchorKey);
   const activeMonth = monthKey(anchorKey);
@@ -588,10 +612,12 @@ function MonthCalendar({
 
 function SessionRow({
   classId,
+  mode,
   session,
 }: {
-  classId: string;
-  session: Session;
+  classId?: string;
+  mode: SessionCalendarMode;
+  session: SessionCalendarRecord;
 }) {
   return (
     <li className="flex items-center gap-3 px-5 py-3">
@@ -610,13 +636,70 @@ function SessionRow({
           />
         </div>
         <p className="text-muted-foreground truncate text-xs">
-          {session.lesson?.title ?? session.topic ?? "Chưa gắn bài học"}
+          {sessionTitle(session)}
         </p>
       </div>
 
-      <SessionActions classId={classId} session={session} />
+      <SessionTrailing
+        classId={classId}
+        mode={mode}
+        session={session}
+        showTeacherLabel
+      />
     </li>
   );
+}
+
+function sessionTitle(session: SessionCalendarRecord) {
+  return (
+    session.lesson?.title ??
+    session.topic ??
+    session.lesson_log ??
+    "Chưa gắn bài học"
+  );
+}
+
+function SessionTrailing({
+  classId,
+  mode,
+  session,
+  showTeacherLabel = false,
+}: {
+  classId?: string;
+  mode: SessionCalendarMode;
+  session: SessionCalendarRecord;
+  showTeacherLabel?: boolean;
+}) {
+  if (mode === "admin" && classId) {
+    return <SessionActions classId={classId} session={session} />;
+  }
+
+  if (mode === "teacher") {
+    return (
+      <Button
+        asChild
+        size="sm"
+        variant="outline"
+        className={cn(!showTeacherLabel && "size-8 p-0")}
+      >
+        <Link href={`/teacher/sessions/${session.id}`}>
+          <BookOpenCheck className="size-4" aria-hidden />
+          <span className={cn(!showTeacherLabel && "sr-only")}>Nhật ký</span>
+        </Link>
+      </Button>
+    );
+  }
+
+  if (mode === "student" && session.myAttendance) {
+    return (
+      <StatusBadge
+        label={ATTENDANCE_STATUS_LABELS[session.myAttendance.status]}
+        tone={ATTENDANCE_STATUS_TONE[session.myAttendance.status]}
+      />
+    );
+  }
+
+  return null;
 }
 
 function SessionActions({
@@ -624,7 +707,7 @@ function SessionActions({
   session,
 }: {
   classId: string;
-  session: Session;
+  session: SessionCalendarRecord;
 }) {
   // Buổi đã dạy: không cho xóa ở UI, và DB cũng chặn (migration 22). Ẩn nút chỉ
   // là lịch sự — chốt chặn thật nằm ở trigger.

@@ -32,7 +32,7 @@ Mã giáo viên và học viên cũng được DB tự sinh khi tạo hồ sơ. 
 
 **Lịch linh hoạt:** `LOP-01` (Ban Giám đốc VCB) **không có row `class_schedules`**. Buổi học được admin tạo tay từng buổi khi khách hàng chốt lịch. Hệ thống **không** được ép mọi lớp phải có recurrence — đây là yêu cầu nghiệp vụ, không phải thiếu dữ liệu.
 
-**Cách xem buổi học:** mặc định mở tuần chứa buổi sắp tới gần nhất (nếu khóa đã kết thúc thì mở tuần của buổi cuối). Mũi tên trái/phải đổi tuần hoặc tháng; nút “Hôm nay” quay về kỳ hiện tại. `Tối giản` giữ danh sách đầy đủ và các hành động hủy/xóa; `Tuần` cũng cho thao tác ngay trên card buổi; `Tháng` ưu tiên tổng quan, có thể chuyển về tuần/tối giản để thao tác.
+**Cách xem buổi học:** admin, giáo viên trong tab `Lịch / Buổi` của lớp và học viên tại `Lịch học` dùng chung ba chế độ. Mặc định mở tuần chứa buổi sắp tới gần nhất (nếu khóa đã kết thúc thì mở tuần của buổi cuối). Mũi tên trái/phải đổi tuần hoặc tháng; nút “Hôm nay” quay về kỳ hiện tại. `Tối giản` giữ danh sách đầy đủ; admin giữ hành động hủy/xóa, giáo viên mở nhật ký buổi, học viên xem kết quả điểm danh đã có. `Tuần` giữ các thao tác phù hợp vai trò ngay trên card; `Tháng` ưu tiên tổng quan, có thể chuyển về tuần/tối giản để thao tác.
 
 **Sinh buổi học — `generate_class_sessions(class_id)`:**
 
@@ -134,6 +134,7 @@ Giáo viên mở Dashboard "Hôm nay"
 - `marked_by` = **actor đang đăng nhập thật**. Không lấy "user đầu tiên trong DB" — đây là lỗi attribution có thật ở hệ cũ (`BUG_M06_01`, `BUG_M12_01`).
 - Bulk attendance là **upsert**, không phải insert. Bấm Lưu 2 lần → vẫn 1 bản ghi/học viên.
 - Trigger DB chặn điểm danh cho enrollment **không thuộc lớp của session** — dù server có bug thì DB vẫn giữ.
+- Điểm chuyên cần hiển thị theo thang 10: `max(0, 10 - absent_count × 0,5)`. Chỉ bản ghi `absent` bị trừ; `late` và `excused` vẫn được thống kê riêng nhưng không làm giảm điểm này.
 
 **Đổi lịch / nghỉ / học bù:**
 
@@ -155,7 +156,8 @@ Giáo viên tạo/version câu hỏi → tạo bộ bài tập → thêm section
 
 Học viên mở delivery của lớp mình → start_attempt idempotent
   → nếu có câu Nói: kiểm tra/cho phép micro ngay trên trang
-  → autosave từng câu → resume được → submit idempotent
+  → autosave từng câu; dừng thu âm thì tự upload và chờ server xác nhận
+  → resume được → chỉ cho submit khi mọi bản ghi đang thu/tải đã lưu → submit idempotent
   → UI khóa nút + báo đang nộp → thành công chuyển sang tab Đã nộp
   → DB chấm tự động phần objective, chuyển phần rubric/essay sang chờ chấm
 

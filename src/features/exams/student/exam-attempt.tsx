@@ -13,7 +13,10 @@ import {
   uploadExamSpeakingAnswer,
 } from "@/features/exams/server/actions";
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
-import { SpeakingRecorder } from "@/features/question-builder/renderers/speaking-recorder";
+import {
+  SpeakingRecorder,
+  type SpeakingRecorderStatus,
+} from "@/features/question-builder/renderers/speaking-recorder";
 import { Button } from "@/components/ui/button";
 import { useConfirmation } from "@/components/shared/confirmation-provider";
 import type { QuestionType } from "@/features/question-builder/domain/questions";
@@ -80,12 +83,28 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
   const [saved, setSaved] = useState("Đã tải dữ liệu");
   const [error, setError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasPendingRecording, setHasPendingRecording] = useState(false);
   const answersRef = useRef(answers);
+  const speakingStatusesRef = useRef<Record<string, SpeakingRecorderStatus>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const submitted = useRef(false);
   const finish = useCallback(
     async (reason: "manual" | "duration_expired" = "manual") => {
       if (submitted.current) return;
+      if (
+        reason === "manual" &&
+        Object.values(speakingStatusesRef.current).some((status) =>
+          ["recording", "recorded", "uploading", "upload_error"].includes(
+            status,
+          ),
+        )
+      ) {
+        setSaved("Chưa thể nộp — bản ghi âm chưa được lưu");
+        setError(
+          "Hãy dừng thu và đợi đến khi câu Nói hiện “Đã nộp bản ghi” rồi nộp bài thi.",
+        );
+        return;
+      }
       submitted.current = true;
       setIsSubmitting(true);
       setError(undefined);
@@ -188,7 +207,7 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
             </p>
             <Button
               size="sm"
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasPendingRecording}
               onClick={async () => {
                 const accepted = await confirm({
                   title: "Nộp bài thi sớm?",
@@ -226,6 +245,23 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
                 </p>
                 <SpeakingRecorder
                   existingUrl={audioUrlOf(item.answer)}
+                  onStatusChange={(status) => {
+                    const next = {
+                      ...speakingStatusesRef.current,
+                      [item.id]: status,
+                    };
+                    speakingStatusesRef.current = next;
+                    setHasPendingRecording(
+                      Object.values(next).some((value) =>
+                        [
+                          "recording",
+                          "recorded",
+                          "uploading",
+                          "upload_error",
+                        ].includes(value),
+                      ),
+                    );
+                  }}
                   onUpload={(blob, durationMs) => {
                     const fd = new FormData();
                     fd.set("audio", blob, "speaking");
