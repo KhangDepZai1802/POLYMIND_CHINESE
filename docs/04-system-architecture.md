@@ -198,7 +198,7 @@ Mutation nhiều bảng **phải** là RPC PostgreSQL (`SECURITY DEFINER`, `SET 
 
 ## 8. Storage
 
-4 bucket **private**: `avatars` · `course-materials` · `student-documents` · `question-media`.
+Mọi bucket đều **private**. Media assessment dùng `question-media` cho audio đề và `answer-media` cho bản ghi câu Nói; hai bucket legacy `assignment-files`/`submissions` chỉ chờ cleanup sau cutover.
 
 ```text
 Upload nhỏ: client → server action (validate MIME/size/ext)
@@ -209,12 +209,17 @@ Audio câu hỏi: client gửi metadata → server kiểm auth/quota/MIME/size v
                → browser upload thẳng Storage, không đưa blob qua Server Action
                → server kiểm path + metadata thật từ Storage → lưu `question_media`
 
+Audio câu Nói: client gửi metadata → server kiểm đúng student/attempt/item đang mở và SINH path
+              → browser upload Blob thẳng `answer-media` bằng vé ký
+              → server kiểm namespace + metadata thật → RPC gắn `answer_media` và `answer_payload`
+
 Download: server action kiểm quyền → tạo signed URL (TTL ≤ 5 phút) → trả về client
 ```
 
 - **`object_path` do server sinh.** Không tin path client gửi lên (path traversal). Audio câu hỏi dùng `{owner_uid}/{uuid}.{mp3|m4a}`; lúc finalize server buộc path đúng actor rồi kiểm lại object trong Storage.
 - Storage policy soi **cùng điều kiện class/student như DB**, không chỉ `auth.uid() IS NOT NULL`.
 - Media câu hỏi không chỉ ẩn metadata: policy `question-media` kiểm owner/share/delivery; answer key không bao giờ nằm trong object metadata hay payload học viên trước release.
+- Student chỉ ký được audio đề thuộc lượt Bài tập/Thi đang mở của chính mình. `answer-media` cho student owner và giáo viên phụ trách lớp đọc qua RLS; bảng metadata có `SELECT` cho authenticated nhưng RLS vẫn fail-closed.
 - **Không log signed URL đầy đủ** (nó là credential tạm thời).
 
 ---

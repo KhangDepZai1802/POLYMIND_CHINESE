@@ -7,11 +7,13 @@ import { toast } from "sonner";
 
 import { MicrophoneCheck } from "@/components/shared/microphone-check";
 import {
+  createExerciseSpeakingUploadUrl,
   deleteExerciseSpeakingAnswer,
   saveExerciseAnswer,
   submitExerciseAttempt,
   uploadExerciseSpeakingAnswer,
 } from "@/features/exercises/server/actions";
+import { uploadSpeakingAnswerBlob } from "@/features/assessment-results/client/speaking-upload";
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
 import {
   SpeakingRecorder,
@@ -213,16 +215,24 @@ export function ExerciseAttempt({ payload }: { payload: Payload }) {
                         : { ...current, [item.id]: status },
                     )
                   }
-                  onUpload={(blob, durationMs) => {
-                    const fd = new FormData();
-                    fd.set("audio", blob, "speaking");
-                    fd.set("duration_ms", String(durationMs));
-                    return uploadExerciseSpeakingAnswer(
-                      payload.attempt.id,
-                      item.id,
-                      fd,
-                    );
-                  }}
+                  onUpload={(blob, durationMs) =>
+                    uploadSpeakingAnswerBlob({
+                      blob,
+                      durationMs,
+                      createTicket: (input) =>
+                        createExerciseSpeakingUploadUrl(
+                          payload.attempt.id,
+                          item.id,
+                          input,
+                        ),
+                      attach: (input) =>
+                        uploadExerciseSpeakingAnswer(
+                          payload.attempt.id,
+                          item.id,
+                          input,
+                        ),
+                    })
+                  }
                   onDelete={() =>
                     deleteExerciseSpeakingAnswer(payload.attempt.id, item.id)
                   }

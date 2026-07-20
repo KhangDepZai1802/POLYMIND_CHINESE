@@ -98,11 +98,16 @@ export function SpeakingRecorder({
     if (!onUpload) return;
     setStatus("uploading");
     setError(undefined);
-    const result = await onUpload(blob, durationMs);
-    if (result.ok) {
-      setStatus("saved");
-    } else {
+    try {
+      const result = await onUpload(blob, durationMs);
+      if (result.ok) {
+        setStatus("saved");
+        return;
+      }
       setError(result.error ?? "Không nộp được bản ghi.");
+      setStatus("upload_error");
+    } catch {
+      setError("Mất kết nối khi tải bản ghi. Hãy bấm thử lại.");
       setStatus("upload_error");
     }
   };

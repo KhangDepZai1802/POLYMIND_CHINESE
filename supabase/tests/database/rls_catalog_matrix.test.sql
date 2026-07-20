@@ -125,8 +125,8 @@ select is(
    from pg_policies
    where schemaname = 'storage' and tablename = 'objects'
      and roles = array['authenticated'::name]),
-  17,
-  'đủ 17 policy Storage và tất cả chỉ áp cho authenticated'
+  18,
+  'đủ 18 policy Storage và tất cả chỉ áp cho authenticated'
 );
 
 select * from finish();

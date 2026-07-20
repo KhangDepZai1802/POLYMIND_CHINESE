@@ -156,8 +156,9 @@ Giáo viên tạo/version câu hỏi → tạo bộ bài tập → thêm section
   → đặt window, số lượt, late penalty, grading/release mode → publish
 
 Học viên mở delivery của lớp mình → start_attempt idempotent
+  → audio đề được ký URL private chỉ khi question thuộc đúng lượt đang mở của học viên
   → nếu có câu Nói: kiểm tra/cho phép micro ngay trên trang
-  → autosave từng câu; dừng thu âm thì tự upload và chờ server xác nhận
+  → autosave từng câu; dừng thu âm thì browser upload thẳng Storage bằng vé ký, server xác minh rồi gắn đáp án
   → resume được → chỉ cho submit khi mọi bản ghi đang thu/tải đã lưu → submit idempotent
   → UI khóa nút + báo đang nộp → thành công chuyển sang tab Đã nộp
   → DB chấm tự động phần objective, chuyển phần rubric/essay sang chờ chấm
@@ -185,6 +186,8 @@ Giáo viên mở từng học viên → câu thủ công chưa có điểm hiệ
 | Save/nộp sau deadline                 | RPC fail-closed; không tin đồng hồ client          |
 | Giáo viên chấm bài lớp khác           | RLS/RPC `app.teaches_class` chặn                   |
 | Bấm Nộp 2 lần                         | RPC idempotent, không chấm hoặc notification trùng |
+| Học viên đổi path audio sang lượt khác | Metadata + Storage RLS fail-closed, không ký URL   |
+| Blob audio vượt giới hạn Server Action | Không đi qua action; direct upload rồi kiểm 25 MB  |
 
 ---
 
@@ -195,6 +198,7 @@ Giáo viên tạo và khóa bộ đề thi → tick chọn một hoặc nhiều 
   → tạo kỳ thi riêng cho từng lớp trong một transaction → lên lịch window (có thể nhiều ngày, EX-12 đã đảo)
   → duration không vượt window → publish
 Học viên vào phòng chờ → kiểm tra audio; nếu đề có câu Nói thì kiểm tra micro → xác nhận quy định → start
+  → MP3 đề chỉ được ký khi câu thuộc đúng lượt thi `in_progress` và còn deadline
   → bật chế độ tập trung (ẩn dashboard, thử fullscreen, cảnh báo rời/tải lại)
   → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút
   → nộp chủ động hoặc pg_cron finalize khi hết hạn/browser đóng

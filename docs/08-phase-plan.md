@@ -307,7 +307,7 @@
 | P13-T7 | Production deploy | DB additive trước app, smoke, cleanup sau sign-off | ☐ |
 | P13-T8 | Post-deploy monitoring | Error/query/storage/job/notification | ☐ |
 
-> `BUG-M11-M12-005` (2026-07-20): đã sửa code/test luồng persist MP3 khi tạo/chỉnh sửa câu hỏi; `P13-T3` giữ `◐` cho tới khi smoke file thật sau redeploy trên trình duyệt/thiết bị.
+> `BUG-M11-M12-005/006/007` (2026-07-20): đã sửa luồng persist MP3 khi tạo/chỉnh sửa câu hỏi, direct upload bản ghi Nói và RLS để học viên nhận audio đề đúng lượt Bài tập/Thi; `P13-T3` giữ `◐` cho tới khi smoke file/micro thật sau redeploy trên trình duyệt/thiết bị.
 
 ---
 

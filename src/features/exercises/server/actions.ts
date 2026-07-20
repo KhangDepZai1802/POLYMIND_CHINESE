@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import {
   clearSpeakingAnswer,
+  createSpeakingAnswerUploadUrl,
   persistSpeakingAnswer,
 } from "@/features/assessment-results/server/speaking-upload";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
@@ -140,19 +141,28 @@ export async function saveExerciseAnswer(
   return { ok: true, savedAt: data };
 }
 
-export async function uploadExerciseSpeakingAnswer(
+export async function createExerciseSpeakingUploadUrl(
   attemptId: string,
   itemId: string,
-  formData: FormData,
+  input: { mimeType: string; sizeBytes: number },
 ) {
   const actor = await requireRole("student");
-  return persistSpeakingAnswer(
+  return createSpeakingAnswerUploadUrl(
     "exercise",
     actor.id,
     attemptId,
     itemId,
-    formData,
+    input,
   );
+}
+
+export async function uploadExerciseSpeakingAnswer(
+  attemptId: string,
+  itemId: string,
+  input: { objectPath: string; durationMs: number },
+) {
+  const actor = await requireRole("student");
+  return persistSpeakingAnswer("exercise", actor.id, attemptId, itemId, input);
 }
 
 export async function deleteExerciseSpeakingAnswer(

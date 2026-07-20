@@ -7,11 +7,13 @@ import { toast } from "sonner";
 import { MicrophoneCheck } from "@/components/shared/microphone-check";
 import { ExamIntegrityBoundary } from "@/features/exams/integrity/exam-integrity-boundary";
 import {
+  createExamSpeakingUploadUrl,
   deleteExamSpeakingAnswer,
   saveExamAnswer,
   submitExamAttempt,
   uploadExamSpeakingAnswer,
 } from "@/features/exams/server/actions";
+import { uploadSpeakingAnswerBlob } from "@/features/assessment-results/client/speaking-upload";
 import { QuestionRenderer } from "@/features/question-builder/renderers/question-renderer";
 import {
   SpeakingRecorder,
@@ -262,16 +264,24 @@ export function ExamAttempt({ payload }: { payload: Payload }) {
                       ),
                     );
                   }}
-                  onUpload={(blob, durationMs) => {
-                    const fd = new FormData();
-                    fd.set("audio", blob, "speaking");
-                    fd.set("duration_ms", String(durationMs));
-                    return uploadExamSpeakingAnswer(
-                      payload.attempt.id,
-                      item.id,
-                      fd,
-                    );
-                  }}
+                  onUpload={(blob, durationMs) =>
+                    uploadSpeakingAnswerBlob({
+                      blob,
+                      durationMs,
+                      createTicket: (input) =>
+                        createExamSpeakingUploadUrl(
+                          payload.attempt.id,
+                          item.id,
+                          input,
+                        ),
+                      attach: (input) =>
+                        uploadExamSpeakingAnswer(
+                          payload.attempt.id,
+                          item.id,
+                          input,
+                        ),
+                    })
+                  }
                   onDelete={() =>
                     deleteExamSpeakingAnswer(payload.attempt.id, item.id)
                   }

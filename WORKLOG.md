@@ -37,24 +37,26 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-20** — Codex — đã sửa luồng persist MP3 của Question Bank; chờ smoke file thật sau redeploy.
+> Cập nhật: **2026-07-20** — Codex — đã sửa audio đề + audio câu Nói cho Bài tập/Thi; chờ smoke độc lập.
 
+- **BUG-M11-M12-007 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** RLS metadata + Storage cho học viên đọc MP3 đề thuộc đúng lượt Bài tập/Thi đang mở; học viên/lượt khác bị chặn. Migration 63–64 đã áp cloud.
+- **BUG-M11-M12-006 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Audio câu Nói dùng signed direct upload chung cho Bài tập/Thi, server xác minh rồi RPC gắn đáp án; bổ sung quyền đọc `answer_media` qua RLS để màn chấm ký URL.
 - **BUG-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** MP3/M4A tạo mới/chỉnh sửa upload trực tiếp bằng signed ticket, server kiểm Storage rồi gắn version; editor phát lại audio hiện tại.
 - **P13-T3 / BR-M10-M13-001 / UX-M08-005 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Điểm chuyên cần `/10`; lịch Tối giản/Tuần/Tháng cho giáo viên/học viên.
 - **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`; chưa smoke MP3/micro thật trên Chrome/Safari/mobile và bản deploy.
 - **P13-T3 — ◐.** Code/test a11y-mobile-media đã có; chưa đạt DoD thiết bị thật. Role `head_teacher` vẫn chưa triển khai.
 - **P7-T7 — đang làm (cloud 1–62 đã đồng bộ; còn smoke authenticated).** `P7-T8/P7-T9` còn nợ rà trạng thái runtime.
-- **Baseline phiên 42:** 51 bảng public đều RLS · 60 RPC · 7 bucket private · pgTAP gần nhất **291/291** · lint/typecheck sạch · Vitest **127/127** · production build xanh.
+- **Baseline phiên 43:** 51 bảng public đều RLS · 60 RPC · 7 bucket private · 18 Storage policy · pgTAP **309/309** · lint/typecheck sạch · Vitest **130/130** · production build xanh · cloud migration 1–64 đồng bộ.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) User review/commit để Vercel redeploy. (2) Smoke `BUG-M11-M12-005` bằng MP3 thật > 1 MB cho cả Tạo câu hỏi và Chỉnh sửa, mở lại editor + preview bộ để xác nhận phát được; Claude xác minh độc lập cùng các fix assessment đang chờ. (3) Sau smoke, tiếp tục role `head_teacher` thành các task nhỏ có pgTAP.
+**Tiếp theo:** (1) User có thể smoke ngay `BUG-M11-M12-007` trên tài khoản học viên vì migration RLS đã lên cloud: mở cả Bài tập và Bài thi có MP3 đề, xác nhận nghe được. (2) User review/commit để Vercel redeploy code; smoke `BUG-M11-M12-005/006` với MP3/bản thu > 1 MB, nộp rồi mở màn giáo viên chấm để nghe lại. (3) Claude xác minh độc lập; sau đó tiếp tục role `head_teacher` thành task nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
-⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -132,6 +134,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-20] Phiên 43 — Codex — BUG-M11-M12-006/007
+
+- **Làm được:** Xác định bản ghi câu Nói chỉ phát local bằng Blob URL nhưng blob thật bị gửi qua Server Action giới hạn 1 MB. Chuyển Bài tập/Thi sang một helper signed direct upload: server kiểm đúng student/attempt/item đang mở, MIME/size và sinh path; browser upload Storage; server kiểm object thật rồi RPC `attach_answer_media`. Sửa recorder bắt exception thành trạng thái lỗi/retry. Với MP3 đề, xác định `question_media` chỉ có policy giáo viên nên query học viên rỗng; thêm policy metadata + Storage dựa trên helper fail-closed cho đúng lượt exercise/exam. Test Storage thật còn phát hiện migration 55 thiếu `GRANT SELECT answer_media`; bổ sung forward-fix để student owner/teacher ký URL qua RLS.
+- **File thay đổi:** `assessment-results/{client,domain,server}`; action/attempt Bài tập + Thi; recorder; migration 63–64; pgTAP + unit test; docs 02/03/04/08; QA board và WORKLOG.
+- **Migration/data impact:** `20260720000063_student_assessment_question_media.sql` thêm helper/policy đọc audio đề theo đúng lượt; `20260720000064_answer_media_select_grant.sql` cấp SELECT metadata qua RLS. Đã áp local và Supabase cloud; migration list 63–64 khớp local/remote; dry-run cuối trả `Remote database is up to date`.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **130/130** · pgTAP **309/309** (có test metadata + object Storage cho đúng/sai học viên/giáo viên, cả Bài tập/Thi và màn chấm) · production build xanh · `git diff --check` sạch. Build sandbox lần đầu không tải được Google Font; chạy lại có quyền mạng thành công.
+- **Quyết định mới:** không đổi quyết định đã chốt; cả audio đề và audio trả lời giữ bucket private/RLS, không dùng service role và không nới quyền ngoài đúng attempt.
+- **Blocker/rủi ro:** chưa smoke micro/file thật end-to-end bằng tài khoản học viên/giáo viên trên bản deploy; người fix không tự đánh dấu Verified. Migration đã live nên `BUG-M11-M12-007` có thể smoke ngay; `BUG-M11-M12-006` cần user commit/redeploy code.
+- **Next action:** user smoke audio đề ngay; review/commit/redeploy rồi smoke bản thu > 1 MB cho cả Bài tập/Thi và màn chấm; Claude xác minh độc lập.
+
 ### [2026-07-20] Phiên 42 — Codex — BUG-M11-M12-005
 
 - **Làm được:** Xác định gốc lỗi MP3 là wizard gửi nguyên blob qua Next Server Action trong khi Next 16 mặc định giới hạn body 1 MB. Chuyển sang signed upload hai bước: server kiểm auth/quota/đuôi/MIME/size và sinh path owner; browser upload thẳng bucket private; action lưu câu hỏi kiểm lại path + metadata thật từ Storage rồi mới insert `question_media`. Tạo mới/chỉnh sửa dùng chung luồng; giữ audio cũ bằng Storage copy; mở lại editor lấy signed URL 5 phút và phát được file hiện tại.
@@ -181,13 +193,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt. Quyền micro không thể bị ứng dụng tự vượt; UX chuẩn hóa thành một bước cho phép/kiểm tra trong sản phẩm. Chế độ thi ngăn điều hướng dashboard và cảnh báo rời trang, không tuyên bố khóa được tuyệt đối OS/trình duyệt.
 - **Blocker/rủi ro:** chưa smoke micro/fullscreen/Back/reload trên trình duyệt và thiết bị thật; P13-T3 vẫn `◐`, `UX-M11-M12-002` chờ Claude xác minh độc lập.
 - **Next action:** smoke + independent verification `UX-M11-M12-001/002`, đặc biệt allow/deny micro và lượt thi đang chạy; sau đó role `head_teacher`.
-
-### [2026-07-18] Phiên 37 — Codex — P13-T3 (QA/UX Bài tập + Kiểm tra/thi)
-
-- **Làm được:** Dùng chung cho Bài tập/Thi: picker ghi chú và khóa câu đã nằm trong bộ theo `question_id` (không mất dấu khi câu có version mới); điểm mỗi câu để trống và bắt buộc nhập; preview mở modal riêng có vùng cuộn; xóa bộ dùng dialog theo theme. Giao bài tự lấy `raw_max_score` của bộ đã khóa làm `max_score`, không còn ô tổng điểm độc lập. Tạo kỳ thi tick nhiều lớp như giao bài và tạo một delivery/lớp trong transaction. Thay toàn bộ `window.confirm`/`window.alert` trong source bằng confirmation dialog dùng chung.
-- **File thay đổi:** `question-builder/{components,server}`, `exercises/{teacher,server}`, `exams/{teacher,server}`, confirmation provider + alert dialog UI, 10 nhóm component có xác nhận, migration/test/types/docs/WORKLOG/QA board.
-- **Migration/data impact:** thêm `20260718000060_multi_class_exam_delivery.sql` (`create_multi_class_exam_deliveries` fail-closed, authenticated only); đã áp local và Supabase cloud. `migration list` local/remote khớp đến 60; dry-run cuối: `Remote database is up to date`.
-- **Đã test:** lint xanh · typecheck xanh · Vitest **103/103** · build production xanh (lần đầu sandbox không tải được Google Font, chạy lại có quyền mạng thành công) · pgTAP **283/283**. Test inventory được cập nhật sau khi truy vấn trực tiếp catalog thật: 51 bảng/58 RPC/7 bucket/17 storage policy.
-- **Quyết định mới:** không đổi quyết định đã chốt; hiện thực hóa EX-06 cho kỳ thi bằng chọn nhiều lớp + delivery riêng từng lớp.
-- **Blocker/rủi ro:** chưa smoke trình duyệt/light-dark/mobile bằng tài khoản giáo viên thật; P13-T3 chỉ `◐`, không tuyên bố Verified. `UX-M11-M12-001` chờ Claude xác minh độc lập.
-- **Next action:** smoke + independent verification `UX-M11-M12-001`; sau đó tách và triển khai role `head_teacher`.

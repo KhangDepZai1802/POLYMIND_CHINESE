@@ -12,6 +12,7 @@ const { replace, saveExerciseAnswer, submitExerciseAttempt } = vi.hoisted(
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 vi.mock("@/features/exercises/server/actions", () => ({
+  createExerciseSpeakingUploadUrl: vi.fn(),
   deleteExerciseSpeakingAnswer: vi.fn(),
   saveExerciseAnswer,
   submitExerciseAttempt,
