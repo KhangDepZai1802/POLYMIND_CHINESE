@@ -37,24 +37,24 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-20** — Codex — đang tối ưu xác thực production Vercel nhưng giữ fail-closed.
+> Cập nhật: **2026-07-20** — Codex — đã tối ưu xác thực ES256/`getClaims()`, chờ redeploy và đo production.
 
 - **UX-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Hai nút bắt đầu hiện spinner + nhãn đang mở và tự khóa trong lúc tạo attempt/redirect; có test cho cả Bài tập/Thi.
 - **BUG-M11-M12-005/006/007/008 — Fixed, chờ xác minh độc lập — Codex — 2026-07-20.** Direct upload MP3/bản ghi Nói, RLS media đúng lượt và audio đồng bộ ở lượt làm/chấm/kết quả; cloud migration 1–65 đã đồng bộ.
-- **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BR-M10-M13-001`, `UX-M08-005`; chưa smoke trình duyệt/thiết bị thật trên bản redeploy.
+- **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BR-M10-M13-001`, `UX-M08-005`, `PERF-M20-001`; chưa smoke trình duyệt/thiết bị thật trên bản redeploy.
 - **P13-T3 — ◐.** Code/test a11y-mobile-media đã có; chưa đạt DoD thiết bị thật. Role `head_teacher` vẫn chưa triển khai.
 - **P7-T7 — đang làm (cloud 1–65 đã đồng bộ; còn smoke authenticated).** `P7-T8/P7-T9` còn nợ rà trạng thái runtime.
-- **PERF-M20-001 / P13-T4 — đang làm — Codex — 2026-07-20.** Đổi xác minh JWT `getUser()` qua mạng sang `getClaims()`/ES256, vẫn đọc role + `is_active` từ `profiles` và giữ RLS.
+- **PERF-M20-001 / P13-T4 — Fixed, chờ Claude/user đo production sau redeploy — Codex — 2026-07-20.** Production/local dùng ES256; request thường dùng `getClaims()`/JWKS thay `getUser()` qua mạng, vẫn đọc role + `is_active` từ `profiles` và giữ RLS; test bảo mật + smoke đăng nhập local xanh.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) User review/commit để Vercel redeploy code. (2) Smoke `UX-M11-M12-005` bằng kết nối có độ trễ: hai nút bắt đầu phải đổi ngay sang trạng thái loading và không bấm lặp được. (3) Smoke ma trận audio `BUG-M11-M12-005/006/007/008`, rồi Claude xác minh độc lập. (4) Tiếp tục role `head_teacher` thành task nhỏ có pgTAP.
+**Tiếp theo:** (1) User review/commit để Vercel redeploy code. (2) Đo lại thời gian phản hồi production của các route đại diện trước/sau `PERF-M20-001`; nếu vẫn 4–6 giây thì trace region Vercel và thời gian query. (3) Smoke `UX-M11-M12-005` bằng kết nối có độ trễ và ma trận audio `BUG-M11-M12-005/006/007/008`, rồi Claude xác minh độc lập. (4) Tiếp tục role `head_teacher` thành task nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
-⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008`, `PERF-M20-001` chờ Claude/user xác minh độc lập trên production. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -104,6 +104,7 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 | D-23  | **TÁCH DÒNG CHƯƠNG TRÌNH VÀ TỰ SINH MÃ** _(user chốt 2026-07-16)_. Course chọn `core` hoặc `business`; chỉ `core` có Loại (`hsk`, `communication`, `kids`, `exam_prep`, `custom`), còn `business` không có Loại. Người dùng không nhập tay mã khóa học, lớp học, giáo viên hoặc học viên; DB tự sinh mã UNIQUE.                                                                                                                                                                                                                                                                                                         |
 | D-24  | **LỊCH HỌC DỄ ĐỌC CHO GIÁO VIÊN** _(user chốt 2026-07-16)_. Card Buổi học dùng thời khóa biểu tuần làm mặc định, có nút lùi/tiến tuần và chuyển qua lại giữa `Tối giản`, `Tuần`, `Tháng`; danh sách đánh số buổi hiện tại chỉ nằm trong chế độ Tối giản.                                                                                                                                                                                                                                                                                                                                                                |
 | D-25  | **AGENT TỰ ÁP MIGRATION CLOUD** _(user chốt 2026-07-18)_. Khi task có migration mới và project cloud đã link/credential còn hiệu lực, Claude/Codex phải tự chạy dry-run → áp cloud → xác minh history + remote up-to-date trong cùng task; không để user tự làm. Chỉ được dừng khi có blocker cloud/credential thật và phải ghi rõ chưa áp.                                                                                                                                                                                                                                                                             |
+| D-26  | **JWT REQUEST THƯỜNG DÙNG `getClaims()`** _(user chốt 2026-07-20)_. Production dùng ES256/JWKS nên middleware và server guard xác minh chữ ký cục bộ qua helper fail-closed; vẫn query role + `is_active` từ `profiles`, không tin `user_metadata`, không bỏ RLS. `getUser()` chỉ giữ cho thao tác thật sự cần Auth record/session mới nhất; tuyệt đối không dùng `getSession()` để phân quyền. |
 | EX-01 | Thay hoàn toàn luồng bài tập cũ bằng assessment engine; không giữ form nộp text/file chung.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | EX-02 | Chưa có dữ liệu sử dụng thật; chỉ cleanup dữ liệu demo sau backup/count/smoke.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | EX-03 | Bài tập và Thi dùng chung Question Bank + Builder nhưng tách module, delivery và attempt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -131,6 +132,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-07-20] Phiên 46 — Codex — PERF-M20-001 / P13-T4
+
+- **Làm được:** Xác nhận JWKS của Supabase production đang phát khóa ES256. Tạo helper xác minh identity fail-closed bằng `getClaims()`; chuyển middleware, `getCurrentUser()` và query Question Bank khỏi `getUser()` qua mạng. Role + `is_active` vẫn lấy từ `profiles`, RLS vẫn là lớp chặn DB; chỉ giữ `getUser()` ở luồng reset mật khẩu cần user mới nhất. Thêm test cho claim lỗi, UUID lỗi, tài khoản bị khóa, role giả trong JWT và redirect route bảo vệ.
+- **File thay đổi:** `src/lib/auth/{verified-identity,session}.ts`, `src/lib/supabase/middleware.ts`, query Question Bank; ba file test auth; `AGENTS.md`, docs 01/03/04/08, QA board và WORKLOG.
+- **Migration/data impact:** không có; không đổi schema, RLS, RPC, Storage hay dữ liệu.
+- **Đã test:** production JWKS trả khóa ES256; test mới **11/11**; lint sạch; typecheck sạch; Vitest đầy đủ **147/147** với `--maxWorkers=4`; Playwright smoke đăng nhập admin + redirect + chuyển tab **1/1**; production build xanh. Build sandbox lần đầu không tải được Google Font, chạy lại có quyền mạng thành công.
+- **Quyết định mới:** D-26 — request thường dùng `getClaims()`/JWKS nhưng phân quyền động vẫn bắt buộc dựa trên `profiles` + RLS; `getUser()` chỉ dùng khi cần trạng thái Auth mới nhất, không dùng `getSession()` để phân quyền.
+- **Blocker/rủi ro:** chưa redeploy và chưa có số đo production trước/sau nên P13-T4 vẫn `◐`; người fix không tự đánh dấu Verified.
+- **Next action:** user review/commit/redeploy; đo các route production đại diện, rồi Claude/user xác minh độc lập `PERF-M20-001`.
 
 ### [2026-07-20] Phiên 45 — Codex — UX-M11-M12-005
 
@@ -181,13 +192,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** chỉ `absent` trừ điểm; điểm tối thiểu 0. Tỉ lệ chuyên cần hiện hữu tiếp tục phục vụ readiness, không bị thay bằng thang 10.
 - **Blocker/rủi ro:** chưa smoke responsive bằng tài khoản thật và chưa deploy; người fix không tự đánh dấu Verified.
 - **Next action:** user review/commit/redeploy; Claude xác minh độc lập công thức và UI Tối giản/Tuần/Tháng trên desktop/mobile.
-
-### [2026-07-18] Phiên 40 — Codex — P13-T3 / điều hướng, phân trang và media assessment
-
-- **Làm được:** (1) thêm nút quay lại đúng nguồn cho kết quả bài tập/kỳ thi của học viên và màn chấm bài/chấm thi giáo viên; (2) làm lại phân trang ngân hàng câu hỏi: count trước, kẹp `page` vượt trang cuối, giữ filter, link chỉ render khi còn trang; (3) preview bộ lấy `prompt_content` + `question_media`, ký URL bucket private 5 phút và truyền vào `QuestionRenderer`; (4) câu Nói tự upload khi bấm Dừng, khóa nút nộp khi đang thu/tải/lỗi, có retry; (5) chuẩn hóa MIME có codec suffix của Chrome (`audio/webm;codecs=opus`) và MIME MP3/M4A phổ biến.
-- **Nguyên nhân gốc:** `Button asChild disabled` không vô hiệu hóa `Link`; query range ngoài count có thể trả lỗi server. Preview set không query/truyền media. Recorder chỉ preview blob cục bộ và đòi nút nộp phụ; submit toàn bài không biết trạng thái đó. Server whitelist MIME exact nên từ chối MIME Chrome có `;codecs=opus`.
-- **File chính:** 4 route result/grading; `question-bank/{domain/pagination,server/queries,components/question-bank-page}`; `question-builder/{server/queries,components/set-manager,renderers/speaking-recorder}`; `assessment-results/{domain/speaking-audio,server/speaking-upload}`; attempt bài tập/thi; 4 test hồi quy; docs 01/03 + QA board.
-- **Migration/data impact:** không có migration; không đổi schema/data/RLS. Signed URL media câu hỏi TTL 5 phút; answer audio vẫn đi qua RPC `attach_answer_media` và bucket private.
-- **Đã test:** lint sạch · typecheck sạch · Vitest **118/118** · build production xanh · pgTAP **291/291** · `git diff --check` sạch. Build lần đầu bị sandbox chặn Google Fonts, chạy lại có network thì xanh.
-- **Chưa xác minh:** chưa smoke trình duyệt với MP3/micro thật và chưa deploy; người fix không tự đánh dấu Verified.
-- **Next action:** user review/commit/redeploy; Claude smoke độc lập ba bug mới trên Chrome/Safari/mobile và bản production.

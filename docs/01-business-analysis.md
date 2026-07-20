@@ -142,6 +142,7 @@ Nguyên tắc bất di bất dịch:
 2. **Ẩn menu không phải là phân quyền.** Mỗi mutation phải kiểm quyền ở server **và** được RLS chặn ở database. Đổi UUID trên URL hoặc gọi thẳng Supabase client từ trình duyệt đều không được vượt scope.
 3. **Service role chỉ dùng cho admin flow server-only** (invite, khóa tài khoản, đổi role). Không bao giờ dùng service role để phục vụ request thường của teacher/student — làm vậy là vô hiệu hóa toàn bộ RLS.
 4. **Không tin `user_metadata`.** Client sửa được nó. Role đọc từ bảng `profiles`.
+5. **Xác minh JWT không thay thế kiểm quyền sống.** Request thường dùng `getClaims()`/ES256 để tránh gọi Auth server lặp lại, nhưng role và `is_active` vẫn phải đọc từ `profiles`; RLS/`app.is_active()` vẫn là chốt cuối. Không dùng `getSession()` để phân quyền.
 
 ---
 

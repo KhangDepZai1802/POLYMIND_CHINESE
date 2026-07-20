@@ -4,6 +4,7 @@ import {
   clampQuestionPage,
   QUESTION_PAGE_SIZE,
 } from "@/features/question-bank/domain/pagination";
+import { getVerifiedIdentity } from "@/lib/auth/verified-identity";
 import { createClient } from "@/lib/supabase/server";
 import { signPaths } from "@/lib/supabase/signed-urls";
 
@@ -56,18 +57,17 @@ export async function getQuestions(
     questionQuery = questionQuery.eq("skill", filters.skill as never);
   if (filters.visibility)
     questionQuery = questionQuery.eq("visibility", filters.visibility as never);
-  const [{ data, error }, { data: teachers }, { data: auth }] =
-    await Promise.all([
-      questionQuery,
-      supabase
-        .from("teachers")
-        .select(
-          "id,teacher_code,profile:profiles!fk_teachers_profile!inner(full_name)",
-        )
-        .eq("is_active", true)
-        .order("teacher_code"),
-      supabase.auth.getUser(),
-    ]);
+  const [{ data, error }, { data: teachers }, identity] = await Promise.all([
+    questionQuery,
+    supabase
+      .from("teachers")
+      .select(
+        "id,teacher_code,profile:profiles!fk_teachers_profile!inner(full_name)",
+      )
+      .eq("is_active", true)
+      .order("teacher_code"),
+    getVerifiedIdentity(supabase.auth),
+  ]);
   if (error) throw new Error("Không tải được Ngân hàng câu hỏi.");
   // Ký toàn bộ audio đề của cả trang trong MỘT request (trước đây: một request
   // mỗi file → số request tăng theo số câu hiển thị).
@@ -103,7 +103,7 @@ export async function getQuestions(
       teacher_code: teacher.teacher_code,
       full_name: teacher.profile.full_name,
     })),
-    currentUserId: auth.user?.id,
+    currentUserId: identity?.id,
     count: normalizedCount,
     page,
     totalPages,

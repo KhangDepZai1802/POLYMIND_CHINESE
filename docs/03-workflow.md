@@ -67,6 +67,7 @@ Super Admin tạo hồ sơ giáo viên/học viên (chưa có tài khoản)
 - Hồ sơ học viên **tạo được trước khi có tài khoản** (`students.user_id` nullable) — trung tâm nhập danh sách lớp trước, mời sau.
 - `admin_invite_user` phải **idempotent**: mời lại một email đã tồn tại → link vào tài khoản cũ, không tạo trùng.
 - Service role key **chỉ tồn tại ở server environment**. Không `NEXT_PUBLIC_`.
+- Sau đăng nhập, middleware/server guard dùng `getClaims()` để xác minh JWT ES256 mà không gọi Auth server lặp lại; sau đó vẫn đọc `profiles.role` + `profiles.is_active`. Claims hợp lệ nhưng profile thiếu/bị khóa/role lạ → deny; RLS tiếp tục chặn ở DB.
 
 **Failure path:**
 

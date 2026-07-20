@@ -51,7 +51,7 @@ P2-T11 — đang làm — Codex — 2026-07-15
 - **Ẩn menu/nút KHÔNG PHẢI phân quyền.** Mọi mutation kiểm quyền ở server **và** được RLS chặn ở DB.
 - **Không dùng `user_metadata`** làm nguồn phân quyền (client sửa được). Role đọc từ bảng `profiles`.
 - **Không commit secret.** `SUPABASE_SERVICE_ROLE_KEY` không bao giờ có tiền tố `NEXT_PUBLIC_`.
-- Dùng `supabase.auth.getUser()`, **không** dùng `getSession()` ở server (cookie chưa verify).
+- Xác minh request thường bằng `supabase.auth.getClaims()` qua helper fail-closed (production dùng ES256/JWKS); vẫn đọc role + `is_active` từ `profiles` và để RLS chặn. Chỉ dùng `getUser()` khi thật sự cần user/session mới nhất từ Auth (ví dụ thao tác mật khẩu nhạy cảm). **Không** dùng `getSession()` để phân quyền ở server vì cookie chưa verify.
 
 ### Dữ liệu
 - **Migration phải có test.** Đổi schema mà không có pgTAP/integration test → chưa xong.

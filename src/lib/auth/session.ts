@@ -3,6 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { getVerifiedIdentity } from "@/lib/auth/verified-identity";
 import { homePathForRole } from "@/lib/permissions/routes";
 import { createClient } from "@/lib/supabase/server";
 import { isUserRole, type UserRole } from "@/types/roles";
@@ -21,19 +22,15 @@ export type CurrentUser = {
  * Role đọc từ bảng `profiles` — KHÔNG đọc từ `user.user_metadata` (client sửa
  * được nó; dùng làm nguồn phân quyền là tự mở cửa cho leo thang quyền).
  */
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+export async function loadCurrentUser(): Promise<CurrentUser | null> {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+  const identity = await getVerifiedIdentity(supabase.auth);
+  if (!identity) return null;
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, full_name, avatar_path, is_active")
-    .eq("id", user.id)
+    .eq("id", identity.id)
     .single();
 
   // Fail-closed: thiếu profile hoặc bị khóa → coi như chưa đăng nhập.
@@ -41,13 +38,15 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!isUserRole(profile.role)) return null;
 
   return {
-    id: user.id,
-    email: user.email ?? "",
+    id: identity.id,
+    email: identity.email,
     role: profile.role,
     fullName: profile.full_name,
     avatarPath: profile.avatar_path,
   };
-});
+}
+
+export const getCurrentUser = cache(loadCurrentUser);
 
 /** Bắt buộc đã đăng nhập. Chưa → về /login. */
 export async function requireUser(): Promise<CurrentUser> {

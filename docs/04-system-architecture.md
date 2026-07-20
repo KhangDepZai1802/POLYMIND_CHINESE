@@ -82,19 +82,22 @@ Theo hướng dẫn chính thức của `@supabase/ssr` (cookie-based, không lo
 
 ```text
 middleware.ts
-  → supabase.auth.getUser()      ← LUÔN dùng getUser(), KHÔNG dùng getSession()
-                                    (getSession đọc cookie chưa verify — không tin được)
+  → supabase.auth.getClaims()    ← verify JWT bằng ES256/JWKS cache
+                                    KHÔNG dùng getSession() để phân quyền
   → chưa đăng nhập → redirect /login
   → / hoặc /login khi đã đăng nhập: đọc profiles để redirect đúng trang chủ
   → route protected: không query profiles lặp lại ở middleware
 
 Server Component / Server Action / Route Handler
-  → requireUser/requireRole đọc role + is_active từ profiles (request-memoized)
+  → getClaims() lấy `sub` đã verify; requireUser/requireRole đọc role + is_active
+    từ profiles (request-memoized), không tin role/user_metadata trong JWT
   → sai role / tài khoản bị khóa → fail-closed
   → RLS tiếp tục chặn ở DB
 ```
 
 **Middleware chỉ là lớp UX.** Nó không query `profiles` trên mọi navigation vì việc đó lặp lại kiểm tra của server và thêm một network round-trip tuần tự. Mỗi Page/Server Action/Route Handler **phải tự kiểm quyền**, và RLS **vẫn** chặn ở DB. Cache request chỉ khử lời gọi trùng trong cùng một render, không cache chéo user/request.
+
+Production Supabase dùng signing key bất đối xứng ES256. Helper `getVerifiedIdentity()` gọi `getClaims()` và fail-closed khi SDK báo lỗi, thiếu claims hoặc `sub` không phải UUID; public JWKS chỉ dùng xác minh, không thể ký token. `getUser()` chỉ giữ cho thao tác thật sự cần user/session mới nhất từ Auth. Khóa tài khoản và đổi role vẫn có hiệu lực ngay vì server tiếp tục đọc `profiles.is_active`/`role`, còn DB tiếp tục kiểm `app.is_active()` + RLS.
 
 **Nguồn phân quyền là bảng `profiles`**, không phải `user_metadata` (client sửa được).
 
@@ -158,7 +161,7 @@ RLS đã lọc → không cần `WHERE user_id = ...` thủ công. Nhưng **vẫ
 
 ```text
 'use server'
-  1. Xác thực: getUser() → chưa login → throw
+  1. Xác thực: getClaims() + profiles.is_active/role → sai/thiếu → deny
   2. Kiểm quyền ở server (lib/permissions) — KHÔNG tin UI đã ẩn nút
   3. Validate input bằng Zod (cùng schema với client)
   4. Gọi RPC (nếu nhiều bảng) hoặc query (nếu một bảng)

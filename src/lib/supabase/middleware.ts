@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getVerifiedIdentity } from "@/lib/auth/verified-identity";
 import { getPublicEnv } from "@/lib/env";
 import { homePathForRole } from "@/lib/permissions/routes";
 import type { Database } from "@/types/database";
@@ -56,16 +57,14 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // getUser(), KHÔNG PHẢI getSession().
-  // getSession() đọc cookie mà không xác minh chữ ký với Auth server — cookie giả
-  // mạo sẽ lọt. getUser() luôn xác minh.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims(), KHÔNG PHẢI getSession(). Production dùng ES256 nên SDK xác
+  // minh chữ ký bằng public JWKS được cache, không cần gọi Auth server ở mỗi
+  // request. Thiếu/sai claims luôn fail-closed trong helper dùng chung.
+  const identity = await getVerifiedIdentity(supabase.auth);
 
   const { pathname } = request.nextUrl;
 
-  if (!user) {
+  if (!identity) {
     if (isPublicPath(pathname)) return supabaseResponse;
 
     const redirectUrl = request.nextUrl.clone();
@@ -88,7 +87,7 @@ export async function updateSession(request: NextRequest) {
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, is_active")
-    .eq("id", user.id)
+    .eq("id", identity.id)
     .single();
 
   // Fail-closed: không có profile, hoặc bị khóa → đá ra ngoài.

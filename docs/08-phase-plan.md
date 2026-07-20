@@ -51,7 +51,7 @@
 | P1-T3 | Test stack        | Vitest + RTL + Playwright config. 1 smoke test mỗi loại chạy được                                                                         | ☑          |
 | P1-T4 | Supabase local    | `supabase init` + `config.toml` + `npx supabase start` chạy được trên Docker                                                              | ☑          |
 | P1-T5 | 3 Supabase client | `lib/supabase/{client,server,admin}.ts`. `admin.ts` có `import 'server-only'`                                                             | ☑          |
-| P1-T6 | Auth SSR          | login / forgot-password / reset-password / accept-invite + `middleware.ts` (dùng `getUser()`, **không** `getSession()`) + guard theo role | ☑          |
+| P1-T6 | Auth SSR          | login / forgot-password / reset-password / accept-invite + `middleware.ts` (ES256 `getClaims()`, **không** `getSession()`; role/active vẫn từ `profiles`) + guard theo role | ☑          |
 | P1-T7 | App shell 3 role  | Sidebar desktop + bottom nav mobile (4–5 mục), menu đúng đặc tả §16                                                                       | ☑          |
 | P1-T8 | CI                | GitHub Actions: lint + typecheck + unit test + build                                                                                      | ☑          |
 
@@ -301,12 +301,14 @@
 | P13-T1 | Full pgTAP matrix | Mọi bảng/RPC/Storage mới | ☐ |
 | P13-T2 | Full Playwright 3 role | Exercise + exam + negative | ☐ |
 | P13-T3 | A11y/mobile/IME | 44px, keyboard, Chinese input real devices | ◐ |
-| P13-T4 | Performance test | Có số thật, không đoán | ☐ |
+| P13-T4 | Performance test | Có số thật, không đoán | ◐ |
 | P13-T5 | Security review | Answer key/XSS/IDOR/rate limit/import | ☐ |
 | P13-T6 | Staging rehearsal | Migration A → app → cleanup | ☐ |
 | P13-T7 | Production deploy | DB additive trước app, smoke, cleanup sau sign-off | ☐ |
 | P13-T8 | Post-deploy monitoring | Error/query/storage/job/notification | ☐ |
 
+> `PERF-M20-001` (2026-07-20): production và local đều dùng ES256; thay các lần `getUser()` trên critical path bằng helper `getClaims()` fail-closed, vẫn query role/`is_active` từ `profiles`, giữ RLS và giữ `getUser()` cho thao tác Auth nhạy cảm. Có unit test token lỗi/claims sai/tài khoản khóa/role giả và middleware không gọi `getUser()`.
+>
 > `BUG-M11-M12-005/006/007/008` (2026-07-20): đã sửa luồng persist MP3 khi tạo/chỉnh sửa câu hỏi, direct upload bản ghi Nói, RLS nhận audio đề đúng lượt/kết quả, và đồng bộ audio đề + bản ghi Nói ở màn giáo viên chấm/kết quả học viên cho cả Bài tập/Thi; `P13-T3` giữ `◐` cho tới khi smoke file/micro thật sau redeploy trên trình duyệt/thiết bị.
 >
 > `UX-M11-M12-005` (2026-07-20): nút bắt đầu Bài tập/Thi hiện spinner + nhãn đang mở và tự khóa trong lúc Server Action tạo attempt/redirect; có component test chống tái phát cho cả hai luồng.
