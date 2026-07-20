@@ -198,14 +198,14 @@ Nguyên tắc bất di bất dịch:
 - Câu hỏi và bộ dùng version; version đã khóa/được giao là bất biến. Có đủ 11 dạng Q1–Q11, không có hint ở v1.
 - Giáo viên thao tác bằng nút **Chỉnh sửa** trên cùng câu hỏi; hệ thống vẫn tạo version bất biến ở tầng dữ liệu để đề đã giao không đổi nội dung.
 - Một bộ giao nhiều lớp tạo delivery riêng; giáo viên chỉ giao lớp mình phụ trách.
-- Học viên chỉ start/save/submit attempt cho enrollment của chính mình, trong window và còn lượt; autosave/submit idempotent.
+- Học viên chỉ start/save/submit attempt cho enrollment của chính mình, trong window và còn lượt; autosave/submit idempotent. Ngay khi bấm bắt đầu Bài tập/Thi, UI phải hiện spinner + trạng thái đang mở và khóa nút cho tới khi tạo attempt rồi chuyển trang, tránh cảm giác đứng màn hình và bấm lặp.
 - Khi nộp, UI phải khóa nút, báo đang xử lý, báo kết quả và chuyển thẳng sang nhóm **Đã nộp**; lỗi lưu cuối phải chặn submit và cho thử lại.
 - Bản ghi câu Nói phải tự tải lên ngay khi học viên dừng thu; nút nộp toàn bài/toàn bài thi bị khóa cho tới khi server xác nhận đã lưu. MIME có tham số codec (ví dụ `audio/webm;codecs=opus`) phải được chuẩn hóa trước khi whitelist.
 - Lượt làm có câu Nói phải có bước xin/kiểm tra quyền micro ngay trên trang; ứng dụng không được giả định có thể tự vượt quyền bảo mật của trình duyệt.
 - Điểm objective do DB chấm, essay/rubric chờ giáo viên; late penalty, grading method và release mode được cưỡng chế ở DB.
 - Màn chấm dành cho giáo viên phải dùng ngôn ngữ nghiệp vụ tiếng Việt, không lộ JSON/trạng thái kỹ thuật. Câu thủ công chưa nhập điểm hiển thị **Chưa chấm**; giáo viên lưu toàn bộ điểm đã nhập bằng một nút, được cảnh báo nếu còn sót và không thể công bố khi chưa chấm đủ.
 - Danh sách bài tập đã giao được chia theo lớp và trình bày dạng dòng gọn. Kết quả học viên phải hiển thị câu hỏi, bài làm, đáp án và nhận xét ở dạng đọc được, không hiển thị khóa lựa chọn hay dữ liệu kỹ thuật.
-- Preview bộ bài tập/bộ đề phải dùng signed URL của media private như renderer học viên. Trang kết quả và trang chấm phải có lối quay lại danh sách nguồn; phân trang ngân hàng câu hỏi không được tạo link vượt trang cuối và phải giữ bộ lọc hiện tại.
+- Preview bộ bài tập/bộ đề phải dùng signed URL của media private như renderer học viên. Audio đề phải nghe được xuyên suốt ở preview, lượt làm, màn giáo viên chấm và kết quả đã công bố; bản ghi câu Nói phải nghe lại được ở lượt làm, màn chấm và kết quả học viên. Trang kết quả và trang chấm phải có lối quay lại danh sách nguồn; phân trang ngân hàng câu hỏi không được tạo link vượt trang cuối và phải giữ bộ lọc hiện tại.
 - MP3/M4A khi soạn hoặc chỉnh sửa câu hỏi phải upload thẳng từ trình duyệt vào bucket private bằng vé do server ký (không đi qua giới hạn body của Server Action). Server xác minh object path, MIME và kích thước từ Storage trước khi gắn `question_media`; mở lại màn Chỉnh sửa phải phát được audio hiện tại bằng signed URL ngắn hạn.
 - Answer key không xuất hiện trong client payload hoặc quyền student trước thời điểm release.
 

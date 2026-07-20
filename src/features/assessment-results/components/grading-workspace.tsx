@@ -34,12 +34,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormAction } from "@/lib/use-form-action";
+import { AssessmentAudioPlayer } from "@/features/assessment-results/components/audio-player";
 
 type Option = { option_key: string; content: string };
 type Answer = {
   id: string;
   answer_payload: unknown;
   audio_url?: string | null;
+  prompt_audio_url?: string | null;
   auto_score: number | null;
   manual_score: number | null;
   final_score: number | null;
@@ -49,6 +51,7 @@ type Answer = {
     points: number;
     order_index: number;
     question_version: {
+      id: string;
       question_type: string;
       prompt_text: string;
       options?: Option[];
@@ -345,12 +348,18 @@ function StudentGradingForm({
                 <p className="whitespace-pre-wrap text-sm font-medium">
                   {answer.item?.question_version?.prompt_text || "Câu hỏi"}
                 </p>
+                {answer.prompt_audio_url && (
+                  <AssessmentAudioPlayer src={answer.prompt_audio_url} label="Audio đề bài" />
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-lg border bg-muted/30 p-4 text-sm">
                   <p className="mb-2 font-medium">Câu trả lời của học viên</p>
                   {answer.audio_url ? (
-                    <audio controls preload="metadata" src={answer.audio_url} className="w-full"><track kind="captions" /></audio>
+                    <AssessmentAudioPlayer
+                      src={answer.audio_url}
+                      label="Bản ghi âm học viên đã nộp"
+                    />
                   ) : (
                     <p className="whitespace-pre-wrap break-words">
                       {formatAnswer(answer.answer_payload, answer.item?.question_version?.options ?? [])}

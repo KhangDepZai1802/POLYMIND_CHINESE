@@ -5,6 +5,7 @@ import {
   QUESTION_PAGE_SIZE,
 } from "@/features/question-bank/domain/pagination";
 import { createClient } from "@/lib/supabase/server";
+import { signPaths } from "@/lib/supabase/signed-urls";
 
 export type QuestionFilters = {
   q?: string;
@@ -68,26 +69,33 @@ export async function getQuestions(
       supabase.auth.getUser(),
     ]);
   if (error) throw new Error("Không tải được Ngân hàng câu hỏi.");
-  const questions = await Promise.all(
-    (data ?? []).map(async (question) => {
-      if (!question.current_version) return question;
-      const media = await Promise.all(
-        question.current_version.media.map(async (item) => {
-          if (item.media_role !== "prompt_audio") {
-            return { ...item, signed_url: null };
-          }
-          const { data: signed } = await supabase.storage
-            .from("question-media")
-            .createSignedUrl(item.object_path, 300);
-          return { ...item, signed_url: signed?.signedUrl ?? null };
-        }),
-      );
-      return {
-        ...question,
-        current_version: { ...question.current_version, media },
-      };
-    }),
+  // Ký toàn bộ audio đề của cả trang trong MỘT request (trước đây: một request
+  // mỗi file → số request tăng theo số câu hiển thị).
+  const signedByPath = await signPaths(
+    supabase,
+    "question-media",
+    (data ?? []).flatMap((question) =>
+      (question.current_version?.media ?? [])
+        .filter((item) => item.media_role === "prompt_audio")
+        .map((item) => item.object_path),
+    ),
+    300,
   );
+
+  const questions = (data ?? []).map((question) => {
+    if (!question.current_version) return question;
+    const media = question.current_version.media.map((item) => ({
+      ...item,
+      signed_url:
+        item.media_role === "prompt_audio"
+          ? (signedByPath.get(item.object_path) ?? null)
+          : null,
+    }));
+    return {
+      ...question,
+      current_version: { ...question.current_version, media },
+    };
+  });
   return {
     questions,
     teachers: (teachers ?? []).map((teacher) => ({

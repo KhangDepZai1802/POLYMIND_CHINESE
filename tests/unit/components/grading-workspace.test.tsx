@@ -43,7 +43,7 @@ describe("GradingWorkspace", () => {
               item: {
                 points: 2,
                 order_index: 1,
-                question_version: { question_type: "essay_translation", prompt_text: "Dịch câu sau", options: [] },
+                question_version: { id: "version-1", question_type: "essay_translation", prompt_text: "Dịch câu sau", options: [] },
               },
             }],
           }],
@@ -58,5 +58,73 @@ describe("GradingWorkspace", () => {
     expect(screen.getByText("你好")).toBeInTheDocument();
     expect(screen.queryByText(/"value"/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Feedback|override|integrity/i)).not.toBeInTheDocument();
+  });
+
+  it("hiện cả audio đề và bản ghi Nói của học viên", () => {
+    const { container } = render(
+      <GradingWorkspace
+        kind="exam"
+        delivery={{
+          id: "delivery-audio",
+          title: "Bài thi nghe nói",
+          status: "closed",
+          class: { code: "HSK2", name: "Lớp nghe nói" },
+          attempts: [{
+            id: "attempt-audio",
+            status: "pending_manual_grading",
+            submitted_at: "2026-07-18T06:00:00Z",
+            raw_score: 0,
+            final_score_100: 0,
+            enrollment: { student: { student_code: "HV002", full_name: "Trần Bình" } },
+            answers: [
+              {
+                id: "answer-listening",
+                answer_payload: { value: "1" },
+                prompt_audio_url: "https://signed.test/question.mp3",
+                auto_score: 2,
+                manual_score: null,
+                final_score: 2,
+                feedback: null,
+                override_reason: null,
+                item: {
+                  points: 2,
+                  order_index: 1,
+                  question_version: {
+                    id: "version-listening",
+                    question_type: "listening_choice",
+                    prompt_text: "Nghe và chọn",
+                    options: [{ option_key: "1", content: "Đáp án một" }],
+                  },
+                },
+              },
+              {
+                id: "answer-speaking",
+                answer_payload: { audio_path: "student/answer.webm" },
+                audio_url: "https://signed.test/answer.webm",
+                auto_score: null,
+                manual_score: null,
+                final_score: null,
+                feedback: null,
+                override_reason: null,
+                item: {
+                  points: 3,
+                  order_index: 2,
+                  question_version: {
+                    id: "version-speaking",
+                    question_type: "speaking",
+                    prompt_text: "Đọc câu sau",
+                    options: [],
+                  },
+                },
+              },
+            ],
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Audio đề bài")).toBeInTheDocument();
+    expect(screen.getByText("Bản ghi âm học viên đã nộp")).toBeInTheDocument();
+    expect(container.querySelectorAll("audio")).toHaveLength(2);
   });
 });

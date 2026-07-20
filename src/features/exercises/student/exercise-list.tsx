@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { startExerciseAction } from "@/features/exercises/server/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,7 +112,9 @@ function ExerciseCard({ delivery }: { delivery: StudentExerciseOverview }) {
         ) : (
           <form action={startExerciseAction}>
             <input type="hidden" name="delivery_id" value={delivery.id} />
-            <Button type="submit">Bắt đầu làm</Button>
+            <SubmitButton pendingText="Đang mở bài tập…">
+              Bắt đầu làm
+            </SubmitButton>
           </form>
         )}
       </CardContent>

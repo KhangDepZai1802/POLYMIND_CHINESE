@@ -37,26 +37,24 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-20** — Codex — đã sửa audio đề + audio câu Nói cho Bài tập/Thi; chờ smoke độc lập.
+> Cập nhật: **2026-07-20** — Codex — đang tối ưu xác thực production Vercel nhưng giữ fail-closed.
 
-- **BUG-M11-M12-007 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** RLS metadata + Storage cho học viên đọc MP3 đề thuộc đúng lượt Bài tập/Thi đang mở; học viên/lượt khác bị chặn. Migration 63–64 đã áp cloud.
-- **BUG-M11-M12-006 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Audio câu Nói dùng signed direct upload chung cho Bài tập/Thi, server xác minh rồi RPC gắn đáp án; bổ sung quyền đọc `answer_media` qua RLS để màn chấm ký URL.
-- **BUG-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** MP3/M4A tạo mới/chỉnh sửa upload trực tiếp bằng signed ticket, server kiểm Storage rồi gắn version; editor phát lại audio hiện tại.
-- **P13-T3 / BR-M10-M13-001 / UX-M08-005 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Điểm chuyên cần `/10`; lịch Tối giản/Tuần/Tháng cho giáo viên/học viên.
-- **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`; chưa smoke MP3/micro thật trên Chrome/Safari/mobile và bản deploy.
+- **UX-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Hai nút bắt đầu hiện spinner + nhãn đang mở và tự khóa trong lúc tạo attempt/redirect; có test cho cả Bài tập/Thi.
+- **BUG-M11-M12-005/006/007/008 — Fixed, chờ xác minh độc lập — Codex — 2026-07-20.** Direct upload MP3/bản ghi Nói, RLS media đúng lượt và audio đồng bộ ở lượt làm/chấm/kết quả; cloud migration 1–65 đã đồng bộ.
+- **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BR-M10-M13-001`, `UX-M08-005`; chưa smoke trình duyệt/thiết bị thật trên bản redeploy.
 - **P13-T3 — ◐.** Code/test a11y-mobile-media đã có; chưa đạt DoD thiết bị thật. Role `head_teacher` vẫn chưa triển khai.
-- **P7-T7 — đang làm (cloud 1–62 đã đồng bộ; còn smoke authenticated).** `P7-T8/P7-T9` còn nợ rà trạng thái runtime.
-- **Baseline phiên 43:** 51 bảng public đều RLS · 60 RPC · 7 bucket private · 18 Storage policy · pgTAP **309/309** · lint/typecheck sạch · Vitest **130/130** · production build xanh · cloud migration 1–64 đồng bộ.
+- **P7-T7 — đang làm (cloud 1–65 đã đồng bộ; còn smoke authenticated).** `P7-T8/P7-T9` còn nợ rà trạng thái runtime.
+- **PERF-M20-001 / P13-T4 — đang làm — Codex — 2026-07-20.** Đổi xác minh JWT `getUser()` qua mạng sang `getClaims()`/ES256, vẫn đọc role + `is_active` từ `profiles` và giữ RLS.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) User có thể smoke ngay `BUG-M11-M12-007` trên tài khoản học viên vì migration RLS đã lên cloud: mở cả Bài tập và Bài thi có MP3 đề, xác nhận nghe được. (2) User review/commit để Vercel redeploy code; smoke `BUG-M11-M12-005/006` với MP3/bản thu > 1 MB, nộp rồi mở màn giáo viên chấm để nghe lại. (3) Claude xác minh độc lập; sau đó tiếp tục role `head_teacher` thành task nhỏ có pgTAP.
+**Tiếp theo:** (1) User review/commit để Vercel redeploy code. (2) Smoke `UX-M11-M12-005` bằng kết nối có độ trễ: hai nút bắt đầu phải đổi ngay sang trạng thái loading và không bấm lặp được. (3) Smoke ma trận audio `BUG-M11-M12-005/006/007/008`, rồi Claude xác minh độc lập. (4) Tiếp tục role `head_teacher` thành task nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
-⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -134,6 +132,26 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-20] Phiên 45 — Codex — UX-M11-M12-005
+
+- **Làm được:** Xác định hai form bắt đầu lượt đang dùng `Button` thường nên không có phản hồi trong lúc Server Action tạo attempt và redirect. Chuyển cả Bài tập/Thi sang `SubmitButton` dùng `useFormStatus`: hiện spinner + nhãn “Đang mở…”, tự khóa chống bấm lặp; giữ thao tác fullscreen của phòng chờ thi ở sự kiện submit. Thêm test hồi quy cho cả hai luồng.
+- **File thay đổi:** `exercise-list.tsx`, `exam-waiting-room.tsx`, test `assessment-start-loading`; docs 01/03/04/08, QA board, WORKLOG; `eslint.config.mjs` bỏ qua bundle tooling `.agents/.claude/.codex` để lint chỉ kiểm source dự án.
+- **Migration/data impact:** không có; không đổi schema, RLS, RPC, Storage hay dữ liệu.
+- **Đã test:** test mới **2/2**; lint sạch; typecheck sạch; Vitest đầy đủ **136/136** với `--maxWorkers=4`. Lần chạy mặc định đầu có 4 timeout tài nguyên ở test UI cũ (132/136), chạy riêng **5/5** rồi toàn suite giới hạn worker xanh, không sửa/nới test. Production build xanh; lần đầu sandbox không tải được Google Font, chạy lại có quyền mạng thành công.
+- **Quyết định mới:** không đổi quyết định đã chốt; UI chống double-submit chỉ là phản hồi UX, idempotency thật vẫn ở RPC/DB.
+- **Blocker/rủi ro:** chưa smoke độ trễ thật trên bản deploy; người fix không tự đánh dấu Verified.
+- **Next action:** user review/commit/redeploy; smoke hai nút bắt đầu trên mạng chậm và để Claude xác minh độc lập `UX-M11-M12-005`, sau đó tiếp tục verification queue hiện tại.
+
+### [2026-07-20] Phiên 44 — Codex — BUG-M11-M12-008
+
+- **Làm được:** Audit toàn bộ vòng đời audio thay vì vá từng màn. Xác định màn chấm chỉ ký bản ghi Nói, còn query thiếu question version id; kết quả học viên cũng chỉ ký bản ghi Nói, RPC thiếu `question_version_id`/`prompt_content`, và RLS dừng quyền audio đề ngay khi attempt kết thúc. Gom ký URL vào pipeline chung: audio đề cho Nghe/Chép và bản ghi Nói đều chạy ở lượt làm, màn chấm và kết quả; UI dùng player có nhãn riêng. Giữ nguyên các bề mặt đã đúng ở Question Bank và preview bộ.
+- **File thay đổi:** `assessment-results/{server/audio-signing,components/audio-player,components/grading-workspace,components/result-view}`; query chấm Bài tập/Thi; migration 65; pgTAP + unit/component test; docs 01/02/03/04/08; QA board và WORKLOG.
+- **Migration/data impact:** `20260720000065_assessment_audio_surfaces.sql` mở đọc `question-media` fail-closed cho đúng delivery giáo viên và kết quả đã công bố của chính học viên, đồng thời bổ sung snapshot version/prompt cho RPC kết quả. Đã áp local + Supabase cloud; migration list local/remote khớp 1–65; dry-run cuối trả `Remote database is up to date`. Push có cảnh báo cache catalog pg-delta thiếu certificate tạm, nhưng migration history và dry-run đã xác minh trạng thái remote.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **133/133** · pgTAP **325/325** (đúng/sai giáo viên, đúng/sai học viên, attempt đang mở + kết quả đã công bố, metadata + Storage, cả Bài tập/Thi) · production build xanh · `git diff --check` sạch. Build sandbox lần đầu không tải được Google Font; chạy lại có quyền mạng thành công.
+- **Quyết định mới:** không đổi quyết định đã chốt; bucket tiếp tục private, mọi ký URL chạy bằng user client/RLS, không service role và không nới quyền ngoài delivery/attempt hợp lệ.
+- **Blocker/rủi ro:** code cần user review/commit để Vercel redeploy rồi mới smoke trình duyệt thật; người fix không tự đánh dấu Verified.
+- **Next action:** redeploy và smoke đủ Question Bank → preview → lượt làm → chấm → kết quả cho cả Bài tập/Thi; Claude xác minh độc lập `BUG-M11-M12-008`.
+
 ### [2026-07-20] Phiên 43 — Codex — BUG-M11-M12-006/007
 
 - **Làm được:** Xác định bản ghi câu Nói chỉ phát local bằng Blob URL nhưng blob thật bị gửi qua Server Action giới hạn 1 MB. Chuyển Bài tập/Thi sang một helper signed direct upload: server kiểm đúng student/attempt/item đang mở, MIME/size và sinh path; browser upload Storage; server kiểm object thật rồi RPC `attach_answer_media`. Sửa recorder bắt exception thành trạng thái lỗi/retry. Với MP3 đề, xác định `question_media` chỉ có policy giáo viên nên query học viên rỗng; thêm policy metadata + Storage dựa trên helper fail-closed cho đúng lượt exercise/exam. Test Storage thật còn phát hiện migration 55 thiếu `GRANT SELECT answer_media`; bổ sung forward-fix để student owner/teacher ký URL qua RLS.
@@ -173,23 +191,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Đã test:** lint sạch · typecheck sạch · Vitest **118/118** · build production xanh · pgTAP **291/291** · `git diff --check` sạch. Build lần đầu bị sandbox chặn Google Fonts, chạy lại có network thì xanh.
 - **Chưa xác minh:** chưa smoke trình duyệt với MP3/micro thật và chưa deploy; người fix không tự đánh dấu Verified.
 - **Next action:** user review/commit/redeploy; Claude smoke độc lập ba bug mới trên Chrome/Safari/mobile và bản production.
-
-### [2026-07-18] Phiên 39 — Codex — P13-T3 / UX-M11-M12-003
-
-- **Làm được:** Sửa dứt điểm Lưu chỉnh sửa câu hỏi: nạp đủ đáp án/cấu hình/audio, hiện loading/lỗi/thành công và cập nhật câu hiện tại cho lần chọn sau (đề đã giao vẫn giữ snapshot). Làm lại màn chấm Bài tập/Thi bằng tiếng Việt nghiệp vụ: bỏ JSON/enum/Feedback/override/integrity, câu thủ công để trống **Chưa chấm**, cảnh báo sót và một nút lưu toàn bộ phần đã nhập; tải bảng điểm dùng nhãn Việt. Thu gọn delivery và chia theo lớp. Làm lại kết quả học viên với câu hỏi/bài làm/đáp án/nhận xét dễ đọc và audio Nói signed URL. Tìm đúng gốc micro là header `microphone=()` chặn toàn site, đổi thành `microphone=(self)` và thêm chẩn đoán policy.
-- **File thay đổi:** question bank wizard/action/query; assessment grading/result/audio; exercise/exam dashboard/action/query; `next.config.ts`, migration/test/types, docs/QA/WORKLOG và unit test.
-- **Migration/data impact:** thêm migration 62 (`grade_exercise_answers_bulk`, `grade_exam_answers_bulk`, payload kết quả thân thiện), authenticated-only/fail-closed theo delivery. Đã reset/apply local, dry-run → push cloud → history local/remote khớp đến 62; dry-run cuối `Remote database is up to date`. Cảnh báo cache pg-delta thiếu certificate xuất hiện sau push nhưng không ảnh hưởng migration history.
-- **Đã test:** smoke production local nút Lưu chỉnh sửa câu hỏi thành công và khôi phục dữ liệu; lint xanh · typecheck xanh · Vitest **112/112** · pgTAP **291/291** · production build xanh. Lần pgTAP đầu dính dữ liệu smoke cũ nên reset local rồi chạy sạch; build sandbox đầu không tải Google Font, chạy lại có quyền mạng thành công.
-- **Quyết định mới:** EX-21/22/23 — chấm bulk một lần + Chưa chấm; delivery theo lớp/kết quả không lộ payload; Permissions Policy cho phép micro của chính origin.
-- **Blocker/rủi ro:** header micro chỉ có hiệu lực trên `polymind-chinese-one.vercel.app` sau khi user commit/redeploy; chưa smoke UI mới trên thiết bị thật và chưa được Claude xác minh độc lập.
-- **Next action:** redeploy rồi verify `UX-M11-M12-001/002/003` trên Chrome/Safari/mobile; sau đó role `head_teacher`.
-
-### [2026-07-18] Phiên 38 — Codex — UX học viên nộp bài, micro, khóa điều hướng thi và chỉnh sửa câu hỏi
-
-- **Làm được:** Nộp bài tập khóa nút + spinner, hủy autosave đang chờ, kiểm lỗi mọi lần lưu cuối, báo lỗi/thành công và `replace` thẳng sang tab **Đã nộp**. Thêm bước kiểm tra micro dùng chung: xin quyền từ thao tác học viên, đóng stream kiểm tra ngay, hướng dẫn retry theo lỗi; phòng chờ chỉ bắt buộc micro khi bộ thi có câu Nói và không cho start trước khi sẵn sàng. Lượt thi ẩn sidebar/header/footer, thử fullscreen từ nút bắt đầu, cảnh báo unload, chặn Back và ghi integrity event. Ngân hàng câu hỏi đổi toàn bộ ngôn ngữ người dùng từ “Tạo version mới” sang **Chỉnh sửa**; tầng DB vẫn tạo version để giữ đề đã giao.
-- **File thay đổi:** student exercise/exam attempt/list/waiting room, `microphone-check`, speaking recorder, exam integrity + dashboard layout/CSS, question bank wizard/action, overview type, unit/pgTAP test, docs/WORKLOG/QA board.
-- **Migration/data impact:** thêm `20260718000061_assessment_microphone_preflight.sql`, bổ sung `requires_microphone` an toàn vào overview student. Đã áp local và Supabase cloud; history local/remote khớp đến 61; dry-run cuối trả `Remote database is up to date`. Push có cảnh báo cache catalog pg-delta thiếu certificate tạm nhưng migration đã áp và history đã xác minh.
-- **Đã test:** lint xanh · typecheck xanh · Vitest **107/107** (lần chạy song song đầu có 1 timeout test course cũ; chạy lại riêng toàn suite xanh) · pgTAP **285/285** · production build xanh (lần đầu sandbox không tải được Google Font, chạy lại có quyền mạng thành công).
-- **Quyết định mới:** không đổi quyết định đã chốt. Quyền micro không thể bị ứng dụng tự vượt; UX chuẩn hóa thành một bước cho phép/kiểm tra trong sản phẩm. Chế độ thi ngăn điều hướng dashboard và cảnh báo rời trang, không tuyên bố khóa được tuyệt đối OS/trình duyệt.
-- **Blocker/rủi ro:** chưa smoke micro/fullscreen/Back/reload trên trình duyệt và thiết bị thật; P13-T3 vẫn `◐`, `UX-M11-M12-002` chờ Claude xác minh độc lập.
-- **Next action:** smoke + independent verification `UX-M11-M12-001/002`, đặc biệt allow/deny micro và lượt thi đang chạy; sau đó role `head_teacher`.

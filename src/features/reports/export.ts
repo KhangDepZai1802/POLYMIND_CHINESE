@@ -1,3 +1,7 @@
+// ExcelJS nặng ~1MB. Chặn cứng ở đây: nếu file này lỡ bị import từ Client
+// Component, build sẽ đỏ ngay thay vì âm thầm nhồi 1MB vào bundle của trình duyệt.
+import "server-only";
+
 import ExcelJS from "exceljs";
 
 import { INVOICE_STATUS_LABELS } from "@/lib/domain/labels";

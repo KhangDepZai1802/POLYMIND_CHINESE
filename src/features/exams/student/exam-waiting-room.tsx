@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MicrophoneCheck } from "@/components/shared/microphone-check";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { startExamAction } from "@/features/exams/server/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,19 +85,18 @@ export function ExamWaitingRoom({
           </Label>
         </div>
         <DialogFooter>
-          <form action={startExamAction}>
+          <form action={startExamAction} onSubmit={enterFocusMode}>
             <input type="hidden" name="delivery_id" value={deliveryId} />
-            <Button
-              type="submit"
+            <SubmitButton
+              pendingText="Đang mở bài thi…"
               disabled={
                 !audioChecked ||
                 !accepted ||
                 (requiresMicrophone && !microphoneReady)
               }
-              onClick={enterFocusMode}
             >
               Bắt đầu thi
-            </Button>
+            </SubmitButton>
           </form>
         </DialogFooter>
       </DialogContent>

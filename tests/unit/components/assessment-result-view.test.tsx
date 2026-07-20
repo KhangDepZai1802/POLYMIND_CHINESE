@@ -43,4 +43,53 @@ describe("AssessmentResultView", () => {
     expect(screen.queryByText("graded")).not.toBeInTheDocument();
     expect(screen.queryByText(/"values"/)).not.toBeInTheDocument();
   });
+
+  it("hiện audio đề và bản ghi Nói trong kết quả đã công bố", () => {
+    const { container } = render(
+      <AssessmentResultView
+        kind="exam"
+        result={{
+          status: "graded",
+          raw_score: 8,
+          final_score: 80,
+          max_score: 100,
+          published_at: "2026-07-18T06:47:00Z",
+          answers: [
+            {
+              set_item_id: "item-listening",
+              question_version_id: "version-listening",
+              order_index: 1,
+              points: 2,
+              question_type: "listening_choice",
+              prompt_text: "Nghe và chọn đáp án",
+              prompt_audio_url: "https://signed.test/question.mp3",
+              answer: { value: "1" },
+              score: 2,
+              feedback: null,
+              answer_key: null,
+              explanation: null,
+            },
+            {
+              set_item_id: "item-speaking",
+              question_version_id: "version-speaking",
+              order_index: 2,
+              points: 3,
+              question_type: "speaking",
+              prompt_text: "Đọc câu sau",
+              answer: { audio_path: "student/answer.webm" },
+              audio_url: "https://signed.test/answer.webm",
+              score: 3,
+              feedback: null,
+              answer_key: null,
+              explanation: null,
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Audio đề bài")).toBeInTheDocument();
+    expect(screen.getByText("Bản ghi âm đã nộp")).toBeInTheDocument();
+    expect(container.querySelectorAll("audio")).toHaveLength(2);
+  });
 });

@@ -2,6 +2,7 @@ import { CheckCircle2, MessageSquareText, Trophy } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AssessmentAudioPlayer } from "@/features/assessment-results/components/audio-player";
 
 type Option = { option_key: string; content: string };
 type Result = {
@@ -15,9 +16,12 @@ type Result = {
     order_index?: number;
     points?: number;
     question_type?: string;
+    question_version_id?: string;
     prompt_text?: string;
+    prompt_content?: Record<string, unknown> | null;
     options?: Option[];
     answer: unknown;
+    prompt_audio_url?: string | null;
     audio_url?: string | null;
     score: number | null;
     feedback: string | null;
@@ -96,6 +100,9 @@ export function AssessmentResultView({
               {answer.prompt_text && <p className="whitespace-pre-wrap font-medium">{answer.prompt_text}</p>}
             </CardHeader>
             <CardContent className="space-y-4">
+              {answer.prompt_audio_url && (
+                <AssessmentAudioPlayer src={answer.prompt_audio_url} label="Audio đề bài" />
+              )}
               <div className="grid gap-3 md:grid-cols-2">
                 <ResultBlock
                   title="Bài làm của em"
@@ -149,7 +156,7 @@ function ResultBlock({
         {correct && <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />}{title}
       </p>
       {audioUrl ? (
-        <audio controls preload="metadata" src={audioUrl} className="w-full"><track kind="captions" /></audio>
+        <AssessmentAudioPlayer src={audioUrl} label="Bản ghi âm đã nộp" />
       ) : (
         <p className="whitespace-pre-wrap break-words text-sm">{value}</p>
       )}

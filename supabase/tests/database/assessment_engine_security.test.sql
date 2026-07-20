@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(58);
 
 select is(
   (select count(*)::integer from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in (
@@ -19,6 +19,14 @@ select ok(
 select ok(
   exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='question_media_student_attempt_storage_read'),
   'Storage question-media có policy đọc theo lượt của học viên'
+);
+select ok(
+  exists(select 1 from pg_policies where schemaname='public' and tablename='question_media' and policyname='question_media_teacher_delivery_read'),
+  'question_media có policy đọc theo delivery giáo viên phụ trách'
+);
+select ok(
+  exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='question_media_teacher_delivery_storage_read'),
+  'Storage question-media có policy đọc theo delivery giáo viên phụ trách'
 );
 select ok(
   pg_get_functiondef('app.release_immediate_exercise_result()'::regprocedure) like '%result_release_mode = ''after_graded''%',
@@ -124,6 +132,10 @@ insert into public.answer_media(id,attempt_kind,attempt_id,set_item_id,object_pa
 ('4f000000-0000-0000-0000-000000000001','exercise','4c000000-0000-0000-0000-000000000001','4a000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000004/4c000000-0000-0000-0000-000000000001/4a000000-0000-0000-0000-000000000001/50000000-0000-4000-8000-000000000001.webm','audio/webm',2048,3000,'40000000-0000-0000-0000-000000000004');
 insert into storage.objects(bucket_id,name,owner,owner_id,metadata) values
 ('answer-media','40000000-0000-0000-0000-000000000004/4c000000-0000-0000-0000-000000000001/4a000000-0000-0000-0000-000000000001/50000000-0000-4000-8000-000000000001.webm','40000000-0000-0000-0000-000000000004','40000000-0000-0000-0000-000000000004','{"mimetype":"audio/webm","size":2048}');
+insert into public.exercise_answers(attempt_id,set_item_id,answer_payload,auto_score,final_score,is_correct) values
+('4c000000-0000-0000-0000-000000000001','4a000000-0000-0000-0000-000000000001','{"value":"1"}',10,10,true);
+insert into public.exam_answers(attempt_id,set_item_id,answer_payload,auto_score,final_score,is_correct) values
+('4e000000-0000-0000-0000-000000000001','4a000000-0000-0000-0000-000000000002','{"value":"1"}',10,10,true);
 
 select lives_ok(
   $$insert into public.exam_deliveries(class_id,set_version_id,title,opens_at,closes_at,duration_minutes,created_by)
@@ -164,12 +176,55 @@ select ok(not app.can_student_read_question_media('40000000-0000-0000-0000-00000
 select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000002',true);
 select is((select count(*)::integer from public.answer_media),1,'giáo viên phụ trách đọc metadata bản ghi Nói để chấm');
 select is((select count(*)::integer from storage.objects where bucket_id='answer-media'),1,'giáo viên phụ trách đọc object bản ghi Nói để chấm');
+select is((select count(*)::integer from public.question_media),2,'giáo viên phụ trách đọc metadata audio đề để chấm');
+select is((select count(*)::integer from storage.objects where bucket_id='question-media'),2,'giáo viên phụ trách đọc object audio đề để chấm');
+select ok(app.can_teacher_read_assessment_question_media('40000000-0000-0000-0000-000000000002/exam-audio.mp3'),'giáo viên phụ trách được ký audio đề thi');
 
 select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000003',true);
 select is((select count(*)::integer from public.exercise_deliveries),0,'Teacher B không đọc delivery lớp A');
 select is((select count(*)::integer from public.answer_media),0,'giáo viên lớp khác không đọc metadata bản ghi Nói');
 select is((select count(*)::integer from storage.objects where bucket_id='answer-media'),0,'giáo viên lớp khác không đọc object bản ghi Nói');
+select is((select count(*)::integer from public.question_media),0,'giáo viên lớp khác không đọc metadata audio đề');
+select is((select count(*)::integer from storage.objects where bucket_id='question-media'),0,'giáo viên lớp khác không đọc object audio đề');
+select ok(not app.can_teacher_read_assessment_question_media('40000000-0000-0000-0000-000000000002/exam-audio.mp3'),'giáo viên lớp khác không ký được audio đề thi');
 select throws_ok($$select public.publish_exercise_delivery('4b000000-0000-0000-0000-000000000001')$$,'P0001',null,'Teacher B không publish lớp A');
+
+reset role;
+update public.exercise_attempts
+set status='graded',submitted_at=now(),raw_score=10,final_score=10,graded_at=now(),results_published_at=now()
+where id='4c000000-0000-0000-0000-000000000001';
+update public.exercise_deliveries set status='results_published'
+where id='4b000000-0000-0000-0000-000000000001';
+update public.exam_attempts
+set status='graded',submitted_at=now(),submission_reason='manual',raw_score=10,final_score_100=100,graded_at=now()
+where id='4e000000-0000-0000-0000-000000000001';
+update public.exam_deliveries set status='results_published',results_published_at=now()
+where id='4d000000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000004',true);
+select is((select count(*)::integer from public.question_media),2,'student tiếp tục đọc metadata audio đề sau khi công bố kết quả');
+select is((select count(*)::integer from storage.objects where bucket_id='question-media'),2,'student tiếp tục đọc object audio đề sau khi công bố kết quả');
+select ok(app.can_student_read_question_media('40000000-0000-0000-0000-000000000002/exercise-audio.mp3'),'student ký được audio đề bài tập trong kết quả');
+select ok(app.can_student_read_question_media('40000000-0000-0000-0000-000000000002/exam-audio.mp3'),'student ký được audio đề thi trong kết quả');
+select is(
+  public.get_my_assessment_result('exercise','4c000000-0000-0000-0000-000000000001')->'answers'->0->>'question_version_id',
+  '47000000-0000-0000-0000-000000000001',
+  'kết quả bài tập trả question_version_id để ký audio đề'
+);
+select ok(
+  (public.get_my_assessment_result('exercise','4c000000-0000-0000-0000-000000000001')->'answers'->0) ? 'prompt_content',
+  'kết quả bài tập trả prompt_content'
+);
+select is(
+  public.get_my_assessment_result('exam','4e000000-0000-0000-0000-000000000001')->'answers'->0->>'question_version_id',
+  '47000000-0000-0000-0000-000000000002',
+  'kết quả bài thi trả question_version_id để ký audio đề'
+);
+select ok(
+  (public.get_my_assessment_result('exam','4e000000-0000-0000-0000-000000000001')->'answers'->0) ? 'prompt_content',
+  'kết quả bài thi trả prompt_content'
+);
 
 set local role anon;
 select set_config('request.jwt.claim.sub','',true);

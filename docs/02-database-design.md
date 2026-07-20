@@ -555,7 +555,8 @@ Quy tắc:
 - Whitelist MIME/extension + giới hạn dung lượng (mặc định 20 MB; audio câu hỏi 50 MB; audio bài nói 25 MB). Tên file sanitize.
 - Storage policy phải **soi cùng một điều kiện class/student như DB**, không chỉ check `auth.uid() IS NOT NULL`.
 - `question-media` dùng path owner UUID và chỉ đọc khi owner/share/delivery cho phép; bucket luôn private.
-- Học viên chỉ đọc metadata/object `question-media` khi question version nằm trong chính lượt Bài tập (`in_progress`/`returned_for_revision`) hoặc lượt Thi còn hạn của mình; học viên khác và lượt đã khóa bị RLS từ chối.
+- Học viên chỉ đọc metadata/object `question-media` khi question version nằm trong chính lượt Bài tập (`in_progress`/`returned_for_revision`), lượt Thi `in_progress` còn hạn, hoặc kết quả Bài tập/Thi của chính mình đã được công bố. Giáo viên phụ trách lớp đọc được media của đúng bộ đã giao để chấm; học viên/giáo viên ngoài phạm vi bị RLS từ chối.
+- `get_my_assessment_result` trả `question_version_id` + `prompt_content` cùng snapshot từng câu để server ký audio đề private; object path không được đưa thẳng vào payload trình duyệt.
 - Upload audio câu hỏi dùng hai bước: server xác thực/quota và sinh signed upload path trong namespace owner → browser upload trực tiếp → server đọc metadata thật từ Storage rồi mới insert `question_media`. Không gửi blob MP3/M4A qua Server Action.
 - Upload câu Nói dùng cùng mẫu direct upload: path `{student_uid}/{attempt_id}/{item_id}/{uuid}.{ext}` do server sinh → browser upload → server xác minh object → RPC gắn metadata + đáp án. Không đưa Blob thu âm qua Server Action.
 - Xóa object + metadata phải có transaction/compensation — **không để orphan im lặng**.

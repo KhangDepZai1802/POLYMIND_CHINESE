@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// `export.ts` gắn "server-only" để chặn ExcelJS (~1MB) lọt vào bundle client.
+// Vitest không phải môi trường RSC nên phải vô hiệu hoá guard này khi test.
+vi.mock("server-only", () => ({}));
 
 import { createReportCsv, createReportXlsx } from "@/features/reports/export";
 import type { AdminTuitionReport } from "@/features/reports/server/admin-queries";

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { signPaths } from "@/lib/supabase/signed-urls";
 
 export async function getQuestionSets(kind: "exercise" | "exam") {
   const supabase = await createClient();
@@ -22,34 +23,41 @@ export async function getQuestionSets(kind: "exercise" | "exam") {
       .order("title"),
   ]);
   if (error) throw new Error("Không tải được danh sách bộ câu hỏi.");
-  await Promise.all(
-    (sets ?? []).flatMap((set) =>
-      (set.current_version?.question_set_items ?? []).map(async (item) => {
-        const question = item.question_version;
-        if (!question) return;
-        const content =
-          question.prompt_content &&
-          typeof question.prompt_content === "object" &&
-          !Array.isArray(question.prompt_content)
-            ? question.prompt_content
-            : {};
-        const audio = question?.media.find(
-          (media) => media.media_role === "prompt_audio",
-        );
-        if (audio) {
-          const { data } = await supabase.storage
-            .from("question-media")
-            .createSignedUrl(audio.object_path, 5 * 60);
-          question.prompt_content = {
-            ...content,
-            ...(data?.signedUrl ? { audio_url: data.signedUrl } : {}),
-          };
-        } else {
-          question.prompt_content = content;
-        }
-        question.media = [];
-      }),
-    ),
+  const builderItems = (sets ?? []).flatMap(
+    (set) => set.current_version?.question_set_items ?? [],
   );
+
+  // Ký audio đề của mọi câu trong mọi bộ bằng MỘT request.
+  const signedByPath = await signPaths(
+    supabase,
+    "question-media",
+    builderItems.map(
+      (item) =>
+        item.question_version?.media.find(
+          (media) => media.media_role === "prompt_audio",
+        )?.object_path,
+    ),
+    5 * 60,
+  );
+
+  for (const item of builderItems) {
+    const question = item.question_version;
+    if (!question) continue;
+    const content =
+      question.prompt_content &&
+      typeof question.prompt_content === "object" &&
+      !Array.isArray(question.prompt_content)
+        ? question.prompt_content
+        : {};
+    const audio = question.media.find(
+      (media) => media.media_role === "prompt_audio",
+    );
+    const signedUrl = audio ? signedByPath.get(audio.object_path) : undefined;
+    question.prompt_content = {
+      ...content,
+      ...(signedUrl ? { audio_url: signedUrl } : {}),
+    };
+    question.media = [];
+  }
   return { sets: sets ?? [], questions: questions ?? [] };
 }

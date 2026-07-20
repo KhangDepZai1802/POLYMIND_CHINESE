@@ -155,7 +155,7 @@ Giáo viên tạo/version câu hỏi → tạo bộ bài tập → thêm section
   → giao cho một hoặc nhiều lớp phụ trách (mỗi lớp một delivery)
   → đặt window, số lượt, late penalty, grading/release mode → publish
 
-Học viên mở delivery của lớp mình → start_attempt idempotent
+Học viên mở delivery của lớp mình → bấm bắt đầu: UI khóa nút + báo đang mở → start_attempt idempotent
   → audio đề được ký URL private chỉ khi question thuộc đúng lượt đang mở của học viên
   → nếu có câu Nói: kiểm tra/cho phép micro ngay trên trang
   → autosave từng câu; dừng thu âm thì browser upload thẳng Storage bằng vé ký, server xác minh rồi gắn đáp án
@@ -164,10 +164,12 @@ Học viên mở delivery của lớp mình → start_attempt idempotent
   → DB chấm tự động phần objective, chuyển phần rubric/essay sang chờ chấm
 
 Giáo viên mở từng học viên → câu thủ công chưa có điểm hiện "Chưa chấm"
+  → audio đề Nghe/Chép và bản ghi câu Nói đều được ký theo delivery/lớp để nghe ngay trong màn chấm
   → nhập điểm/nhận xét cho nhiều câu → bấm một nút lưu toàn bộ phần đã nhập
   → nếu còn sót: cảnh báo, giữ các câu đó ở "Chưa chấm" và chặn công bố
   → RPC bulk lưu atomic → DB tính lại tổng → giáo viên vẫn ở học viên hiện tại để kiểm tra
   → công bố theo manual / after_graded / after_due
+  → học viên xem kết quả vẫn nghe được audio đề của đúng attempt và bản ghi Nói của chính mình
   → answer key chỉ xuất hiện đúng answer_release_mode
 ```
 
@@ -203,6 +205,7 @@ Học viên vào phòng chờ → kiểm tra audio; nếu đề có câu Nói th
   → timer dùng deadline DB, autosave, cảnh báo 10/5/1 phút
   → nộp chủ động hoặc pg_cron finalize khi hết hạn/browser đóng
 Giáo viên chấm phần thủ công bằng một lần lưu atomic → chấm đủ → hoàn tất điểm → công bố
+  → màn chấm có audio đề + bản ghi Nói; kết quả học viên có lại hai loại audio trong đúng phạm vi attempt
   → điểm 0–100 + classification + notification dedupe
   → regrade bắt buộc lý do và audit trước/sau
 ```
