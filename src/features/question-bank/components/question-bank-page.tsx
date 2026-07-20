@@ -40,6 +40,14 @@ function isWizardEditable(skill: string, type: string): skill is WizardSkill {
   );
 }
 
+function promptAudioUrl(
+  media: ReadonlyArray<{ media_role: string; signed_url?: string | null }>,
+): string | null {
+  return (
+    media.find((item) => item.media_role === "prompt_audio")?.signed_url ?? null
+  );
+}
+
 export async function QuestionBankPage({
   kind,
   filters,
@@ -172,6 +180,14 @@ export async function QuestionBankPage({
                             hasAudio: question.current_version.media.some(
                               (media) => media.media_role === "prompt_audio",
                             ),
+                            audioUrl: promptAudioUrl(
+                              question.current_version.media,
+                            ),
+                            audioFileName: question.current_version.media.some(
+                              (media) => media.media_role === "prompt_audio",
+                            )
+                              ? "Audio hiện tại đã lưu"
+                              : null,
                             sourceVersionId: question.current_version.id,
                           }}
                         />
@@ -200,7 +216,9 @@ export async function QuestionBankPage({
           <div className="flex gap-2">
             {page > 1 ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={questionPageHref(basePath, filters ?? {}, page - 1)}>
+                <Link
+                  href={questionPageHref(basePath, filters ?? {}, page - 1)}
+                >
                   Trang trước
                 </Link>
               </Button>
@@ -211,7 +229,9 @@ export async function QuestionBankPage({
             )}
             {page < totalPages ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={questionPageHref(basePath, filters ?? {}, page + 1)}>
+                <Link
+                  href={questionPageHref(basePath, filters ?? {}, page + 1)}
+                >
                   Trang sau
                 </Link>
               </Button>

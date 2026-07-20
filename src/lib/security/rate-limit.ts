@@ -6,12 +6,15 @@ export type RateLimitScope =
   | "material_upload"
   | "assignment_upload"
   | "submission_upload"
+  | "question_media"
   | "report_export";
 
 export async function consumeRateLimit(
   supabase: SupabaseClient<Database>,
   scope: RateLimitScope,
 ) {
-  const { data, error } = await supabase.rpc("consume_rate_limit", { p_scope: scope });
+  const { data, error } = await supabase.rpc("consume_rate_limit", {
+    p_scope: scope,
+  });
   return !error && data === true;
 }

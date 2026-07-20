@@ -33,10 +33,7 @@ export async function getQuestions(
   if (countError) throw new Error("Không tải được số lượng câu hỏi.");
 
   const normalizedCount = count ?? 0;
-  const { page, totalPages } = clampQuestionPage(
-    filters.page,
-    normalizedCount,
-  );
+  const { page, totalPages } = clampQuestionPage(filters.page, normalizedCount);
   let questionQuery = supabase
     .from("questions")
     .select(
@@ -44,15 +41,12 @@ export async function getQuestions(
           id,question_type,prompt_text,prompt_content,explanation_text,
           question_options(id,option_key,content,order_index),
           answer_key:question_answer_keys(answer_key,grading_config),
-          media:question_media(id,media_role)
+          media:question_media(id,media_role,object_path)
         )`,
     )
     .neq("status", "archived")
     .order("created_at", { ascending: false })
-    .range(
-      (page - 1) * QUESTION_PAGE_SIZE,
-      page * QUESTION_PAGE_SIZE - 1,
-    );
+    .range((page - 1) * QUESTION_PAGE_SIZE, page * QUESTION_PAGE_SIZE - 1);
   if (filters.q?.trim())
     questionQuery = questionQuery.or(
       `title.ilike.%${filters.q.trim()}%,code.ilike.%${filters.q.trim()}%`,
@@ -74,8 +68,28 @@ export async function getQuestions(
       supabase.auth.getUser(),
     ]);
   if (error) throw new Error("Không tải được Ngân hàng câu hỏi.");
+  const questions = await Promise.all(
+    (data ?? []).map(async (question) => {
+      if (!question.current_version) return question;
+      const media = await Promise.all(
+        question.current_version.media.map(async (item) => {
+          if (item.media_role !== "prompt_audio") {
+            return { ...item, signed_url: null };
+          }
+          const { data: signed } = await supabase.storage
+            .from("question-media")
+            .createSignedUrl(item.object_path, 300);
+          return { ...item, signed_url: signed?.signedUrl ?? null };
+        }),
+      );
+      return {
+        ...question,
+        current_version: { ...question.current_version, media },
+      };
+    }),
+  );
   return {
-    questions: data,
+    questions,
     teachers: (teachers ?? []).map((teacher) => ({
       id: teacher.id,
       teacher_code: teacher.teacher_code,

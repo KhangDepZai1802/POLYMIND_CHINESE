@@ -66,6 +66,7 @@ _Không còn bug chờ fix._
 | UX-M11-M12-004 | M11, M12 | Thêm nút quay lại đúng danh sách ở kết quả học viên và màn chấm giáo viên; phân trang kẹp trang vượt giới hạn, giữ filter, không bọc Link trong nút disabled. | ⏳ Chờ Claude xác minh UI và URL `page=3` độc lập |
 | BUG-M11-M12-003 | M11, M12, M18 | Query preview bộ lấy `prompt_content` + `question_media`, tạo signed URL private 5 phút và truyền vào cùng renderer học viên. | ⏳ Chờ Claude xác minh MP3 thật ở preview bộ bài tập/bộ đề |
 | BUG-M11-004 | M11, M18 | Dừng thu thì tự upload; chuẩn hóa MIME Chrome `audio/webm;codecs=opus`; chặn nộp khi đang thu/tải/lỗi và cho retry. RPC/answer_media giữ nguyên, pgTAP 291/291. | ⏳ Chờ Claude xác minh Chrome/Safari/mobile và màn chấm |
+| BUG-M11-M12-005 | M11, M12, M18 | MP3/M4A của Question Bank upload thẳng browser → Storage bằng vé server ký, server kiểm path/MIME/size thật trước khi gắn version; tạo mới và chỉnh sửa dùng chung luồng, mở lại editor phát được audio hiện tại. | ⏳ Chờ Claude/user smoke MP3 thật sau redeploy |
 | BR-M10-M13-001 | M10, M13 | Thêm công thức thuần `max(0, 10 - absent_count × 0,5)`; hiện điểm `/10` ở dashboard/lịch học viên và các màn tiến độ giáo viên, vẫn giữ tỉ lệ chuyên cần riêng cho điều kiện hoàn thành khóa. | ⏳ Chờ Claude xác minh nghiệp vụ độc lập |
 | UX-M08-005 | M08 | Dùng chung `SessionCalendar` ba chế độ Tối giản/Tuần/Tháng cho admin, tab Lịch/Buổi giáo viên và Lịch học học viên; hành động/badge thay đổi đúng vai trò. | ⏳ Chờ Claude xác minh UI responsive độc lập |
 

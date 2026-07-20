@@ -553,6 +553,7 @@ Quy tắc:
 - Whitelist MIME/extension + giới hạn dung lượng (mặc định 20 MB; audio bài nói 50 MB). Tên file sanitize.
 - Storage policy phải **soi cùng một điều kiện class/student như DB**, không chỉ check `auth.uid() IS NOT NULL`.
 - `question-media` dùng path owner UUID và chỉ đọc khi owner/share/delivery cho phép; bucket luôn private.
+- Upload audio câu hỏi dùng hai bước: server xác thực/quota và sinh signed upload path trong namespace owner → browser upload trực tiếp → server đọc metadata thật từ Storage rồi mới insert `question_media`. Không gửi blob MP3/M4A qua Server Action.
 - Xóa object + metadata phải có transaction/compensation — **không để orphan im lặng**.
 - Test IDOR: đổi `object_path` sang class/student khác → phải bị từ chối.
 

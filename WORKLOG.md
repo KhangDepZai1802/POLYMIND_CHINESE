@@ -37,28 +37,24 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-18** — Codex — đã bổ sung điểm chuyên cần thang 10 và lịch ba chế độ cho giáo viên/học viên; còn chờ xác minh UI/nghiệp vụ độc lập.
+> Cập nhật: **2026-07-20** — Codex — đã sửa luồng persist MP3 của Question Bank; chờ smoke file thật sau redeploy.
 
-- **P13-T3 / BR-M10-M13-001 / UX-M08-005 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Điểm chuyên cần = `max(0, 10 - absent_count × 0,5)`; dashboard/lịch học viên và tiến độ giáo viên hiện `/10`. Giáo viên/học viên dùng chung lịch Tối giản/Tuần/Tháng với hành động đúng vai trò.
-- **P13-T3 / UX-M11-M12-004 / BUG-M11-M12-003 / BUG-M11-004 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Có test hồi quy; chưa smoke MP3/micro thật trên Chrome/Safari/mobile và bản deploy.
-- **P13-T3 — ◐ — Codex — 2026-07-18.** Lưu chỉnh sửa câu hỏi đã sửa và smoke production local thành công; UX chấm/kết quả/micro đã có test, nhưng chưa đạt DoD thiết bị thật.
-- **UX-M11-M12-001 — Fixed, chờ Claude xác minh độc lập.** Preview modal cuộn, ghi chú câu đã chọn, điểm bắt buộc, điểm giao đồng bộ, thi chọn nhiều lớp, dialog theo theme.
-- **UX-M11-M12-002 — Fixed, chờ Claude xác minh độc lập.** Nộp bài có loading/toast/chuyển tab; preflight micro; thi ẩn dashboard/cảnh báo rời trang; chỉnh sửa câu hỏi giữ lịch sử.
-- **UX-M11-M12-003 — Fixed, chờ Claude xác minh độc lập.** Chấm bulk atomic + Chưa chấm/cảnh báo; delivery gọn theo lớp; kết quả học viên dễ đọc; header micro cho phép self.
-- **P-C — hoàn thành code, chưa smoke runtime.** Câu Nói + recorder + signed URL + preflight micro; migration 54–55 và 61 đã ở cloud.
-- **P7-T8/P7-T9 — còn nợ rà trạng thái runtime; role `head_teacher` chưa triển khai.** Không tự coi các task này hoàn tất trong phiên 37.
-- **P7-T7 — đang làm (cloud 1–62 đã đồng bộ; còn smoke authenticated).** Migration history local/remote khớp đến `20260718000062`.
-- **Baseline phiên 39:** 51 bảng public đều RLS · 60 RPC · 7 bucket private · pgTAP **291/291** · lint/typecheck sạch · Vitest **112/112** · production build xanh.
+- **BUG-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** MP3/M4A tạo mới/chỉnh sửa upload trực tiếp bằng signed ticket, server kiểm Storage rồi gắn version; editor phát lại audio hiện tại.
+- **P13-T3 / BR-M10-M13-001 / UX-M08-005 — Fixed, chờ Claude xác minh độc lập — Codex — 2026-07-18.** Điểm chuyên cần `/10`; lịch Tối giản/Tuần/Tháng cho giáo viên/học viên.
+- **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`; chưa smoke MP3/micro thật trên Chrome/Safari/mobile và bản deploy.
+- **P13-T3 — ◐.** Code/test a11y-mobile-media đã có; chưa đạt DoD thiết bị thật. Role `head_teacher` vẫn chưa triển khai.
+- **P7-T7 — đang làm (cloud 1–62 đã đồng bộ; còn smoke authenticated).** `P7-T8/P7-T9` còn nợ rà trạng thái runtime.
+- **Baseline phiên 42:** 51 bảng public đều RLS · 60 RPC · 7 bucket private · pgTAP gần nhất **291/291** · lint/typecheck sạch · Vitest **127/127** · production build xanh.
 
 ---
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) User review/commit để Vercel redeploy. (2) Claude xác minh độc lập `BR-M10-M13-001`, `UX-M08-005` và các fix assessment đang chờ: công thức chuyên cần, lịch responsive ba chế độ, URL question bank `page=3`, nút quay lại, MP3 preview/thu âm/chấm trên thiết bị thật. (3) Sau smoke, tiếp tục role `head_teacher` thành các task nhỏ có pgTAP.
+**Tiếp theo:** (1) User review/commit để Vercel redeploy. (2) Smoke `BUG-M11-M12-005` bằng MP3 thật > 1 MB cho cả Tạo câu hỏi và Chỉnh sửa, mở lại editor + preview bộ để xác nhận phát được; Claude xác minh độc lập cùng các fix assessment đang chờ. (3) Sau smoke, tiếp tục role `head_teacher` thành các task nhỏ có pgTAP.
 
 Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
 
-⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005` chờ Claude xác minh độc lập. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -136,6 +132,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-20] Phiên 42 — Codex — BUG-M11-M12-005
+
+- **Làm được:** Xác định gốc lỗi MP3 là wizard gửi nguyên blob qua Next Server Action trong khi Next 16 mặc định giới hạn body 1 MB. Chuyển sang signed upload hai bước: server kiểm auth/quota/đuôi/MIME/size và sinh path owner; browser upload thẳng bucket private; action lưu câu hỏi kiểm lại path + metadata thật từ Storage rồi mới insert `question_media`. Tạo mới/chỉnh sửa dùng chung luồng; giữ audio cũ bằng Storage copy; mở lại editor lấy signed URL 5 phút và phát được file hiện tại.
+- **File thay đổi:** `question-bank/{domain/audio,server/actions,server/queries,components/question-wizard,components/question-bank-page}`; rate-limit type; unit/component test; docs 01/02/03/04; QA board và WORKLOG.
+- **Migration/data impact:** không có migration; không đổi schema/RLS/data. Dùng policy/bucket private `question-media` và scope rate limit `question_media` đã tồn tại ở migration 38/42/49.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **127/127** · production build xanh · `git diff --check` sạch. Test mới bao phủ MP3 1,2 MB không đi qua Server Action, cả tạo mới/chỉnh sửa, MIME alias/path traversal và mở lại editor thấy audio cũ.
+- **Quyết định mới:** không đổi quyết định đã chốt; áp lại mẫu signed direct upload đã dùng ở tài liệu khóa học để tránh giới hạn request mà vẫn giữ RLS/fail-closed.
+- **Blocker/rủi ro:** Docker Desktop đang tắt nên không chạy smoke Supabase local/pgTAP trong phiên; không có migration nên dùng baseline pgTAP gần nhất 291/291. Cần redeploy rồi smoke MP3 thật trên trình duyệt; người fix không tự đánh dấu Verified.
+- **Next action:** user review/commit/redeploy; Claude/user smoke `BUG-M11-M12-005` với MP3 > 1 MB cho cả tạo và sửa, mở lại editor + preview bộ.
+
 ### [2026-07-18] Phiên 41 — Codex — P13-T3 / BR-M10-M13-001 / UX-M08-005
 
 - **Làm được:** Thêm công thức điểm chuyên cần thang 10, mỗi buổi `absent` trừ 0,5 và chặn đáy 0; `late`/`excused` không bị trừ. Hiện điểm `/10` ở dashboard và tab Chuyên cần của học viên, chi tiết/ báo cáo tiến độ giáo viên; tách rõ tỉ lệ chuyên cần dùng cho điều kiện hoàn thành khóa. Tái sử dụng lịch admin cho tab Lịch/Buổi giáo viên và Lịch học học viên với đủ Tối giản/Tuần/Tháng, điều hướng kỳ và hành động/badge đúng vai trò.
@@ -185,12 +191,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt; hiện thực hóa EX-06 cho kỳ thi bằng chọn nhiều lớp + delivery riêng từng lớp.
 - **Blocker/rủi ro:** chưa smoke trình duyệt/light-dark/mobile bằng tài khoản giáo viên thật; P13-T3 chỉ `◐`, không tuyên bố Verified. `UX-M11-M12-001` chờ Claude xác minh độc lập.
 - **Next action:** smoke + independent verification `UX-M11-M12-001`; sau đó tách và triển khai role `head_teacher`.
-
-### [2026-07-18] Phiên 36 — Codex — Áp migration 56–59 lên Supabase cloud
-
-- **Làm được:** Đối chiếu release plan và 4 migration local; dry-run cloud chỉ liệt kê đúng `20260718000056`–`59`, sau đó áp thật cả 4 lên project đã link `jmrftblsmsusulzwzvtv`.
-- **Xác minh:** `supabase migration list` cho thấy local/remote khớp đến `20260718000059`; dry-run sau cùng trả về `Remote database is up to date`. Migration 56 đã đưa bản ép kiểu enum của `publish_exercise_delivery` và 4 RPC đánh giá liên quan lên cloud.
-- **Gate repo:** `npm run lint` xanh · `npm run typecheck` xanh · Vitest **100/100** · `npm run build` xanh (lần đầu sandbox không tải được Google Font; chạy lại có quyền mạng thì compile thành công).
-- **Quyết định mới:** D-25 — từ nay agent tự dry-run, áp và xác minh migration cloud trong cùng task; không bàn giao bước này lại cho user. Đã bổ sung luật cứng vào `AGENTS.md` (Claude kế thừa qua `CLAUDE.md`).
-- **Rủi ro còn lại:** Chưa smoke thao tác giao bài bằng tài khoản giáo viên thật; cảnh báo cache catalog `pg-delta` của CLI xuất hiện sau push do thiếu certificate tạm, nhưng migration history đã ghi đủ và remote không còn pending.
-- **Next action:** Smoke production luồng giao bài để xác nhận lỗi `exercise_delivery_status` không còn ở request thực.

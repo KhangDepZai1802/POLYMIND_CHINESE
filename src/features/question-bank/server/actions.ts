@@ -11,13 +11,17 @@ import {
   QUESTION_TYPES,
   type BuiltQuestionPayload,
 } from "@/features/question-builder/domain/questions";
+import {
+  isOwnedQuestionAudioPath,
+  MAX_QUESTION_AUDIO_BYTES,
+  QUESTION_AUDIO_BUCKET,
+  questionAudioFormat,
+} from "@/features/question-bank/domain/audio";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
 import { requireRole } from "@/lib/auth/session";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database";
-
-const AUDIO_MIME = new Set(["audio/mpeg", "audio/mp4"]);
-const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
 
 const saveQuestionSchema = z.object({
   mode: z.enum(["create", "version"]),
@@ -30,6 +34,52 @@ const saveQuestionSchema = z.object({
   prompt_text: z.string().trim().min(1, "Nhập nội dung câu hỏi"),
   explanation_text: z.string().trim().optional().default(""),
 });
+
+type QuestionAudioUploadTicket = {
+  path: string;
+  token: string;
+  contentType: "audio/mpeg" | "audio/mp4";
+};
+
+/**
+ * Cấp vé upload ngắn hạn để browser gửi MP3/M4A thẳng tới Supabase Storage.
+ * File không đi qua Server Action (mặc định Next chỉ nhận 1 MB và Vercel cũng
+ * giới hạn request), nhưng URL vẫn được ký bằng session thật và chịu Storage RLS.
+ */
+export async function createQuestionAudioUploadUrlAction(input: {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}): Promise<{ error: string } | QuestionAudioUploadTicket> {
+  const actor = await requireRole("teacher", "super_admin");
+  const format = questionAudioFormat(input.fileName, input.mimeType);
+  if (!format) return { error: "Audio chỉ nhận file MP3 hoặc M4A hợp lệ." };
+
+  if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0) {
+    return { error: "File audio rỗng hoặc không đọc được." };
+  }
+  if (input.sizeBytes > MAX_QUESTION_AUDIO_BYTES) {
+    return { error: "Audio tối đa 50 MB." };
+  }
+
+  // Path do server sinh. Client chỉ nhận path sau khi đã qua auth + allowlist.
+  const path = `${actor.id}/${crypto.randomUUID()}.${format.extension}`;
+  const supabase = await createClient();
+  if (!(await consumeRateLimit(supabase, "question_media"))) {
+    return {
+      error: "Bạn đã tạo quá nhiều lượt tải audio. Vui lòng thử lại sau.",
+    };
+  }
+
+  const { data, error } = await supabase.storage
+    .from(QUESTION_AUDIO_BUCKET)
+    .createSignedUploadUrl(path);
+  if (error || !data) {
+    return { error: "Không tạo được liên kết tải audio. Vui lòng thử lại." };
+  }
+
+  return { path: data.path, token: data.token, contentType: format.mimeType };
+}
 
 /**
  * P-B — điểm ghi duy nhất cho wizard soạn câu hỏi (tạo mới + chỉnh sửa).
@@ -82,22 +132,70 @@ export async function saveQuestionAction(
     };
   }
 
-  const audio = formData.get("audio");
   const needsAudio = AUDIO_QUESTION_TYPES.includes(input.question_type);
-  const audioFile = audio instanceof File && audio.size > 0 ? audio : null;
+  const rawAudioObjectPath = formData.get("audio_object_path");
+  const audioObjectPath =
+    typeof rawAudioObjectPath === "string" && rawAudioObjectPath.length > 0
+      ? rawAudioObjectPath
+      : null;
   const canReuseAudio =
     input.mode === "version" && Boolean(input.source_version_id);
-  if (needsAudio && !audioFile && !canReuseAudio) {
+  if (needsAudio && !audioObjectPath && !canReuseAudio) {
     return { error: "Dạng câu Nghe cần một file audio (MP3/M4A)." };
   }
-  if (audioFile) {
-    if (!AUDIO_MIME.has(audioFile.type))
-      return { error: "Audio chỉ nhận MP3 hoặc M4A." };
-    if (audioFile.size > MAX_AUDIO_BYTES)
-      return { error: "Audio tối đa 50 MB." };
+  if (!needsAudio && audioObjectPath) {
+    return { error: "Dạng câu này không sử dụng audio đề bài." };
   }
 
   const supabase = await createClient();
+
+  // Path đi vòng qua browser nên phải coi là dữ liệu không tin cậy: bắt buộc
+  // đúng namespace actor và kiểm tra file thật trong Storage trước khi ghi DB.
+  let preparedMedia: {
+    object_path: string;
+    mime_type: "audio/mpeg" | "audio/mp4";
+    size_bytes: number;
+    duration_ms: number | null;
+  } | null = null;
+  if (audioObjectPath) {
+    if (!isOwnedQuestionAudioPath(audioObjectPath, actor.id)) {
+      return { error: "Đường dẫn audio không hợp lệ." };
+    }
+    const { data: existingMedia, error: existingMediaError } = await supabase
+      .from("question_media")
+      .select("id")
+      .eq("object_path", audioObjectPath)
+      .maybeSingle();
+    if (existingMediaError || existingMedia) {
+      return { error: "File audio này đã được gắn vào một câu hỏi." };
+    }
+    const { data: info, error: infoError } = await supabase.storage
+      .from(QUESTION_AUDIO_BUCKET)
+      .info(audioObjectPath);
+    const format = questionAudioFormat(audioObjectPath, info?.contentType);
+    const sizeBytes = info?.size;
+    if (
+      infoError ||
+      !info ||
+      !format ||
+      typeof sizeBytes !== "number" ||
+      sizeBytes <= 0 ||
+      sizeBytes > MAX_QUESTION_AUDIO_BYTES
+    ) {
+      await supabase.storage
+        .from(QUESTION_AUDIO_BUCKET)
+        .remove([audioObjectPath]);
+      return {
+        error: "Không xác minh được file audio vừa tải lên. Hãy chọn lại file.",
+      };
+    }
+    preparedMedia = {
+      object_path: audioObjectPath,
+      mime_type: format.mimeType,
+      size_bytes: sizeBytes,
+      duration_ms: null,
+    };
+  }
 
   // 1) Xác định question: tạo mới hoặc dùng câu đang sở hữu.
   let questionId: string;
@@ -122,7 +220,14 @@ export async function saveQuestionAction(
       })
       .select("id, code")
       .single();
-    if (error || !data) return { error: "Không tạo được câu hỏi." };
+    if (error || !data) {
+      if (preparedMedia) {
+        await supabase.storage
+          .from(QUESTION_AUDIO_BUCKET)
+          .remove([preparedMedia.object_path]);
+      }
+      return { error: "Không tạo được câu hỏi." };
+    }
     questionId = data.id;
     questionCode = data.code;
     createdQuestion = true;
@@ -133,21 +238,29 @@ export async function saveQuestionAction(
       .select("current_version_id,title,skill,difficulty,status")
       .eq("id", questionId)
       .maybeSingle();
-    if (error || !data)
+    if (error || !data) {
+      if (preparedMedia) {
+        await supabase.storage
+          .from(QUESTION_AUDIO_BUCKET)
+          .remove([preparedMedia.object_path]);
+      }
       return { error: "Không tìm thấy câu hỏi để chỉnh sửa." };
+    }
     previousQuestion = data;
   }
 
   let versionId: string | null = null;
-  let uploadedObjectPath: string | null = null;
+  let uploadedObjectPath: string | null = preparedMedia?.object_path ?? null;
   const rollback = async () => {
     if (versionId && uploadedObjectPath) {
       await supabase
         .from("question_media")
         .delete()
         .eq("question_version_id", versionId);
+    }
+    if (uploadedObjectPath) {
       await supabase.storage
-        .from("question-media")
+        .from(QUESTION_AUDIO_BUCKET)
         .remove([uploadedObjectPath]);
     }
     if (createdQuestion) {
@@ -173,7 +286,7 @@ export async function saveQuestionAction(
     size_bytes: number;
     duration_ms: number | null;
   } | null = null;
-  if (needsAudio && !audioFile && input.source_version_id) {
+  if (needsAudio && !preparedMedia && input.source_version_id) {
     const { data: sourceVersion } = await supabase
       .from("question_versions")
       .select("id")
@@ -218,52 +331,56 @@ export async function saveQuestionAction(
   }
   versionId = String(createdVersionId);
 
-  // 3) Gắn audio: upload vào bucket private rồi ghi question_media cho version này.
-  if (audioFile || reusableMedia) {
-    const sourceName =
-      audioFile?.name ?? reusableMedia!.object_path.split("/").at(-1)!;
-    const safeName = sourceName
-      .normalize("NFC")
-      .replace(/[^a-zA-Z0-9._-]/g, "-");
-    const objectPath = `${actor.id}/${versionId}/${crypto.randomUUID()}-${safeName}`;
-    let body: Uint8Array | Blob;
-    if (audioFile) {
-      body = new Uint8Array(await audioFile.arrayBuffer());
-    } else {
-      const downloaded = await supabase.storage
-        .from("question-media")
-        .download(reusableMedia!.object_path);
-      if (downloaded.error || !downloaded.data) {
-        await rollback();
-        return { error: "Không đọc được audio cũ. Hãy chọn lại file audio." };
-      }
-      body = downloaded.data;
-    }
-    const mimeType = audioFile?.type ?? reusableMedia!.mime_type;
-    const sizeBytes = audioFile?.size ?? reusableMedia!.size_bytes;
-    const uploaded = await supabase.storage
-      .from("question-media")
-      .upload(objectPath, body, {
-        contentType: mimeType,
-        upsert: false,
-      });
-    if (uploaded.error) {
+  // 3) Gắn audio đã upload trực tiếp. Khi giữ audio cũ, Storage tự copy nội
+  // bộ sang path mới; không kéo file qua Server Action/Vercel.
+  let mediaToLink = preparedMedia;
+  if (!mediaToLink && reusableMedia) {
+    const format = questionAudioFormat(
+      reusableMedia.object_path,
+      reusableMedia.mime_type,
+    );
+    if (!format) {
       await rollback();
-      return { error: `Không tải được audio: ${uploaded.error.message}` };
+      return { error: "Audio cũ không còn đúng định dạng MP3/M4A." };
+    }
+    const objectPath = `${actor.id}/${versionId}/${crypto.randomUUID()}.${format.extension}`;
+    const copied = await supabase.storage
+      .from(QUESTION_AUDIO_BUCKET)
+      .copy(reusableMedia.object_path, objectPath);
+    if (copied.error) {
+      await rollback();
+      return {
+        error: "Không sao chép được audio cũ. Hãy chọn lại file audio.",
+      };
     }
     uploadedObjectPath = objectPath;
+    mediaToLink = {
+      object_path: objectPath,
+      mime_type: format.mimeType,
+      size_bytes: reusableMedia.size_bytes,
+      duration_ms: reusableMedia.duration_ms,
+    };
+  }
+
+  if (mediaToLink) {
     const linked = await supabase.from("question_media").insert({
       question_version_id: versionId,
       media_role: "prompt_audio",
-      object_path: objectPath,
-      mime_type: mimeType,
-      size_bytes: sizeBytes,
-      duration_ms: reusableMedia?.duration_ms,
+      object_path: mediaToLink.object_path,
+      mime_type: mediaToLink.mime_type,
+      size_bytes: mediaToLink.size_bytes,
+      duration_ms: mediaToLink.duration_ms,
       uploaded_by: actor.id,
     });
     if (linked.error) {
-      await supabase.storage.from("question-media").remove([objectPath]);
-      uploadedObjectPath = null;
+      // Nếu một request đồng thời đã gắn cùng path trước, tuyệt đối không xóa
+      // object mà request thắng đang dùng.
+      const { data: racedMedia } = await supabase
+        .from("question_media")
+        .select("id")
+        .eq("object_path", mediaToLink.object_path)
+        .maybeSingle();
+      if (racedMedia) uploadedObjectPath = null;
       await rollback();
       return { error: `Không lưu được media: ${linked.error.message}` };
     }

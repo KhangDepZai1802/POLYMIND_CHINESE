@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-import { saveQuestionAction } from "@/features/question-bank/server/actions";
+import {
+  createQuestionAudioUploadUrlAction,
+  saveQuestionAction,
+} from "@/features/question-bank/server/actions";
+import {
+  MAX_QUESTION_AUDIO_BYTES,
+  QUESTION_AUDIO_BUCKET,
+  questionAudioFormat,
+} from "@/features/question-bank/domain/audio";
 import {
   AUDIO_QUESTION_TYPES,
   QUESTION_SKILL_LABELS,
@@ -29,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormAction } from "@/lib/use-form-action";
+import { createClient } from "@/lib/supabase/client";
 
 type WizardSkill = (typeof WIZARD_SKILLS)[number];
 
@@ -51,6 +60,8 @@ type VersionInitial = {
   gradingConfig: unknown;
   promptContent: unknown;
   hasAudio: boolean;
+  audioUrl?: string | null;
+  audioFileName?: string | null;
   sourceVersionId: string;
 };
 
@@ -120,6 +131,7 @@ export function QuestionWizard({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const form = useFormAction(saveQuestionAction, {
     onSuccess: () => {
       setOpen(false);
@@ -184,7 +196,10 @@ export function QuestionWizard({
   }
 
   function handleOpenChange(next: boolean) {
-    if (next) setS(initialState());
+    if (next) {
+      setS(initialState());
+      setUploadError(null);
+    }
     setOpen(next);
   }
 
@@ -192,15 +207,16 @@ export function QuestionWizard({
     setS((prev) => ({ ...prev, ...next }));
 
   const needsAudio = s.type ? AUDIO_QUESTION_TYPES.includes(s.type) : false;
-  const audioUrl = useMemo(
+  const localAudioUrl = useMemo(
     () => (s.audioFile ? URL.createObjectURL(s.audioFile) : null),
     [s.audioFile],
   );
   useEffect(() => {
     return () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      if (localAudioUrl) URL.revokeObjectURL(localAudioUrl);
     };
-  }, [audioUrl]);
+  }, [localAudioUrl]);
+  const audioUrl = localAudioUrl ?? version?.audioUrl ?? null;
 
   const contentError = validate(
     s,
@@ -263,6 +279,7 @@ export function QuestionWizard({
   const submit = async () => {
     const content = buildContent();
     if (!s.skill || !s.type || !content || contentError) return;
+    setUploadError(null);
     const fd = new FormData();
     fd.set("mode", version ? "version" : "create");
     if (version) fd.set("question_id", version.questionId);
@@ -274,10 +291,45 @@ export function QuestionWizard({
     fd.set("explanation_text", s.explanation.trim());
     fd.set("content", JSON.stringify(content));
     if (version?.hasAudio) fd.set("source_version_id", version.sourceVersionId);
-    if (s.audioFile) fd.set("audio", s.audioFile);
     setPending(true);
     try {
+      if (s.audioFile) {
+        const format = questionAudioFormat(s.audioFile.name, s.audioFile.type);
+        if (!format || s.audioFile.size > MAX_QUESTION_AUDIO_BYTES) {
+          setUploadError("Audio chỉ nhận MP3/M4A và tối đa 50 MB.");
+          return;
+        }
+
+        // File đi thẳng browser → Supabase Storage bằng vé do server ký. Chỉ
+        // path nhỏ được gửi tiếp vào Server Action lưu câu hỏi.
+        const ticket = await createQuestionAudioUploadUrlAction({
+          fileName: s.audioFile.name,
+          mimeType: s.audioFile.type,
+          sizeBytes: s.audioFile.size,
+        });
+        if ("error" in ticket) {
+          setUploadError(ticket.error);
+          return;
+        }
+        const supabase = createClient();
+        const { error } = await supabase.storage
+          .from(QUESTION_AUDIO_BUCKET)
+          .uploadToSignedUrl(ticket.path, ticket.token, s.audioFile, {
+            contentType: ticket.contentType,
+          });
+        if (error) {
+          setUploadError(
+            "Tải audio lên thất bại. Kiểm tra kết nối rồi thử lại.",
+          );
+          return;
+        }
+        fd.set("audio_object_path", ticket.path);
+      }
       await form.formAction(fd);
+    } catch {
+      setUploadError(
+        "Không thể tải audio hoặc lưu câu hỏi. Vui lòng kiểm tra mạng và thử lại.",
+      );
     } finally {
       setPending(false);
     }
@@ -312,9 +364,11 @@ export function QuestionWizard({
 
         <Stepper step={s.step} version={Boolean(version)} />
 
-        {form.state.error && (
+        {(uploadError || form.state.error) && (
           <Alert variant="destructive">
-            <AlertDescription>{form.state.error}</AlertDescription>
+            <AlertDescription>
+              {uploadError ?? form.state.error}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -421,9 +475,14 @@ export function QuestionWizard({
             {needsAudio && (
               <AudioEditor
                 audioUrl={audioUrl}
-                fileName={s.audioFile?.name}
+                fileName={
+                  s.audioFile?.name ?? version?.audioFileName ?? undefined
+                }
                 maxPlays={s.maxPlays}
-                onFile={(file) => patch({ audioFile: file })}
+                onFile={(file) => {
+                  setUploadError(null);
+                  patch({ audioFile: file });
+                }}
                 onMaxPlays={(value) => patch({ maxPlays: value })}
               />
             )}
@@ -604,7 +663,8 @@ function AudioEditor({
       <div className="flex flex-wrap items-center gap-2">
         <Input
           type="file"
-          accept="audio/mpeg,audio/mp4"
+          aria-label="Chọn file audio"
+          accept=".mp3,.m4a,audio/mpeg,audio/mp4"
           className="h-11 max-w-72"
           onChange={(e) => onFile(e.target.files?.[0] ?? null)}
         />
@@ -633,7 +693,7 @@ function AudioEditor({
         <p className="text-muted-foreground text-xs">Chưa có audio.</p>
       )}
       {fileName && (
-        <p className="text-muted-foreground text-xs">Đã chọn: {fileName}</p>
+        <p className="text-muted-foreground text-xs">Audio: {fileName}</p>
       )}
     </div>
   );

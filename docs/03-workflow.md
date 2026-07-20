@@ -150,6 +150,7 @@ Buổi bù:  tạo session mới, original_session_id = <buổi gốc>
 
 ```text
 Giáo viên tạo/version câu hỏi → tạo bộ bài tập → thêm section/câu
+  → nếu là câu Nghe: server cấp vé, browser upload MP3/M4A thẳng vào Storage, server xác minh rồi gắn media
   → preview bằng cùng renderer học viên → kiểm tra & khóa version
   → giao cho một hoặc nhiều lớp phụ trách (mỗi lớp một delivery)
   → đặt window, số lượt, late penalty, grading/release mode → publish

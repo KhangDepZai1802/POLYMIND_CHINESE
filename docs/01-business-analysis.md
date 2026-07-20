@@ -206,6 +206,7 @@ Nguyên tắc bất di bất dịch:
 - Màn chấm dành cho giáo viên phải dùng ngôn ngữ nghiệp vụ tiếng Việt, không lộ JSON/trạng thái kỹ thuật. Câu thủ công chưa nhập điểm hiển thị **Chưa chấm**; giáo viên lưu toàn bộ điểm đã nhập bằng một nút, được cảnh báo nếu còn sót và không thể công bố khi chưa chấm đủ.
 - Danh sách bài tập đã giao được chia theo lớp và trình bày dạng dòng gọn. Kết quả học viên phải hiển thị câu hỏi, bài làm, đáp án và nhận xét ở dạng đọc được, không hiển thị khóa lựa chọn hay dữ liệu kỹ thuật.
 - Preview bộ bài tập/bộ đề phải dùng signed URL của media private như renderer học viên. Trang kết quả và trang chấm phải có lối quay lại danh sách nguồn; phân trang ngân hàng câu hỏi không được tạo link vượt trang cuối và phải giữ bộ lọc hiện tại.
+- MP3/M4A khi soạn hoặc chỉnh sửa câu hỏi phải upload thẳng từ trình duyệt vào bucket private bằng vé do server ký (không đi qua giới hạn body của Server Action). Server xác minh object path, MIME và kích thước từ Storage trước khi gắn `question_media`; mở lại màn Chỉnh sửa phải phát được audio hiện tại bằng signed URL ngắn hạn.
 - Answer key không xuất hiện trong client payload hoặc quyền student trước thời điểm release.
 
 ### BR-7 — Kiểm tra, xếp loại và đánh giá

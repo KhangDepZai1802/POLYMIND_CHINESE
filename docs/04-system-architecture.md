@@ -201,15 +201,18 @@ Mutation nhiều bảng **phải** là RPC PostgreSQL (`SECURITY DEFINER`, `SET 
 4 bucket **private**: `avatars` · `course-materials` · `student-documents` · `question-media`.
 
 ```text
-Upload:   client → server action (validate MIME/size/ext)
-          → server SINH object_path: {class_id}/{entity_id}/{uuid}.{ext}
-          → upload qua server client
-          → lưu metadata vào DB (cùng transaction với entity)
+Upload nhỏ: client → server action (validate MIME/size/ext)
+              → server SINH object_path và upload bằng user client
+
+Audio câu hỏi: client gửi metadata → server kiểm auth/quota/MIME/size và SINH path
+               → server ký vé upload bằng user client (Storage RLS vẫn chạy)
+               → browser upload thẳng Storage, không đưa blob qua Server Action
+               → server kiểm path + metadata thật từ Storage → lưu `question_media`
 
 Download: server action kiểm quyền → tạo signed URL (TTL ≤ 5 phút) → trả về client
 ```
 
-- **`object_path` do server sinh.** Không tin path client gửi lên (path traversal).
+- **`object_path` do server sinh.** Không tin path client gửi lên (path traversal). Audio câu hỏi dùng `{owner_uid}/{uuid}.{mp3|m4a}`; lúc finalize server buộc path đúng actor rồi kiểm lại object trong Storage.
 - Storage policy soi **cùng điều kiện class/student như DB**, không chỉ `auth.uid() IS NOT NULL`.
 - Media câu hỏi không chỉ ẩn metadata: policy `question-media` kiểm owner/share/delivery; answer key không bao giờ nằm trong object metadata hay payload học viên trước release.
 - **Không log signed URL đầy đủ** (nó là credential tạm thời).
