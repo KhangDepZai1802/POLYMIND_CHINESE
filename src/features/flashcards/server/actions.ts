@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import {
   FLASHCARD_MEDIA_BUCKET,
+  flashcardAltText,
   flashcardMediaFormat,
   flashcardMediaSizeLimit,
   isOwnedFlashcardMediaPath,
@@ -284,7 +285,7 @@ export async function saveFlashcardPageAction(
   const supabase = await createClient();
   const { data: section } = await supabase
     .from("flashcard_sections")
-    .select("id,status,deck:flashcard_decks(id)")
+    .select("id,status,title,deck:flashcard_decks(id)")
     .eq("id", parsed.data.section_id)
     .maybeSingle();
   if (!section?.deck || section.status !== "draft") {
@@ -299,11 +300,20 @@ export async function saveFlashcardPageAction(
     .is("archived_at", null)
     .maybeSingle();
 
-  const media = [
-    ["front", parsed.data.front_image_path, existing?.front_image_path],
-    ["back", parsed.data.back_image_path, existing?.back_image_path],
-    ["audio", parsed.data.audio_path, existing?.audio_path],
-  ] as const;
+  const kind = existing?.kind ?? parsed.data.kind;
+  // Trang mở đầu chỉ gồm hai ảnh; audio là ràng buộc riêng của trang từ vựng.
+  const audioPath = kind === "vocabulary" ? parsed.data.audio_path : null;
+  if (kind === "vocabulary" && !audioPath) {
+    return { error: "Trang từ vựng cần audio phát âm." };
+  }
+
+  const media: Array<[FlashcardMediaSlot, string, string | null]> = [
+    ["front", parsed.data.front_image_path, existing?.front_image_path ?? null],
+    ["back", parsed.data.back_image_path, existing?.back_image_path ?? null],
+  ];
+  if (audioPath) {
+    media.push(["audio", audioPath, existing?.audio_path ?? null]);
+  }
   const newPaths = media
     .filter(([, path, oldPath]) => path !== oldPath)
     .map(([, path]) => path);
@@ -342,7 +352,6 @@ export async function saveFlashcardPageAction(
     }
   }
 
-  const kind = existing?.kind ?? parsed.data.kind;
   let orderIndex = existing?.order_index;
   if (orderIndex === undefined) {
     const { data: activePages } = await supabase
@@ -362,14 +371,25 @@ export async function saveFlashcardPageAction(
     }
   }
 
+  const term = kind === "vocabulary" ? parsed.data.term : null;
   const values = {
     kind,
-    term: kind === "vocabulary" ? parsed.data.term : null,
-    front_alt: parsed.data.front_alt,
-    back_alt: parsed.data.back_alt,
+    term,
+    front_alt: flashcardAltText({
+      kind,
+      face: "front",
+      term,
+      sectionTitle: section.title,
+    }),
+    back_alt: flashcardAltText({
+      kind,
+      face: "back",
+      term,
+      sectionTitle: section.title,
+    }),
     front_image_path: parsed.data.front_image_path,
     back_image_path: parsed.data.back_image_path,
-    audio_path: parsed.data.audio_path,
+    audio_path: audioPath,
   };
 
   const result = existing
@@ -399,9 +419,15 @@ export async function saveFlashcardPageAction(
   }
 
   const replacedPaths = existing
-    ? media
-        .filter(([, path, oldPath]) => Boolean(oldPath) && path !== oldPath)
-        .map(([, , oldPath]) => oldPath!)
+    ? [
+        ...media
+          .filter(([, path, oldPath]) => Boolean(oldPath) && path !== oldPath)
+          .map(([, , oldPath]) => oldPath!),
+        // Trang mở đầu không còn dùng audio: dọn file cũ để không mồ côi trong bucket.
+        ...(kind === "session_cover" && existing.audio_path
+          ? [existing.audio_path]
+          : []),
+      ]
     : [];
   await removeFlashcardObjects(replacedPaths);
   await logAudit(supabase, {
@@ -533,11 +559,11 @@ export async function archiveFlashcardPageAction(
   if (error)
     return { error: dbErrorToMessage(error, "Không lưu trữ được trang.") };
   if (page) {
-    await removeFlashcardObjects([
-      page.front_image_path,
-      page.back_image_path,
-      page.audio_path,
-    ]);
+    await removeFlashcardObjects(
+      [page.front_image_path, page.back_image_path, page.audio_path].filter(
+        (path): path is string => Boolean(path),
+      ),
+    );
   }
   revalidateFlashcards();
   return { success: "Đã lưu trữ trang flashcard." };

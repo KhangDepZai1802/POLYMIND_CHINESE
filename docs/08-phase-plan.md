@@ -329,6 +329,8 @@
 | P14-T6 | Migration Ôn câu sai | Snapshot sai từ exercise/exam đã nộp, chỉ dạng `manual_required = false`; bảng tiến độ theo student + question version; RPC lấy câu đến hạn và chấm lại atomic, đúng thì rời danh sách; RLS/answer-key fail-closed + pgTAP; áp cloud | ☑ |
 | P14-T7 | Học viên — Ôn câu sai | Tab thứ hai của `/student/review`; renderer objective dùng chung, submit/loading/error rõ ràng, lưu lịch sử; đúng rời hàng đợi, sai lên lịch lại; empty state + component/server test | ☑ |
 | P14-T8 | Quality gate & docs | Generate types; cập nhật nav/docs/QA/WORKLOG; lint + typecheck + Vitest + pgTAP + build xanh; smoke 3 role/IDOR/signed URL ở local, ghi rõ phần production còn chờ redeploy | ☑ |
+| P14-T9 | Hiệu chỉnh chuyển động Flashcard | Chuyển trang là cú lật toàn bộ flashcard quanh tâm theo phải→trái/trái→phải, không phải hiệu ứng trang sách; click lật mặt dưới↔trên độc lập, giữ mặt riêng theo từng trang; reduced-motion + component test xanh | ☑ |
+| P14-T10 | Rút gọn form trang & trải nghiệm đọc Flashcard | Form theo loại trang: trang mở đầu chỉ 2 ảnh, trang từ vựng chỉ từ/cụm từ + audio + 2 ảnh, bỏ ô mô tả ảnh (server sinh alt); reader bỏ overlay nhãn/từ trên thẻ, desktop hiện trọn ảnh còn mobile giữ nguyên, rời trang là reset trang đó về mặt trước, audio thành một nút mang tiêu đề trang; migration `audio_path` nullable + check theo `kind`; lint/typecheck/test/build + pgTAP flashcards xanh | ☑ |
 
 ---
 

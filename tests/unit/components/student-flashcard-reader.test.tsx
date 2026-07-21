@@ -41,12 +41,12 @@ const deck = {
           term: null,
           front_image_path: "front-cover.jpg",
           back_image_path: "back-cover.jpg",
-          audio_path: "cover.mp3",
+          audio_path: null,
           front_alt: "Ảnh mở đầu mặt trước",
           back_alt: "Ảnh mở đầu mặt sau",
           frontUrl: "https://signed.test/front-cover.jpg",
           backUrl: "https://signed.test/back-cover.jpg",
-          audioUrl: "https://signed.test/cover.mp3",
+          audioUrl: null,
         },
         {
           ...commonPage,
@@ -69,7 +69,7 @@ const deck = {
 } as const;
 
 describe("StudentFlashcardReader", () => {
-  it("giữ trạng thái lật mặt độc lập khi chuyển trang và hỗ trợ phím mũi tên", () => {
+  it("reset trang vừa rời về mặt trước và hỗ trợ phím mũi tên", () => {
     const { container } = render(
       <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
     );
@@ -86,10 +86,24 @@ describe("StudentFlashcardReader", () => {
       screen.getByRole("button", { name: /Mặt sau của trang mở đầu/i }),
       { key: "ArrowRight" },
     );
+
+    const outgoingNext = container.querySelector(
+      '[data-transition-layer="outgoing"][data-page-transition="next"]',
+    );
+    const incomingNext = container.querySelector(
+      '[data-transition-layer="incoming"][data-page-transition="next"]',
+    );
+    expect(outgoingNext).toHaveClass("flashcard-page-out-next");
+    expect(outgoingNext).toHaveClass("motion-reduce:hidden");
+    expect(outgoingNext?.querySelector('[data-face="back"]')).toHaveStyle({
+      transform: "rotateX(180deg)",
+    });
+    expect(incomingNext).toHaveClass("flashcard-page-in-next");
+    expect(incomingNext).toHaveClass("motion-reduce:animate-none");
     expect(
       screen.getByRole("button", { name: /Mặt trước của 你好/i }),
     ).toBeInTheDocument();
-    expect(container.innerHTML).toContain("motion-reduce:animate-none");
+    fireEvent.animationEnd(incomingNext!);
 
     fireEvent.click(
       screen.getByRole("button", { name: /Mặt trước của 你好/i }),
@@ -101,8 +115,45 @@ describe("StudentFlashcardReader", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Trang flashcard trước" }),
     );
+    const incomingPrevious = container.querySelector(
+      '[data-transition-layer="incoming"][data-page-transition="previous"]',
+    );
     expect(
-      screen.getByRole("button", { name: /Mặt sau của trang mở đầu/i }),
+      container.querySelector(
+        '[data-transition-layer="outgoing"][data-page-transition="previous"]',
+      ),
+    ).toHaveClass("flashcard-page-out-previous");
+    expect(
+      container.querySelector(
+        '[data-transition-layer="outgoing"] [data-face="back"]',
+      ),
+    ).toHaveStyle({ transform: "rotateX(180deg)" });
+    expect(incomingPrevious).toHaveClass("flashcard-page-in-previous");
+    fireEvent.animationEnd(incomingPrevious!);
+    // Trang mở đầu từng bị lật sang mặt sau, nhưng đã reset khi rời trang.
+    expect(
+      screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
     ).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("button", { name: /Mặt trước của trang mở đầu/i })
+        .querySelector('[data-face="front"]'),
+    ).toHaveStyle({ transform: "rotateX(0deg)" });
+  });
+
+  it("phát âm bằng một nút mang tiêu đề trang, trang mở đầu không có audio", () => {
+    render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
+
+    expect(
+      screen.queryByRole("button", { name: /Phát audio/i }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
+      { key: "ArrowRight" },
+    );
+
+    const playButton = screen.getByRole("button", { name: "Phát audio 你好" });
+    expect(playButton).toHaveTextContent("你好");
   });
 });

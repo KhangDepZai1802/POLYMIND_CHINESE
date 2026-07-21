@@ -67,6 +67,24 @@ export function flashcardMediaSizeLimit(slot: FlashcardMediaSlot) {
     : MAX_FLASHCARD_IMAGE_BYTES;
 }
 
+/**
+ * Alt của ảnh flashcard do hệ thống sinh — admin không nhập mô tả nữa, nhưng
+ * screen reader vẫn phải đọc được thẻ đang xem là gì.
+ */
+export function flashcardAltText(input: {
+  kind: "session_cover" | "vocabulary";
+  face: "front" | "back";
+  term: string | null;
+  sectionTitle: string;
+}): string {
+  const face = input.face === "front" ? "Mặt trước" : "Mặt sau";
+  const term = input.term?.trim();
+  const sectionTitle = input.sectionTitle.trim() || "buổi học";
+  return input.kind === "vocabulary" && term
+    ? `${face} thẻ từ vựng ${term}`
+    : `${face} trang mở đầu ${sectionTitle}`;
+}
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

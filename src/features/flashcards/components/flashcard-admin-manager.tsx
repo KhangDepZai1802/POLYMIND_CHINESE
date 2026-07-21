@@ -525,11 +525,11 @@ function FlashcardPageRow({
             <audio controls preload="none" className="mt-2 h-9 w-full max-w-sm">
               <source src={page.audioUrl} />
             </audio>
-          ) : (
+          ) : page.audio_path ? (
             <p className="text-destructive mt-2 text-xs">
               Không ký được audio.
             </p>
-          )}
+          ) : null}
         </div>
       </div>
       {section.status === "draft" && (
@@ -641,11 +641,19 @@ function PageDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    // Trang mở đầu chỉ nhận hai ảnh; audio là phần riêng của trang từ vựng.
     const selected = Object.entries(files).filter(
-      (entry): entry is ["front" | "back" | "audio", File] => Boolean(entry[1]),
+      (entry): entry is ["front" | "back" | "audio", File] =>
+        Boolean(entry[1]) && (kind === "vocabulary" || entry[0] !== "audio"),
     );
-    if (!isEdit && selected.length !== 3) {
-      setState({ error: "Trang mới cần đủ ảnh trước, ảnh sau và audio." });
+    const requiredSlots = kind === "vocabulary" ? 3 : 2;
+    if (!isEdit && selected.length !== requiredSlots) {
+      setState({
+        error:
+          kind === "vocabulary"
+            ? "Trang từ vựng cần đủ ảnh mặt trước, ảnh mặt sau và audio."
+            : "Trang mở đầu cần đủ ảnh mặt trước và ảnh mặt sau.",
+      });
       return;
     }
 
@@ -711,7 +719,7 @@ function PageDialog({
       if (!formData.get("back_image_path") && page) {
         formData.set("back_image_path", page.back_image_path);
       }
-      if (!formData.get("audio_path") && page) {
+      if (!formData.get("audio_path") && page?.audio_path) {
         formData.set("audio_path", page.audio_path);
       }
 
@@ -777,8 +785,9 @@ function PageDialog({
             {isEdit ? "Chỉnh sửa trang" : "Thêm trang flashcard"}
           </DialogTitle>
           <DialogDescription>
-            Ảnh tối đa 8 MB; audio MP3/M4A tối đa 20 MB. File tải thẳng vào kho
-            riêng tư.
+            {kind === "vocabulary"
+              ? "Ảnh tối đa 8 MB; audio MP3/M4A tối đa 20 MB. File tải thẳng vào kho riêng tư."
+              : "Trang mở đầu chỉ cần ảnh mặt trước và mặt sau, tối đa 8 MB mỗi ảnh. File tải thẳng vào kho riêng tư."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -792,9 +801,12 @@ function PageDialog({
             <Select
               name="kind"
               value={kind}
-              onValueChange={(value) =>
-                setKind(value as "session_cover" | "vocabulary")
-              }
+              onValueChange={(value) => {
+                setKind(value as "session_cover" | "vocabulary");
+                if (value === "session_cover") {
+                  setFiles((current) => ({ ...current, audio: undefined }));
+                }
+              }}
               disabled={isEdit}
             >
               <SelectTrigger id={`page-kind-${page?.id ?? "new"}`}>
@@ -811,16 +823,18 @@ function PageDialog({
             </Select>
             {isEdit && <input type="hidden" name="kind" value={page!.kind} />}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor={`term-${page?.id ?? "new"}`}>Từ/cụm từ</Label>
-            <Input
-              id={`term-${page?.id ?? "new"}`}
-              name="term"
-              defaultValue={page?.term ?? ""}
-              placeholder="Ví dụ: 你好"
-              required={kind === "vocabulary"}
-            />
-          </div>
+          {kind === "vocabulary" && (
+            <div className="space-y-2">
+              <Label htmlFor={`term-${page?.id ?? "new"}`}>Từ/cụm từ *</Label>
+              <Input
+                id={`term-${page?.id ?? "new"}`}
+                name="term"
+                defaultValue={page?.term ?? ""}
+                placeholder="Ví dụ: 你好"
+                required
+              />
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <MediaFileField
               id={`front-${page?.id ?? "new"}`}
@@ -841,39 +855,17 @@ function PageDialog({
               }
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor={`front-alt-${page?.id ?? "new"}`}>
-                Mô tả mặt trước *
-              </Label>
-              <Input
-                id={`front-alt-${page?.id ?? "new"}`}
-                name="front_alt"
-                defaultValue={page?.front_alt ?? ""}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`back-alt-${page?.id ?? "new"}`}>
-                Mô tả mặt sau *
-              </Label>
-              <Input
-                id={`back-alt-${page?.id ?? "new"}`}
-                name="back_alt"
-                defaultValue={page?.back_alt ?? ""}
-                required
-              />
-            </div>
-          </div>
-          <MediaFileField
-            id={`audio-${page?.id ?? "new"}`}
-            label="Audio phát âm"
-            accept={accepted.audio}
-            required={!isEdit}
-            onFile={(file) =>
-              setFiles((current) => ({ ...current, audio: file }))
-            }
-          />
+          {kind === "vocabulary" && (
+            <MediaFileField
+              id={`audio-${page?.id ?? "new"}`}
+              label="Audio phát âm"
+              accept={accepted.audio}
+              required={!isEdit}
+              onFile={(file) =>
+                setFiles((current) => ({ ...current, audio: file }))
+              }
+            />
+          )}
           <DialogFooter>
             <Button type="submit" disabled={saving}>
               {saving ? (

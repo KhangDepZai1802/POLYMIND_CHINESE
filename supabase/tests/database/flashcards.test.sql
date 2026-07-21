@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(28);
+select plan(30);
 
 select is(
   (
@@ -142,7 +142,7 @@ values
     'session_cover', 0, null,
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/front-a.png',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/back-a.png',
-    '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/audio-a.mp3',
+    null,
     'Trang mở đầu buổi 1', 'Mặt sau trang mở đầu buổi 1'
   ),
   (
@@ -179,7 +179,7 @@ from (
   union all
   select back_image_path from public.flashcard_pages
   union all
-  select audio_path from public.flashcard_pages
+  select audio_path from public.flashcard_pages where audio_path is not null
 ) media;
 
 select is(
@@ -234,8 +234,8 @@ select is((select count(*)::integer from public.flashcard_sections), 1, 'Student
 select is((select count(*)::integer from public.flashcard_pages), 3, 'Student A đọc đủ page active đã publish');
 select is(
   (select count(*)::integer from storage.objects where bucket_id = 'flashcard-media'),
-  9,
-  'Student A đọc đủ object Flashcard đã publish'
+  8,
+  'Student A đọc đủ object Flashcard đã publish (cover không có audio)'
 );
 select ok(
   app.can_student_read_flashcard_media(
@@ -340,6 +340,20 @@ select is(
   ),
   1,
   'archive tự compact thứ tự page còn lại'
+);
+select throws_ok(
+  $$update public.flashcard_pages set audio_path = null where id = '66700000-0000-4000-8000-000000000002'$$,
+  '23514',
+  null,
+  'trang từ vựng bắt buộc có audio phát âm'
+);
+select throws_ok(
+  $$update public.flashcard_pages
+    set audio_path = '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/audio-a.mp3'
+    where id = '66700000-0000-4000-8000-000000000001'$$,
+  '23514',
+  null,
+  'trang mở đầu không nhận audio'
 );
 
 reset role;

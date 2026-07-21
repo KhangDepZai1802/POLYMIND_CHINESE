@@ -37,9 +37,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-21** — Codex — hoàn tất Phase 14, chờ user review/commit/redeploy và QA độc lập.
+> Cập nhật: **2026-07-21** — Claude — rút gọn form trang flashcard + sửa trải nghiệm đọc theo yêu cầu user, chờ Codex/user xác minh độc lập.
 
-- **P14-T1…T8 — ☑ hoàn thành code/gate — Codex — 2026-07-21.** “Lớp của tôi”, Flashcard admin/học viên và Ôn câu sai đã hoàn tất; cloud migration 1–67 đồng bộ. M21/M22 còn chờ user review/redeploy và Claude xác minh UI độc lập.
+- **P14-T10 / UX-M22-002 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Form thêm trang tách theo loại (mở đầu: 2 ảnh; từ vựng: từ/cụm từ + audio + 2 ảnh), bỏ ô mô tả ảnh; thẻ học viên bỏ vùng tối + nhãn mặt, desktop hiện trọn ảnh, rời trang là reset trang đó về mặt trước, audio thành một nút mang tiêu đề trang. Migration 68 đã áp local, **chưa push cloud**.
+- **P14-T9 / UX-M22-001 — ☑ Fixed, chờ xác minh độc lập — Codex — 2026-07-21.** Chuyển trang giờ ghép thẻ cũ đi ra + thẻ mới đi vào thành cú lật toàn bộ flashcard phải→trái/trái→phải quanh tâm; lật mặt dưới↔trên và trạng thái từng trang vẫn độc lập.
 - **UX-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Hai nút bắt đầu hiện spinner + nhãn đang mở và tự khóa trong lúc tạo attempt/redirect; có test cho cả Bài tập/Thi.
 - **BUG-M11-M12-005/006/007/008 — Fixed, chờ xác minh độc lập — Codex — 2026-07-20.** Direct upload MP3/bản ghi Nói, RLS media đúng lượt và audio đồng bộ ở lượt làm/chấm/kết quả; cloud migration 1–65 đã đồng bộ.
 - **P13-T3 — ◐.** Code/test a11y-mobile-media đã có; chưa đạt DoD thiết bị thật. Role `head_teacher` vẫn chưa triển khai.
@@ -50,11 +51,11 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** user review/commit/redeploy Phase 14; Claude QA độc lập M21/M22 trên desktop/mobile với media thật. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
+**Tiếp theo:** user review/commit/redeploy Phase 14 (gồm migration 68 chưa push cloud); Codex/user xác minh độc lập `UX-M22-002`; Claude/user xác minh độc lập `UX-M22-001` trên desktop/mobile với media thật, gồm hướng lật trang và lật mặt. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
 
 Còn nợ trước đó: user review/commit/redeploy để đo `PERF-M20-001`; smoke assessment/audio và verification queue; smoke P-C; role `head_teacher`; rà runtime `P7-T7/P7-T8/P7-T9`.
 
-⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008`, `PERF-M20-001` chờ Claude/user xác minh độc lập trên production. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `UX-M22-002`, `UX-M22-001`, `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008`, `PERF-M20-001` chờ Claude/user xác minh độc lập trên production. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -133,6 +134,26 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-21] Phiên 49 — Claude — P14-T10 / UX-M22-002
+
+- **Làm được:** Rút gọn form "Thêm trang flashcard" theo loại trang — trang mở đầu chỉ còn 2 ảnh; trang từ vựng chỉ còn từ/cụm từ + audio + 2 ảnh; bỏ hẳn ô "Mô tả mặt trước/sau", server tự sinh alt từ từ vựng hoặc tên buổi nên screen reader vẫn đọc được. Reader học viên: bỏ vùng gradient tối + nhãn "MẶT TRƯỚC"/từ ở đáy thẻ (cả hai mặt); desktop hiện trọn ảnh (`sm:object-contain`, cao 560px) còn mobile giữ nguyên `object-cover`; chuyển trang vẫn tự do ở bất kỳ mặt nào nhưng trang vừa rời luôn reset về mặt trước (snapshot mặt cũ trong `pageTransition.fromFace` để animation vẫn đúng); thanh `<audio controls>` đổi thành một nút mang đúng tiêu đề admin đặt cho trang. Nút play của màn admin giữ nguyên theo yêu cầu user.
+- **File chính:** `supabase/migrations/20260721000068_flashcard_cover_media_optional.sql`, `flashcards/{schema.ts,domain/media.ts,server/actions.ts,server/queries.ts}`, `components/{flashcard-admin-manager,student-flashcard-reader}.tsx`, `src/types/database.ts`, test unit Flashcard + `supabase/tests/database/flashcards.test.sql`, docs 08/QA board.
+- **Migration/data impact:** migration 68 bỏ `not null` của `flashcard_pages.audio_path`, null hóa audio của mọi trang `session_cover` cũ (tắt trigger user trong lúc chạy) và thêm check `vocabulary ⇒ có audio`, `session_cover ⇒ không audio`. Đã `supabase migration up --local`; **chưa push cloud**. File audio cũ của trang mở đầu còn nằm trong bucket, action lưu trang sẽ dọn khi admin sửa trang đó.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **161/161** · build production xanh · pgTAP `flashcards.test.sql` **30/30 ok** (thêm 2 assert cho check audio theo `kind`). `announcement_workflow.test.sql` fail 2/32 (đếm 11 thay vì 4 người nhận) — do DB local đang có dữ liệu dev thừa, không liên quan thay đổi này; cần `npx supabase db reset` để đối chiếu lại.
+- **Quyết định mới:** trang mở đầu không dùng audio (ràng buộc ở DB, không chỉ ở UI); alt ảnh là dữ liệu hệ thống sinh chứ không phải trường admin nhập.
+- **Blocker/rủi ro:** người fix là Claude nên **không tự ghi Verified** — `UX-M22-002` vào Verification Queue chờ Codex/user. Chưa nhìn bằng mắt trên desktop/mobile với media thật; migration 68 chưa push cloud.
+- **Next action:** Codex/user xác minh độc lập `UX-M22-002` (form 2 loại trang, thẻ hết vùng tối, ảnh đủ khung desktop, reset mặt khi qua trang, nút audio), sau đó push migration 68 lên cloud rồi tiếp `P7-T7/P7-T8/P7-T9`.
+
+### [2026-07-21] Phiên 48 — Codex — P14-T9 / UX-M22-001
+
+- **Làm được:** Đối chiếu mô tả trực tiếp của user và xác định implementation cũ chỉ animate trang mới đi vào, chưa phải cú lật flashcard hoàn chỉnh. Tách chuyển trang thành hai lớp quanh trục Y tại tâm: thẻ hiện tại đi ra phải→trái và thẻ kế tiếp đi vào cùng hướng; chiều lùi đảo ngược. Giữ lật mặt quanh trục X dưới→trên là state riêng theo từng page, nên đang ở mặt sau vẫn sang/lùi trang và quay lại vẫn đúng mặt đã xem. Trang mở đầu vẫn là page 1; mỗi page vẫn dùng 2 ảnh + 1 audio.
+- **File chính:** `student-flashcard-reader.tsx`, keyframe trong `globals.css`, component test Flashcard; cập nhật BR-13/workflow/phase plan, QA board và WORKLOG để chốt rõ không phải hiệu ứng trang sách.
+- **Migration/data impact:** không có; không đổi schema, RLS, RPC, Storage hoặc dữ liệu.
+- **Đã test:** test Flashcard mục tiêu **1/1**; lint sạch; typecheck sạch; Vitest đầy đủ **159/159**; production build xanh; `git diff --check` sạch. Lần chạy suite song song đầu có 2 test UI cũ timeout/race; cả hai chạy riêng xanh và toàn suite chạy tuần tự sau đó xanh, không sửa/nới test. Build sandbox lần đầu không tải được Google Font; chạy lại có quyền mạng thành công.
+- **Quyết định mới:** ghi rõ yêu cầu UX của user vào docs: chuyển trang lật toàn bộ flashcard quanh tâm, không có gáy/điểm xoay kiểu sách; lật trang và lật mặt không dùng chung state. Skill `ui-styling` dẫn đến giữ focus/ARIA và `prefers-reduced-motion` trong cấu trúc hai lớp.
+- **Blocker/rủi ro:** chưa smoke chuyển động bằng mắt với media thật trên desktop/mobile sau redeploy; người fix không tự ghi Verified, đã đưa `UX-M22-001` sang Verification Queue.
+- **Next action:** user review/commit/redeploy; Claude/user kiểm hướng phải→trái, chiều back, lật mặt hai chiều và persistence khi đổi trang trên thiết bị thật.
+
 ### [2026-07-21] Phiên 47 — Codex — P14-T1…T8 / M21-M22
 
 - **Làm được:** Tiếp quản phần Claude dở dang và hoàn tất hai module học viên. `/student/class` gộp 7 tab chỉ đọc, route lịch cũ redirect; `/student/review` có Flashcard theo bookmark buổi, lật trang trục dọc + lật mặt trục ngang độc lập, touch/keyboard/reduced-motion, và tab Ôn câu sai dùng renderer chung. Super Admin có CRUD/publish/reorder/archive Flashcard, signed direct upload 2 ảnh + audio, kiểm path/MIME/size thật. Queue câu sai tự nhận answer objective từ Bài tập/Thi, loại Nói/Tự luận, không lộ answer key, chấm atomic qua RPC, lưu history và resolve/reopen đúng lifecycle.
@@ -182,13 +203,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt; cả audio đề và audio trả lời giữ bucket private/RLS, không dùng service role và không nới quyền ngoài đúng attempt.
 - **Blocker/rủi ro:** chưa smoke micro/file thật end-to-end bằng tài khoản học viên/giáo viên trên bản deploy; người fix không tự đánh dấu Verified. Migration đã live nên `BUG-M11-M12-007` có thể smoke ngay; `BUG-M11-M12-006` cần user commit/redeploy code.
 - **Next action:** user smoke audio đề ngay; review/commit/redeploy rồi smoke bản thu > 1 MB cho cả Bài tập/Thi và màn chấm; Claude xác minh độc lập.
-
-### [2026-07-20] Phiên 42 — Codex — BUG-M11-M12-005
-
-- **Làm được:** Xác định gốc lỗi MP3 là wizard gửi nguyên blob qua Next Server Action trong khi Next 16 mặc định giới hạn body 1 MB. Chuyển sang signed upload hai bước: server kiểm auth/quota/đuôi/MIME/size và sinh path owner; browser upload thẳng bucket private; action lưu câu hỏi kiểm lại path + metadata thật từ Storage rồi mới insert `question_media`. Tạo mới/chỉnh sửa dùng chung luồng; giữ audio cũ bằng Storage copy; mở lại editor lấy signed URL 5 phút và phát được file hiện tại.
-- **File thay đổi:** `question-bank/{domain/audio,server/actions,server/queries,components/question-wizard,components/question-bank-page}`; rate-limit type; unit/component test; docs 01/02/03/04; QA board và WORKLOG.
-- **Migration/data impact:** không có migration; không đổi schema/RLS/data. Dùng policy/bucket private `question-media` và scope rate limit `question_media` đã tồn tại ở migration 38/42/49.
-- **Đã test:** lint sạch · typecheck sạch · Vitest **127/127** · production build xanh · `git diff --check` sạch. Test mới bao phủ MP3 1,2 MB không đi qua Server Action, cả tạo mới/chỉnh sửa, MIME alias/path traversal và mở lại editor thấy audio cũ.
-- **Quyết định mới:** không đổi quyết định đã chốt; áp lại mẫu signed direct upload đã dùng ở tài liệu khóa học để tránh giới hạn request mà vẫn giữ RLS/fail-closed.
-- **Blocker/rủi ro:** Docker Desktop đang tắt nên không chạy smoke Supabase local/pgTAP trong phiên; không có migration nên dùng baseline pgTAP gần nhất 291/291. Cần redeploy rồi smoke MP3 thật trên trình duyệt; người fix không tự đánh dấu Verified.
-- **Next action:** user review/commit/redeploy; Claude/user smoke `BUG-M11-M12-005` với MP3 > 1 MB cho cả tạo và sửa, mở lại editor + preview bộ.

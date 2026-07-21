@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Pause,
   RotateCw,
   Volume2,
 } from "lucide-react";
@@ -18,7 +19,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { FlashcardDeckView } from "@/features/flashcards/server/queries";
 
 type Face = "front" | "back";
-type PageDirection = "next" | "previous" | null;
+type PageDirection = "next" | "previous";
+type FlashcardPage = FlashcardDeckView["sections"][number]["pages"][number];
+type PageTransition = {
+  sectionId: string;
+  fromIndex: number;
+  /** Mặt của trang cũ tại lúc rời đi — trang cũ đã được reset về mặt trước. */
+  fromFace: Face;
+  direction: PageDirection;
+};
 
 export function StudentFlashcardReader({
   deck,
@@ -36,7 +45,9 @@ export function StudentFlashcardReader({
     {},
   );
   const [faceByPage, setFaceByPage] = useState<Record<string, Face>>({});
-  const [direction, setDirection] = useState<PageDirection>(null);
+  const [pageTransition, setPageTransition] = useState<PageTransition | null>(
+    null,
+  );
   const touchStartX = useRef<number | null>(null);
   const suppressFlip = useRef(false);
 
@@ -50,6 +61,21 @@ export function StudentFlashcardReader({
     : 0;
   const page = section?.pages[pageIndex] ?? null;
   const face = page ? (faceByPage[page.id] ?? "front") : "front";
+  const outgoingPage =
+    section && pageTransition?.sectionId === section.id
+      ? (section.pages[pageTransition.fromIndex] ?? null)
+      : null;
+  const outgoingFace = pageTransition?.fromFace ?? "front";
+
+  useEffect(() => {
+    if (!pageTransition) return;
+
+    const fallbackTimer = window.setTimeout(() => {
+      setPageTransition(null);
+    }, 520);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [pageTransition]);
 
   if (!courseName) {
     return (
@@ -79,14 +105,35 @@ export function StudentFlashcardReader({
     );
   }
 
+  // Tiêu đề admin đặt cho trang: từ/cụm từ với trang từ vựng, tên buổi với trang mở đầu.
+  const pageTitle =
+    page.kind === "vocabulary" ? (page.term ?? section.title) : section.title;
+
   function navigate(nextIndex: number) {
-    if (!section || nextIndex < 0 || nextIndex >= section.pages.length) return;
-    setDirection(nextIndex > pageIndex ? "next" : "previous");
+    if (
+      !section ||
+      pageTransition ||
+      nextIndex < 0 ||
+      nextIndex >= section.pages.length
+    ) {
+      return;
+    }
+    const leavingPage = section.pages[pageIndex];
+    setPageTransition({
+      sectionId: section.id,
+      fromIndex: pageIndex,
+      fromFace: leavingPage ? (faceByPage[leavingPage.id] ?? "front") : "front",
+      direction: nextIndex > pageIndex ? "next" : "previous",
+    });
+    // Rời trang nào thì trang đó quay lại mặt trước cho lần xem sau.
+    if (leavingPage) {
+      setFaceByPage((current) => ({ ...current, [leavingPage.id]: "front" }));
+    }
     setPageBySection((current) => ({ ...current, [section.id]: nextIndex }));
   }
 
   function toggleFace() {
-    if (!page) return;
+    if (!page || pageTransition) return;
     setFaceByPage((current) => ({
       ...current,
       [page.id]: (current[page.id] ?? "front") === "front" ? "back" : "front",
@@ -134,7 +181,7 @@ export function StudentFlashcardReader({
             variant={candidate.id === section.id ? "default" : "outline"}
             className="h-11 shrink-0 rounded-t-lg rounded-b-sm"
             onClick={() => {
-              setDirection(null);
+              setPageTransition(null);
               setSectionId(candidate.id);
             }}
           >
@@ -149,31 +196,56 @@ export function StudentFlashcardReader({
           variant="outline"
           size="icon"
           className="absolute top-1/2 left-0 z-20 size-11 -translate-y-1/2 rounded-full"
-          disabled={pageIndex === 0}
+          disabled={pageIndex === 0 || Boolean(pageTransition)}
           onClick={() => navigate(pageIndex - 1)}
           aria-label="Trang flashcard trước"
         >
           <ChevronLeft className="size-5" aria-hidden />
         </Button>
 
-        <div
-          key={page.id}
-          className={
-            direction === "next"
-              ? "animate-[flashcard-page-next_360ms_ease-out] motion-reduce:animate-none"
-              : direction === "previous"
-                ? "animate-[flashcard-page-previous_360ms_ease-out] motion-reduce:animate-none"
-                : undefined
-          }
-        >
-          <div className="[perspective:1400px]">
+        <div className="relative [perspective:1400px]">
+          {outgoingPage && pageTransition ? (
+            <div
+              aria-hidden="true"
+              data-page-transition={pageTransition.direction}
+              data-transition-layer="outgoing"
+              className={`pointer-events-none absolute inset-0 z-10 [transform-origin:center] [transform-style:preserve-3d] motion-reduce:hidden ${
+                pageTransition.direction === "next"
+                  ? "flashcard-page-out-next"
+                  : "flashcard-page-out-previous"
+              }`}
+            >
+              <FlashcardSurface page={outgoingPage} face={outgoingFace} />
+            </div>
+          ) : null}
+
+          <div
+            key={page.id}
+            data-page-transition={pageTransition?.direction}
+            data-transition-layer="incoming"
+            className={`relative [transform-origin:center] [transform-style:preserve-3d] motion-reduce:animate-none ${
+              pageTransition?.direction === "next"
+                ? "flashcard-page-in-next"
+                : pageTransition?.direction === "previous"
+                  ? "flashcard-page-in-previous"
+                  : ""
+            }`}
+            onAnimationEnd={(event) => {
+              if (event.currentTarget === event.target) {
+                setPageTransition(null);
+              }
+            }}
+          >
             <div
               role="button"
-              tabIndex={0}
+              tabIndex={pageTransition ? -1 : 0}
+              aria-disabled={pageTransition ? true : undefined}
               aria-label={`Mặt ${face === "front" ? "trước" : "sau"} của ${
                 page.kind === "session_cover" ? "trang mở đầu" : page.term
               }. Nhấn Enter hoặc phím cách để lật mặt.`}
-              className="focus-visible:ring-ring relative min-h-[360px] cursor-pointer rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 sm:min-h-[460px]"
+              className={`focus-visible:ring-ring relative min-h-[360px] rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 sm:min-h-[560px] ${
+                pageTransition ? "cursor-default" : "cursor-pointer"
+              }`}
               onClick={handleCardClick}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -199,26 +271,7 @@ export function StudentFlashcardReader({
                 navigate(end < start ? pageIndex + 1 : pageIndex - 1);
               }}
             >
-              <div
-                className="absolute inset-0 transition-transform duration-500 [transform-style:preserve-3d] motion-reduce:transition-none"
-                style={{
-                  transform: `rotateX(${face === "back" ? 180 : 0}deg)`,
-                }}
-              >
-                <FlashcardFace
-                  url={page.frontUrl}
-                  alt={page.front_alt}
-                  label="Mặt trước"
-                  term={page.kind === "vocabulary" ? page.term : section.title}
-                />
-                <FlashcardFace
-                  url={page.backUrl}
-                  alt={page.back_alt}
-                  label="Mặt sau"
-                  term={page.kind === "vocabulary" ? page.term : section.title}
-                  back
-                />
-              </div>
+              <FlashcardFaces page={page} face={face} />
             </div>
           </div>
         </div>
@@ -228,7 +281,9 @@ export function StudentFlashcardReader({
           variant="outline"
           size="icon"
           className="absolute top-1/2 right-0 z-20 size-11 -translate-y-1/2 rounded-full"
-          disabled={pageIndex === section.pages.length - 1}
+          disabled={
+            pageIndex === section.pages.length - 1 || Boolean(pageTransition)
+          }
           onClick={() => navigate(pageIndex + 1)}
           aria-label="Trang flashcard tiếp theo"
         >
@@ -248,27 +303,29 @@ export function StudentFlashcardReader({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" onClick={toggleFace}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={Boolean(pageTransition)}
+            onClick={toggleFace}
+          >
             <RotateCw className="size-4" aria-hidden />
             Lật mặt
           </Button>
           {page.audioUrl ? (
-            <audio
+            <FlashcardAudioButton
               key={page.audioUrl}
-              controls
-              preload="metadata"
-              className="h-11 max-w-52"
-            >
-              <source src={page.audioUrl} />
-            </audio>
-          ) : (
+              url={page.audioUrl}
+              label={pageTitle}
+            />
+          ) : page.audio_path ? (
             <Alert className="py-2">
               <Volume2 className="size-4" aria-hidden />
               <AlertDescription>
                 Audio tạm thời không khả dụng.
               </AlertDescription>
             </Alert>
-          )}
+          ) : null}
         </div>
       </div>
       <p className="text-muted-foreground text-center text-xs">
@@ -279,17 +336,94 @@ export function StudentFlashcardReader({
   );
 }
 
+function FlashcardSurface({ page, face }: { page: FlashcardPage; face: Face }) {
+  return (
+    <div className="relative min-h-[360px] rounded-2xl sm:min-h-[560px]">
+      <FlashcardFaces page={page} face={face} />
+    </div>
+  );
+}
+
+function FlashcardAudioButton({ url, label }: { url: string; label: string }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <>
+      <Button
+        type="button"
+        aria-label={playing ? `Dừng audio ${label}` : `Phát audio ${label}`}
+        onClick={() => {
+          const audio = audioRef.current;
+          if (!audio) return;
+          if (audio.paused) {
+            audio.currentTime = 0;
+            void audio.play().catch(() => setPlaying(false));
+          } else {
+            audio.pause();
+          }
+        }}
+      >
+        {playing ? (
+          <Pause className="size-4" aria-hidden />
+        ) : (
+          <Volume2 className="size-4" aria-hidden />
+        )}
+        <span className="font-hanzi max-w-40 truncate">{label}</span>
+      </Button>
+      <audio
+        key={url}
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        className="hidden"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+    </>
+  );
+}
+
+function FlashcardFaces({
+  page,
+  face,
+}: {
+  page: FlashcardPage;
+  face: Face;
+}) {
+  return (
+    <div
+      data-face={face}
+      className="absolute inset-0 origin-center transition-transform duration-500 [transform-style:preserve-3d] motion-reduce:transition-none"
+      style={{
+        transform: `rotateX(${face === "back" ? 180 : 0}deg)`,
+      }}
+    >
+      <FlashcardFace
+        url={page.frontUrl}
+        alt={page.front_alt}
+        label="Mặt trước"
+      />
+      <FlashcardFace
+        url={page.backUrl}
+        alt={page.back_alt}
+        label="Mặt sau"
+        back
+      />
+    </div>
+  );
+}
+
 function FlashcardFace({
   url,
   alt,
   label,
-  term,
   back = false,
 }: {
   url: string | null;
   alt: string;
   label: string;
-  term: string | null;
   back?: boolean;
 }) {
   return (
@@ -305,7 +439,8 @@ function FlashcardFace({
           fill
           sizes="(max-width: 768px) 80vw, 680px"
           unoptimized
-          className="object-cover"
+          // Mobile giữ nguyên khung đầy; desktop thu gọn để thấy trọn ảnh.
+          className="object-cover sm:object-contain"
           priority={!back}
         />
       ) : (
@@ -313,12 +448,6 @@ function FlashcardFace({
           Không tải được ảnh {label.toLowerCase()}.
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent p-5 pt-16 text-white">
-        <p className="text-xs font-medium tracking-wide uppercase">{label}</p>
-        {term && (
-          <p className="font-hanzi mt-1 text-2xl font-semibold">{term}</p>
-        )}
-      </div>
     </div>
   );
 }

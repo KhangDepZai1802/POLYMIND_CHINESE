@@ -263,9 +263,9 @@ Nguyên tắc bất di bất dịch:
 
 ### BR-13 — Flashcard và ôn câu sai
 
-- Mỗi Course có tối đa một deck flashcard; nội dung chia theo **buổi số 1…N**. Mỗi buổi có đúng một trang mở đầu và các trang từ vựng theo thứ tự. Mỗi trang được publish phải có **ảnh mặt trước + ảnh mặt sau + audio**; media nằm trong bucket private.
+- Mỗi Course có tối đa một deck flashcard; nội dung chia theo **buổi số 1…N**. Mỗi buổi có đúng một trang mở đầu và các trang từ vựng theo thứ tự. Mỗi trang được publish phải có **ảnh mặt trước + ảnh mặt sau**; riêng trang từ vựng bắt buộc thêm **từ/cụm từ + audio phát âm**, còn trang mở đầu không có audio (ràng buộc check ở DB). Mô tả ảnh (alt) do server sinh từ từ vựng/tên buổi, admin không nhập. Media nằm trong bucket private.
 - Super Admin chọn khóa và buổi khi quản trị, có thể chuẩn bị nháp từng buổi rồi publish. Học viên chỉ thấy buổi đã publish của Course thuộc lớp mình học; teacher/anonymous không có quyền.
-- Trên màn học viên, mũi tên trái/phải đổi trang bằng hiệu ứng lật quanh trục dọc (phải → trái hoặc ngược lại). Bấm trực tiếp thẻ lật mặt trước/sau quanh trục ngang (dưới → trên); trạng thái mặt **độc lập** với đổi trang. Bookmark buổi là các tab đánh dấu trang sách, không dùng dropdown.
+- Trên màn học viên, trang 1 là trang mở đầu; mũi tên phải lật **toàn bộ flashcard** hiện tại từ phải → trái quanh tâm để sang trang kế, mũi tên trái chạy chiều ngược lại. Đây là hiệu ứng lật flashcard, **không phải lật trang sách và không có gáy làm điểm xoay**. Bấm trực tiếp thẻ lật mặt trước/sau từ dưới → trên quanh tâm; bấm lại quay về mặt trước. Mặt đang xem được lưu riêng theo từng trang: đang ở mặt sau vẫn sang/lùi trang được, và đổi trang không tự ép mặt về trước. Bookmark buổi là các tab đánh dấu trang sách, không dùng dropdown.
 - Animation phải dùng được bằng bàn phím/touch, có focus rõ, live text cho screen reader và tắt chuyển động khi `prefers-reduced-motion`.
 - Ôn câu sai chỉ nhận answer có `is_correct = false` từ loại câu **máy chấm được**. `essay_translation` và `speaking` không vào hàng đợi; Nghe/Đọc vẫn vào nếu chính dạng câu đó được DB chấm tự động.
 - Mỗi cặp `(student_id, question_version_id)` có một hàng đợi. Sai thêm thì tăng số lần và mở lại nếu đã thành thạo; làm đúng trong màn ôn thì ghi lịch sử và rời danh sách. Làm sai vẫn ở lại để thử tiếp.

@@ -19,18 +19,24 @@ export const flashcardPageSchema = z
     section_id: z.uuid("Buổi flashcard không hợp lệ."),
     kind: z.enum(["session_cover", "vocabulary"]),
     term: z.string().trim().max(120).optional().default(""),
-    front_alt: z.string().trim().min(2, "Nhập mô tả ảnh mặt trước.").max(240),
-    back_alt: z.string().trim().min(2, "Nhập mô tả ảnh mặt sau.").max(240),
     front_image_path: z.string().trim().min(1),
     back_image_path: z.string().trim().min(1),
-    audio_path: z.string().trim().min(1),
+    audio_path: z.string().trim().optional().default(""),
   })
   .superRefine((value, ctx) => {
-    if (value.kind === "vocabulary" && !value.term) {
+    if (value.kind !== "vocabulary") return;
+    if (!value.term) {
       ctx.addIssue({
         code: "custom",
         path: ["term"],
         message: "Trang từ vựng cần nhập từ/cụm từ.",
+      });
+    }
+    if (!value.audio_path) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["audio_path"],
+        message: "Trang từ vựng cần audio phát âm.",
       });
     }
   });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_FLASHCARD_AUDIO_BYTES,
   MAX_FLASHCARD_IMAGE_BYTES,
+  flashcardAltText,
   flashcardMediaFormat,
   flashcardMediaSizeLimit,
   isOwnedFlashcardMediaPath,
@@ -42,6 +43,33 @@ describe("flashcard media", () => {
     expect(flashcardMediaSizeLimit("front")).toBe(MAX_FLASHCARD_IMAGE_BYTES);
     expect(flashcardMediaSizeLimit("back")).toBe(MAX_FLASHCARD_IMAGE_BYTES);
     expect(flashcardMediaSizeLimit("audio")).toBe(MAX_FLASHCARD_AUDIO_BYTES);
+  });
+
+  it("sinh alt ảnh từ từ vựng hoặc tên buổi vì admin không nhập mô tả", () => {
+    expect(
+      flashcardAltText({
+        kind: "vocabulary",
+        face: "front",
+        term: "胡萝卜",
+        sectionTitle: "Buổi 1",
+      }),
+    ).toBe("Mặt trước thẻ từ vựng 胡萝卜");
+    expect(
+      flashcardAltText({
+        kind: "session_cover",
+        face: "back",
+        term: null,
+        sectionTitle: "Chào hỏi",
+      }),
+    ).toBe("Mặt sau trang mở đầu Chào hỏi");
+    expect(
+      flashcardAltText({
+        kind: "vocabulary",
+        face: "back",
+        term: "  ",
+        sectionTitle: "  ",
+      }),
+    ).toBe("Mặt sau trang mở đầu buổi học");
   });
 
   it("khóa object path theo actor, deck, buổi, trang và đúng slot", () => {

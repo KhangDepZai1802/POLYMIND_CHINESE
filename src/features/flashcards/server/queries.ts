@@ -89,11 +89,11 @@ export async function getAdminFlashcardDeck(
   const signed = await signPaths(
     supabase,
     FLASHCARD_MEDIA_BUCKET,
-    pages.flatMap((page) => [
-      page.front_image_path,
-      page.back_image_path,
-      page.audio_path,
-    ]),
+    pages.flatMap((page) =>
+      [page.front_image_path, page.back_image_path, page.audio_path].filter(
+        (path): path is string => Boolean(path),
+      ),
+    ),
     300,
   );
 
@@ -104,7 +104,9 @@ export async function getAdminFlashcardDeck(
       ...page,
       frontUrl: signed.get(page.front_image_path) ?? null,
       backUrl: signed.get(page.back_image_path) ?? null,
-      audioUrl: signed.get(page.audio_path) ?? null,
+      audioUrl: page.audio_path
+        ? (signed.get(page.audio_path) ?? null)
+        : null,
     });
     pagesBySection.set(page.section_id, group);
   }
@@ -158,11 +160,11 @@ export async function getStudentFlashcardDeck(
   const signed = await signPaths(
     supabase,
     FLASHCARD_MEDIA_BUCKET,
-    pages.flatMap((page) => [
-      page.front_image_path,
-      page.back_image_path,
-      page.audio_path,
-    ]),
+    pages.flatMap((page) =>
+      [page.front_image_path, page.back_image_path, page.audio_path].filter(
+        (path): path is string => Boolean(path),
+      ),
+    ),
     900,
   );
   const pagesBySection = new Map<string, FlashcardPageView[]>();
@@ -172,7 +174,9 @@ export async function getStudentFlashcardDeck(
       ...page,
       frontUrl: signed.get(page.front_image_path) ?? null,
       backUrl: signed.get(page.back_image_path) ?? null,
-      audioUrl: signed.get(page.audio_path) ?? null,
+      audioUrl: page.audio_path
+        ? (signed.get(page.audio_path) ?? null)
+        : null,
     });
     pagesBySection.set(page.section_id, group);
   }
