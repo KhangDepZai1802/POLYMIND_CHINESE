@@ -37,8 +37,9 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-21** — Claude — rút gọn form trang flashcard + sửa trải nghiệm đọc theo yêu cầu user, chờ Codex/user xác minh độc lập.
+> Cập nhật: **2026-07-21** — Claude — trang mở đầu flashcard xóa được như trang thường; chờ Codex/user xác minh độc lập.
 
+- **P14-T11 / UX-M22-003 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Trang mở đầu có nút xóa (lưu trữ) như mọi trang; bỏ trang mở đầu không dồn thứ tự trang từ vựng, reorder vẫn chạy khi thiếu cover, publish vẫn bị chặn tới khi thêm cover mới. Migration 69 đã áp local, **chưa push cloud**.
 - **P14-T10 / UX-M22-002 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Form thêm trang tách theo loại (mở đầu: 2 ảnh; từ vựng: từ/cụm từ + audio + 2 ảnh), bỏ ô mô tả ảnh; thẻ học viên bỏ vùng tối + nhãn mặt, desktop hiện trọn ảnh, rời trang là reset trang đó về mặt trước, audio thành một nút mang tiêu đề trang. Migration 68 đã áp local, **chưa push cloud**.
 - **P14-T9 / UX-M22-001 — ☑ Fixed, chờ xác minh độc lập — Codex — 2026-07-21.** Chuyển trang giờ ghép thẻ cũ đi ra + thẻ mới đi vào thành cú lật toàn bộ flashcard phải→trái/trái→phải quanh tâm; lật mặt dưới↔trên và trạng thái từng trang vẫn độc lập.
 - **UX-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Hai nút bắt đầu hiện spinner + nhãn đang mở và tự khóa trong lúc tạo attempt/redirect; có test cho cả Bài tập/Thi.
@@ -51,11 +52,11 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** user review/commit/redeploy Phase 14 (gồm migration 68 chưa push cloud); Codex/user xác minh độc lập `UX-M22-002`; Claude/user xác minh độc lập `UX-M22-001` trên desktop/mobile với media thật, gồm hướng lật trang và lật mặt. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
+**Tiếp theo:** user review/commit/redeploy Phase 14 (gồm migration 68+69 chưa push cloud); Codex/user xác minh độc lập `UX-M22-003` và `UX-M22-002`; Claude/user xác minh độc lập `UX-M22-001` trên desktop/mobile với media thật, gồm hướng lật trang và lật mặt. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
 
 Còn nợ trước đó: user review/commit/redeploy để đo `PERF-M20-001`; smoke assessment/audio và verification queue; smoke P-C; role `head_teacher`; rà runtime `P7-T7/P7-T8/P7-T9`.
 
-⏳ **Verification Queue:** `UX-M22-002`, `UX-M22-001`, `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008`, `PERF-M20-001` chờ Claude/user xác minh độc lập trên production. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
+⏳ **Verification Queue:** `UX-M22-003`, `UX-M22-002`, `UX-M22-001`, `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008`, `PERF-M20-001` chờ Claude/user xác minh độc lập trên production. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
 Xem chi tiết task ở [`docs/08-phase-plan.md`](docs/08-phase-plan.md).
 
@@ -134,6 +135,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-21] Phiên 50 — Claude — P14-T11 / UX-M22-003
+
+- **Làm được:** Theo yêu cầu user, trang mở đầu giờ có nút xóa (lưu trữ) như mọi trang khác trong màn admin flashcard. `archive_flashcard_page` bỏ nhánh chặn `session_cover`; khi bỏ trang mở đầu thì **không dồn** thứ tự để trang từ vựng không rơi về `order_index = 0` (vi phạm check constraint). `reorder_flashcard_pages` chỉ bắt "cover đứng đầu" khi buổi còn cover, và đánh số từ 1 khi cover đã bị lưu trữ. Server action `moveFlashcardPageAction` + nút mũi tên trong UI tính `minIndex` theo việc còn cover hay không. Buổi thiếu trang mở đầu vẫn sửa được nhưng publish vẫn bị trigger chặn — dialog "Thêm trang" tự mở lại lựa chọn "Trang mở đầu buổi" để thêm lại.
+- **File chính:** `supabase/migrations/20260721000069_flashcard_cover_archivable.sql`, `flashcards/server/actions.ts`, `components/flashcard-admin-manager.tsx`, `tests/unit/components/flashcard-admin-manager.test.tsx`, `supabase/tests/database/flashcards.test.sql`, `docs/01-business-analysis.md` (BR-13).
+- **Migration/data impact:** migration 69 chỉ `create or replace` hai function (`archive_flashcard_page`, `reorder_flashcard_pages`), không đổi bảng/dữ liệu. Đã chạy `npx supabase db reset` local; **chưa push cloud** (cùng lô với migration 68 còn nợ).
+- **Đã test:** `npx supabase db reset` xanh · pgTAP `flashcards.test.sql` **33/33 ok** (bỏ assert "không archive cover", thêm 4 assert: archive cover chạy được, không dồn từ vựng về 0, reorder chạy khi thiếu cover, publish bị chặn khi thiếu cover) · lint sạch · typecheck sạch · Vitest **162/162** · `npm run build` xanh.
+- **Quyết định mới:** trang mở đầu được xóa mềm như trang thường; ràng buộc "mỗi buổi đúng một trang mở đầu" chỉ enforce ở thời điểm publish, không chặn ở thao tác xóa.
+- **Blocker/rủi ro:** Claude là người fix nên **không tự ghi Verified** — `UX-M22-003` vào Verification Queue chờ Codex/user. Chưa bấm thử bằng tay trên UI thật; migration 68+69 chưa push cloud.
+- **Next action:** Codex/user xác minh độc lập `UX-M22-003` (xóa trang mở đầu → thứ tự trang từ vựng giữ nguyên, publish bị chặn, thêm lại cover thành công), rồi push migration 68+69 lên cloud.
+
 ### [2026-07-21] Phiên 49 — Claude — P14-T10 / UX-M22-002
 
 - **Làm được:** Rút gọn form "Thêm trang flashcard" theo loại trang — trang mở đầu chỉ còn 2 ảnh; trang từ vựng chỉ còn từ/cụm từ + audio + 2 ảnh; bỏ hẳn ô "Mô tả mặt trước/sau", server tự sinh alt từ từ vựng hoặc tên buổi nên screen reader vẫn đọc được. Reader học viên: bỏ vùng gradient tối + nhãn "MẶT TRƯỚC"/từ ở đáy thẻ (cả hai mặt); desktop hiện trọn ảnh (`sm:object-contain`, cao 560px) còn mobile giữ nguyên `object-cover`; chuyển trang vẫn tự do ở bất kỳ mặt nào nhưng trang vừa rời luôn reset về mặt trước (snapshot mặt cũ trong `pageTransition.fromFace` để animation vẫn đúng); thanh `<audio controls>` đổi thành một nút mang đúng tiêu đề admin đặt cho trang. Nút play của màn admin giữ nguyên theo yêu cầu user.
@@ -183,23 +194,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt; UI chống double-submit chỉ là phản hồi UX, idempotency thật vẫn ở RPC/DB.
 - **Blocker/rủi ro:** chưa smoke độ trễ thật trên bản deploy; người fix không tự đánh dấu Verified.
 - **Next action:** user review/commit/redeploy; smoke hai nút bắt đầu trên mạng chậm và để Claude xác minh độc lập `UX-M11-M12-005`, sau đó tiếp tục verification queue hiện tại.
-
-### [2026-07-20] Phiên 44 — Codex — BUG-M11-M12-008
-
-- **Làm được:** Audit toàn bộ vòng đời audio thay vì vá từng màn. Xác định màn chấm chỉ ký bản ghi Nói, còn query thiếu question version id; kết quả học viên cũng chỉ ký bản ghi Nói, RPC thiếu `question_version_id`/`prompt_content`, và RLS dừng quyền audio đề ngay khi attempt kết thúc. Gom ký URL vào pipeline chung: audio đề cho Nghe/Chép và bản ghi Nói đều chạy ở lượt làm, màn chấm và kết quả; UI dùng player có nhãn riêng. Giữ nguyên các bề mặt đã đúng ở Question Bank và preview bộ.
-- **File thay đổi:** `assessment-results/{server/audio-signing,components/audio-player,components/grading-workspace,components/result-view}`; query chấm Bài tập/Thi; migration 65; pgTAP + unit/component test; docs 01/02/03/04/08; QA board và WORKLOG.
-- **Migration/data impact:** `20260720000065_assessment_audio_surfaces.sql` mở đọc `question-media` fail-closed cho đúng delivery giáo viên và kết quả đã công bố của chính học viên, đồng thời bổ sung snapshot version/prompt cho RPC kết quả. Đã áp local + Supabase cloud; migration list local/remote khớp 1–65; dry-run cuối trả `Remote database is up to date`. Push có cảnh báo cache catalog pg-delta thiếu certificate tạm, nhưng migration history và dry-run đã xác minh trạng thái remote.
-- **Đã test:** lint sạch · typecheck sạch · Vitest **133/133** · pgTAP **325/325** (đúng/sai giáo viên, đúng/sai học viên, attempt đang mở + kết quả đã công bố, metadata + Storage, cả Bài tập/Thi) · production build xanh · `git diff --check` sạch. Build sandbox lần đầu không tải được Google Font; chạy lại có quyền mạng thành công.
-- **Quyết định mới:** không đổi quyết định đã chốt; bucket tiếp tục private, mọi ký URL chạy bằng user client/RLS, không service role và không nới quyền ngoài delivery/attempt hợp lệ.
-- **Blocker/rủi ro:** code cần user review/commit để Vercel redeploy rồi mới smoke trình duyệt thật; người fix không tự đánh dấu Verified.
-- **Next action:** redeploy và smoke đủ Question Bank → preview → lượt làm → chấm → kết quả cho cả Bài tập/Thi; Claude xác minh độc lập `BUG-M11-M12-008`.
-
-### [2026-07-20] Phiên 43 — Codex — BUG-M11-M12-006/007
-
-- **Làm được:** Xác định bản ghi câu Nói chỉ phát local bằng Blob URL nhưng blob thật bị gửi qua Server Action giới hạn 1 MB. Chuyển Bài tập/Thi sang một helper signed direct upload: server kiểm đúng student/attempt/item đang mở, MIME/size và sinh path; browser upload Storage; server kiểm object thật rồi RPC `attach_answer_media`. Sửa recorder bắt exception thành trạng thái lỗi/retry. Với MP3 đề, xác định `question_media` chỉ có policy giáo viên nên query học viên rỗng; thêm policy metadata + Storage dựa trên helper fail-closed cho đúng lượt exercise/exam. Test Storage thật còn phát hiện migration 55 thiếu `GRANT SELECT answer_media`; bổ sung forward-fix để student owner/teacher ký URL qua RLS.
-- **File thay đổi:** `assessment-results/{client,domain,server}`; action/attempt Bài tập + Thi; recorder; migration 63–64; pgTAP + unit test; docs 02/03/04/08; QA board và WORKLOG.
-- **Migration/data impact:** `20260720000063_student_assessment_question_media.sql` thêm helper/policy đọc audio đề theo đúng lượt; `20260720000064_answer_media_select_grant.sql` cấp SELECT metadata qua RLS. Đã áp local và Supabase cloud; migration list 63–64 khớp local/remote; dry-run cuối trả `Remote database is up to date`.
-- **Đã test:** lint sạch · typecheck sạch · Vitest **130/130** · pgTAP **309/309** (có test metadata + object Storage cho đúng/sai học viên/giáo viên, cả Bài tập/Thi và màn chấm) · production build xanh · `git diff --check` sạch. Build sandbox lần đầu không tải được Google Font; chạy lại có quyền mạng thành công.
-- **Quyết định mới:** không đổi quyết định đã chốt; cả audio đề và audio trả lời giữ bucket private/RLS, không dùng service role và không nới quyền ngoài đúng attempt.
-- **Blocker/rủi ro:** chưa smoke micro/file thật end-to-end bằng tài khoản học viên/giáo viên trên bản deploy; người fix không tự đánh dấu Verified. Migration đã live nên `BUG-M11-M12-007` có thể smoke ngay; `BUG-M11-M12-006` cần user commit/redeploy code.
-- **Next action:** user smoke audio đề ngay; review/commit/redeploy rồi smoke bản thu > 1 MB cho cả Bài tập/Thi và màn chấm; Claude xác minh độc lập.

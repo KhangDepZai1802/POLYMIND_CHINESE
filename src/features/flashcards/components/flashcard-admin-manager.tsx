@@ -486,6 +486,12 @@ function FlashcardPageRow({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const isCover = page.kind === "session_cover";
+  const pageLabel = isCover ? "trang mở đầu" : (page.term ?? "trang từ vựng");
+  // Còn trang mở đầu thì vị trí 0 bị khóa; đã lưu trữ thì từ vựng được đứng đầu.
+  const minIndex = section.pages.some((item) => item.kind === "session_cover")
+    ? 1
+    : 0;
 
   function mutate(
     action: (data: FormData) => Promise<ActionState>,
@@ -534,15 +540,15 @@ function FlashcardPageRow({
       </div>
       {section.status === "draft" && (
         <div className="flex flex-wrap items-center justify-end gap-1">
-          {page.kind === "vocabulary" && (
+          {!isCover && (
             <>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 className="size-11"
-                disabled={pending || index <= 1}
-                aria-label={`Đưa ${page.term} lên`}
+                disabled={pending || index <= minIndex}
+                aria-label={`Đưa ${pageLabel} lên`}
                 onClick={() =>
                   mutate(moveFlashcardPageAction, { direction: "up" })
                 }
@@ -555,7 +561,7 @@ function FlashcardPageRow({
                 size="icon"
                 className="size-11"
                 disabled={pending || index >= total - 1}
-                aria-label={`Đưa ${page.term} xuống`}
+                aria-label={`Đưa ${pageLabel} xuống`}
                 onClick={() =>
                   mutate(moveFlashcardPageAction, { direction: "down" })
                 }
@@ -565,23 +571,24 @@ function FlashcardPageRow({
             </>
           )}
           <PageDialog deckId={deckId} section={section} page={page} />
-          {page.kind === "vocabulary" && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-destructive size-11"
-              disabled={pending}
-              aria-label={`Lưu trữ ${page.term}`}
-              onClick={() => {
-                if (window.confirm(`Lưu trữ trang “${page.term}”?`)) {
-                  mutate(archiveFlashcardPageAction);
-                }
-              }}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-destructive size-11"
+            disabled={pending}
+            aria-label={`Lưu trữ ${pageLabel}`}
+            onClick={() => {
+              const confirmText = isCover
+                ? "Lưu trữ trang mở đầu? Buổi sẽ không công bố được cho tới khi thêm trang mở đầu mới."
+                : `Lưu trữ trang “${page.term}”?`;
+              if (window.confirm(confirmText)) {
+                mutate(archiveFlashcardPageAction);
+              }
+            }}
+          >
+            <Trash2 className="size-4" aria-hidden />
+          </Button>
         </div>
       )}
     </article>

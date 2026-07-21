@@ -520,14 +520,16 @@ export async function moveFlashcardPageAction(
   }
   const { data: pages } = await supabase
     .from("flashcard_pages")
-    .select("id")
+    .select("id,kind")
     .eq("section_id", page.section_id)
     .is("archived_at", null)
     .order("order_index");
   const ids = pages?.map((item) => item.id) ?? [];
+  // Còn trang mở đầu thì nó khóa vị trí 0; đã lưu trữ thì từ vựng được đứng đầu.
+  const minIndex = pages?.some((item) => item.kind === "session_cover") ? 1 : 0;
   const index = ids.indexOf(page.id);
   const target = parsed.data.direction === "up" ? index - 1 : index + 1;
-  if (index <= 0 || target <= 0 || target >= ids.length) {
+  if (index < minIndex || target < minIndex || target >= ids.length) {
     return { success: "Trang đã ở vị trí ngoài cùng." };
   }
   [ids[index], ids[target]] = [ids[target]!, ids[index]!];

@@ -51,6 +51,48 @@ const deck = {
   ],
 } as const;
 
+const basePage = {
+  section_id: deck.sections[0].id,
+  front_image_path: "front.png",
+  back_image_path: "back.png",
+  front_alt: "mặt trước",
+  back_alt: "mặt sau",
+  created_by: "33333333-3333-4333-8333-333333333333",
+  archived_at: null,
+  created_at: "2026-07-21T00:00:00Z",
+  updated_at: "2026-07-21T00:00:00Z",
+  frontUrl: null,
+  backUrl: null,
+  audioUrl: null,
+} as const;
+
+const deckWithPages = {
+  ...deck,
+  sections: [
+    {
+      ...deck.sections[0],
+      pages: [
+        {
+          ...basePage,
+          id: "55555555-5555-4555-8555-555555555551",
+          kind: "session_cover",
+          order_index: 0,
+          term: null,
+          audio_path: null,
+        },
+        {
+          ...basePage,
+          id: "55555555-5555-4555-8555-555555555552",
+          kind: "vocabulary",
+          order_index: 1,
+          term: "你好",
+          audio_path: "audio.mp3",
+        },
+      ],
+    },
+  ],
+} as const;
+
 describe("FlashcardAdminManager", () => {
   it("hiển thị mục lục buổi, trạng thái và khóa nút thêm khi đã đủ số buổi", () => {
     render(
@@ -71,5 +113,22 @@ describe("FlashcardAdminManager", () => {
     expect(
       screen.getByRole("button", { name: "Công bố buổi" }),
     ).toBeInTheDocument();
+  });
+
+  it("cho phép lưu trữ cả trang mở đầu lẫn trang từ vựng ở buổi nháp", () => {
+    render(
+      <FlashcardAdminManager
+        courses={[course] as never}
+        selectedCourseId={course.id}
+        deck={deckWithPages as never}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Lưu trữ trang mở đầu" }),
+    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Lưu trữ 你好" })).toBeEnabled();
+    // Còn trang mở đầu thì trang từ vựng đầu tiên không được đẩy lên vị trí 0.
+    expect(screen.getByRole("button", { name: "Đưa 你好 lên" })).toBeDisabled();
   });
 });

@@ -331,6 +331,7 @@
 | P14-T8 | Quality gate & docs | Generate types; cập nhật nav/docs/QA/WORKLOG; lint + typecheck + Vitest + pgTAP + build xanh; smoke 3 role/IDOR/signed URL ở local, ghi rõ phần production còn chờ redeploy | ☑ |
 | P14-T9 | Hiệu chỉnh chuyển động Flashcard | Chuyển trang là cú lật toàn bộ flashcard quanh tâm theo phải→trái/trái→phải, không phải hiệu ứng trang sách; click lật mặt dưới↔trên độc lập, giữ mặt riêng theo từng trang; reduced-motion + component test xanh | ☑ |
 | P14-T10 | Rút gọn form trang & trải nghiệm đọc Flashcard | Form theo loại trang: trang mở đầu chỉ 2 ảnh, trang từ vựng chỉ từ/cụm từ + audio + 2 ảnh, bỏ ô mô tả ảnh (server sinh alt); reader bỏ overlay nhãn/từ trên thẻ, desktop hiện trọn ảnh còn mobile giữ nguyên, rời trang là reset trang đó về mặt trước, audio thành một nút mang tiêu đề trang; migration `audio_path` nullable + check theo `kind`; lint/typecheck/test/build + pgTAP flashcards xanh | ☑ |
+| P14-T11 | Xóa được trang mở đầu Flashcard | Trang mở đầu có nút lưu trữ như trang từ vựng; bỏ cover không dồn `order_index` của trang từ vựng; reorder vẫn chạy khi buổi tạm thiếu cover; publish vẫn bị chặn tới khi thêm lại cover; pgTAP + unit test + lint/typecheck/test/build xanh | ☑ |
 
 ---
 

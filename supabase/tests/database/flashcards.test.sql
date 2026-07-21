@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(33);
 
 select is(
   (
@@ -322,12 +322,6 @@ select is(
   1,
   'reorder cập nhật đúng thứ tự vocabulary'
 );
-select throws_ok(
-  $$select public.archive_flashcard_page('66700000-0000-4000-8000-000000000001')$$,
-  'P0001',
-  'Không lưu trữ trang mở đầu; hãy cập nhật media của trang',
-  'không archive cover'
-);
 select lives_ok(
   $$select public.archive_flashcard_page('66700000-0000-4000-8000-000000000003')$$,
   'archive vocabulary chạy được ở section nháp'
@@ -354,6 +348,32 @@ select throws_ok(
   '23514',
   null,
   'trang mở đầu không nhận audio'
+);
+select lives_ok(
+  $$select public.archive_flashcard_page('66700000-0000-4000-8000-000000000001')$$,
+  'archive trang mở đầu chạy được ở section nháp'
+);
+select is(
+  (
+    select order_index
+    from public.flashcard_pages
+    where id = '66700000-0000-4000-8000-000000000002'
+  ),
+  1,
+  'archive trang mở đầu không dồn trang từ vựng về order 0'
+);
+select lives_ok(
+  $$select public.reorder_flashcard_pages(
+      '66600000-0000-4000-8000-000000000001',
+      array['66700000-0000-4000-8000-000000000002'::uuid]
+    )$$,
+  'reorder chạy được khi buổi tạm thời không còn trang mở đầu'
+);
+select throws_ok(
+  $$select public.publish_flashcard_section('66600000-0000-4000-8000-000000000001')$$,
+  'P0001',
+  'Mỗi buổi cần đúng một trang mở đầu và ít nhất một trang từ vựng',
+  'buổi thiếu trang mở đầu không publish được'
 );
 
 reset role;
