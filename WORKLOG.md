@@ -37,10 +37,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-21** — Claude — trang mở đầu flashcard xóa được như trang thường; chờ Codex/user xác minh độc lập.
+> Cập nhật: **2026-07-21** — Claude — trang mở đầu flashcard xóa được như trang thường; migration 68+69 đã push cloud; chờ Codex/user xác minh độc lập.
 
-- **P14-T11 / UX-M22-003 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Trang mở đầu có nút xóa (lưu trữ) như mọi trang; bỏ trang mở đầu không dồn thứ tự trang từ vựng, reorder vẫn chạy khi thiếu cover, publish vẫn bị chặn tới khi thêm cover mới. Migration 69 đã áp local, **chưa push cloud**.
-- **P14-T10 / UX-M22-002 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Form thêm trang tách theo loại (mở đầu: 2 ảnh; từ vựng: từ/cụm từ + audio + 2 ảnh), bỏ ô mô tả ảnh; thẻ học viên bỏ vùng tối + nhãn mặt, desktop hiện trọn ảnh, rời trang là reset trang đó về mặt trước, audio thành một nút mang tiêu đề trang. Migration 68 đã áp local, **chưa push cloud**.
+- **P14-T11 / UX-M22-003 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Trang mở đầu có nút xóa (lưu trữ) như mọi trang; bỏ trang mở đầu không dồn thứ tự trang từ vựng, reorder vẫn chạy khi thiếu cover, publish vẫn bị chặn tới khi thêm cover mới. Migration 69 **đã push cloud** (user cho phép 2026-07-21).
+- **P14-T10 / UX-M22-002 — ☑ Fixed (Claude), chờ xác minh độc lập — 2026-07-21.** Form thêm trang tách theo loại (mở đầu: 2 ảnh; từ vựng: từ/cụm từ + audio + 2 ảnh), bỏ ô mô tả ảnh; thẻ học viên bỏ vùng tối + nhãn mặt, desktop hiện trọn ảnh, rời trang là reset trang đó về mặt trước, audio thành một nút mang tiêu đề trang. Migration 68 **đã push cloud**; audio trang mở đầu trên production đã về null và file .mp3 mồ côi đã xóa khỏi bucket.
 - **P14-T9 / UX-M22-001 — ☑ Fixed, chờ xác minh độc lập — Codex — 2026-07-21.** Chuyển trang giờ ghép thẻ cũ đi ra + thẻ mới đi vào thành cú lật toàn bộ flashcard phải→trái/trái→phải quanh tâm; lật mặt dưới↔trên và trạng thái từng trang vẫn độc lập.
 - **UX-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Hai nút bắt đầu hiện spinner + nhãn đang mở và tự khóa trong lúc tạo attempt/redirect; có test cho cả Bài tập/Thi.
 - **BUG-M11-M12-005/006/007/008 — Fixed, chờ xác minh độc lập — Codex — 2026-07-20.** Direct upload MP3/bản ghi Nói, RLS media đúng lượt và audio đồng bộ ở lượt làm/chấm/kết quả; cloud migration 1–65 đã đồng bộ.
@@ -52,7 +52,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** user review/commit/redeploy Phase 14 (gồm migration 68+69 chưa push cloud); Codex/user xác minh độc lập `UX-M22-003` và `UX-M22-002`; Claude/user xác minh độc lập `UX-M22-001` trên desktop/mobile với media thật, gồm hướng lật trang và lật mặt. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
+**Tiếp theo:** user review/commit/**redeploy code** Phase 14 (migration 68+69 đã live trên cloud, chỉ còn phần code UI chưa deploy); Codex/user xác minh độc lập `UX-M22-003` và `UX-M22-002`; Claude/user xác minh độc lập `UX-M22-001` trên desktop/mobile với media thật, gồm hướng lật trang và lật mặt. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
 
 Còn nợ trước đó: user review/commit/redeploy để đo `PERF-M20-001`; smoke assessment/audio và verification queue; smoke P-C; role `head_teacher`; rà runtime `P7-T7/P7-T8/P7-T9`.
 
@@ -139,11 +139,11 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 - **Làm được:** Theo yêu cầu user, trang mở đầu giờ có nút xóa (lưu trữ) như mọi trang khác trong màn admin flashcard. `archive_flashcard_page` bỏ nhánh chặn `session_cover`; khi bỏ trang mở đầu thì **không dồn** thứ tự để trang từ vựng không rơi về `order_index = 0` (vi phạm check constraint). `reorder_flashcard_pages` chỉ bắt "cover đứng đầu" khi buổi còn cover, và đánh số từ 1 khi cover đã bị lưu trữ. Server action `moveFlashcardPageAction` + nút mũi tên trong UI tính `minIndex` theo việc còn cover hay không. Buổi thiếu trang mở đầu vẫn sửa được nhưng publish vẫn bị trigger chặn — dialog "Thêm trang" tự mở lại lựa chọn "Trang mở đầu buổi" để thêm lại.
 - **File chính:** `supabase/migrations/20260721000069_flashcard_cover_archivable.sql`, `flashcards/server/actions.ts`, `components/flashcard-admin-manager.tsx`, `tests/unit/components/flashcard-admin-manager.test.tsx`, `supabase/tests/database/flashcards.test.sql`, `docs/01-business-analysis.md` (BR-13).
-- **Migration/data impact:** migration 69 chỉ `create or replace` hai function (`archive_flashcard_page`, `reorder_flashcard_pages`), không đổi bảng/dữ liệu. Đã chạy `npx supabase db reset` local; **chưa push cloud** (cùng lô với migration 68 còn nợ).
+- **Migration/data impact:** migration 69 chỉ `create or replace` hai function (`archive_flashcard_page`, `reorder_flashcard_pages`), không đổi bảng/dữ liệu. Đã chạy `npx supabase db reset` local — **lệnh này xóa sạch dữ liệu DB local** (deck/profile local mất, phải nạp lại `supabase/seed.dev.sql`; dữ liệu thật nằm ở cloud nên không ảnh hưởng). Sau đó user cho phép push: `npx supabase db push` đã đưa **68 + 69 lên cloud** (`migration list --linked` xác nhận cả hai có remote); trên cloud `session_cover` giờ `audio_path = null` và file .mp3 mồ côi duy nhất đã xóa bằng `supabase storage rm` (kiểm lại: 0 object mồ côi).
 - **Đã test:** `npx supabase db reset` xanh · pgTAP `flashcards.test.sql` **33/33 ok** (bỏ assert "không archive cover", thêm 4 assert: archive cover chạy được, không dồn từ vựng về 0, reorder chạy khi thiếu cover, publish bị chặn khi thiếu cover) · lint sạch · typecheck sạch · Vitest **162/162** · `npm run build` xanh.
 - **Quyết định mới:** trang mở đầu được xóa mềm như trang thường; ràng buộc "mỗi buổi đúng một trang mở đầu" chỉ enforce ở thời điểm publish, không chặn ở thao tác xóa.
-- **Blocker/rủi ro:** Claude là người fix nên **không tự ghi Verified** — `UX-M22-003` vào Verification Queue chờ Codex/user. Chưa bấm thử bằng tay trên UI thật; migration 68+69 chưa push cloud.
-- **Next action:** Codex/user xác minh độc lập `UX-M22-003` (xóa trang mở đầu → thứ tự trang từ vựng giữ nguyên, publish bị chặn, thêm lại cover thành công), rồi push migration 68+69 lên cloud.
+- **Blocker/rủi ro:** Claude là người fix nên **không tự ghi Verified** — `UX-M22-003` vào Verification Queue chờ Codex/user. Chưa bấm thử bằng tay trên UI thật. DB cloud đã có 68+69 nhưng **code UI chưa deploy**, nên nút xóa trang mở đầu chỉ xuất hiện sau khi user commit + redeploy.
+- **Next action:** user commit + redeploy code; Codex/user xác minh độc lập `UX-M22-003` (xóa trang mở đầu → thứ tự trang từ vựng giữ nguyên, publish bị chặn, thêm lại cover thành công).
 
 ### [2026-07-21] Phiên 49 — Claude — P14-T10 / UX-M22-002
 
