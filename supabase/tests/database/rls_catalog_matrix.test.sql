@@ -4,12 +4,12 @@ select plan(15);
 
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public'),
-  51,
-  'catalog có đúng 51 bảng public đã review'
+  56,
+  'catalog có đúng 56 bảng public đã review'
 );
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public' and rowsecurity),
-  51,
+  56,
   'mọi bảng public đều bật RLS'
 );
 select is(
@@ -82,8 +82,8 @@ select is(
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'),
-  60,
-  'catalog có đúng 60 RPC public đã review'
+  65,
+  'catalog có đúng 65 RPC public đã review'
 );
 select is(
   (select count(*)::integer
@@ -114,7 +114,15 @@ select is(
   'service_role chỉ có hai entrypoint cron HTTP nền'
 );
 
-select is((select count(*)::integer from storage.buckets), 7, 'có đúng 7 bucket Storage');
+select is(
+  (
+    select count(*)::integer
+    from storage.buckets
+    where id not in ('assignment-files', 'submissions')
+  ),
+  6,
+  'có đúng 6 bucket nghiệp vụ Storage; không tính hai bucket legacy rỗng'
+);
 select is(
   (select count(*)::integer from storage.buckets where public),
   0,
@@ -125,8 +133,8 @@ select is(
    from pg_policies
    where schemaname = 'storage' and tablename = 'objects'
      and roles = array['authenticated'::name]),
-  19,
-  'đủ 19 policy Storage và tất cả chỉ áp cho authenticated'
+  24,
+  'đủ 24 policy Storage và tất cả chỉ áp cho authenticated'
 );
 
 select * from finish();

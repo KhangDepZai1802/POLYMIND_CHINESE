@@ -7,7 +7,7 @@
 | Mặt trận | Chốt chặn | Bằng chứng kiểm thử |
 |---|---|---|
 | IDOR | Page/action kiểm role; query dùng client JWT; RLS khoanh lớp/học viên; route export tự trả 401/403 | `student_isolation.test.sql`, `teacher-route-params.smoke.spec.ts`, `verify-codex-guards.spec.ts` |
-| Upload abuse | Allowlist extension; giới hạn 20/50 MB ở server + bucket; server sinh path UUID; xác minh lại object size từ Storage; private bucket | `files.test.ts`, pgTAP Storage/integrity, E2E submission |
+| Upload abuse | Allowlist extension; giới hạn theo loại (Flashcard: ảnh 8 MB, audio 20 MB; các bucket khác 20/50 MB); server sinh path UUID; xác minh lại MIME/size từ Storage; private bucket | `files.test.ts`, `flashcard-media.test.ts`, pgTAP Storage/integrity, E2E submission |
 | Rate limit | Supabase Auth: 30 sign-in/5 phút/IP. DB-backed counter: 20 upload/giờ/user/scope; 10 export/phút/user | `rate_limits.test.sql` (limit 20/21, scope độc lập, fail-closed) |
 | Path traversal | Không nhận destination path từ client khi ký upload; register bắt buộc đúng số segment và root entity; trigger DB kiểm lại; tên download loại `/\\:*?"<>|` | `files.test.ts`, `assignment_integrity.test.sql`, `submission_grading.test.sql` |
 

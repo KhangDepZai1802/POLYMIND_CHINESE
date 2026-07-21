@@ -48,6 +48,16 @@ export function QuestionRenderer({
             {promptContent.passage}
           </div>
         )}
+      {type === "reading_group" && (
+        <Input
+          value={selected}
+          onChange={(event) => onChange?.({ value: event.target.value })}
+          onCompositionEnd={(event) =>
+            onChange?.({ value: event.currentTarget.value })
+          }
+          placeholder="Nhập câu trả lời cho bài đọc…"
+        />
+      )}
       {["listening_choice", "dictation"].includes(type) &&
         typeof promptContent.audio_url === "string" && (
           <audio controls preload="metadata" className="w-full">

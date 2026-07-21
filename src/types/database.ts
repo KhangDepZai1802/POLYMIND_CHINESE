@@ -1395,6 +1395,153 @@ export type Database = {
           },
         ]
       }
+      flashcard_decks: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          published_at: string | null
+          status: Database["public"]["Enums"]["flashcard_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["flashcard_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["flashcard_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_decks_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_pages: {
+        Row: {
+          archived_at: string | null
+          audio_path: string
+          back_alt: string
+          back_image_path: string
+          created_at: string
+          created_by: string
+          front_alt: string
+          front_image_path: string
+          id: string
+          kind: Database["public"]["Enums"]["flashcard_page_kind"]
+          order_index: number
+          section_id: string
+          term: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          audio_path: string
+          back_alt: string
+          back_image_path: string
+          created_at?: string
+          created_by?: string
+          front_alt: string
+          front_image_path: string
+          id?: string
+          kind: Database["public"]["Enums"]["flashcard_page_kind"]
+          order_index: number
+          section_id: string
+          term?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          audio_path?: string
+          back_alt?: string
+          back_image_path?: string
+          created_at?: string
+          created_by?: string
+          front_alt?: string
+          front_image_path?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["flashcard_page_kind"]
+          order_index?: number
+          section_id?: string
+          term?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_pages_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_sections: {
+        Row: {
+          created_at: string
+          created_by: string
+          deck_id: string
+          id: string
+          published_at: string | null
+          session_number: number
+          status: Database["public"]["Enums"]["flashcard_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          deck_id: string
+          id?: string
+          published_at?: string | null
+          session_number: number
+          status?: Database["public"]["Enums"]["flashcard_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deck_id?: string
+          id?: string
+          published_at?: string | null
+          session_number?: number
+          status?: Database["public"]["Enums"]["flashcard_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_sections_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grading_scale_rules: {
         Row: {
           created_at: string
@@ -2987,6 +3134,105 @@ export type Database = {
           },
         ]
       }
+      wrong_answer_queue: {
+        Row: {
+          created_at: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          question_version_id: string
+          resolved_at: string | null
+          source_kind: Database["public"]["Enums"]["question_set_kind"]
+          source_set_item_id: string
+          student_id: string
+          updated_at: string
+          wrong_count: number
+        }
+        Insert: {
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          question_version_id: string
+          resolved_at?: string | null
+          source_kind: Database["public"]["Enums"]["question_set_kind"]
+          source_set_item_id: string
+          student_id: string
+          updated_at?: string
+          wrong_count?: number
+        }
+        Update: {
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          question_version_id?: string
+          resolved_at?: string | null
+          source_kind?: Database["public"]["Enums"]["question_set_kind"]
+          source_set_item_id?: string
+          student_id?: string
+          updated_at?: string
+          wrong_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wrong_answer_queue_question_version_id_fkey"
+            columns: ["question_version_id"]
+            isOneToOne: false
+            referencedRelation: "question_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wrong_answer_queue_source_set_item_id_fkey"
+            columns: ["source_set_item_id"]
+            isOneToOne: false
+            referencedRelation: "question_set_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wrong_answer_queue_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wrong_answer_review_attempts: {
+        Row: {
+          answer_payload: Json
+          attempted_at: string
+          id: string
+          is_correct: boolean
+          queue_id: string
+          score: number | null
+        }
+        Insert: {
+          answer_payload: Json
+          attempted_at?: string
+          id?: string
+          is_correct: boolean
+          queue_id: string
+          score?: number | null
+        }
+        Update: {
+          answer_payload?: Json
+          attempted_at?: string
+          id?: string
+          is_correct?: boolean
+          queue_id?: string
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wrong_answer_review_attempts_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "wrong_answer_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       v_at_risk_assessment_students: {
@@ -3199,6 +3445,10 @@ export type Database = {
       }
     }
     Functions: {
+      archive_flashcard_page: {
+        Args: { p_page_id: string }
+        Returns: undefined
+      }
       attach_answer_media: {
         Args: {
           p_attempt_id: string
@@ -3349,6 +3599,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_my_wrong_answer_reviews: { Args: never; Returns: Json }
       get_student_assessment_overview: { Args: never; Returns: Json }
       grade_exam_answer: {
         Args: {
@@ -3423,6 +3674,10 @@ export type Database = {
         Args: { p_delivery_id: string }
         Returns: number
       }
+      publish_flashcard_section: {
+        Args: { p_section_id: string }
+        Returns: undefined
+      }
       publish_question_version: {
         Args: { p_question_id: string }
         Returns: undefined
@@ -3440,6 +3695,10 @@ export type Database = {
       }
       remove_question_set_item: {
         Args: { p_item_id: string }
+        Returns: undefined
+      }
+      reorder_flashcard_pages: {
+        Args: { p_page_ids: string[]; p_section_id: string }
         Returns: undefined
       }
       review_global_question: {
@@ -3536,6 +3795,10 @@ export type Database = {
         Args: { p_question_id: string }
         Returns: string
       }
+      submit_wrong_answer_review: {
+        Args: { p_answer_payload: Json; p_queue_id: string }
+        Returns: Json
+      }
       transfer_enrollment: {
         Args: {
           p_enrollment_id: string
@@ -3602,6 +3865,8 @@ export type Database = {
         | "cancelled"
         | "archived"
       exercise_grading_method: "first" | "latest" | "highest"
+      flashcard_page_kind: "session_cover" | "vocabulary"
+      flashcard_status: "draft" | "published" | "archived"
       invoice_status:
         | "draft"
         | "issued"
@@ -3860,6 +4125,8 @@ export const Constants = {
         "archived",
       ],
       exercise_grading_method: ["first", "latest", "highest"],
+      flashcard_page_kind: ["session_cover", "vocabulary"],
+      flashcard_status: ["draft", "published", "archived"],
       invoice_status: [
         "draft",
         "issued",

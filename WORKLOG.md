@@ -37,11 +37,11 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> Cập nhật: **2026-07-20** — Codex — đã tối ưu xác thực ES256/`getClaims()`, chờ redeploy và đo production.
+> Cập nhật: **2026-07-21** — Codex — hoàn tất Phase 14, chờ user review/commit/redeploy và QA độc lập.
 
+- **P14-T1…T8 — ☑ hoàn thành code/gate — Codex — 2026-07-21.** “Lớp của tôi”, Flashcard admin/học viên và Ôn câu sai đã hoàn tất; cloud migration 1–67 đồng bộ. M21/M22 còn chờ user review/redeploy và Claude xác minh UI độc lập.
 - **UX-M11-M12-005 — Fixed, chờ Claude/user xác minh độc lập — Codex — 2026-07-20.** Hai nút bắt đầu hiện spinner + nhãn đang mở và tự khóa trong lúc tạo attempt/redirect; có test cho cả Bài tập/Thi.
 - **BUG-M11-M12-005/006/007/008 — Fixed, chờ xác minh độc lập — Codex — 2026-07-20.** Direct upload MP3/bản ghi Nói, RLS media đúng lượt và audio đồng bộ ở lượt làm/chấm/kết quả; cloud migration 1–65 đã đồng bộ.
-- **Assessment QA queue — Fixed, chờ xác minh độc lập.** `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BR-M10-M13-001`, `UX-M08-005`, `PERF-M20-001`; chưa smoke trình duyệt/thiết bị thật trên bản redeploy.
 - **P13-T3 — ◐.** Code/test a11y-mobile-media đã có; chưa đạt DoD thiết bị thật. Role `head_teacher` vẫn chưa triển khai.
 - **P7-T7 — đang làm (cloud 1–65 đã đồng bộ; còn smoke authenticated).** `P7-T8/P7-T9` còn nợ rà trạng thái runtime.
 - **PERF-M20-001 / P13-T4 — Fixed, chờ Claude/user đo production sau redeploy — Codex — 2026-07-20.** Production/local dùng ES256; request thường dùng `getClaims()`/JWKS thay `getUser()` qua mạng, vẫn đọc role + `is_active` từ `profiles` và giữ RLS; test bảo mật + smoke đăng nhập local xanh.
@@ -50,9 +50,9 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**Tiếp theo:** (1) User review/commit để Vercel redeploy code. (2) Đo lại thời gian phản hồi production của các route đại diện trước/sau `PERF-M20-001`; nếu vẫn 4–6 giây thì trace region Vercel và thời gian query. (3) Smoke `UX-M11-M12-005` bằng kết nối có độ trễ và ma trận audio `BUG-M11-M12-005/006/007/008`, rồi Claude xác minh độc lập. (4) Tiếp tục role `head_teacher` thành task nhỏ có pgTAP.
+**Tiếp theo:** user review/commit/redeploy Phase 14; Claude QA độc lập M21/M22 trên desktop/mobile với media thật. Sau đó tiếp tục `P7-T7/P7-T8/P7-T9`, smoke assessment/audio và role `head_teacher` còn nợ.
 
-Còn nợ trước đó: Smoke P-C (migration 54–55 đã áp cloud); `P7-T8` (admin cấp tài khoản) → `P7-T9` → smoke `P7-T7`.
+Còn nợ trước đó: user review/commit/redeploy để đo `PERF-M20-001`; smoke assessment/audio và verification queue; smoke P-C; role `head_teacher`; rà runtime `P7-T7/P7-T8/P7-T9`.
 
 ⏳ **Verification Queue:** `BR-M10-M13-001`, `UX-M08-005`, `UX-M11-M12-001/002/003/004/005`, `BUG-M11-M12-003`, `BUG-M11-004`, `BUG-M11-M12-005/006/007/008`, `PERF-M20-001` chờ Claude/user xác minh độc lập trên production. Bốn bug cũ đã Verified: `BUG-M06-001`, `BUG-M11-001`, `BUG-M08-001`, `BUG-M11-002`.
 
@@ -133,6 +133,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-21] Phiên 47 — Codex — P14-T1…T8 / M21-M22
+
+- **Làm được:** Tiếp quản phần Claude dở dang và hoàn tất hai module học viên. `/student/class` gộp 7 tab chỉ đọc, route lịch cũ redirect; `/student/review` có Flashcard theo bookmark buổi, lật trang trục dọc + lật mặt trục ngang độc lập, touch/keyboard/reduced-motion, và tab Ôn câu sai dùng renderer chung. Super Admin có CRUD/publish/reorder/archive Flashcard, signed direct upload 2 ảnh + audio, kiểm path/MIME/size thật. Queue câu sai tự nhận answer objective từ Bài tập/Thi, loại Nói/Tự luận, không lộ answer key, chấm atomic qua RPC, lưu history và resolve/reopen đúng lifecycle.
+- **File chính:** route student `{class,review,schedule}` + admin `flashcards`; feature `flashcards`, `wrong-answer-review`, query student; migration/test DB 66–67; unit/component/server test mới; types, nav, docs 01–04/06/08/09 và QA/security matrix.
+- **Migration/data impact:** `20260721000066_flashcards.sql` thêm 3 bảng, bucket `flashcard-media`, RLS/Storage/RPC publish-reorder-archive; `20260721000067_wrong_answer_review.sql` thêm queue/history, trigger exercise+exam, backfill, RPC đọc/chấm, RLS và scope `question-media`. Cả hai đã dry-run → push cloud; migration history local/remote khớp 1–67; dry-run cuối trả `Remote database is up to date`. Push có cảnh báo cache catalog pg-delta thiếu certificate tạm nhưng migration history đã xác minh. Local reset sạch dựng được 1–67, sau đó seed dev được nạp lại bằng `docker cp`; tên tiếng Việt kiểm mắt đúng dấu.
+- **Đã test:** lint sạch · typecheck sạch · Vitest **159/159** · pgTAP **393/393** sau reset sạch (Flashcard 28, Ôn câu sai 40; có admin/teacher/two-student IDOR và private media) · production build xanh · `git diff --check` sạch. Build sandbox lần đầu không tải được Google Font; chạy lại có quyền mạng thành công.
+- **Quyết định mới:** không đổi quyết định đã chốt; implementation bám BR-12/BR-13. Media luôn private/user client + RLS, điểm/đúng-sai luôn do DB tự chấm, không dùng service role cho user flow.
+- **Blocker/rủi ro:** code chưa được user commit/redeploy nên UI Phase 14 chưa có trên production; media thật và responsive cần Claude/user xác minh độc lập, người fix không tự ghi Verified. `format:check` toàn repo vẫn báo baseline format cũ ở nhiều file/tooling ngoài scope; các file TS/TSX mới đã được Prettier và gate bắt buộc vẫn xanh.
+- **Next action:** user review/commit/redeploy; Super Admin nạp bộ Flashcard thật; Claude smoke M21/M22 bằng admin/teacher/student trên desktop/mobile rồi cập nhật Verification.
+
 ### [2026-07-20] Phiên 46 — Codex — PERF-M20-001 / P13-T4
 
 - **Làm được:** Xác nhận JWKS của Supabase production đang phát khóa ES256. Tạo helper xác minh identity fail-closed bằng `getClaims()`; chuyển middleware, `getCurrentUser()` và query Question Bank khỏi `getUser()` qua mạng. Role + `is_active` vẫn lấy từ `profiles`, RLS vẫn là lớp chặn DB; chỉ giữ `getUser()` ở luồng reset mật khẩu cần user mới nhất. Thêm test cho claim lỗi, UUID lỗi, tài khoản bị khóa, role giả trong JWT và redirect route bảo vệ.
@@ -182,13 +192,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Quyết định mới:** không đổi quyết định đã chốt; áp lại mẫu signed direct upload đã dùng ở tài liệu khóa học để tránh giới hạn request mà vẫn giữ RLS/fail-closed.
 - **Blocker/rủi ro:** Docker Desktop đang tắt nên không chạy smoke Supabase local/pgTAP trong phiên; không có migration nên dùng baseline pgTAP gần nhất 291/291. Cần redeploy rồi smoke MP3 thật trên trình duyệt; người fix không tự đánh dấu Verified.
 - **Next action:** user review/commit/redeploy; Claude/user smoke `BUG-M11-M12-005` với MP3 > 1 MB cho cả tạo và sửa, mở lại editor + preview bộ.
-
-### [2026-07-18] Phiên 41 — Codex — P13-T3 / BR-M10-M13-001 / UX-M08-005
-
-- **Làm được:** Thêm công thức điểm chuyên cần thang 10, mỗi buổi `absent` trừ 0,5 và chặn đáy 0; `late`/`excused` không bị trừ. Hiện điểm `/10` ở dashboard và tab Chuyên cần của học viên, chi tiết/ báo cáo tiến độ giáo viên; tách rõ tỉ lệ chuyên cần dùng cho điều kiện hoàn thành khóa. Tái sử dụng lịch admin cho tab Lịch/Buổi giáo viên và Lịch học học viên với đủ Tối giản/Tuần/Tháng, điều hướng kỳ và hành động/badge đúng vai trò.
-- **File chính:** `src/lib/domain/attendance.ts`; dashboard/lịch học viên; chi tiết lớp/báo cáo tiến độ giáo viên; `schedule-manager.tsx`; test attendance/calendar; docs 01/03, QA board và WORKLOG.
-- **Migration/data impact:** không có migration; không đổi schema/data/RLS. Điểm chuyên cần là giá trị tính từ `absent_count`, không lưu thêm cột điểm dễ lệch dữ liệu.
-- **Đã test:** lint sạch · typecheck sạch · Vitest **122/122** · production build xanh · `git diff --check` sạch. Test mới bao phủ công thức 10/9,5/8/0, ba chế độ lịch, link Nhật ký giáo viên và badge điểm danh học viên.
-- **Quyết định mới:** chỉ `absent` trừ điểm; điểm tối thiểu 0. Tỉ lệ chuyên cần hiện hữu tiếp tục phục vụ readiness, không bị thay bằng thang 10.
-- **Blocker/rủi ro:** chưa smoke responsive bằng tài khoản thật và chưa deploy; người fix không tự đánh dấu Verified.
-- **Next action:** user review/commit/redeploy; Claude xác minh độc lập công thức và UI Tối giản/Tuần/Tháng trên desktop/mobile.

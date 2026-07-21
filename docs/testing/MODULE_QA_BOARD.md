@@ -40,9 +40,11 @@
 |  15 | M15 | Notifications & Announcements | In-app một chiều, **dedupe cron**, link có authorization                                           | P6         | Medium       | Pending        | Not Required | Not Started  |
 |  16 | M16 | Reports & Export              | Báo cáo theo scope, **export giữ đúng filter đang chọn**                                           | P6         | Medium       | Pending        | Not Required | Not Started  |
 |  17 | M17 | Dashboards                    | 3 dashboard theo role, KPI từ view                                                                 | P3–P5      | Low          | Pending        | Not Required | Not Started  |
-|  18 | M18 | Storage & Files               | 5 private bucket, **object_path do server sinh**, signed URL ngắn hạn, IDOR file                   | P2, P4, P5 | **High**     | **Bugs Found** | **Fixed**    | Not Started  |
+|  18 | M18 | Storage & Files               | 6 bucket nghiệp vụ private, **object_path do server sinh**, signed URL ngắn hạn, IDOR file         | P2, P4, P5, P14 | **High**  | **Bugs Found** | **Fixed**    | Not Started  |
 |  19 | M19 | Audit Log                     | Append-only, **chỉ super admin đọc**, actor thật                                                   | P6         | Medium       | Pending        | Not Required | Not Started  |
 |  20 | M20 | Security & Deployment         | Headers, rate limit, upload abuse, env/secret, production seed, RLS trên cloud                     | P7         | **High**     | Pending        | Not Required | Not Started  |
+|  21 | M21 | Student Class Portal          | Lớp của tôi chỉ đọc; không roster; gộp lịch/tài liệu/chuyên cần/assessment/progress                | P14        | Medium       | Automated Tests Ready | Not Required | Not Started |
+|  22 | M22 | Flashcards & Wrong Review     | Signed media; publish scope; IDOR queue; answer key không xuống client; mastery atomic             | P14        | **High**     | Automated Tests Ready | Not Required | Not Started |
 
 **Trạng thái:** chưa bắt đầu đợt QA module toàn diện. Bug phát hiện trong lúc build được ghi ngay vào Verification Queue để không mất dấu.
 

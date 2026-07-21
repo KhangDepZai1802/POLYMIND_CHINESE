@@ -315,6 +315,23 @@
 
 ---
 
+## Phase 14 — Cổng lớp học & ôn tập học viên
+
+**Gate:** học viên xem lớp hiện tại ở một nơi duy nhất; Super Admin quản trị flashcard theo khóa/buổi; học viên học flashcard và làm lại câu máy chấm từng sai mà không đọc được answer key ngoài RPC; RLS/Storage/IDOR, animation bàn phím/mobile và migration cloud đều được kiểm chứng.
+
+| ID | Task | Definition of Done | Trạng thái |
+|---|---|---|---|
+| P14-T1 | Chốt đặc tả & impact map | Docs 01–04 có business rule, schema/RLS/Storage, workflow + failure path, kiến trúc; chốt rõ loại câu được ôn, vòng đời mastery, cấu trúc trang/mặt flashcard và source impact | ☑ |
+| P14-T2 | Học viên — Lớp của tôi | `/student/class` gộp lịch/tài liệu/chuyên cần và bổ sung tổng quan, bài tập, kiểm tra, tiến độ ở chế độ chỉ đọc; `/student/schedule` redirect tương thích; không lộ roster; typecheck + component/server test xanh | ☑ |
+| P14-T3 | Migration Flashcard | Deck theo course; section theo số buổi; page mở đầu/thẻ từ vựng có thứ tự, 2 ảnh + audio; bucket private, RLS fail-closed, constraint/index/idempotency + pgTAP; dry-run → push cloud → remote up-to-date | ☑ |
+| P14-T4 | Super Admin — Flashcard CRUD | Chọn khóa/buổi, tạo/sắp xếp/archive trang; signed direct upload 2 ảnh + audio; server xác minh path/MIME/size và ghi audit; responsive + validation/test | ☑ |
+| P14-T5 | Học viên — Flashcard | Chỉ thấy deck khóa đang học; trang mở đầu + bookmark buổi không dùng dropdown; lật trang phải↔trái và lật mặt dưới↔trên độc lập; audio, phím/touch, focus/ARIA, reduced-motion + test | ☑ |
+| P14-T6 | Migration Ôn câu sai | Snapshot sai từ exercise/exam đã nộp, chỉ dạng `manual_required = false`; bảng tiến độ theo student + question version; RPC lấy câu đến hạn và chấm lại atomic, đúng thì rời danh sách; RLS/answer-key fail-closed + pgTAP; áp cloud | ☑ |
+| P14-T7 | Học viên — Ôn câu sai | Tab thứ hai của `/student/review`; renderer objective dùng chung, submit/loading/error rõ ràng, lưu lịch sử; đúng rời hàng đợi, sai lên lịch lại; empty state + component/server test | ☑ |
+| P14-T8 | Quality gate & docs | Generate types; cập nhật nav/docs/QA/WORKLOG; lint + typecheck + Vitest + pgTAP + build xanh; smoke 3 role/IDOR/signed URL ở local, ghi rõ phần production còn chờ redeploy | ☑ |
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |
@@ -339,3 +356,5 @@
 | M18    | Storage & Files                    | P2, P4, P5      |
 | M19    | Audit Log                          | P6              |
 | M20    | Security & Deployment              | P7              |
+| M21    | Student Class Portal               | P14             |
+| M22    | Flashcards & Wrong-answer Review   | P14             |

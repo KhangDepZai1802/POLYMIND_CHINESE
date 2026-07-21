@@ -206,6 +206,28 @@ html[data-exam-active="true"] [data-dashboard-main] {
   font-size: 1.08em;
 }
 
+@keyframes flashcard-page-next {
+  from {
+    opacity: 0.35;
+    transform: rotateY(-85deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes flashcard-page-previous {
+  from {
+    opacity: 0.35;
+    transform: rotateY(85deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+}
+
 @media print {
   .no-print {
     display: none !important;

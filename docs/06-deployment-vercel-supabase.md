@@ -58,7 +58,7 @@ psql "$DATABASE_URL" -f supabase/seed.sql
 
 **Bắt buộc kiểm sau khi push:**
 - [ ] Mọi bảng đã `ENABLE ROW LEVEL SECURITY` (Dashboard → Database → Tables, cột RLS)
-- [x] 4 bucket Storage đều **private**
+- [x] 6 bucket nghiệp vụ Storage đều **private**
 - [ ] Auth: **tắt public sign-up** (Dashboard → Authentication → Providers → Email → Enable signup = **off**)
 - [ ] Auth: cấu hình Site URL + Redirect URLs trỏ về domain Vercel
 - [ ] Email invite/reset hoạt động (Supabase SMTP mặc định có rate limit thấp — production nên gắn SMTP riêng)
@@ -154,7 +154,7 @@ Giữ cùng một `backup_id`/timestamp cho database và Storage. Mỗi backup p
 
 ### 7.2. Backup Storage
 
-Bốn bucket hiện tại: `avatars`, `course-materials`, `student-documents`, `question-media`; tất cả phải private. Với từng bucket:
+Sáu bucket nghiệp vụ hiện tại: `avatars`, `course-materials`, `student-documents`, `question-media`, `answer-media`, `flashcard-media`; tất cả phải private. Hai bucket legacy `assignment-files` / `submissions` phải rỗng và được cleanup bằng script repo, không đưa vào backup mới. Với từng bucket nghiệp vụ:
 
 1. Liệt kê toàn bộ object thành manifest gồm `bucket_id`, `name/object_path`, `size`, `updated_at`, checksum nếu có.
 2. Tải **byte thô** từng object vào `<backup-dir>/storage/<bucket>/<object_path>`; không pipe qua PowerShell (xem luật UTF-8 trong `AGENTS.md`).
@@ -177,7 +177,7 @@ psql --single-transaction --variable ON_ERROR_STOP=1 \
   --dbname "$RESTORE_DATABASE_URL"
 ```
 
-Sau DB, upload lại Storage đúng bucket/path rồi mới mở app. Kiểm bắt buộc: migration history, 50 bảng public đều bật RLS, 4 bucket private, số row các bảng trọng yếu, số object/tổng byte, signed download và một file UTF-8 mở đúng. Chỉ coi backup dùng được khi một restore rehearsal gần nhất đã hoàn tất và kết quả được ghi vào nhật ký vận hành.
+Sau DB, upload lại Storage đúng bucket/path rồi mới mở app. Kiểm bắt buộc: migration history, 56 bảng public đều bật RLS, 6 bucket nghiệp vụ private, số row các bảng trọng yếu, số object/tổng byte, signed download và một file UTF-8 mở đúng. Chỉ coi backup dùng được khi một restore rehearsal gần nhất đã hoàn tất và kết quả được ghi vào nhật ký vận hành.
 
 ---
 

@@ -337,3 +337,56 @@ Ghi audit cho: đổi role/khóa tài khoản · sửa hồ sơ GV/HV · sửa c
 Mỗi dòng: `actor_id` (**actor thật đang đăng nhập**), `actor_role`, `action`, `resource_type`, `resource_id`, `before`/`after` (JSONB), `ip`, `user_agent`, `created_at`.
 
 **Append-only.** Không role app nào update/delete được. **Chỉ super admin đọc.**
+
+---
+
+## 11. “Lớp của tôi” và ôn tập
+
+```text
+Học viên mở /student/class
+  → server lấy enrollment đang mở của chính user
+  → song song tải lớp/lịch/tài liệu/chuyên cần/tiến độ/tóm tắt assessment qua user client
+  → RLS chỉ trả lớp và dữ liệu own
+  → 7 tab chỉ đọc; Bài tập/Kiểm tra dẫn về module nguồn
+
+Link cũ /student/schedule
+  → redirect /student/class (giữ tương thích notification/bookmark cũ)
+```
+
+Thiếu enrollment/class mapping → empty state “chưa được xếp lớp”. Không fallback sang lớp đầu tiên, không dùng admin client, không hiển thị roster.
+
+```text
+Super Admin mở /admin/flashcards
+  → chọn Course đã có default_session_count
+  → tạo/lấy deck → chọn Buổi N
+  → tạo page id + server ký 3 vé upload (front/back/audio)
+  → browser upload trực tiếp bucket private
+  → server kiểm namespace + metadata thật → lưu page
+  → sắp xếp atomic → publish section
+      → DB kiểm cover + vocabulary + media + số buổi
+      → student của Course mới đọc/ký được
+
+Học viên mở /student/review, tab Flashcard
+  → lấy các section đã publish của Course lớp mình
+  → bookmark nhảy buổi
+  → trái/phải đổi page; click/Enter/Space lật front/back; audio phát từ signed URL
+  → đổi page không tự ép mặt về trước và lật mặt không đổi page
+```
+
+**Failure path Flashcard:** section nháp/khác Course → RLS trả 0; path giả/MIME sai/file quá giới hạn → không finalize page và dọn orphan; publish thiếu media/cover/vocabulary → rollback; reorder thiếu/thừa page → RPC từ chối toàn bộ.
+
+```text
+Khi submit Bài tập/Thi
+  → DB chấm answer objective
+  → answer is_correct=false + loại máy chấm
+      → trigger upsert (student, question_version) vào wrong_answer_queue
+
+Học viên mở tab Ôn câu sai
+  → RPC chỉ trả queue unresolved own + prompt/options, không answer key
+  → nhập đáp án qua renderer dùng chung → submit RPC
+  → DB auto-grade + append wrong_answer_review_attempts
+      → đúng: resolved_at=now(), item rời danh sách
+      → sai: queue vẫn mở, tăng lịch sử, cho thử lại
+```
+
+**Failure path Ôn câu sai:** queue của student khác/đã resolved/loại manual → RPC từ chối; payload sai schema → không ghi history; answer key không có SELECT/payload; một question sai lại sau khi đã thành thạo → trigger mở lại đúng một queue row nhờ UNIQUE.

@@ -26,6 +26,38 @@ export async function getMyEnrollment() {
   return data?.class ? data : null;
 }
 
+/**
+ * Thông tin lớp cho trang "Lớp của tôi" — bản CHỈ ĐỌC của học viên.
+ *
+ * RLS cho học viên đọc: `classes` (studies_class), `class_teachers`,
+ * `class_schedules`, `teachers`/`profiles` của giáo viên dạy lớp mình. **Không**
+ * đọc được `students`/`enrollments` của bạn cùng lớp — nên ở đây không có roster.
+ */
+export async function getMyClassOverview(classId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("classes")
+    .select(
+      `id, code, name, capacity, status, start_date, expected_end_date,
+       planned_session_count, session_duration_minutes, target_audience,
+       delivery_mode, location_name, address, location_note, meeting_url,
+       course:courses (id, code, title),
+       class_teachers (
+         id,
+         teacher:teachers (
+           id, teacher_code, specialization,
+           profile:profiles!fk_teachers_profile (full_name)
+         )
+       ),
+       class_schedules (id, weekday, start_time, end_time, effective_from, effective_to)`,
+    )
+    .eq("id", classId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Không tải được thông tin lớp: ${error.message}`);
+  return data;
+}
+
 /** Lịch học của lớp + điểm danh CỦA MÌNH ở từng buổi (RLS lọc, không lọc ở app). */
 export async function getMySchedule(classId: string) {
   const supabase = await createClient();
@@ -61,6 +93,22 @@ export async function getMyMaterials(courseId: string) {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(`Không tải được tài liệu: ${error.message}`);
+  return data;
+}
+
+/** Tiến độ tổng hợp của chính mình trong lớp (RLS: view security_invoker). */
+export async function getMyProgress(enrollmentId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_enrollment_assessment_progress")
+    .select(
+      `total_lessons, completed_lessons, total_exercises, submitted_exercises,
+       avg_score, attendance_rate, progress_percent, is_completion_ready`,
+    )
+    .eq("enrollment_id", enrollmentId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Không tải được tiến độ: ${error.message}`);
   return data;
 }
 
