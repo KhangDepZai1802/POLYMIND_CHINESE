@@ -94,6 +94,12 @@ describe("loading khi bắt đầu lượt làm", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Vào phòng chờ" }));
+    expect(
+      screen.getByRole("heading", { name: "1. Kiểm tra âm thanh", level: 3 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "2. Xác nhận quy định", level: 3 }),
+    ).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: "Phát âm thanh kiểm tra" }),
     );

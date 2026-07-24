@@ -7,15 +7,15 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
+  // Ứng dụng chỉ có giao diện Light (DS-016). Trước đây chỗ này đọc `useTheme()`
+  // của next-themes và nhận "system" — nghĩa là máy đang để dark thì toast hoá
+  // tối trong khi cả trang vẫn sáng. Khoá "light" cho khớp phần còn lại.
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

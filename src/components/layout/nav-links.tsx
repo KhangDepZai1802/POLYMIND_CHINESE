@@ -37,6 +37,9 @@ export function NavLinks({
             onClick={onNavigate}
             className={cn(
               "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              // Focus bàn phím phải thấy rõ trên CẢ nền trắng lẫn nền primary của
+              // mục đang active — dùng offset để ring không chìm vào nền nút.
+              "focus-visible:ring-ring focus-visible:ring-offset-card focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
               active
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-brand-orange/15 hover:text-foreground",

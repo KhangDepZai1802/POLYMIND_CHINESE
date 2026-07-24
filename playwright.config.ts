@@ -4,6 +4,10 @@ const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Dọn sạch MỌI dải fixture E2E trước khi suite bắt đầu. Mỗi spec chỉ xoá rác
+  // của chính nó, nên một lượt chạy bị dừng giữa chừng để lại rác phá lượt chạy
+  // kế tiếp ở spec KHÁC — chỗ duy nhất biết đủ về mọi fixture là đây.
+  globalSetup: "./tests/e2e/global-setup.ts",
   // Các smoke test dùng chung Supabase local và tự dựng/dọn fixture. Chạy hai
   // project đồng thời khiến mobile xóa fixture của desktop (và ngược lại).
   fullyParallel: false,
@@ -30,5 +34,14 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Chuyển tiếp log của `next dev` ra output của lượt chạy.
+    //
+    // Không phải để cho đẹp: `UX-UIUX-M00-025` là một truy vấn phía MÁY CHỦ
+    // `throw` khiến trang rơi vào error boundary, và suốt hai đợt nó bị đọc
+    // nhầm thành lỗi a11y của sản phẩm — một phần vì **không ai nhìn thấy log
+    // của máy chủ**. Mặc định Playwright nuốt luôn stdout/stderr của webServer,
+    // nên khi test đỏ thì vết duy nhất còn lại là phía trình duyệt.
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });

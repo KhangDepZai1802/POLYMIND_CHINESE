@@ -254,3 +254,144 @@ begin
     end loop;
   end loop;
 end $$;
+
+-- =====================================================================
+-- Flashcard mẫu (Phase 16 / `P16-T9`)
+-- =====================================================================
+-- Lý do phải có: bài học `P18-T10` — `/admin/reports` giấu lỗi ISO suốt nhiều
+-- tháng vì seed rỗng nên bảng luôn trống. Màn Flashcard cũng vậy: không có thẻ
+-- mẫu thì không đo được gì bằng trình duyệt.
+--
+-- ⛔ Nội dung KHÔNG nhân bản thẻ mẫu 胡萝卜 (`DS-050` điểm 4): hai ảnh mẫu là
+-- chuẩn cho CÁCH DỰNG thẻ, không phải chuẩn cho nội dung thẻ.
+--
+-- ⚠️ File media chỉ có HÀNG trong `storage.objects`, không có byte thật — đủ để
+-- giao diện render đúng trạng thái bình thường (mục đích của seed này là đo bố
+-- cục), nhưng ảnh/audio sẽ không hiện/không phát.
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}',
+  false
+);
+
+insert into public.flashcard_decks (id, course_id, title, description)
+values (
+  'a1000000-0000-4000-8000-000000000001',
+  (select id from public.courses where code = 'VCB-BANK'),
+  'Flashcard — Tiếng Trung ngân hàng',
+  'Từ vựng theo từng buổi cho lớp VCB-BANK.'
+)
+on conflict (course_id) do nothing;
+
+insert into public.flashcard_sections (id, deck_id, session_number, title)
+values
+  ('a1100000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 1, 'Buổi 1 — Ở ngân hàng'),
+  ('a1100000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000001', 2, 'Buổi 2 — Giao dịch (bản nháp)')
+on conflict (deck_id, session_number) do nothing;
+
+insert into public.flashcard_pages (
+  id, section_id, kind, order_index,
+  hanzi, pinyin_syllables, meaning_vi,
+  sense_breakdown, example_sentences, common_phrases,
+  front_image_path, back_image_path, audio_path, front_alt, back_alt
+)
+values
+  (
+    'a1200000-0000-4000-8000-000000000001',
+    'a1100000-0000-4000-8000-000000000001',
+    'session_cover', 0, null, null, null,
+    '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000001/front-a1300000-0000-4000-8000-000000000001.png',
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000001/back-a1300000-0000-4000-8000-000000000002.png',
+    null,
+    'Mặt trước trang mở đầu Buổi 1 — Ở ngân hàng',
+    'Mặt sau trang mở đầu Buổi 1 — Ở ngân hàng'
+  ),
+  (
+    'a1200000-0000-4000-8000-000000000002',
+    'a1100000-0000-4000-8000-000000000001',
+    'vocabulary', 1,
+    '银行', 'yín háng', 'Ngân hàng',
+    '[{"hanzi":"银","pinyin":"yín","meaning_vi":"bạc, kim loại bạc"},
+      {"hanzi":"行","pinyin":"háng","meaning_vi":"hàng, ngành nghề"}]'::jsonb,
+    '[{"hanzi":"我去银行取钱。","pinyin":"wǒ qù yínháng qǔ qián","meaning_vi":"Tôi đến ngân hàng rút tiền."},
+      {"hanzi":"这家银行几点开门？","pinyin":"zhè jiā yínháng jǐ diǎn kāimén","meaning_vi":"Ngân hàng này mấy giờ mở cửa?"}]'::jsonb,
+    '[{"hanzi":"银行卡","pinyin":"yínháng kǎ","meaning_vi":"thẻ ngân hàng"},
+      {"hanzi":"中国银行","pinyin":"Zhōngguó Yínháng","meaning_vi":"Ngân hàng Trung Quốc"},
+      {"hanzi":"去银行","pinyin":"qù yínháng","meaning_vi":"đi ngân hàng"}]'::jsonb,
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000002/front-a1300000-0000-4000-8000-000000000003.png',
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000002/back-a1300000-0000-4000-8000-000000000004.png',
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000002/audio-a1300000-0000-4000-8000-000000000005.mp3',
+    'Mặt trước thẻ từ vựng 银行 — Ngân hàng',
+    'Mặt sau thẻ từ vựng 银行 — Ngân hàng'
+  ),
+  (
+    'a1200000-0000-4000-8000-000000000003',
+    'a1100000-0000-4000-8000-000000000001',
+    'vocabulary', 2,
+    '客户', 'kè hù', 'Khách hàng',
+    '[{"hanzi":"客","pinyin":"kè","meaning_vi":"khách"},
+      {"hanzi":"户","pinyin":"hù","meaning_vi":"hộ, tài khoản"}]'::jsonb,
+    '[{"hanzi":"这位客户要开户。","pinyin":"zhè wèi kèhù yào kāihù","meaning_vi":"Vị khách hàng này muốn mở tài khoản."}]'::jsonb,
+    '[{"hanzi":"新客户","pinyin":"xīn kèhù","meaning_vi":"khách hàng mới"},
+      {"hanzi":"客户服务","pinyin":"kèhù fúwù","meaning_vi":"dịch vụ khách hàng"}]'::jsonb,
+    null, null,
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000003/audio-a1300000-0000-4000-8000-000000000006.mp3',
+    null, null
+  ),
+  (
+    'a1200000-0000-4000-8000-000000000004',
+    'a1100000-0000-4000-8000-000000000001',
+    'vocabulary', 3,
+    '存钱', 'cún qián', 'Gửi tiền',
+    '[{"hanzi":"存","pinyin":"cún","meaning_vi":"gửi, cất giữ"},
+      {"hanzi":"钱","pinyin":"qián","meaning_vi":"tiền"}]'::jsonb,
+    '[{"hanzi":"我想存钱。","pinyin":"wǒ xiǎng cún qián","meaning_vi":"Tôi muốn gửi tiền."},
+      {"hanzi":"存钱要带身份证吗？","pinyin":"cún qián yào dài shēnfènzhèng ma","meaning_vi":"Gửi tiền có cần mang chứng minh thư không?"}]'::jsonb,
+    '[{"hanzi":"存钱进去","pinyin":"cún qián jìnqù","meaning_vi":"gửi tiền vào"},
+      {"hanzi":"取钱","pinyin":"qǔ qián","meaning_vi":"rút tiền"}]'::jsonb,
+    null, null,
+    '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000004/audio-a1300000-0000-4000-8000-000000000007.mp3',
+    null, null
+  ),
+  -- Buổi 2 giữ NHÁP: để màn Quản trị có sẵn cả trạng thái nháp lẫn đã công bố.
+  (
+    'a1200000-0000-4000-8000-000000000005',
+    'a1100000-0000-4000-8000-000000000002',
+    'vocabulary', 1,
+    '汇款', 'huì kuǎn', 'Chuyển khoản',
+    '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+    null, null, null, null, null
+  )
+on conflict (id) do nothing;
+
+insert into storage.objects (bucket_id, name, owner, owner_id, metadata)
+select
+  'flashcard-media',
+  media.path,
+  '11111111-1111-1111-1111-111111111111',
+  '11111111-1111-1111-1111-111111111111',
+  jsonb_build_object(
+    'mimetype', case when media.path like '%.mp3' then 'audio/mpeg' else 'image/png' end,
+    'size', 1024
+  )
+from (
+  select distinct unnest(media_paths) as path
+  from public.flashcard_pages
+  where section_id in (
+    'a1100000-0000-4000-8000-000000000001',
+    'a1100000-0000-4000-8000-000000000002'
+  )
+) media
+on conflict (bucket_id, name) do nothing;
+
+-- Công bố buổi 1 (buổi 2 giữ nháp). Trigger `validate_flashcard_section_publish`
+-- vẫn chạy, nên nếu seed thiếu cover/audio thì lệnh này sẽ đỏ chứ không im lặng.
+update public.flashcard_sections
+set status = 'published', published_at = now()
+where id = 'a1100000-0000-4000-8000-000000000001';
+
+update public.flashcard_decks
+set status = 'published', published_at = now()
+where id = 'a1000000-0000-4000-8000-000000000001';

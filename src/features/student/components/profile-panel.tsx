@@ -13,8 +13,19 @@ import {
 } from "@/features/student/server/profile-actions";
 import { useFormAction } from "@/lib/use-form-action";
 
-function FieldError({ message }: { message?: string }) {
-  return message ? <p className="text-destructive text-xs">{message}</p> : null;
+/**
+ * Lỗi của một ô nhập.
+ *
+ * `role="alert"` + `id` là bắt buộc: không có chúng thì trình đọc màn hình
+ * không đọc lỗi lên, và ô nhập không có gì để `aria-describedby` trỏ tới.
+ * Đây đúng mẫu đã sửa ở `M14-S03` (`session-log-form.tsx`).
+ */
+function FieldError({ id, message }: { id: string; message?: string }) {
+  return message ? (
+    <p id={id} role="alert" className="text-destructive text-sm">
+      {message}
+    </p>
+  ) : null;
 }
 
 export function ContactForm({
@@ -28,11 +39,15 @@ export function ContactForm({
   const errors = state.fieldErrors ?? {};
 
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <UserRound className="size-4" aria-hidden />
-          Thông tin liên hệ
+        <CardTitle asChild>
+          <h2 className="flex items-center gap-2 text-base">
+            <span className="bg-student-sky-surface text-student-sky-ink flex size-9 shrink-0 items-center justify-center rounded-lg">
+              <UserRound className="size-4" aria-hidden />
+            </span>
+            Thông tin liên hệ
+          </h2>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -50,15 +65,30 @@ export function ContactForm({
               id="full_name"
               name="full_name"
               required
+              // Phản chiếu đúng giới hạn của `contactSchema` phía server
+              // (2–120 ký tự), không tạo luật validation mới — nguyên tắc
+              // đã chốt ở `DS-021`.
+              maxLength={120}
               defaultValue={fullName}
+              aria-invalid={errors["full_name"] ? true : undefined}
+              aria-describedby={
+                errors["full_name"] ? "full_name-error" : undefined
+              }
             />
-            <FieldError message={errors["full_name"]} />
+            <FieldError id="full_name-error" message={errors["full_name"]} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="phone">Số điện thoại</Label>
-            <Input id="phone" name="phone" defaultValue={phone ?? ""} />
-            <FieldError message={errors["phone"]} />
+            <Input
+              id="phone"
+              name="phone"
+              maxLength={20}
+              defaultValue={phone ?? ""}
+              aria-invalid={errors["phone"] ? true : undefined}
+              aria-describedby={errors["phone"] ? "phone-error" : undefined}
+            />
+            <FieldError id="phone-error" message={errors["phone"]} />
           </div>
 
           <SubmitButton>Lưu thay đổi</SubmitButton>
@@ -73,11 +103,15 @@ export function PasswordForm() {
   const errors = state.fieldErrors ?? {};
 
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <KeyRound className="size-4" aria-hidden />
-          Đổi mật khẩu
+        <CardTitle asChild>
+          <h2 className="flex items-center gap-2 text-base">
+            <span className="bg-student-amber-surface text-student-amber-ink flex size-9 shrink-0 items-center justify-center rounded-lg">
+              <KeyRound className="size-4" aria-hidden />
+            </span>
+            Đổi mật khẩu
+          </h2>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -97,9 +131,22 @@ export function PasswordForm() {
               type="password"
               required
               minLength={8}
+              maxLength={72}
               autoComplete="new-password"
+              aria-invalid={errors["password"] ? true : undefined}
+              // Luôn trỏ tới dòng yêu cầu độ dài; thêm lỗi vào khi có.
+              // Trước đây `minLength={8}` chỉ nằm trong thuộc tính HTML nên
+              // người dùng chỉ biết luật sau khi bị trình duyệt chặn.
+              aria-describedby={
+                errors["password"]
+                  ? "password-hint password-error"
+                  : "password-hint"
+              }
             />
-            <FieldError message={errors["password"]} />
+            <p id="password-hint" className="text-text-secondary text-sm">
+              Tối thiểu 8 ký tự.
+            </p>
+            <FieldError id="password-error" message={errors["password"]} />
           </div>
 
           <div className="space-y-2">
@@ -109,9 +156,12 @@ export function PasswordForm() {
               name="confirm"
               type="password"
               required
+              maxLength={72}
               autoComplete="new-password"
+              aria-invalid={errors["confirm"] ? true : undefined}
+              aria-describedby={errors["confirm"] ? "confirm-error" : undefined}
             />
-            <FieldError message={errors["confirm"]} />
+            <FieldError id="confirm-error" message={errors["confirm"]} />
           </div>
 
           <SubmitButton>Đổi mật khẩu</SubmitButton>

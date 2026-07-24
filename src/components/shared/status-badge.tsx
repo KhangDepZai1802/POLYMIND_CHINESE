@@ -6,7 +6,11 @@ const TONE_CLASS: Record<BadgeTone, string> = {
   neutral: "bg-muted text-muted-foreground border-transparent",
   success: "bg-success/12 text-success border-success/25",
   warning: "bg-warning/12 text-warning border-warning/25",
-  danger: "bg-destructive/12 text-destructive border-destructive/25",
+  // Chữ dùng `danger-ink` (#B91C1C) chứ không phải `destructive` (#DC2626):
+  // trên nền `bg-destructive/12` (#FBE5E5) thì #DC2626 chỉ đạt 4.01:1, dưới
+  // ngưỡng AA cho chữ 12px của badge. #B91C1C đạt 5.37:1. Nền và viền giữ
+  // nguyên nên badge không đổi hình dáng. Xem `DS-030`.
+  danger: "bg-destructive/12 text-danger-ink border-destructive/25",
   info: "bg-primary/10 text-primary border-primary/25",
 };
 

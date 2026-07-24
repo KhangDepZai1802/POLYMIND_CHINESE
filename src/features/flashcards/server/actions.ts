@@ -4,18 +4,24 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import {
+  exampleMediaSlot,
   FLASHCARD_MEDIA_BUCKET,
   flashcardAltText,
   flashcardMediaFormat,
   flashcardMediaSizeLimit,
+  flashcardMediaSlotFromFileName,
   isOwnedFlashcardMediaPath,
+  MAX_FLASHCARD_UPLOAD_FILES,
   type FlashcardMediaSlot,
 } from "@/features/flashcards/domain/media";
+import { MAX_FLASHCARD_IMPORT_ROWS } from "@/features/flashcards/domain/bulk-import";
 import {
   flashcardDeckSchema,
+  flashcardImportRowSchema,
   flashcardPageSchema,
   flashcardSectionSchema,
   flashcardUploadRequestSchema,
+  type FlashcardPageInput,
 } from "@/features/flashcards/schema";
 import {
   dbErrorToMessage,
@@ -161,7 +167,7 @@ export async function createFlashcardUploadTicketsAction(
 
   const slots = parsed.data.files.map((file) => file.slot);
   if (new Set(slots).size !== slots.length) {
-    return { error: "Mỗi mặt flashcard chỉ nhận một file." };
+    return { error: "Mỗi khe media của thẻ chỉ nhận một file." };
   }
 
   const supabase = await createClient();
@@ -250,14 +256,17 @@ export async function discardFlashcardUploadsAction(input: unknown) {
       deckId: z.uuid(),
       sectionId: z.uuid(),
       pageId: z.uuid(),
-      paths: z.array(z.string().min(1)).max(3),
+      paths: z.array(z.string().min(1)).max(MAX_FLASHCARD_UPLOAD_FILES),
     })
     .safeParse(input);
   if (!parsed.success) return;
 
   const validPaths = parsed.data.paths.filter((path) => {
-    const slot = path.split("/").at(-1)?.split("-", 1)[0];
-    if (slot !== "front" && slot !== "back" && slot !== "audio") return false;
+    // Khe phải đọc từ TOÀN BỘ tên file. Bản trước cắt bằng `split("-", 1)` nên
+    // `example-2-<uuid>.png` ra khe "example" và không khớp khe nào — file rác
+    // sẽ nằm lại bucket vĩnh viễn.
+    const slot = flashcardMediaSlotFromFileName(path.split("/").at(-1) ?? "");
+    if (!slot) return false;
     return isOwnedFlashcardMediaPath(path, {
       actorId: actor.id,
       deckId: parsed.data.deckId,
@@ -275,18 +284,84 @@ async function removeFlashcardObjects(paths: string[]) {
   await supabase.storage.from(FLASHCARD_MEDIA_BUCKET).remove(paths);
 }
 
+/**
+ * Mọi media của trang, kèm KHE mà nó được khai báo.
+ *
+ * Khe phải đi cùng đường dẫn chứ không suy ngược từ tên file: có vậy mới chặn
+ * được trò khai một file `front-….png` vào ô audio — `isOwnedFlashcardMediaPath`
+ * so khe khai báo với khe trong tên file và với đuôi file.
+ */
+function declaredMedia(
+  input: FlashcardPageInput,
+): Array<{ slot: FlashcardMediaSlot; path: string }> {
+  if (input.kind === "session_cover") {
+    return [
+      { slot: "front", path: input.front_image_path },
+      { slot: "back", path: input.back_image_path },
+    ];
+  }
+
+  const media: Array<{ slot: FlashcardMediaSlot; path: string }> = [];
+  if (input.audio_path) {
+    media.push({ slot: "audio", path: input.audio_path });
+  }
+  if (input.front_image_path) {
+    media.push({ slot: "front", path: input.front_image_path });
+  }
+  if (input.back_image_path) {
+    media.push({ slot: "back", path: input.back_image_path });
+  }
+  input.example_sentences.forEach((example, index) => {
+    if (example.image_path) {
+      media.push({ slot: exampleMediaSlot(index), path: example.image_path });
+    }
+  });
+  return media;
+}
+
+function pageValues(input: FlashcardPageInput, sectionTitle: string) {
+  const hanzi = input.kind === "vocabulary" ? input.hanzi : null;
+  const meaningVi = input.kind === "vocabulary" ? input.meaning_vi : null;
+  const frontPath = input.front_image_path ?? null;
+  const backPath = input.back_image_path ?? null;
+
+  const altFor = (face: "front" | "back") =>
+    flashcardAltText({ kind: input.kind, face, hanzi, meaningVi, sectionTitle });
+
+  return {
+    kind: input.kind,
+    hanzi,
+    pinyin_syllables:
+      input.kind === "vocabulary" ? input.pinyin_syllables : null,
+    meaning_vi: meaningVi,
+    audio_path: input.kind === "vocabulary" ? (input.audio_path ?? null) : null,
+    front_image_path: frontPath,
+    back_image_path: backPath,
+    // `flashcard_pages_alt_pairing_check`: có ảnh thì phải có alt, không ảnh thì
+    // alt phải rỗng. Sinh alt cho ảnh không tồn tại là tự tạo dữ liệu ma.
+    front_alt: frontPath ? altFor("front") : null,
+    back_alt: backPath ? altFor("back") : null,
+    sense_breakdown:
+      input.kind === "vocabulary" ? input.sense_breakdown : [],
+    example_sentences:
+      input.kind === "vocabulary" ? input.example_sentences : [],
+    common_phrases: input.kind === "vocabulary" ? input.common_phrases : [],
+  };
+}
+
 export async function saveFlashcardPageAction(
   formData: FormData,
 ): Promise<ActionState> {
   const actor = await requireRole("super_admin");
   const parsed = flashcardPageSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
+  const input = parsed.data;
 
   const supabase = await createClient();
   const { data: section } = await supabase
     .from("flashcard_sections")
     .select("id,status,title,deck:flashcard_decks(id)")
-    .eq("id", parsed.data.section_id)
+    .eq("id", input.section_id)
     .maybeSingle();
   if (!section?.deck || section.status !== "draft") {
     return { error: "Chỉ sửa trang trong buổi flashcard đang nháp." };
@@ -295,42 +370,44 @@ export async function saveFlashcardPageAction(
   const { data: existing } = await supabase
     .from("flashcard_pages")
     .select("*")
-    .eq("id", parsed.data.id)
-    .eq("section_id", parsed.data.section_id)
+    .eq("id", input.id)
+    .eq("section_id", input.section_id)
     .is("archived_at", null)
     .maybeSingle();
 
-  const kind = existing?.kind ?? parsed.data.kind;
-  // Trang mở đầu chỉ gồm hai ảnh; audio là ràng buộc riêng của trang từ vựng.
-  const audioPath = kind === "vocabulary" ? parsed.data.audio_path : null;
-  if (kind === "vocabulary" && !audioPath) {
-    return { error: "Trang từ vựng cần audio phát âm." };
+  // Bản cũ lặng lẽ lấy `existing.kind` và bỏ qua `kind` được gửi lên. Im lặng
+  // như vậy che mất một yêu cầu sai; nói thẳng ra thì người gọi sửa được.
+  if (existing && existing.kind !== input.kind) {
+    return {
+      error: "Không đổi được loại trang sau khi đã tạo. Hãy lưu trữ rồi tạo lại.",
+    };
   }
 
-  const media: Array<[FlashcardMediaSlot, string, string | null]> = [
-    ["front", parsed.data.front_image_path, existing?.front_image_path ?? null],
-    ["back", parsed.data.back_image_path, existing?.back_image_path ?? null],
-  ];
-  if (audioPath) {
-    media.push(["audio", audioPath, existing?.audio_path ?? null]);
-  }
-  const newPaths = media
-    .filter(([, path, oldPath]) => path !== oldPath)
-    .map(([, path]) => path);
+  const media = declaredMedia(input);
+  // `media_paths` là bản kê media mà DB đang giữ cho trang này, nên so sánh với
+  // nó là cách duy nhất biết chắc file nào vừa thêm và file nào vừa bị bỏ ra.
+  const previousPaths = new Set(existing?.media_paths ?? []);
+  const nextPaths = new Set(media.map((item) => item.path));
+  const addedPaths = [...nextPaths].filter((path) => !previousPaths.has(path));
 
-  for (const [slot, path, oldPath] of media) {
+  const failWithCleanup = async (error: string): Promise<ActionState> => {
+    await removeFlashcardObjects(addedPaths);
+    return { error };
+  };
+
+  for (const { slot, path } of media) {
+    if (previousPaths.has(path)) continue;
+
     if (
-      path !== oldPath &&
       !isOwnedFlashcardMediaPath(path, {
         actorId: actor.id,
         deckId: section.deck.id,
         sectionId: section.id,
-        pageId: parsed.data.id,
+        pageId: input.id,
         slot,
       })
     ) {
-      await removeFlashcardObjects(newPaths);
-      return { error: "Đường dẫn media flashcard không hợp lệ." };
+      return failWithCleanup("Đường dẫn media flashcard không hợp lệ.");
     }
 
     const { data: info, error: infoError } = await supabase.storage
@@ -345,10 +422,9 @@ export async function saveFlashcardPageAction(
       info.size <= 0 ||
       info.size > flashcardMediaSizeLimit(slot)
     ) {
-      await removeFlashcardObjects(newPaths);
-      return {
-        error: `File ${slot} không tồn tại hoặc sai định dạng/kích thước.`,
-      };
+      return failWithCleanup(
+        `File ở khe ${slot} không tồn tại hoặc sai định dạng/kích thước.`,
+      );
     }
   }
 
@@ -360,10 +436,9 @@ export async function saveFlashcardPageAction(
       .eq("section_id", section.id)
       .is("archived_at", null)
       .order("order_index");
-    if (kind === "session_cover") {
+    if (input.kind === "session_cover") {
       if (activePages?.some((page) => page.kind === "session_cover")) {
-        await removeFlashcardObjects(newPaths);
-        return { error: "Buổi này đã có trang mở đầu." };
+        return failWithCleanup("Buổi này đã có trang mở đầu.");
       }
       orderIndex = 0;
     } else {
@@ -371,65 +446,38 @@ export async function saveFlashcardPageAction(
     }
   }
 
-  const term = kind === "vocabulary" ? parsed.data.term : null;
-  const values = {
-    kind,
-    term,
-    front_alt: flashcardAltText({
-      kind,
-      face: "front",
-      term,
-      sectionTitle: section.title,
-    }),
-    back_alt: flashcardAltText({
-      kind,
-      face: "back",
-      term,
-      sectionTitle: section.title,
-    }),
-    front_image_path: parsed.data.front_image_path,
-    back_image_path: parsed.data.back_image_path,
-    audio_path: audioPath,
-  };
-
+  const values = pageValues(input, section.title);
   const result = existing
     ? await supabase
         .from("flashcard_pages")
         .update(values)
         .eq("id", existing.id)
-        .select("id,kind,term")
+        .select("id,kind,hanzi")
         .single()
     : await supabase
         .from("flashcard_pages")
         .insert({
-          id: parsed.data.id,
-          section_id: parsed.data.section_id,
+          id: input.id,
+          section_id: input.section_id,
           order_index: orderIndex,
           created_by: actor.id,
           ...values,
         })
-        .select("id,kind,term")
+        .select("id,kind,hanzi")
         .single();
 
   if (result.error || !result.data) {
-    await removeFlashcardObjects(newPaths);
-    return {
-      error: dbErrorToMessage(result.error, "Không lưu được trang flashcard."),
-    };
+    return failWithCleanup(
+      dbErrorToMessage(result.error, "Không lưu được trang flashcard."),
+    );
   }
 
-  const replacedPaths = existing
-    ? [
-        ...media
-          .filter(([, path, oldPath]) => Boolean(oldPath) && path !== oldPath)
-          .map(([, , oldPath]) => oldPath!),
-        // Trang mở đầu không còn dùng audio: dọn file cũ để không mồ côi trong bucket.
-        ...(kind === "session_cover" && existing.audio_path
-          ? [existing.audio_path]
-          : []),
-      ]
-    : [];
-  await removeFlashcardObjects(replacedPaths);
+  // File cũ không còn được trang tham chiếu nữa thì dọn khỏi bucket private.
+  const droppedPaths = [...previousPaths].filter(
+    (path) => !nextPaths.has(path),
+  );
+  await removeFlashcardObjects(droppedPaths);
+
   await logAudit(supabase, {
     action: existing ? "flashcard.page.update" : "flashcard.page.create",
     resourceType: "flashcard_page",
@@ -437,14 +485,14 @@ export async function saveFlashcardPageAction(
     before: existing
       ? {
           kind: existing.kind,
-          term: existing.term,
+          hanzi: existing.hanzi,
           section_id: existing.section_id,
         }
       : undefined,
     after: {
       kind: result.data.kind,
-      term: result.data.term,
-      section_id: parsed.data.section_id,
+      hanzi: result.data.hanzi,
+      section_id: input.section_id,
     },
   });
   revalidateFlashcards();
@@ -452,6 +500,104 @@ export async function saveFlashcardPageAction(
     success: existing
       ? "Đã cập nhật trang flashcard."
       : "Đã thêm trang flashcard.",
+  };
+}
+
+export type FlashcardImportOutcome = {
+  createdCount: number;
+  duplicateCount: number;
+};
+
+/**
+ * Nhập hàng loạt thẻ từ vựng (`P16-T4`).
+ *
+ * Zod kiểm **từng dòng** ở đây (`DS-050`: Zod là chỗ cưỡng chế duy nhất), rồi
+ * RPC lo chèn. Idempotency nằm ở **unique index của DB** + `ON CONFLICT DO
+ * NOTHING`, không phải ở vòng lặp này (`BUG_M09_01`) — nên dù request có được
+ * gửi lại hai lần thì cũng không sinh thẻ trùng.
+ */
+export async function importFlashcardVocabularyAction(
+  input: unknown,
+): Promise<ActionState & { outcome?: FlashcardImportOutcome }> {
+  await requireRole("super_admin");
+  const parsed = z
+    .object({
+      sectionId: z.uuid(),
+      rows: z
+        .array(flashcardImportRowSchema)
+        .min(1, "Chưa có dòng nào hợp lệ để nhập.")
+        .max(
+          MAX_FLASHCARD_IMPORT_ROWS,
+          `Mỗi lượt nhập tối đa ${MAX_FLASHCARD_IMPORT_ROWS} dòng.`,
+        ),
+    })
+    .safeParse(input);
+  if (!parsed.success) return zodToActionState(parsed.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("import_flashcard_vocabulary", {
+    p_section_id: parsed.data.sectionId,
+    p_rows: parsed.data.rows,
+  });
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không nhập được danh sách thẻ.") };
+  }
+
+  const results = data ?? [];
+  const createdCount = results.filter(
+    (item) => item.row_status === "created",
+  ).length;
+  const duplicateCount = results.filter(
+    (item) => item.row_status === "duplicate",
+  ).length;
+
+  await logAudit(supabase, {
+    action: "flashcard.page.import",
+    resourceType: "flashcard_section",
+    resourceId: parsed.data.sectionId,
+    after: { created: createdCount, duplicate: duplicateCount },
+  });
+  revalidateFlashcards();
+
+  return {
+    success:
+      duplicateCount === 0
+        ? `Đã tạo ${createdCount} thẻ.`
+        : `Đã tạo ${createdCount} thẻ, bỏ qua ${duplicateCount} thẻ đã có sẵn.`,
+    outcome: { createdCount, duplicateCount },
+  };
+}
+
+/**
+ * ★ thẻ khó — nhận trạng thái MONG MUỐN, không phải "đảo trạng thái".
+ *
+ * RPC `set_flashcard_star` là đường ghi duy nhất; idempotency nằm ở khoá chính
+ * ghép của bảng (`BUG_M09_01`), nên bấm lặp không tạo hàng thừa dù app có gửi
+ * lại request hay không.
+ */
+export async function setFlashcardStarAction(
+  input: unknown,
+): Promise<ActionState> {
+  await requireRole("student");
+  const parsed = z
+    .object({ pageId: z.uuid(), starred: z.boolean() })
+    .safeParse(input);
+  if (!parsed.success) return { error: "Yêu cầu đánh dấu không hợp lệ." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_flashcard_star", {
+    p_page_id: parsed.data.pageId,
+    p_starred: parsed.data.starred,
+  });
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không lưu được đánh dấu.") };
+  }
+
+  revalidatePath("/student/review");
+  return {
+    success: parsed.data.starred
+      ? "Đã đánh dấu thẻ khó."
+      : "Đã bỏ đánh dấu thẻ khó.",
   };
 }
 
@@ -467,8 +613,9 @@ export async function publishFlashcardSectionAction(
   const { error } = await supabase.rpc("publish_flashcard_section", {
     p_section_id: parsed.data.id,
   });
-  if (error)
+  if (error) {
     return { error: dbErrorToMessage(error, "Không công bố được buổi.") };
+  }
   revalidateFlashcards();
   return { success: "Đã công bố buổi flashcard." };
 }
@@ -484,8 +631,9 @@ export async function unpublishFlashcardSectionAction(
     .from("flashcard_sections")
     .update({ status: "draft", published_at: null })
     .eq("id", parsed.data.id);
-  if (error)
+  if (error) {
     return { error: dbErrorToMessage(error, "Không đưa buổi về nháp.") };
+  }
   await logAudit(supabase, {
     action: "flashcard.section.unpublish",
     resourceType: "flashcard_section",
@@ -537,8 +685,9 @@ export async function moveFlashcardPageAction(
     p_section_id: page.section_id,
     p_page_ids: ids,
   });
-  if (error)
+  if (error) {
     return { error: dbErrorToMessage(error, "Không sắp xếp được trang.") };
+  }
   revalidateFlashcards();
   return { success: "Đã đổi thứ tự trang." };
 }
@@ -550,23 +699,20 @@ export async function archiveFlashcardPageAction(
   const parsed = pageMutationSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Trang flashcard không hợp lệ." };
   const supabase = await createClient();
+  // `media_paths` gom đủ cả ảnh của câu ví dụ; liệt kê ba cột như bản cũ sẽ để
+  // ảnh câu ví dụ nằm lại bucket sau khi trang đã bị lưu trữ.
   const { data: page } = await supabase
     .from("flashcard_pages")
-    .select("front_image_path,back_image_path,audio_path")
+    .select("media_paths")
     .eq("id", parsed.data.id)
     .maybeSingle();
   const { error } = await supabase.rpc("archive_flashcard_page", {
     p_page_id: parsed.data.id,
   });
-  if (error)
+  if (error) {
     return { error: dbErrorToMessage(error, "Không lưu trữ được trang.") };
-  if (page) {
-    await removeFlashcardObjects(
-      [page.front_image_path, page.back_image_path, page.audio_path].filter(
-        (path): path is string => Boolean(path),
-      ),
-    );
   }
+  if (page) await removeFlashcardObjects(page.media_paths);
   revalidateFlashcards();
   return { success: "Đã lưu trữ trang flashcard." };
 }

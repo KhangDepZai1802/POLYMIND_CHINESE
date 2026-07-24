@@ -39,24 +39,36 @@ export default async function AdminTuitionPage() {
         description="Lập hóa đơn, quản lý khoản mục và phát hành cho học viên."
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard
-          label="Tổng hóa đơn"
-          value={String(invoices.length)}
-          note={`${draftCount} bản nháp`}
-        />
-        <SummaryCard
-          label="Còn phải thu"
-          value={formatCurrency(outstanding)}
-          note="Tính từ hóa đơn đã phát hành"
-        />
-        <SummaryCard
-          label="Quá hạn"
-          value={String(overdueCount)}
-          note="Có số dư và đã qua hạn đóng"
-          danger={overdueCount > 0}
-        />
-      </div>
+      <section aria-labelledby="tuition-summary-heading">
+        <h2 id="tuition-summary-heading" className="sr-only">
+          Tổng hợp học phí
+        </h2>
+        {/*
+         * Grid là `<div>`, và **mỗi thẻ tự chứa `<dl>` của riêng nó**.
+         * Không bọc `<dl>` ra ngoài các `Card`: `<dl>` chỉ được chứa trực tiếp
+         * `<dt>`/`<dd>` hoặc `<div>` bọc một cặp, mà `Card > CardContent > dt`
+         * đã sâu hai cấp — axe báo `definition-list` + `dlitem` (9 node) mức
+         * `serious`. Bài kiểm bắt được trước khi giao.
+         */}
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SummaryCard
+            label="Tổng hóa đơn"
+            value={String(invoices.length)}
+            note={`${draftCount} bản nháp`}
+          />
+          <SummaryCard
+            label="Còn phải thu"
+            value={formatCurrency(outstanding)}
+            note="Tính từ hóa đơn đã phát hành"
+          />
+          <SummaryCard
+            label="Quá hạn"
+            value={String(overdueCount)}
+            note="Có số dư và đã qua hạn đóng"
+            danger={overdueCount > 0}
+          />
+        </div>
+      </section>
 
       <TuitionInvoiceManager
         invoices={invoices}
@@ -79,15 +91,24 @@ function SummaryCard({
   danger?: boolean;
 }) {
   return (
-    <Card>
-      <CardContent className="space-y-1 p-4">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p
-          className={`text-2xl font-semibold tabular-nums ${danger ? "text-destructive" : ""}`}
-        >
-          {value}
-        </p>
-        <p className="text-muted-foreground text-xs">{note}</p>
+    <Card className="h-full py-0">
+      <CardContent className="p-4">
+        {/*
+         * `<dl>` nằm TRONG thẻ, bọc đúng một cặp nhãn–giá trị.
+         *
+         * `text-sm` chứ không `text-xs`: đây là nhãn và cách giải thích của CON
+         * SỐ TIỀN — người đọc phải biết "Còn phải thu" tính từ đâu mới dám tin
+         * nó. Cùng lỗi đã sửa ở M26 (`P15-T7`).
+         */}
+        <dl className="space-y-1">
+          <dt className="text-text-secondary text-sm">{label}</dt>
+          <dd
+            className={`text-2xl font-semibold tabular-nums ${danger ? "text-danger-ink" : ""}`}
+          >
+            {value}
+          </dd>
+          <dd className="text-text-secondary text-sm">{note}</dd>
+        </dl>
       </CardContent>
     </Card>
   );

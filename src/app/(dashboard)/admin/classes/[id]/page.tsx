@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Pencil } from "lucide-react";
+import { ArrowLeft, CalendarDays } from "lucide-react";
 
 import { ClassFormDialog } from "@/features/classes/components/class-form-dialog";
 import { TeacherAssignments } from "@/features/classes/components/teacher-assignments";
@@ -21,7 +21,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
-import { formatDate } from "@/lib/dates";
+import { formatDateOnly } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
   CLASS_STATUS_LABELS,
@@ -62,7 +62,7 @@ export default async function AdminClassDetailPage({
     <>
       <Link
         href="/admin/classes"
-        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
+        className="text-text-secondary hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Danh sách lớp học
@@ -72,16 +72,14 @@ export default async function AdminClassDetailPage({
         title={classRecord.name}
         description={`${classRecord.code} · ${classRecord.course?.title ?? "Chưa có khóa học"}`}
         action={
-          <ClassFormDialog
-            courses={courses}
-            classRecord={classRecord}
-            trigger={
-              <Button variant="outline">
-                <Pencil className="size-4" aria-hidden />
-                Sửa lớp
-              </Button>
-            }
-          />
+          /* ⛔ KHÔNG truyền `trigger` từ đây. `ClassFormDialog` là Client
+             Component và đưa con của nó vào `DialogTrigger asChild`; một React
+             element dựng ở Server Component đi qua ranh giới RSC thì Radix
+             `Children.only()` CÓ LÚC không thấy đúng một phần tử → ném
+             "Primitive.button failed to slot onto its children" → cả trang rơi
+             vào error boundary. Đo được 47/120 lượt hỏng trước khi sửa
+             (`UX-UIUX-M00-025`). Nút "Sửa lớp" nay do chính dialog dựng. */
+          <ClassFormDialog courses={courses} classRecord={classRecord} />
         }
       />
 
@@ -90,27 +88,32 @@ export default async function AdminClassDetailPage({
           label={CLASS_STATUS_LABELS[classRecord.status]}
           tone={CLASS_STATUS_TONE[classRecord.status]}
         />
-        <span className="text-muted-foreground text-sm">
+        <span className="text-text-secondary text-sm">
           {DELIVERY_MODE_LABELS[classRecord.delivery_mode]} ·{" "}
           {openEnrollments.length}/{classRecord.capacity} học viên
         </span>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Thông tin lớp</CardTitle>
+      {/* `min-w-0` trên từng cột: con grid mặc định `min-width: auto` nên không
+          co được dưới min-content — `DS-039`, đo được trang này tràn **193px**
+          ở 360px trước khi sửa (mốc tràn nặng nhất của cả khu Quản trị). */}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(21rem,0.8fr)]">
+        <div className="min-w-0 space-y-4">
+          <Card className="gap-4 py-4">
+            <CardHeader className="px-4">
+              <CardTitle asChild className="text-base">
+                <h2>Thông tin lớp</h2>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <CardContent className="grid gap-4 px-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Khóa học" value={classRecord.course?.title} />
               <Field
                 label="Ngày khai giảng"
-                value={formatDate(classRecord.start_date)}
+                value={formatDateOnly(classRecord.start_date)}
               />
               <Field
                 label="Dự kiến kết thúc"
-                value={formatDate(classRecord.expected_end_date)}
+                value={formatDateOnly(classRecord.expected_end_date)}
               />
               <Field
                 label="Số buổi"
@@ -132,11 +135,13 @@ export default async function AdminClassDetailPage({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Địa điểm học</CardTitle>
+          <Card className="gap-4 py-4">
+            <CardHeader className="px-4">
+              <CardTitle asChild className="text-base">
+                <h2>Địa điểm học</h2>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+            <CardContent className="grid gap-4 px-4 sm:grid-cols-2">
               <Field label="Tên địa điểm" value={classRecord.location_name} />
               <Field label="Địa chỉ" value={classRecord.address} />
               <Field
@@ -157,12 +162,14 @@ export default async function AdminClassDetailPage({
           />
         </div>
 
-        <div className="space-y-5">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-base">Lịch & buổi học</CardTitle>
-                <p className="text-muted-foreground mt-1 text-xs">
+        <div className="min-w-0 space-y-4">
+          <Card className="gap-4 py-4">
+            <CardHeader className="flex-row items-center justify-between gap-3 px-4">
+              <div className="min-w-0">
+                <CardTitle asChild className="text-base">
+                  <h2>Lịch &amp; buổi học</h2>
+                </CardTitle>
+                <p className="text-text-secondary mt-1 text-sm">
                   {classRecord.class_schedules.length === 0
                     ? "Lớp linh hoạt hoặc chưa cấu hình lịch lặp."
                     : `${classRecord.class_schedules.length} lịch lặp đã cấu hình.`}
@@ -175,23 +182,25 @@ export default async function AdminClassDetailPage({
                 </Link>
               </Button>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3 text-center">
+            <CardContent className="px-4">
+              <dl className="grid grid-cols-2 gap-3 text-center">
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-2xl font-semibold">{sessions.length}</p>
-                  <p className="text-muted-foreground text-xs">Buổi đã sinh</p>
+                  <dd className="text-2xl font-semibold tabular-nums">
+                    {sessions.length}
+                  </dd>
+                  <dt className="text-text-secondary text-sm">Buổi đã sinh</dt>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-2xl font-semibold">
+                  <dd className="text-2xl font-semibold tabular-nums">
                     {
                       sessions.filter(
                         (session) => session.status === "completed",
                       ).length
                     }
-                  </p>
-                  <p className="text-muted-foreground text-xs">Buổi đã dạy</p>
+                  </dd>
+                  <dt className="text-text-secondary text-sm">Buổi đã dạy</dt>
                 </div>
-              </div>
+              </dl>
             </CardContent>
           </Card>
 
@@ -216,8 +225,11 @@ function Field({
   value: string | number | null | undefined;
 }) {
   return (
-    <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
+    // `min-w-0` + `break-words`: ô này chứa cả URL phòng học trực tuyến, là
+    // chuỗi không có dấu cách nên nếu không cho ngắt thì chính nó ghim bề rộng
+    // min-content của cả cột và kéo trang tràn ngang.
+    <div className="min-w-0">
+      <p className="text-text-secondary text-sm">{label}</p>
       <p className="mt-0.5 text-sm break-words whitespace-pre-line">
         {value ?? "—"}
       </p>

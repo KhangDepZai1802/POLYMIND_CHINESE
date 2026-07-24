@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Database } from "lucide-react";
 
 import {
   QUESTION_TYPE_LABELS,
@@ -13,12 +14,15 @@ import {
 } from "@/features/question-bank/server/queries";
 import { questionPageHref } from "@/features/question-bank/domain/pagination";
 import { AssessmentTabs } from "@/components/shared/assessment-tabs";
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StepHint } from "@/components/shared/step-hint";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 
 type WizardSkill = (typeof WIZARD_SKILLS)[number];
 
@@ -64,39 +68,59 @@ export async function QuestionBankPage({
       <PageHeader
         title="Ngân hàng câu hỏi"
         description="Nơi tạo và quản lý từng câu hỏi. Sau khi đã có câu, sang bước ② Bộ bài tập để ghép thành bài."
-        action={<QuestionWizard trigger={<Button>Tạo câu hỏi</Button>} />}
+        /* ⛔ KHÔNG truyền `trigger` — file này là Server Component
+           (`UX-UIUX-M00-025`). Wizard tự dựng nút "Tạo câu hỏi". */
+        action={<QuestionWizard />}
       />
       <StepHint module={kind === "exercise" ? "exercises" : "exams"} step={1} />
-      <form className="mb-4 grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_10rem_auto]">
-        <Input
-          name="q"
-          defaultValue={filters?.q}
-          placeholder="Tìm mã hoặc tiêu đề"
-        />
-        <select
-          name="skill"
-          defaultValue={filters?.skill ?? ""}
-          className="bg-background h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">Mọi kỹ năng</option>
-          <option value="listening">Nghe</option>
-          <option value="speaking">Nói</option>
-          <option value="reading">Đọc</option>
-          <option value="writing">Viết</option>
-          <option value="vocabulary">Từ vựng</option>
-          <option value="grammar">Ngữ pháp</option>
-        </select>
-        <select
-          name="visibility"
-          defaultValue={filters?.visibility ?? ""}
-          className="bg-background h-9 rounded-md border px-3 text-sm"
-        >
-          <option value="">Mọi phạm vi</option>
-          <option value="private">Riêng tư</option>
-          <option value="shared">Được chia sẻ</option>
-          <option value="global">Kho chung</option>
-          <option value="pending_global_review">Chờ duyệt</option>
-        </select>
+      {/*
+        `aria-label` cho `<form>` + `<label>` thật cho từng ô: trước đây ô tìm
+        kiếm chỉ có `placeholder` (biến mất ngay khi gõ) còn hai ô chọn không
+        có tên nào cả, nên trình đọc màn hình đọc ra "combo box" trống.
+      */}
+      <form
+        aria-label="Lọc ngân hàng câu hỏi"
+        className="mb-4 grid items-end gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_10rem_auto]"
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="qb-q">Tìm mã hoặc tiêu đề</Label>
+          <Input
+            id="qb-q"
+            name="q"
+            defaultValue={filters?.q}
+            placeholder="VD: Q-0001"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="qb-skill">Kỹ năng</Label>
+          <NativeSelect
+            id="qb-skill"
+            name="skill"
+            defaultValue={filters?.skill ?? ""}
+          >
+            <option value="">Mọi kỹ năng</option>
+            <option value="listening">Nghe</option>
+            <option value="speaking">Nói</option>
+            <option value="reading">Đọc</option>
+            <option value="writing">Viết</option>
+            <option value="vocabulary">Từ vựng</option>
+            <option value="grammar">Ngữ pháp</option>
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="qb-visibility">Phạm vi</Label>
+          <NativeSelect
+            id="qb-visibility"
+            name="visibility"
+            defaultValue={filters?.visibility ?? ""}
+          >
+            <option value="">Mọi phạm vi</option>
+            <option value="private">Riêng tư</option>
+            <option value="shared">Được chia sẻ</option>
+            <option value="global">Kho chung</option>
+            <option value="pending_global_review">Chờ duyệt</option>
+          </NativeSelect>
+        </div>
         <Button type="submit" variant="outline">
           Lọc
         </Button>
@@ -104,9 +128,11 @@ export async function QuestionBankPage({
       <Card>
         <CardContent className="p-0">
           {questions.length === 0 ? (
-            <p className="text-muted-foreground p-8 text-center">
-              Chưa có câu hỏi. Tạo câu đầu tiên hoàn toàn trên web.
-            </p>
+            <EmptyState
+              icon={Database}
+              title="Chưa có câu hỏi"
+              description="Tạo câu đầu tiên hoàn toàn trên web bằng nút Tạo câu hỏi ở đầu trang."
+            />
           ) : (
             <ul className="divide-y">
               {questions.map((question) => (
@@ -115,19 +141,28 @@ export async function QuestionBankPage({
                   className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 p-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <code className="text-muted-foreground text-xs">
+                    <div className="flex flex-wrap items-center gap-x-2">
+                      <code className="text-text-secondary text-sm">
                         {question.code}
                       </code>
-                      <p className="truncate font-medium">{question.title}</p>
+                      <p className="min-w-0 truncate font-medium">
+                        {question.title}
+                      </p>
                     </div>
                     {question.current_version?.prompt_text && (
-                      <p className="text-muted-foreground mt-0.5 line-clamp-1 text-sm">
+                      <p className="text-text-secondary mt-0.5 line-clamp-1 text-sm">
                         {question.current_version.prompt_text}
                       </p>
                     )}
                   </div>
-                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                  {/*
+                    Bỏ `shrink-0`: nó khoá cụm này ở bề rộng nội dung nên ở
+                    360px cụm rộng **398px** và đẩy cả trang tràn ngang 67px —
+                    `flex-wrap` bên trong không cứu được vì chính cụm mới là
+                    thứ không chịu co. Thêm `min-w-0` + `basis-full sm:basis-auto`
+                    để ở màn hẹp nó xuống hẳn một dòng riêng.
+                  */}
+                  <div className="flex min-w-0 basis-full flex-wrap items-center gap-1.5 sm:basis-auto sm:justify-end">
                     <Badge variant="outline" className="font-normal">
                       {question.current_version
                         ? QUESTION_TYPE_LABELS[
@@ -146,11 +181,8 @@ export async function QuestionBankPage({
                         question.current_version.question_type,
                       ) && (
                         <QuestionWizard
-                          trigger={
-                            <Button size="xs" variant="outline">
-                              Chỉnh sửa
-                            </Button>
-                          }
+                          /* ⛔ Không truyền `trigger` — `UX-UIUX-M00-025`.
+                             Wizard tự dựng nút "Chỉnh sửa" khi có `version`. */
                           version={{
                             questionId: question.id,
                             skill:

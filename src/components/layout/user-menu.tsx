@@ -49,7 +49,7 @@ export function UserMenu({
             </AvatarFallback>
           </Avatar>
           <span className="hidden text-left sm:block">
-            <span className="block max-w-[10rem] truncate text-sm font-medium">
+            <span className="block max-w-40 truncate text-sm font-medium">
               {fullName}
             </span>
             <span className="text-muted-foreground block text-xs">
@@ -85,14 +85,18 @@ export function UserMenu({
 
         <DropdownMenuSeparator />
 
+        {/* NÚT là menuitem, không phải form — nhờ vậy nó có role="menuitem",
+            nhận điều hướng phím mũi tên và highlight focus của Radix như mọi mục
+            khác, còn Enter/Space vẫn submit form. Trước đây đây là <button> trần
+            nên người dùng bàn phím focus vào mà không thấy dấu hiệu gì.
+            Hành vi đăng xuất giữ nguyên. */}
         <form action={logoutAction}>
-          <button
-            type="submit"
-            className="hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"
-          >
-            <LogOut className="size-4" aria-hidden />
-            Đăng xuất
-          </button>
+          <DropdownMenuItem asChild>
+            <button type="submit" className="w-full cursor-pointer">
+              <LogOut className="size-4" aria-hidden />
+              Đăng xuất
+            </button>
+          </DropdownMenuItem>
         </form>
       </DropdownMenuContent>
     </DropdownMenu>

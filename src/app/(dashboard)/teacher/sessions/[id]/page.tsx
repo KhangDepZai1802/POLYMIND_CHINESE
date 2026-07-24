@@ -53,7 +53,7 @@ export default async function TeacherSessionLogPage({
     <>
       <Link
         href={`/teacher/classes/${session.class.id}`}
-        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring mb-4 inline-flex items-center gap-1 rounded-md text-sm focus-visible:ring-2 focus-visible:outline-none"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Về lớp {session.class.code}
@@ -105,7 +105,9 @@ export default async function TeacherSessionLogPage({
       {session.status === "scheduled" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Nội dung thực dạy</CardTitle>
+            <CardTitle asChild className="text-base">
+              <h2>Nội dung thực dạy</h2>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <SessionLogForm
@@ -130,8 +132,8 @@ export default async function TeacherSessionLogPage({
           </Alert>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                {selectedLesson?.title ?? "Bài học đã dạy"}
+              <CardTitle asChild className="text-base">
+                <h2>{selectedLesson?.title ?? "Bài học đã dạy"}</h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -171,12 +173,17 @@ function SummaryCard({
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-4">
-        <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+        <div className="bg-primary-50 text-primary-700 flex size-10 shrink-0 items-center justify-center rounded-lg">
           <Icon className="size-5" aria-hidden />
         </div>
         <div className="min-w-0">
-          <p className="text-muted-foreground text-xs">{label}</p>
-          <p className="truncate text-sm font-medium">{value}</p>
+          <p className="text-text-secondary text-sm">{label}</p>
+          {/* Không `truncate`: ở 640–768px mỗi thẻ chỉ còn ~148px cho chuỗi
+              giờ, cắt đúng giờ kết thúc — dữ liệu chính của thẻ. Xuống dòng
+              không vỡ layout vì `grid` kéo 3 thẻ cùng hàng bằng nhau. */}
+          <p className="text-sm font-medium" title={value}>
+            {value}
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -192,7 +199,7 @@ function ReadOnlyField({
 }) {
   return (
     <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="text-text-secondary text-sm">{label}</p>
       <p className="mt-1 text-sm whitespace-pre-wrap">{value || "—"}</p>
     </div>
   );

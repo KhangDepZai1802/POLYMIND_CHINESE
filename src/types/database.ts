@@ -1443,49 +1443,67 @@ export type Database = {
         Row: {
           archived_at: string | null
           audio_path: string | null
-          back_alt: string
-          back_image_path: string
+          back_alt: string | null
+          back_image_path: string | null
+          common_phrases: Json
           created_at: string
           created_by: string
-          front_alt: string
-          front_image_path: string
+          example_sentences: Json
+          front_alt: string | null
+          front_image_path: string | null
+          hanzi: string | null
           id: string
           kind: Database["public"]["Enums"]["flashcard_page_kind"]
+          meaning_vi: string | null
+          media_paths: string[]
           order_index: number
+          pinyin_syllables: string | null
           section_id: string
-          term: string | null
+          sense_breakdown: Json
           updated_at: string
         }
         Insert: {
           archived_at?: string | null
           audio_path?: string | null
-          back_alt: string
-          back_image_path: string
+          back_alt?: string | null
+          back_image_path?: string | null
+          common_phrases?: Json
           created_at?: string
           created_by?: string
-          front_alt: string
-          front_image_path: string
+          example_sentences?: Json
+          front_alt?: string | null
+          front_image_path?: string | null
+          hanzi?: string | null
           id?: string
           kind: Database["public"]["Enums"]["flashcard_page_kind"]
+          meaning_vi?: string | null
+          media_paths?: string[]
           order_index: number
+          pinyin_syllables?: string | null
           section_id: string
-          term?: string | null
+          sense_breakdown?: Json
           updated_at?: string
         }
         Update: {
           archived_at?: string | null
           audio_path?: string | null
-          back_alt?: string
-          back_image_path?: string
+          back_alt?: string | null
+          back_image_path?: string | null
+          common_phrases?: Json
           created_at?: string
           created_by?: string
-          front_alt?: string
-          front_image_path?: string
+          example_sentences?: Json
+          front_alt?: string | null
+          front_image_path?: string | null
+          hanzi?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["flashcard_page_kind"]
+          meaning_vi?: string | null
+          media_paths?: string[]
           order_index?: number
+          pinyin_syllables?: string | null
           section_id?: string
-          term?: string | null
+          sense_breakdown?: Json
           updated_at?: string
         }
         Relationships: [
@@ -1538,6 +1556,39 @@ export type Database = {
             columns: ["deck_id"]
             isOneToOne: false
             referencedRelation: "flashcard_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_starred_pages: {
+        Row: {
+          created_at: string
+          page_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          page_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          page_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_starred_pages_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcard_starred_pages_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -3627,6 +3678,14 @@ export type Database = {
         Args: { p_delivery_id: string; p_grades: Json }
         Returns: number
       }
+      import_flashcard_vocabulary: {
+        Args: { p_rows: Json; p_section_id: string }
+        Returns: {
+          page_id: string
+          row_index: number
+          row_status: string
+        }[]
+      }
       import_questions: { Args: { p_rows: Json }; Returns: Json }
       invalidate_exam_attempt: {
         Args: { p_attempt_id: string; p_reason: string }
@@ -3759,6 +3818,10 @@ export type Database = {
           p_student_id: string
         }
         Returns: string
+      }
+      set_flashcard_star: {
+        Args: { p_page_id: string; p_starred: boolean }
+        Returns: undefined
       }
       share_question: {
         Args: {

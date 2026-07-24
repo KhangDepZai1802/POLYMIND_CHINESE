@@ -14,16 +14,19 @@ export function SidebarNav({ role }: { role: UserRole }) {
 
   return (
     <aside className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col self-start border-r md:flex">
-      <div className="flex items-center gap-3 border-b px-5 py-4">
-        <Logo size={40} priority />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">POLYMIND</p>
+      {/* Xếp dọc chứ không đặt cạnh chữ: chữ ký thương hiệu nằm ngang, để cạnh
+          nhãn vai trò thì bề ngang 216px của sidebar buộc phải bóp logo lại —
+          đúng thứ đang làm nó khó nhìn. Chữ "POLYMIND" rời đã bỏ vì bản thân
+          logo đã là chữ đó. */}
+      <div className="flex flex-col gap-2 border-b px-5 py-4">
+        <Logo height={36} priority />
+        <div className="flex items-center gap-2">
           {/* Điểm nhấn cam thương hiệu — dùng tiết chế bên cạnh xanh chủ đạo. */}
           <span
-            className="bg-brand-orange my-1 block h-1 w-8 rounded-full"
+            className="bg-brand-orange h-1 w-6 shrink-0 rounded-full"
             aria-hidden
           />
-          <p className="text-muted-foreground truncate text-xs">
+          <p className="text-muted-foreground truncate text-sm">
             {ROLE_LABELS[role]}
           </p>
         </div>

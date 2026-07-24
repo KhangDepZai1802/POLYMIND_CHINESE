@@ -32,7 +32,7 @@ export default async function DashboardLayout({
 
   return (
     <ConfirmationProvider>
-      <div className="bg-muted/30 flex min-h-screen" data-dashboard-shell>
+      <div className="bg-surface-page flex min-h-screen" data-dashboard-shell>
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>
@@ -52,10 +52,13 @@ export default async function DashboardLayout({
             className="bg-card sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b px-4 md:px-6"
             data-dashboard-chrome
           >
-            <div className="flex items-center gap-2 md:hidden">
+            {/* Header di động cao 64px: logo 28px là mức lớn nhất còn chừa
+                được lề thở trên dưới. Chữ "POLYMIND" rời đã bỏ — logo đã là
+                chữ đó, để cả hai thì trên màn 360px không đủ chỗ cho chuông
+                thông báo và menu người dùng bên phải. */}
+            <div className="flex min-w-0 items-center gap-2 md:hidden">
               <MobileNav role={user.role} />
-              <Logo size={32} radius="rounded-lg" priority />
-              <span className="text-sm font-semibold">POLYMIND</span>
+              <Logo height={28} priority />
             </div>
 
             <div className="hidden md:block" />

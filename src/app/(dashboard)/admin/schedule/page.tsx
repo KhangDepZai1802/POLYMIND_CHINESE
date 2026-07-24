@@ -14,7 +14,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
-import { formatDate } from "@/lib/dates";
+import { formatDateOnly } from "@/lib/dates";
 import { CLASS_STATUS_LABELS, CLASS_STATUS_TONE } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Lịch học" };
@@ -58,10 +58,10 @@ export default async function AdminSchedulePage({
         </Card>
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-center gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <Link
               href={`/admin/classes/${board.id}`}
-              className="font-mono text-xs font-medium hover:underline"
+              className="focus-visible:ring-ring rounded-sm font-mono text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
             >
               {board.code}
             </Link>
@@ -69,9 +69,12 @@ export default async function AdminSchedulePage({
               label={CLASS_STATUS_LABELS[board.status]}
               tone={CLASS_STATUS_TONE[board.status]}
             />
-            <span className="text-muted-foreground text-sm">
+            <span className="text-text-secondary text-sm">
               {board.course?.title ?? "Chưa gắn khóa học"} · Khai giảng{" "}
-              {formatDate(board.start_date)}
+              {/* `formatDateOnly`: `classes.start_date` là cột `date`, đẩy qua
+                  `formatDate` thì máy ở múi giờ đông hơn +07 bị lùi một ngày
+                  (đo thật: Auckland/Kiritimati ra 14/07 thay vì 15/07). */}
+              {formatDateOnly(board.start_date)}
             </span>
           </div>
 

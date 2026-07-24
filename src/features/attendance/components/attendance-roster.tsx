@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertCircle, Check, Clock, ShieldCheck, X } from "lucide-react";
 
 import { saveAttendanceAction } from "@/features/attendance/server/actions";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -74,16 +75,41 @@ export function AttendanceRoster({
   );
 
   const { state, formAction } = useFormAction(saveAttendanceAction);
+  const confirm = useConfirmation();
 
   const markedCount = Object.values(marks).filter(Boolean).length;
   const remaining = roster.length - markedCount;
 
-  function setAll(status: AttendanceStatus) {
+  /**
+   * Đánh dấu hàng loạt — hỏi lại KHI VÀ CHỈ KHI có dữ liệu thật sẽ mất.
+   *
+   * Điểm danh tay 18/20 người rồi lỡ chạm "Tất cả có mặt" là mất sạch, không có
+   * Ctrl+Z. Nhưng hỏi mọi lần thì thêm một thao tác vào đúng nút sinh ra để bớt
+   * thao tác. Nên chỉ hỏi khi đang có học viên mang trạng thái KHÁC đích đến:
+   * bấm trên danh sách trắng, hoặc bấm lại đúng nút vừa bấm, đều đi thẳng.
+   */
+  async function setAll(status: AttendanceStatus) {
+    const overwritten = roster.filter((r) => {
+      const current = marks[r.enrollmentId];
+      return current != null && current !== status;
+    }).length;
+
+    if (overwritten > 0) {
+      const label = STATUS_OPTIONS.find((o) => o.value === status)?.label ?? "";
+      const ok = await confirm({
+        title: "Ghi đè trạng thái đã chọn?",
+        description: `${overwritten} học viên đang mang trạng thái khác sẽ bị đổi thành “${label}”. Thao tác này không hoàn tác được.`,
+        confirmLabel: "Ghi đè",
+        cancelLabel: "Giữ nguyên",
+      });
+      if (!ok) return;
+    }
+
     setMarks(Object.fromEntries(roster.map((r) => [r.enrollmentId, status])));
   }
 
   return (
-    <form action={formAction} className="pb-24">
+    <form action={formAction}>
       <input type="hidden" name="session_id" value={sessionId} />
 
       {state.error && (
@@ -101,7 +127,7 @@ export function AttendanceRoster({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setAll("present")}
+          onClick={() => void setAll("present")}
         >
           <Check className="size-4" aria-hidden />
           Tất cả có mặt
@@ -110,7 +136,7 @@ export function AttendanceRoster({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setAll("absent")}
+          onClick={() => void setAll("absent")}
         >
           <X className="size-4" aria-hidden />
           Tất cả vắng
@@ -134,14 +160,17 @@ export function AttendanceRoster({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-medium">{r.studentName}</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-sm">
                   {r.studentCode}
                   {r.status === null && " · chưa điểm danh"}
                 </p>
               </div>
 
+              {/* gap-2 = 8px, không phải gap-1: đây là bề mặt dễ bấm nhầm nhất
+                  của ứng dụng — 4 nút cạnh nhau, bấm bằng ngón cái, đang vừa
+                  dạy vừa bấm, và bấm nhầm thì học viên bị ghi sai trạng thái. */}
               <div
-                className="flex flex-wrap gap-1"
+                className="flex flex-wrap gap-2"
                 role="group"
                 aria-label={`Điểm danh ${r.studentName}`}
               >
@@ -154,8 +183,11 @@ export function AttendanceRoster({
                       key={opt.value}
                       type="button"
                       variant="outline"
-                      // ≥ 44px chiều cao — bấm được bằng ngón tay, không cần ngắm.
-                      className={`h-11 min-w-[5.5rem] ${active ? opt.activeClass : ""}`}
+                      // KHÔNG chép `h-11` vào đây (DS-013). Luật 44px cho ngón
+                      // tay nằm ở `globals.css` — `@media (pointer: coarse)` ép
+                      // `min-height: 44px`, và `min-height` thắng `height`. Điện
+                      // thoại vẫn đúng 44px; chuột xuống 40px theo thang chung.
+                      className={`min-w-22 ${active ? opt.activeClass : ""}`}
                       aria-pressed={active}
                       onClick={() =>
                         setMarks((prev) => ({
@@ -173,10 +205,16 @@ export function AttendanceRoster({
               </div>
             </div>
 
+            {/* aria-label chứ không phải placeholder: 20 học viên = 20 ô nhập
+                giống hệt nhau với trình đọc màn hình, không biết ô nào của ai.
+                maxLength khớp đúng giới hạn 300 của `recordSchema` — chặn tại
+                chỗ thay vì để submit hỏng với thông báo chung không chỉ ra ô. */}
             <Input
               name={`note_${r.enrollmentId}`}
               defaultValue={r.note}
               placeholder="Ghi chú (không bắt buộc)"
+              aria-label={`Ghi chú cho ${r.studentName}`}
+              maxLength={300}
               className="mt-3"
             />
           </li>
@@ -184,8 +222,14 @@ export function AttendanceRoster({
       </ul>
 
       {/* Thanh Lưu STICKY: danh sách 20 học viên thì nút Lưu ở cuối trang nằm
-          ngoài màn hình. Giáo viên bấm xong phải cuộn đi tìm nút → dễ quên lưu. */}
-      <div className="bg-background/95 fixed inset-x-0 bottom-0 z-20 border-t backdrop-blur md:left-64">
+          ngoài màn hình. Giáo viên bấm xong phải cuộn đi tìm nút → dễ quên lưu.
+
+          `sticky` chứ không `fixed`: bản `fixed` đè vĩnh viễn lên SiteFooter nên
+          không trang nào đọc được dòng bản quyền (D-17 bắt buộc có footer). Với
+          `sticky`, thanh vẫn dính đáy suốt lúc cuộn trong danh sách rồi nhả ra
+          khi tới cuối form. Bỏ luôn `md:left-64` — chiều rộng sidebar chép cứng
+          từ `sidebar-nav.tsx`, hai file phải sửa cùng nhau mà không gì ràng buộc. */}
+      <div className="bg-card sticky inset-x-0 bottom-0 z-20 -mx-4 border-t md:-mx-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <p className="text-sm">
             Đã chọn <strong>{markedCount}</strong>/{roster.length}
@@ -196,7 +240,7 @@ export function AttendanceRoster({
               </span>
             )}
           </p>
-          <SubmitButton disabled={markedCount === 0} className="h-11 px-6">
+          <SubmitButton disabled={markedCount === 0} size="lg">
             Lưu điểm danh
           </SubmitButton>
         </div>

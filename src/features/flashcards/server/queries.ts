@@ -1,6 +1,8 @@
 import "server-only";
 
 import { FLASHCARD_MEDIA_BUCKET } from "@/features/flashcards/domain/media";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createClient } from "@/lib/supabase/server";
 import { signPaths } from "@/lib/supabase/signed-urls";
 import type { Database } from "@/types/database";
@@ -9,18 +11,15 @@ type DeckRow = Database["public"]["Tables"]["flashcard_decks"]["Row"];
 type SectionRow = Database["public"]["Tables"]["flashcard_sections"]["Row"];
 type PageRow = Database["public"]["Tables"]["flashcard_pages"]["Row"];
 
-export type FlashcardCourseOption = {
-  id: string;
-  code: string;
-  title: string;
-  defaultSessionCount: number | null;
-  deck: { id: string; status: DeckRow["status"] } | null;
-};
-
 export type FlashcardPageView = PageRow & {
   frontUrl: string | null;
   backUrl: string | null;
   audioUrl: string | null;
+  /**
+   * `path` → signed URL cho **mọi** media của trang, gồm ảnh của từng câu ví dụ
+   * nằm trong `jsonb`. Template tra thẳng bằng `image_path` của câu ví dụ.
+   */
+  mediaUrls: Record<string, string>;
 };
 
 export type FlashcardSectionView = SectionRow & {
@@ -30,6 +29,63 @@ export type FlashcardSectionView = SectionRow & {
 export type FlashcardDeckView = DeckRow & {
   sections: FlashcardSectionView[];
 };
+
+export type FlashcardCourseOption = {
+  id: string;
+  code: string;
+  title: string;
+  defaultSessionCount: number | null;
+  deck: { id: string; status: DeckRow["status"] } | null;
+};
+
+/**
+ * Ký URL cho các trang rồi gom theo buổi.
+ *
+ * Dùng CHUNG cho cả admin lẫn học viên: trước Phase 16 hai hàm dưới chép nguyên
+ * khối này hai bản, đúng hình dạng đã sinh ra `UX-UIUX-M25-010` (ba bản ô số
+ * liệu trôi khác nhau ở chỗ nhìn thấy được).
+ *
+ * Nguồn đường dẫn là `media_paths` — cột do trigger DB tổng hợp — chứ không
+ * phải liệt kê lại ba cột như trước; liệt kê tay chính là chỗ ảnh câu ví dụ bị
+ * bỏ sót và học viên nhận 403 (`DS-049` điểm 1).
+ */
+async function signPagesBySection(
+  supabase: SupabaseClient<Database>,
+  pages: PageRow[],
+  expiresInSeconds: number,
+): Promise<Map<string, FlashcardPageView[]>> {
+  const allPaths = [...new Set(pages.flatMap((page) => page.media_paths))];
+  const signed = await signPaths(
+    supabase,
+    FLASHCARD_MEDIA_BUCKET,
+    allPaths,
+    expiresInSeconds,
+  );
+
+  const pagesBySection = new Map<string, FlashcardPageView[]>();
+  for (const page of pages) {
+    const mediaUrls: Record<string, string> = {};
+    for (const path of page.media_paths) {
+      const url = signed.get(path);
+      if (url) mediaUrls[path] = url;
+    }
+
+    const group = pagesBySection.get(page.section_id) ?? [];
+    group.push({
+      ...page,
+      frontUrl: page.front_image_path
+        ? (mediaUrls[page.front_image_path] ?? null)
+        : null,
+      backUrl: page.back_image_path
+        ? (mediaUrls[page.back_image_path] ?? null)
+        : null,
+      audioUrl: page.audio_path ? (mediaUrls[page.audio_path] ?? null) : null,
+      mediaUrls,
+    });
+    pagesBySection.set(page.section_id, group);
+  }
+  return pagesBySection;
+}
 
 export async function getFlashcardCourseOptions(): Promise<
   FlashcardCourseOption[]
@@ -84,32 +140,12 @@ export async function getAdminFlashcardDeck(
           .is("archived_at", null)
           .order("order_index");
   if (pageResult.error) throw new Error("Không tải được trang flashcard.");
-  const pages = pageResult.data ?? [];
 
-  const signed = await signPaths(
+  const pagesBySection = await signPagesBySection(
     supabase,
-    FLASHCARD_MEDIA_BUCKET,
-    pages.flatMap((page) =>
-      [page.front_image_path, page.back_image_path, page.audio_path].filter(
-        (path): path is string => Boolean(path),
-      ),
-    ),
+    pageResult.data ?? [],
     300,
   );
-
-  const pagesBySection = new Map<string, FlashcardPageView[]>();
-  for (const page of pages) {
-    const group = pagesBySection.get(page.section_id) ?? [];
-    group.push({
-      ...page,
-      frontUrl: signed.get(page.front_image_path) ?? null,
-      backUrl: signed.get(page.back_image_path) ?? null,
-      audioUrl: page.audio_path
-        ? (signed.get(page.audio_path) ?? null)
-        : null,
-    });
-    pagesBySection.set(page.section_id, group);
-  }
 
   return {
     ...deck,
@@ -118,6 +154,22 @@ export async function getAdminFlashcardDeck(
       pages: pagesBySection.get(section.id) ?? [],
     })),
   };
+}
+
+/**
+ * ★ thẻ khó của CHÍNH học viên đang đăng nhập.
+ *
+ * Không truyền `student_id` vào câu truy vấn: RLS đã lọc theo
+ * `app.my_student_id()`, nên thêm điều kiện ở app chỉ tạo ra một nguồn sự thật
+ * thứ hai về "của ai" — đúng thứ `BUG_M10_01` cảnh báo.
+ */
+export async function getStudentStarredPageIds(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("flashcard_starred_pages")
+    .select("page_id");
+  if (error) throw new Error("Không tải được danh sách thẻ khó của bạn.");
+  return data.map((row) => row.page_id);
 }
 
 export async function getStudentFlashcardDeck(
@@ -140,8 +192,9 @@ export async function getStudentFlashcardDeck(
     .eq("deck_id", deck.id)
     .eq("status", "published")
     .order("session_number");
-  if (sectionError)
+  if (sectionError) {
     throw new Error("Không tải được mục lục flashcard của bạn.");
+  }
 
   const sectionIds = sections.map((section) => section.id);
   const pageResult =
@@ -153,33 +206,15 @@ export async function getStudentFlashcardDeck(
           .in("section_id", sectionIds)
           .is("archived_at", null)
           .order("order_index");
-  if (pageResult.error)
+  if (pageResult.error) {
     throw new Error("Không tải được trang flashcard của bạn.");
+  }
 
-  const pages = pageResult.data ?? [];
-  const signed = await signPaths(
+  const pagesBySection = await signPagesBySection(
     supabase,
-    FLASHCARD_MEDIA_BUCKET,
-    pages.flatMap((page) =>
-      [page.front_image_path, page.back_image_path, page.audio_path].filter(
-        (path): path is string => Boolean(path),
-      ),
-    ),
+    pageResult.data ?? [],
     900,
   );
-  const pagesBySection = new Map<string, FlashcardPageView[]>();
-  for (const page of pages) {
-    const group = pagesBySection.get(page.section_id) ?? [];
-    group.push({
-      ...page,
-      frontUrl: signed.get(page.front_image_path) ?? null,
-      backUrl: signed.get(page.back_image_path) ?? null,
-      audioUrl: page.audio_path
-        ? (signed.get(page.audio_path) ?? null)
-        : null,
-    });
-    pagesBySection.set(page.section_id, group);
-  }
 
   return {
     ...deck,

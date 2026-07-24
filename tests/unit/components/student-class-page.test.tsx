@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import StudentClassPage from "@/app/(dashboard)/student/class/page";
@@ -99,6 +100,15 @@ describe("StudentClassPage", () => {
     expect(requireRole).toHaveBeenCalledWith("student");
     expect(getMyClassOverview).toHaveBeenCalledWith("class-1");
     expect(screen.getByText("Giáo viên Demo")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Thông tin lớp", level: 2 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Địa điểm học", level: 2 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Giáo viên phụ trách", level: 2 }),
+    ).toBeInTheDocument();
 
     for (const tab of [
       "Tổng quan",
@@ -113,5 +123,36 @@ describe("StudentClassPage", () => {
     }
 
     expect(screen.queryByText(/danh sách học viên/i)).not.toBeInTheDocument();
+  });
+
+  it("giữ điều hướng bàn phím/click qua các nhóm nội dung read-only", async () => {
+    const user = userEvent.setup();
+    render(await StudentClassPage());
+
+    await user.click(screen.getByRole("tab", { name: "Lịch/Buổi" }));
+    expect(
+      screen.getByRole("heading", { name: "Lịch học lặp", level: 2 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Danh sách buổi học (0)",
+        level: 2,
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Tiến độ" }));
+    expect(
+      screen.getByRole("heading", { name: "Tiến độ của bạn", level: 2 }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Chuyên cần" }));
+    expect(
+      screen.getByRole("heading", { name: "Chuyên cần", level: 2 }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Tài liệu" }));
+    expect(
+      screen.getByRole("heading", { name: "Tài liệu", level: 2 }),
+    ).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ import {
 } from "@/features/question-bank/server/actions";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -153,8 +154,9 @@ export function QuestionActions({
             className="space-y-4"
           >
             <input type="hidden" name="question_id" value={questionId} />
+            <Label htmlFor={`share-teacher-${questionId}`}>Giáo viên *</Label>
             <Select name="teacher_id" required>
-              <SelectTrigger>
+              <SelectTrigger id={`share-teacher-${questionId}`}>
                 <SelectValue placeholder="Chọn giáo viên…" />
               </SelectTrigger>
               <SelectContent>

@@ -4,12 +4,12 @@ select plan(15);
 
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public'),
-  56,
-  'catalog có đúng 56 bảng public đã review'
+  57,
+  'catalog có đúng 57 bảng public đã review'
 );
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public' and rowsecurity),
-  56,
+  57,
   'mọi bảng public đều bật RLS'
 );
 select is(
@@ -82,8 +82,8 @@ select is(
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'),
-  65,
-  'catalog có đúng 65 RPC public đã review'
+  67,
+  'catalog có đúng 67 RPC public đã review'
 );
 select is(
   (select count(*)::integer

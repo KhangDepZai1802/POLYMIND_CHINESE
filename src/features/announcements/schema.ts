@@ -16,7 +16,7 @@ export const announcementSchema = z.object({
     .refine(
       (value) => value === "" || z.string().uuid().safeParse(value).success,
       {
-        message: "Mã announcement không hợp lệ",
+        message: "Mã thông báo chung không hợp lệ",
       },
     )
     .transform((value) => (value === "" ? null : value)),

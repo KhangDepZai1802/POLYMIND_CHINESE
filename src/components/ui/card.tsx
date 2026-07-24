@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
@@ -28,9 +29,24 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * Tiêu đề card.
+ *
+ * Mặc định là `<div>` — giữ nguyên cho 68 chỗ đang dùng. Truyền `asChild` khi
+ * card là một khu vực lớn của trang và tiêu đề của nó phải là heading thật, để
+ * trình đọc màn hình nhảy được giữa các khối. Không sửa cứng thành `<h3>` vì
+ * cấp heading đúng phụ thuộc ngữ cảnh: card trong dialog hay trong tab có cấp
+ * khác card ở cấp trang.
+ */
+function CardTitle({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"div"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "div"
+
   return (
-    <div
+    <Comp
       data-slot="card-title"
       className={cn("leading-none font-semibold", className)}
       {...props}

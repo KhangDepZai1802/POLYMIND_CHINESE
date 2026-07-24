@@ -52,7 +52,6 @@ describe("QuestionWizard edit", () => {
 
     render(
       <QuestionWizard
-        trigger={<button>Chỉnh sửa</button>}
         version={{
           questionId: "46000000-0000-0000-0000-000000000001",
           sourceVersionId: "47000000-0000-0000-0000-000000000001",
@@ -107,7 +106,6 @@ describe("QuestionWizard edit", () => {
     const user = userEvent.setup();
     render(
       <QuestionWizard
-        trigger={<button>Chỉnh sửa audio</button>}
         version={{
           questionId: "46000000-0000-4000-8000-000000000001",
           sourceVersionId: "47000000-0000-4000-8000-000000000001",
@@ -129,7 +127,7 @@ describe("QuestionWizard edit", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Chỉnh sửa audio" }));
+    await user.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
     const mp3 = new File([new Uint8Array(1_200_000)], "bai-nghe.mp3", {
       type: "audio/mpeg",
     });
@@ -158,7 +156,7 @@ describe("QuestionWizard edit", () => {
 
   it("dùng cùng luồng upload MP3 khi soạn câu hỏi mới", async () => {
     const user = userEvent.setup();
-    render(<QuestionWizard trigger={<button>Tạo câu hỏi</button>} />);
+    render(<QuestionWizard />);
 
     await user.click(screen.getByRole("button", { name: "Tạo câu hỏi" }));
     await user.click(screen.getByRole("button", { name: /^Nghe/ }));
@@ -192,7 +190,6 @@ describe("QuestionWizard edit", () => {
     const user = userEvent.setup();
     render(
       <QuestionWizard
-        trigger={<button>Mở câu nghe</button>}
         version={{
           questionId: "46000000-0000-4000-8000-000000000002",
           sourceVersionId: "47000000-0000-4000-8000-000000000002",
@@ -213,7 +210,7 @@ describe("QuestionWizard edit", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Mở câu nghe" }));
+    await user.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
     expect(document.querySelector("audio")).toHaveAttribute(
       "src",
       "https://storage.test/signed-audio.mp3",

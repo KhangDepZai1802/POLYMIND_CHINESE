@@ -38,13 +38,20 @@ export function MobileNav({ role }: { role: UserRole }) {
       </SheetTrigger>
 
       <SheetContent side="left" className="w-72 gap-0 p-0">
-        <div className="flex items-center gap-3 border-b px-5 py-4">
-          <Logo size={40} />
-          <div className="min-w-0">
-            <SheetTitle className="truncate text-sm font-semibold">
-              POLYMIND
-            </SheetTitle>
-            <SheetDescription className="text-muted-foreground truncate text-xs">
+        {/* Cùng bố cục xếp dọc như sidebar desktop — hai bề mặt của cùng một
+            điều hướng phải trông như một. `SheetTitle` bọc chính logo: Radix
+            bắt buộc dialog phải có title, và tên gọi được lấy từ `alt` của ảnh
+            nên không cần thêm chữ "POLYMIND" trùng với chữ trong logo. */}
+        <div className="flex flex-col gap-2 border-b px-5 py-4">
+          <SheetTitle className="flex">
+            <Logo height={36} />
+          </SheetTitle>
+          <div className="flex items-center gap-2">
+            <span
+              className="bg-brand-orange h-1 w-6 shrink-0 rounded-full"
+              aria-hidden
+            />
+            <SheetDescription className="text-muted-foreground truncate text-sm">
               {ROLE_LABELS[role]}
             </SheetDescription>
           </div>

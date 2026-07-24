@@ -4,18 +4,18 @@ import { GraduationCap } from "lucide-react";
 import { TeacherFormDialog } from "@/features/teachers/components/teacher-form-dialog";
 import { TeacherRowActions } from "@/features/teachers/components/teacher-row-actions";
 import { getTeachers } from "@/features/teachers/server/queries";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Giáo viên" };
@@ -33,7 +33,7 @@ export default async function AdminTeachersPage() {
         action={<TeacherFormDialog />}
       />
 
-      <Card>
+      <Card className="py-0">
         <CardContent className="p-0">
           {teachers.length === 0 ? (
             <EmptyState
@@ -42,113 +42,82 @@ export default async function AdminTeachersPage() {
               description="Thêm giáo viên và cấp tài khoản để họ đăng nhập."
             />
           ) : (
-            <>
-              {/* Desktop */}
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã</TableHead>
-                      <TableHead>Họ tên</TableHead>
-                      <TableHead>Liên hệ</TableHead>
-                      <TableHead>Chuyên môn</TableHead>
-                      <TableHead>Lớp phụ trách</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                      <TableHead className="w-10" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teachers.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-mono text-xs font-medium">
-                          {t.teacher_code}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {t.profile?.full_name ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <p>{t.profile?.email ?? "—"}</p>
-                          {t.profile?.phone && (
-                            <p className="text-muted-foreground text-xs">
-                              {t.profile.phone}
-                            </p>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {t.specialization ?? "—"}
-                        </TableCell>
-                        <TableCell>
-                          {t.class_teachers.length === 0 ? (
-                            <span className="text-muted-foreground text-sm">
-                              Chưa phân công
-                            </span>
-                          ) : (
-                            <div className="flex flex-wrap gap-1">
-                              {t.class_teachers.map((ct) => (
-                                <span
-                                  key={ct.id}
-                                  className="bg-muted rounded px-1.5 py-0.5 text-xs"
-                                  title={ct.class?.name}
-                                >
-                                  {ct.class?.code}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge
-                            label={t.is_active ? "Đang dạy" : "Đã khóa"}
-                            tone={t.is_active ? "success" : "danger"}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <TeacherRowActions teacher={t} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile */}
-              <ul className="divide-y md:hidden">
+            /*
+             * MỘT bảng cho mọi bề rộng (`DS-044`). Bản điện thoại cũ bỏ hẳn
+             * **số điện thoại** và **chuyên môn**, nên trên điện thoại quản trị
+             * viên không gọi được cho giáo viên và không biết ai dạy được lớp
+             * nào — cùng kiểu trôi dữ liệu với màn Học viên.
+             */
+            <DataTable
+              caption="Danh sách giáo viên: mã, họ tên, liên hệ, chuyên môn, lớp phụ trách và trạng thái"
+              minWidthClass="min-w-[60rem]"
+            >
+              <DataTableHeader>
+                <tr>
+                  <DataTableHead sticky>Mã</DataTableHead>
+                  <DataTableHead>Họ tên</DataTableHead>
+                  <DataTableHead>Liên hệ</DataTableHead>
+                  <DataTableHead>Chuyên môn</DataTableHead>
+                  <DataTableHead>Lớp phụ trách</DataTableHead>
+                  <DataTableHead>Trạng thái</DataTableHead>
+                  <DataTableHead className="w-10">
+                    <span className="sr-only">Thao tác</span>
+                  </DataTableHead>
+                </tr>
+              </DataTableHeader>
+              <DataTableBody>
                 {teachers.map((t) => (
-                  <li key={t.id} className="flex items-start gap-3 p-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-medium">
-                          {t.teacher_code}
+                  <DataTableRow key={t.id}>
+                    <DataTableCell
+                      sticky
+                      className="font-mono text-sm font-medium"
+                    >
+                      {t.teacher_code}
+                    </DataTableCell>
+                    <DataTableCell className="font-medium">
+                      {t.profile?.full_name ?? "—"}
+                    </DataTableCell>
+                    <DataTableCell>
+                      <p>{t.profile?.email ?? "—"}</p>
+                      {t.profile?.phone && (
+                        <p className="text-text-secondary text-sm">
+                          {t.profile.phone}
+                        </p>
+                      )}
+                    </DataTableCell>
+                    <DataTableCell>{t.specialization ?? "—"}</DataTableCell>
+                    <DataTableCell>
+                      {t.class_teachers.length === 0 ? (
+                        <span className="text-text-secondary">
+                          Chưa phân công
                         </span>
-                        <StatusBadge
-                          label={t.is_active ? "Đang dạy" : "Đã khóa"}
-                          tone={t.is_active ? "success" : "danger"}
-                        />
-                      </div>
-                      <p className="mt-1 font-medium">
-                        {t.profile?.full_name ?? "—"}
-                      </p>
-                      <p className="text-muted-foreground truncate text-xs">
-                        {t.profile?.email ?? "—"}
-                      </p>
-                      {t.class_teachers.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
                           {t.class_teachers.map((ct) => (
                             <span
                               key={ct.id}
-                              className="bg-muted rounded px-1.5 py-0.5 text-xs"
+                              className="bg-muted rounded px-1.5 py-0.5 text-sm"
+                              title={ct.class?.name}
                             >
                               {ct.class?.code}
                             </span>
                           ))}
                         </div>
                       )}
-                    </div>
-                    <TeacherRowActions teacher={t} />
-                  </li>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <StatusBadge
+                        label={t.is_active ? "Đang dạy" : "Đã khóa"}
+                        tone={t.is_active ? "success" : "danger"}
+                      />
+                    </DataTableCell>
+                    <DataTableCell>
+                      <TeacherRowActions teacher={t} />
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </ul>
-            </>
+              </DataTableBody>
+            </DataTable>
           )}
         </CardContent>
       </Card>

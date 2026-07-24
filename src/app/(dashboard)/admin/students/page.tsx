@@ -5,18 +5,18 @@ import { getLevels } from "@/features/courses/server/queries";
 import { StudentFormDialog } from "@/features/students/components/student-form-dialog";
 import { StudentRowActions } from "@/features/students/components/student-row-actions";
 import { getStudents } from "@/features/students/server/queries";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/session";
 import { ENROLLMENT_STATUS_LABELS } from "@/lib/domain/labels";
 
@@ -37,7 +37,7 @@ export default async function AdminStudentsPage() {
         action={<StudentFormDialog levels={levels} />}
       />
 
-      <Card>
+      <Card className="py-0">
         <CardContent className="p-0">
           {active.length === 0 ? (
             <EmptyState
@@ -46,127 +46,102 @@ export default async function AdminStudentsPage() {
               description="Tạo hồ sơ học viên. Tài khoản đăng nhập có thể cấp sau."
             />
           ) : (
-            <>
-              {/* Desktop */}
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã</TableHead>
-                      <TableHead>Họ tên</TableHead>
-                      <TableHead>Liên hệ</TableHead>
-                      <TableHead>Bậc hiện tại</TableHead>
-                      <TableHead>Lớp đang học</TableHead>
-                      <TableHead>Tài khoản</TableHead>
-                      <TableHead className="w-10" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {active.map((s) => {
-                      const activeEnrollments = s.enrollments.filter(
-                        (e) => e.status === "active",
-                      );
+            /*
+             * MỘT bảng cho mọi bề rộng, cuộn ngang trên máy nhỏ (quyết định user
+             * 2026-07-23 → `DS-044`).
+             *
+             * Bản cũ dựng HAI giao diện (`hidden md:block` + `md:hidden`) và hai
+             * bản đã **trôi khác nhau ở chỗ mất dữ liệu**: bản điện thoại bỏ hẳn
+             * **email** và **người giám hộ**, nên trên điện thoại quản trị viên
+             * không có cách nào đọc được hai thông tin đó. Đây đúng mẫu hỏng
+             * `UX-UIUX-M25-010` (ba bản ô số liệu trôi khác nhau) và cũng chính
+             * là thứ làm `admin-accounts.smoke` đỏ ở `P17-T5` (locator `.first()`
+             * trúng bản desktop đang `display:none`).
+             */
+            <DataTable
+              caption="Danh sách học viên đang hoạt động: mã, họ tên, liên hệ, bậc, lớp và trạng thái tài khoản"
+              minWidthClass="min-w-[60rem]"
+            >
+              <DataTableHeader>
+                <tr>
+                  <DataTableHead sticky>Mã</DataTableHead>
+                  <DataTableHead>Họ tên</DataTableHead>
+                  <DataTableHead>Liên hệ</DataTableHead>
+                  <DataTableHead>Bậc hiện tại</DataTableHead>
+                  <DataTableHead>Lớp đang học</DataTableHead>
+                  <DataTableHead>Tài khoản</DataTableHead>
+                  <DataTableHead className="w-10">
+                    <span className="sr-only">Thao tác</span>
+                  </DataTableHead>
+                </tr>
+              </DataTableHeader>
+              <DataTableBody>
+                {active.map((s) => {
+                  const activeEnrollments = s.enrollments.filter(
+                    (e) => e.status === "active",
+                  );
 
-                      return (
-                        <TableRow key={s.id}>
-                          <TableCell className="font-mono text-xs font-medium">
-                            {s.student_code}
-                          </TableCell>
-                          <TableCell>
-                            <p className="font-medium">{s.full_name}</p>
-                            {s.guardian_name && (
-                              <p className="text-muted-foreground text-xs">
-                                GH: {s.guardian_name}
-                                {s.guardian_phone && ` · ${s.guardian_phone}`}
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            <p>{s.phone ?? "—"}</p>
-                            {s.email && (
-                              <p className="text-muted-foreground text-xs">
-                                {s.email}
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {s.current_level?.name ?? "—"}
-                          </TableCell>
-                          <TableCell>
-                            {activeEnrollments.length === 0 ? (
-                              <span className="text-muted-foreground text-sm">
-                                Chưa xếp lớp
-                              </span>
-                            ) : (
-                              <div className="flex flex-wrap gap-1">
-                                {activeEnrollments.map((e) => (
-                                  <span
-                                    key={e.id}
-                                    className="bg-muted rounded px-1.5 py-0.5 text-xs"
-                                    title={`${e.class?.name} — ${ENROLLMENT_STATUS_LABELS[e.status]}`}
-                                  >
-                                    {e.class?.code}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge
-                              label={s.user_id ? "Đã cấp" : "Chưa cấp"}
-                              tone={s.user_id ? "success" : "neutral"}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <StudentRowActions student={s} levels={levels} />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile */}
-              <ul className="divide-y md:hidden">
-                {active.map((s) => (
-                  <li key={s.id} className="flex items-start gap-3 p-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-medium">
-                          {s.student_code}
-                        </span>
-                        <StatusBadge
-                          label={s.user_id ? "Có tài khoản" : "Chưa cấp"}
-                          tone={s.user_id ? "success" : "neutral"}
-                        />
-                      </div>
-                      <p className="mt-1 font-medium">{s.full_name}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {s.phone ?? "—"}
-                        {s.current_level ? ` · ${s.current_level.name}` : ""}
-                      </p>
-                      {s.enrollments.filter((e) => e.status === "active")
-                        .length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {s.enrollments
-                            .filter((e) => e.status === "active")
-                            .map((e) => (
+                  return (
+                    <DataTableRow key={s.id}>
+                      <DataTableCell
+                        sticky
+                        className="font-mono text-sm font-medium"
+                      >
+                        {s.student_code}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <p className="font-medium">{s.full_name}</p>
+                        {s.guardian_name && (
+                          <p className="text-text-secondary text-sm">
+                            GH: {s.guardian_name}
+                            {s.guardian_phone && ` · ${s.guardian_phone}`}
+                          </p>
+                        )}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <p>{s.phone ?? "—"}</p>
+                        {s.email && (
+                          <p className="text-text-secondary text-sm">
+                            {s.email}
+                          </p>
+                        )}
+                      </DataTableCell>
+                      <DataTableCell>
+                        {s.current_level?.name ?? "—"}
+                      </DataTableCell>
+                      <DataTableCell>
+                        {activeEnrollments.length === 0 ? (
+                          <span className="text-text-secondary">
+                            Chưa xếp lớp
+                          </span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {activeEnrollments.map((e) => (
                               <span
                                 key={e.id}
-                                className="bg-muted rounded px-1.5 py-0.5 text-xs"
+                                className="bg-muted rounded px-1.5 py-0.5 text-sm"
+                                title={`${e.class?.name} — ${ENROLLMENT_STATUS_LABELS[e.status]}`}
                               >
                                 {e.class?.code}
                               </span>
                             ))}
-                        </div>
-                      )}
-                    </div>
-                    <StudentRowActions student={s} levels={levels} />
-                  </li>
-                ))}
-              </ul>
-            </>
+                          </div>
+                        )}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <StatusBadge
+                          label={s.user_id ? "Đã cấp" : "Chưa cấp"}
+                          tone={s.user_id ? "success" : "neutral"}
+                        />
+                      </DataTableCell>
+                      <DataTableCell>
+                        <StudentRowActions student={s} levels={levels} />
+                      </DataTableCell>
+                    </DataTableRow>
+                  );
+                })}
+              </DataTableBody>
+            </DataTable>
           )}
         </CardContent>
       </Card>

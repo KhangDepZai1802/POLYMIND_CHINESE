@@ -7,20 +7,20 @@ import {
   getClasses,
   getCourseOptionsForClasses,
 } from "@/features/classes/server/queries";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/session";
-import { formatDate } from "@/lib/dates";
+import { formatDateOnly } from "@/lib/dates";
 import {
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
@@ -46,7 +46,7 @@ export default async function AdminClassesPage() {
         action={<ClassFormDialog courses={courses} />}
       />
 
-      <Card>
+      <Card className="py-0">
         <CardContent className="p-0">
           {classes.length === 0 ? (
             <EmptyState
@@ -55,84 +55,30 @@ export default async function AdminClassesPage() {
               description="Mở lớp từ một khóa học, sau đó phân công giáo viên và cấu hình lịch."
             />
           ) : (
-            <>
-              <div className="hidden lg:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã lớp</TableHead>
-                      <TableHead>Tên lớp / Khóa học</TableHead>
-                      <TableHead>Giáo viên chính</TableHead>
-                      <TableHead>Hình thức</TableHead>
-                      <TableHead>Khai giảng</TableHead>
-                      <TableHead className="text-right">Sĩ số</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                      <TableHead className="w-10" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {classes.map((classRecord) => {
-                      const primary = classRecord.class_teachers;
-                      const openCount = classRecord.enrollments.filter(
-                        (enrollment) =>
-                          OPEN_ENROLLMENT_STATUSES.has(enrollment.status),
-                      ).length;
-
-                      return (
-                        <TableRow key={classRecord.id}>
-                          <TableCell className="font-mono text-xs font-medium">
-                            {classRecord.code}
-                          </TableCell>
-                          <TableCell>
-                            <Link
-                              href={`/admin/classes/${classRecord.id}`}
-                              className="hover:text-primary font-medium hover:underline"
-                            >
-                              {classRecord.name}
-                            </Link>
-                            <p className="text-muted-foreground text-xs">
-                              {classRecord.course?.code} —{" "}
-                              {classRecord.course?.title}
-                            </p>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {primary?.teacher?.profile?.full_name ?? (
-                              <span className="text-muted-foreground">
-                                Chưa phân công
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {DELIVERY_MODE_LABELS[classRecord.delivery_mode]}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatDate(classRecord.start_date)}
-                          </TableCell>
-                          <TableCell className="text-right text-sm">
-                            {openCount}/{classRecord.capacity}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge
-                              label={CLASS_STATUS_LABELS[classRecord.status]}
-                              tone={CLASS_STATUS_TONE[classRecord.status]}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Link
-                              href={`/admin/classes/${classRecord.id}`}
-                              aria-label={`Xem lớp ${classRecord.name}`}
-                            >
-                              <ChevronRight className="text-muted-foreground size-4" />
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <ul className="divide-y lg:hidden">
+            /*
+             * MỘT bảng cho mọi bề rộng (`DS-044`). Bản điện thoại cũ bỏ hẳn
+             * **Khai giảng** — ngày quyết định lớp nào sắp mở — nên không tra
+             * được trên điện thoại.
+             */
+            <DataTable
+              caption="Danh sách lớp học: mã lớp, tên lớp và khóa học, giáo viên chính, hình thức, ngày khai giảng, sĩ số và trạng thái"
+              minWidthClass="min-w-[60rem]"
+            >
+              <DataTableHeader>
+                <tr>
+                  <DataTableHead sticky>Mã lớp</DataTableHead>
+                  <DataTableHead>Tên lớp / Khóa học</DataTableHead>
+                  <DataTableHead>Giáo viên chính</DataTableHead>
+                  <DataTableHead>Hình thức</DataTableHead>
+                  <DataTableHead>Khai giảng</DataTableHead>
+                  <DataTableHead numeric>Sĩ số</DataTableHead>
+                  <DataTableHead>Trạng thái</DataTableHead>
+                  <DataTableHead className="w-10">
+                    <span className="sr-only">Xem chi tiết</span>
+                  </DataTableHead>
+                </tr>
+              </DataTableHeader>
+              <DataTableBody>
                 {classes.map((classRecord) => {
                   const primary = classRecord.class_teachers;
                   const openCount = classRecord.enrollments.filter(
@@ -141,41 +87,64 @@ export default async function AdminClassesPage() {
                   ).length;
 
                   return (
-                    <li key={classRecord.id}>
-                      <Link
-                        href={`/admin/classes/${classRecord.id}`}
-                        className="hover:bg-muted/40 flex items-center gap-3 p-4"
+                    <DataTableRow key={classRecord.id}>
+                      <DataTableCell
+                        sticky
+                        className="font-mono text-sm font-medium"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs font-medium">
-                              {classRecord.code}
-                            </span>
-                            <StatusBadge
-                              label={CLASS_STATUS_LABELS[classRecord.status]}
-                              tone={CLASS_STATUS_TONE[classRecord.status]}
-                            />
-                          </div>
-                          <p className="mt-1 truncate font-medium">
-                            {classRecord.name}
-                          </p>
-                          <p className="text-muted-foreground truncate text-xs">
-                            {classRecord.course?.title} · {openCount}/
-                            {classRecord.capacity} HV
-                          </p>
-                          <p className="text-muted-foreground mt-1 truncate text-xs">
-                            {primary?.teacher?.profile?.full_name ??
-                              "Chưa có GV chính"}{" "}
-                            · {DELIVERY_MODE_LABELS[classRecord.delivery_mode]}
-                          </p>
-                        </div>
-                        <ChevronRight className="text-muted-foreground size-4 shrink-0" />
-                      </Link>
-                    </li>
+                        {classRecord.code}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <Link
+                          href={`/admin/classes/${classRecord.id}`}
+                          className="hover:text-primary focus-visible:ring-ring rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          {classRecord.name}
+                        </Link>
+                        <p className="text-text-secondary text-sm">
+                          {classRecord.course?.code} —{" "}
+                          {classRecord.course?.title}
+                        </p>
+                      </DataTableCell>
+                      <DataTableCell>
+                        {primary?.teacher?.profile?.full_name ?? (
+                          <span className="text-text-secondary">
+                            Chưa phân công
+                          </span>
+                        )}
+                      </DataTableCell>
+                      <DataTableCell>
+                        {DELIVERY_MODE_LABELS[classRecord.delivery_mode]}
+                      </DataTableCell>
+                      <DataTableCell>
+                        {formatDateOnly(classRecord.start_date)}
+                      </DataTableCell>
+                      <DataTableCell numeric>
+                        {openCount}/{classRecord.capacity}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <StatusBadge
+                          label={CLASS_STATUS_LABELS[classRecord.status]}
+                          tone={CLASS_STATUS_TONE[classRecord.status]}
+                        />
+                      </DataTableCell>
+                      <DataTableCell>
+                        <Link
+                          href={`/admin/classes/${classRecord.id}`}
+                          aria-label={`Xem lớp ${classRecord.name}`}
+                          className="focus-visible:ring-ring inline-flex rounded-sm focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          <ChevronRight
+                            className="text-text-secondary size-4"
+                            aria-hidden
+                          />
+                        </Link>
+                      </DataTableCell>
+                    </DataTableRow>
                   );
                 })}
-              </ul>
-            </>
+              </DataTableBody>
+            </DataTable>
           )}
         </CardContent>
       </Card>

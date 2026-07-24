@@ -53,6 +53,45 @@ const bulkGradeSchema = z.object({
   ).min(1, "Chưa có điểm nào để lưu."),
 });
 
+/**
+ * Nói ra bằng tiếng Việt những ràng buộc CHECK mà DB vốn đã cưỡng chế.
+ *
+ * `UX-UIUX-M16-007`: chọn "Mở từ" muộn hơn "Hạn nộp" thì giáo viên nhận nguyên
+ * văn `new row for relation "exercise_deliveries" violates check constraint
+ * "exercise_deliveries_check"` — tiếng Anh kèm tên constraint Postgres, trái
+ * `EX-21`. Bảng dưới **không thêm luật mới**: mỗi dòng là bản dịch đúng một
+ * `pg_get_constraintdef` đang có trên bảng `exercise_deliveries`.
+ *
+ * Ràng buộc vẫn nằm ở DB — đây chỉ là lớp diễn giải khi DB đã từ chối.
+ */
+const DELIVERY_CONSTRAINT_MESSAGES: Record<string, string> = {
+  // CHECK (due_at > available_from)
+  exercise_deliveries_check: "Hạn nộp phải sau thời điểm mở bài.",
+  // CHECK (attempt_limit >= 1 AND attempt_limit <= 20)
+  exercise_deliveries_attempt_limit_check:
+    "Số lượt làm phải từ 1 đến 20.",
+  // CHECK (late_penalty_percent >= 0 AND late_penalty_percent <= 100)
+  exercise_deliveries_late_penalty_percent_check:
+    "Mức trừ điểm nộp muộn phải từ 0 đến 100%.",
+  // CHECK (max_score > 0)
+  exercise_deliveries_max_score_check:
+    "Tổng điểm của bộ bài tập phải lớn hơn 0.",
+};
+
+function deliveryErrorMessage(message: string): string {
+  for (const [constraint, vietnamese] of Object.entries(
+    DELIVERY_CONSTRAINT_MESSAGES,
+  )) {
+    if (message.includes(constraint)) return vietnamese;
+  }
+  // Constraint khác chưa dịch: vẫn KHÔNG được đẩy nguyên văn tiếng Anh + tên
+  // constraint ra giao diện (`EX-21`). Nói chung chung còn hơn nói sai.
+  if (message.includes("violates check constraint")) {
+    return "Thông tin giao bài chưa hợp lệ. Kiểm tra lại thời gian mở bài, hạn nộp và số lượt làm.";
+  }
+  return message;
+}
+
 export async function createExerciseDeliveryAction(
   _previous: ActionState,
   formData: FormData,
@@ -94,7 +133,7 @@ export async function createExerciseDeliveryAction(
       p_publish: formData.get("publish") === "true",
     },
   );
-  if (error) return { error: error.message };
+  if (error) return { error: deliveryErrorMessage(error.message) };
   const ids = data ?? [];
   if (ids.length > 0) {
     const configured = await supabase

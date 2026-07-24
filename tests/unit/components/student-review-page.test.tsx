@@ -13,6 +13,7 @@ vi.mock("@/features/student/server/queries", () => ({
 }));
 vi.mock("@/features/flashcards/server/queries", () => ({
   getStudentFlashcardDeck: vi.fn(),
+  getStudentStarredPageIds: vi.fn(async () => []),
 }));
 vi.mock("@/features/flashcards/components/student-flashcard-reader", () => ({
   StudentFlashcardReader: ({ courseName }: { courseName: string }) => (
@@ -49,9 +50,25 @@ describe("StudentReviewPage", () => {
     expect(
       screen.getByRole("tab", { name: "Flashcard Từ Vựng" }),
     ).toBeInTheDocument();
+    // Nhãn tab nay mang thêm số câu cần ôn, nên khớp theo mẫu chứ không so
+    // bằng chuỗi tuyệt đối.
     expect(
-      screen.getByRole("tab", { name: "Ôn Tập Câu Sai" }),
-    ).toBeInTheDocument();
+      screen.getByRole("tab", { name: /Ôn Tập Câu Sai/ }),
+    ).toHaveTextContent("Ôn Tập Câu Sai0");
     expect(screen.getByText("Flashcard của HSK 1")).toBeInTheDocument();
+  });
+
+  it("đếm đúng số câu cần ôn trên nhãn tab", async () => {
+    vi.mocked(getMyWrongAnswerReviews).mockResolvedValue([
+      {},
+      {},
+      {},
+    ] as never);
+
+    render(await StudentReviewPage());
+
+    expect(
+      screen.getByRole("tab", { name: /Ôn Tập Câu Sai/ }),
+    ).toHaveTextContent("Ôn Tập Câu Sai3");
   });
 });

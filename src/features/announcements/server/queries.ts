@@ -16,7 +16,8 @@ export async function getAnnouncements(): Promise<AnnouncementRecord[]> {
     )
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`Không tải được announcement: ${error.message}`);
+  if (error)
+    throw new Error(`Không tải được thông báo chung: ${error.message}`);
   return data;
 }
 

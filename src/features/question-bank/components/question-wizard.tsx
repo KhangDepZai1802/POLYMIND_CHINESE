@@ -121,11 +121,13 @@ type WizardState = ReturnType<typeof emptyState>;
  * Bước 1 Kỹ năng → 2 Dạng câu → 3 Nội dung + đáp án + audio → 4 Xem trước & lưu.
  * `create`: chọn từ đầu. `version`: skill/type prefill, nhập lại đáp án & audio.
  */
+/**
+ * ⛔ **Cố ý KHÔNG có prop `trigger`** — `UX-UIUX-M00-025`/`DS-051`. Xem ghi chú
+ * đầy đủ ở `class-form-dialog.tsx`. Nút mở wizard suy từ `version`.
+ */
 export function QuestionWizard({
-  trigger,
   version,
 }: {
-  trigger: React.ReactNode;
   version?: VersionInitial;
 }) {
   const router = useRouter();
@@ -349,7 +351,15 @@ export function QuestionWizard({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        {version ? (
+          <Button size="xs" variant="outline">
+            Chỉnh sửa
+          </Button>
+        ) : (
+          <Button>Tạo câu hỏi</Button>
+        )}
+      </DialogTrigger>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -461,9 +471,16 @@ export function QuestionWizard({
               </div>
             </div>
 
+            {/* `htmlFor`/`id` — hai nhãn này trước đây lơ lửng, không nối vào
+                ô nhập nào, nên trình đọc màn hình đọc tới ô là im lặng. Phát
+                hiện khi sửa `UX-UIUX-M00-020`: chính `getByLabel("Nội dung câu
+                hỏi")` không tìm được phần tử nào. Chỉ thêm liên kết nhãn, KHÔNG
+                đổi state, validation hay đường ghi — cùng loại với 4 chỗ Admin
+                đã sửa ở `P17-T5`. */}
             <div className="space-y-1.5">
-              <Label>Nội dung câu hỏi</Label>
+              <Label htmlFor="w-prompt">Nội dung câu hỏi</Label>
               <PinyinField
+                id="w-prompt"
                 multiline
                 rows={3}
                 value={s.prompt}
@@ -490,8 +507,11 @@ export function QuestionWizard({
             <TypeEditor state={s} patch={patch} />
 
             <div className="space-y-1.5">
-              <Label>Giải thích (hiện sau khi công bố)</Label>
+              <Label htmlFor="w-explanation">
+                Giải thích (hiện sau khi công bố)
+              </Label>
               <PinyinField
+                id="w-explanation"
                 multiline
                 rows={2}
                 value={s.explanation}

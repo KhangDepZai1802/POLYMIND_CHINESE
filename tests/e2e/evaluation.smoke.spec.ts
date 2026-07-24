@@ -89,8 +89,26 @@ test("GV A viết ghi chú nội bộ + đánh giá, gửi cho học viên; khô
   ).toBe("true|true|true");
   expect(sql(`select count(*) from notifications where resource_id = '${evalId}'`)).toBe("0");
 
-  page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: "Gửi cho học viên" }).click();
+  /*
+   * Gửi đánh giá đi qua HAI bước, không phải một.
+   *
+   * Bài kiểm cũ dùng `page.once("dialog", d => d.accept())` — cách đó chỉ bắt
+   * được `window.confirm` GỐC của trình duyệt. Ứng dụng đã chuyển sang
+   * `ConfirmationProvider` (AlertDialog của Radix) từ lâu, nên dòng đó không bắt
+   * gì cả: hộp xác nhận mở ra, không ai bấm, và `publish_evaluation` KHÔNG bao
+   * giờ chạy. Bài kiểm đỏ ở đây là do mô hình hoá sai cơ chế xác nhận, không
+   * phải do sản phẩm sai — đã kiểm chứng bằng cách chạy lại trên code trước
+   * `P17-T3` và thấy đỏ y hệt.
+   *
+   * Bấm đúng như người dùng thật: mở hộp xác nhận rồi xác nhận.
+   */
+  await page
+    .getByRole("button", { name: "Gửi cho học viên bản đánh giá" })
+    .click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Gửi cho học viên", exact: true })
+    .click();
   await expect(page.getByText("Học viên đã thấy")).toBeVisible();
 
   // Gửi = bật CẢ HAI cột cùng lúc + đúng 1 thông báo.

@@ -3,12 +3,22 @@ import Link from "next/link";
 
 import { Download } from "lucide-react";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
+import { formatDateOnly } from "@/lib/dates";
 import {
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_TONE,
@@ -51,26 +61,45 @@ export default async function AdminReportsPage({ searchParams }: Props) {
         description="Số liệu hóa đơn theo đúng khoảng ngày, lớp và trạng thái đang chọn."
       />
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Bộ lọc</CardTitle>
+      <Card className="mb-4 gap-4 py-4">
+        <CardHeader className="px-4">
+          <CardTitle asChild className="text-base">
+            <h2>Bộ lọc</h2>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4">
           <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <label className="grid gap-1 text-sm font-medium">
               Từ ngày
-              <DatePicker name="from" defaultValue={filters.from} placeholder="Chọn ngày" />
+              <DatePicker
+                name="from"
+                defaultValue={filters.from}
+                placeholder="Chọn ngày"
+              />
             </label>
             <label className="grid gap-1 text-sm font-medium">
               Đến ngày
-              <DatePicker name="to" defaultValue={filters.to} placeholder="Chọn ngày" />
+              <DatePicker
+                name="to"
+                defaultValue={filters.to}
+                placeholder="Chọn ngày"
+              />
             </label>
-            <label className="grid gap-1 text-sm font-medium">
-              Lớp
-              <select
+            {/*
+             * `NativeSelect` chứ không phải `<select>` tự dựng: hai ô này là bản
+             * chép thứ 7 và thứ 8 của chuỗi class đã gom ở `P17-T1`, và cả hai
+             * đều dùng `border` (**1.27:1** trên nền trắng — gần như vô hình)
+             * thay vì `border-input` (**3.39:1**), kèm `h-9` lệch 4px so với
+             * thang control `h-10` của `DS-013`.
+             */}
+            <div className="grid gap-1">
+              <label htmlFor="report-class" className="text-sm font-medium">
+                Lớp
+              </label>
+              <NativeSelect
+                id="report-class"
                 name="class_id"
                 defaultValue={filters.class_id ?? ""}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
               >
                 <option value="">Tất cả lớp</option>
                 {classes.map((item) => (
@@ -78,14 +107,16 @@ export default async function AdminReportsPage({ searchParams }: Props) {
                     {item.code} — {item.name}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm font-medium">
-              Trạng thái
-              <select
+              </NativeSelect>
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor="report-status" className="text-sm font-medium">
+                Trạng thái
+              </label>
+              <NativeSelect
+                id="report-status"
                 name="status"
                 defaultValue={filters.status ?? ""}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
               >
                 <option value="">Tất cả trạng thái</option>
                 {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
@@ -93,8 +124,8 @@ export default async function AdminReportsPage({ searchParams }: Props) {
                     {label}
                   </option>
                 ))}
-              </select>
-            </label>
+              </NativeSelect>
+            </div>
             <div className="flex items-end gap-2">
               <Button type="submit">Áp dụng</Button>
               <Button asChild variant="ghost">
@@ -103,22 +134,27 @@ export default async function AdminReportsPage({ searchParams }: Props) {
             </div>
           </form>
           {!parsed.success && (
-            <p role="alert" className="mt-3 text-sm text-destructive">
+            <p role="alert" className="text-destructive mt-3 text-sm">
               {parsed.error.issues[0]?.message}
             </p>
           )}
         </CardContent>
       </Card>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Summary label="Hóa đơn" value={String(report.summary.invoices)} />
-        <Summary label="Tổng tiền" value={money.format(report.summary.total)} />
-        <Summary label="Đã thu" value={money.format(report.summary.paid)} />
-        <Summary label="Còn lại" value={money.format(report.summary.balance)} />
-        <Summary label="Quá hạn" value={String(report.summary.overdue)} />
-      </div>
+      <section aria-labelledby="report-summary-heading" className="mb-4">
+        <h2 id="report-summary-heading" className="sr-only">
+          Tổng hợp theo bộ lọc đang chọn
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <Summary label="Hóa đơn" value={String(report.summary.invoices)} />
+          <Summary label="Tổng tiền" value={money.format(report.summary.total)} />
+          <Summary label="Đã thu" value={money.format(report.summary.paid)} />
+          <Summary label="Còn lại" value={money.format(report.summary.balance)} />
+          <Summary label="Quá hạn" value={String(report.summary.overdue)} />
+        </div>
+      </section>
 
-      <div className="mb-4 flex flex-wrap justify-end gap-2">
+      <div className="mb-3 flex flex-wrap justify-end gap-2">
         {(["csv", "xlsx"] as const).map((format) => {
           const params = new URLSearchParams(exportParams);
           params.set("format", format);
@@ -132,60 +168,71 @@ export default async function AdminReportsPage({ searchParams }: Props) {
         })}
       </div>
 
-      <Card>
-        <CardContent className="overflow-x-auto px-0">
-          <table className="w-full min-w-[980px] text-sm">
-            <thead className="border-b bg-muted/40 text-left">
+      <Card className="py-0">
+        <CardContent className="p-0">
+          <DataTable
+            caption="Chi tiết hóa đơn theo bộ lọc đang chọn: mã hóa đơn, ngày phát hành, học viên, lớp, trạng thái và số tiền"
+            minWidthClass="min-w-[60rem]"
+          >
+            <DataTableHeader>
               <tr>
-                {[
-                  "Hóa đơn",
-                  "Ngày phát hành",
-                  "Học viên",
-                  "Lớp",
-                  "Trạng thái",
-                  "Tổng tiền",
-                  "Đã thu",
-                  "Còn lại",
-                ].map((heading) => (
-                  <th key={heading} scope="col" className="px-4 py-3 font-medium">
-                    {heading}
-                  </th>
-                ))}
+                <DataTableHead sticky>Hóa đơn</DataTableHead>
+                <DataTableHead>Ngày phát hành</DataTableHead>
+                <DataTableHead>Học viên</DataTableHead>
+                <DataTableHead>Lớp</DataTableHead>
+                <DataTableHead>Trạng thái</DataTableHead>
+                <DataTableHead numeric>Tổng tiền</DataTableHead>
+                <DataTableHead numeric>Đã thu</DataTableHead>
+                <DataTableHead numeric>Còn lại</DataTableHead>
               </tr>
-            </thead>
-            <tbody>
+            </DataTableHeader>
+            <DataTableBody>
               {report.rows.map((row) => (
-                <tr key={row.invoice_id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-medium">{row.invoice_code}</td>
-                  <td className="px-4 py-3">{row.issue_date}</td>
-                  <td className="px-4 py-3">
+                <DataTableRow key={row.invoice_id}>
+                  <DataTableCell sticky className="font-medium">
+                    {row.invoice_code}
+                  </DataTableCell>
+                  {/*
+                   * `formatDateOnly`, KHÔNG in thẳng `row.issue_date`.
+                   * `v_tuition_balance.issue_date` là cột `date`, PostgREST trả
+                   * về chuỗi "2026-07-15" nên bản cũ hiện đúng nguyên chuỗi ISO
+                   * ra màn hình — trái `D-12` (`dd/MM/yyyy`). Không ai thấy vì
+                   * seed **không có hóa đơn nào**, bảng luôn rỗng.
+                   */}
+                  <DataTableCell>{formatDateOnly(row.issue_date)}</DataTableCell>
+                  <DataTableCell>
                     {row.student?.student_code} — {row.student?.full_name}
-                  </td>
-                  <td className="px-4 py-3">{row.class?.code ?? "—"}</td>
-                  <td className="px-4 py-3">
+                  </DataTableCell>
+                  <DataTableCell>{row.class?.code ?? "—"}</DataTableCell>
+                  <DataTableCell>
                     {row.status && (
                       <StatusBadge
                         tone={INVOICE_STATUS_TONE[row.status]}
                         label={INVOICE_STATUS_LABELS[row.status]}
                       />
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right">{money.format(row.total)}</td>
-                  <td className="px-4 py-3 text-right">
+                  </DataTableCell>
+                  <DataTableCell numeric>{money.format(row.total)}</DataTableCell>
+                  <DataTableCell numeric>
                     {money.format(row.paid_amount)}
-                  </td>
-                  <td className="px-4 py-3 text-right">{money.format(row.balance)}</td>
-                </tr>
+                  </DataTableCell>
+                  <DataTableCell numeric>
+                    {money.format(row.balance)}
+                  </DataTableCell>
+                </DataTableRow>
               ))}
               {report.rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                  <td
+                    colSpan={8}
+                    className="text-text-secondary px-4 py-12 text-center"
+                  >
                     Không có hóa đơn phù hợp bộ lọc.
                   </td>
                 </tr>
               )}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         </CardContent>
       </Card>
     </>
@@ -194,10 +241,14 @@ export default async function AdminReportsPage({ searchParams }: Props) {
 
 function Summary({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="gap-2 py-4">
-      <CardContent>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-1 text-xl font-semibold">{value}</p>
+    <Card className="h-full gap-1 py-3">
+      <CardContent className="px-4">
+        {/* `<dl>` nằm TRONG thẻ: bọc `<dl>` ra ngoài các `Card` thì `<dt>` sâu
+            hai cấp so với `<dl>` và axe báo `definition-list`/`dlitem`. */}
+        <dl>
+          <dt className="text-text-secondary text-sm">{label}</dt>
+          <dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd>
+        </dl>
       </CardContent>
     </Card>
   );

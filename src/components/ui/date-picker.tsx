@@ -34,6 +34,8 @@ export function DatePicker({
   toYear = new Date().getFullYear() + 5,
   disableFuture = false,
   className,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
 }: {
   name: string;
   /** Giá trị ban đầu dạng `yyyy-MM-dd`. */
@@ -46,6 +48,13 @@ export function DatePicker({
   /** Chặn chọn ngày trong tương lai (ví dụ: ngày sinh). */
   disableFuture?: boolean;
   className?: string;
+  /**
+   * Hai prop dưới đây là **tùy chọn và thuần cộng thêm** (`P17-T3`): nút mở lịch
+   * là phần tử người dùng focus vào, nên lỗi ngày phải gắn vào chính nó thì
+   * trình đọc màn hình mới đọc ra. Không truyền thì render y như trước.
+   */
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(() =>
@@ -72,6 +81,8 @@ export function DatePicker({
             type="button"
             variant="outline"
             disabled={disabled}
+            aria-invalid={ariaInvalid}
+            aria-describedby={ariaDescribedBy}
             className={cn(
               "w-full justify-start text-left font-normal",
               !date && "text-muted-foreground",

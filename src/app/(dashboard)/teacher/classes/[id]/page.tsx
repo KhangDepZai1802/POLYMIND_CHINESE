@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Clock3,
+  ExternalLink,
   FileCheck2,
   GraduationCap,
   MapPin,
@@ -43,22 +44,47 @@ import {
 import { formatAttendanceScore } from "@/lib/domain/attendance";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
+  ASSESSMENT_TYPE_LABELS,
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
   DELIVERY_MODE_LABELS,
   ENROLLMENT_STATUS_LABELS,
   ENROLLMENT_STATUS_TONE,
+  EXERCISE_DELIVERY_STATUS_LABELS,
+  EXERCISE_DELIVERY_STATUS_TONE,
 } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Chi tiết lớp học" };
 
+/**
+ * Nguồn sự thật duy nhất của 8 tab: dùng cho cả `TabsTrigger` lẫn việc kiểm
+ * `?tab=` từ URL, nên không thể lệch nhau.
+ */
+const CLASS_TABS = [
+  { value: "overview", label: "Tổng quan" },
+  { value: "schedule", label: "Lịch/Buổi" },
+  { value: "students", label: "Học viên" },
+  { value: "attendance", label: "Điểm danh" },
+  { value: "exercises", label: "Bài tập" },
+  { value: "exams", label: "Kiểm tra" },
+  { value: "progress", label: "Tiến độ" },
+  { value: "materials", label: "Tài liệu" },
+] as const;
+
 export default async function TeacherClassDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   await requireRole("teacher");
   const { id } = await params;
+  const { tab } = await searchParams;
+
+  // Fail-closed: giá trị lạ trong URL rơi về tab đầu thay vì render khung rỗng.
+  const activeTab =
+    CLASS_TABS.find((item) => item.value === tab)?.value ?? "overview";
 
   // Không tự kiểm teacher_id ở app: RLS trên `classes` quy về `class_teachers`.
   // UUID ngoài phạm vi trả null và đi thẳng tới 404, không lộ lớp có tồn tại.
@@ -101,7 +127,7 @@ export default async function TeacherClassDetailPage({
     <>
       <Link
         href="/teacher/classes"
-        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring mb-4 inline-flex items-center gap-1 rounded-md text-sm focus-visible:ring-2 focus-visible:outline-none"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Lớp của tôi
@@ -124,27 +150,57 @@ export default async function TeacherClassDetailPage({
         </span>
       </div>
 
-      <Tabs defaultValue="overview">
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="min-w-max">
-            <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-            <TabsTrigger value="schedule">Lịch/Buổi</TabsTrigger>
-            <TabsTrigger value="students">Học viên</TabsTrigger>
-            <TabsTrigger value="attendance">Điểm danh</TabsTrigger>
-            <TabsTrigger value="exercises">Bài tập</TabsTrigger>
-            <TabsTrigger value="exams">Kiểm tra</TabsTrigger>
-            <TabsTrigger value="progress">Tiến độ</TabsTrigger>
-            <TabsTrigger value="materials">Tài liệu</TabsTrigger>
+      <Tabs value={activeTab} activationMode="manual">
+        {/* `tabIndex={0}` + vòng focus: ở 360px tám tab không đủ chỗ nên dải này
+            cuộn ngang. Radix `Tabs` dùng **roving tabindex** — chỉ tab đang chọn
+            có `tabindex=0`, các tab còn lại là `-1` — nên "bên trong có link"
+            KHÔNG làm vùng cuộn đi được bằng bàn phím; người dùng bàn phím không
+            tới được các tab bên phải (axe `scrollable-region-focusable`).
+            Đúng lỗi `UX-UIUX-M21-009` đã sửa ở `/student/class`, sửa đúng bằng
+            cách màn đó làm (`P17-T5`). */}
+        <nav
+          aria-label="Khu vực của lớp"
+          tabIndex={0}
+          className="bg-muted focus-visible:ring-ring overflow-x-auto rounded-lg pb-1 focus-visible:ring-2 focus-visible:outline-none"
+          style={{
+            // Bóng mép chỉ hiện khi CÒN nội dung cuộn, tắt khi đã cuộn hết.
+            // Hai lớp `local` mang màu nền cuộn theo nội dung và che hai lớp
+            // `scroll` đứng yên phía dưới — thuần CSS, không thêm JS.
+            backgroundImage:
+              "linear-gradient(to right, var(--muted), transparent)," +
+              "linear-gradient(to left, var(--muted), transparent)," +
+              "linear-gradient(to right, rgb(0 0 0 / 0.14), transparent)," +
+              "linear-gradient(to left, rgb(0 0 0 / 0.14), transparent)",
+            backgroundPosition:
+              "left center, right center, left center, right center",
+            backgroundSize: "28px 100%, 28px 100%, 12px 100%, 12px 100%",
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "local, local, scroll, scroll",
+          }}
+        >
+          <TabsList className="min-w-max bg-transparent">
+            {CLASS_TABS.map((item) => (
+              <TabsTrigger key={item.value} value={item.value} asChild>
+                <Link
+                  href={`/teacher/classes/${id}?tab=${item.value}`}
+                  scroll={false}
+                >
+                  {item.label}
+                </Link>
+              </TabsTrigger>
+            ))}
           </TabsList>
-        </div>
+        </nav>
 
         <TabsContent value="overview" className="mt-4">
           <div className="grid gap-5 xl:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <School className="size-4" aria-hidden />
-                  Thông tin lớp
+                <CardTitle asChild className="flex items-center gap-2 text-base">
+                  <h2>
+                    <School className="size-4" aria-hidden />
+                    Thông tin lớp
+                  </h2>
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -172,9 +228,11 @@ export default async function TeacherClassDetailPage({
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <MapPin className="size-4" aria-hidden />
-                  Địa điểm học
+                <CardTitle asChild className="flex items-center gap-2 text-base">
+                  <h2>
+                    <MapPin className="size-4" aria-hidden />
+                    Địa điểm học
+                  </h2>
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -187,16 +245,20 @@ export default async function TeacherClassDetailPage({
                 <Field label="Ghi chú" value={classRecord.location_note} />
                 {classRecord.meeting_url && (
                   <div className="sm:col-span-2">
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-sm">
                       Phòng học trực tuyến
                     </p>
                     <a
                       href={classRecord.meeting_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-primary mt-0.5 block truncate text-sm hover:underline"
+                      aria-label={`Mở phòng học trực tuyến trong tab mới: ${classRecord.meeting_url}`}
+                      className="text-primary mt-0.5 inline-flex max-w-full items-center gap-1 text-sm hover:underline"
                     >
-                      {classRecord.meeting_url}
+                      <span className="min-w-0 truncate">
+                        {classRecord.meeting_url}
+                      </span>
+                      <ExternalLink className="size-4 shrink-0" aria-hidden />
                     </a>
                   </div>
                 )}
@@ -205,9 +267,11 @@ export default async function TeacherClassDetailPage({
 
             <Card className="xl:col-span-2">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="size-4" aria-hidden />
-                  Đội ngũ giảng dạy
+                <CardTitle asChild className="flex items-center gap-2 text-base">
+                  <h2>
+                    <Users className="size-4" aria-hidden />
+                    Đội ngũ giảng dạy
+                  </h2>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -222,7 +286,7 @@ export default async function TeacherClassDetailPage({
                           {assignment.teacher?.profile?.full_name ??
                             "Giáo viên"}
                         </p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-text-secondary text-sm">
                           {assignment.teacher?.teacher_code ?? "—"}
                           {assignment.teacher?.specialization
                             ? ` · ${assignment.teacher.specialization}`
@@ -241,9 +305,11 @@ export default async function TeacherClassDetailPage({
         <TabsContent value="schedule" className="mt-4 space-y-5">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="size-4" aria-hidden />
-                Lịch học lặp
+              <CardTitle asChild className="flex items-center gap-2 text-base">
+                <h2>
+                  <CalendarDays className="size-4" aria-hidden />
+                  Lịch học lặp
+                </h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -271,7 +337,7 @@ export default async function TeacherClassDetailPage({
                         {formatClock(schedule.start_time)}–
                         {formatClock(schedule.end_time)}
                       </span>
-                      <span className="text-muted-foreground ml-auto text-xs">
+                      <span className="text-text-secondary ml-auto text-sm">
                         {formatDate(schedule.effective_from)} →{" "}
                         {formatDate(schedule.effective_to)}
                       </span>
@@ -284,8 +350,8 @@ export default async function TeacherClassDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                Danh sách buổi học ({sessions.length})
+              <CardTitle asChild className="text-base">
+                <h2>Danh sách buổi học ({sessions.length})</h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -305,9 +371,11 @@ export default async function TeacherClassDetailPage({
         <TabsContent value="students" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                Học viên ({openEnrollments.length} đang mở /{" "}
-                {classRecord.enrollments.length} lượt học)
+              <CardTitle asChild className="text-base">
+                <h2>
+                  Học viên ({openEnrollments.length} đang mở /{" "}
+                  {classRecord.enrollments.length} lượt học)
+                </h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -330,12 +398,12 @@ export default async function TeacherClassDetailPage({
                           <p className="truncate text-sm font-medium">
                             {enrollment.student?.full_name ?? "Học viên"}
                           </p>
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-text-secondary text-sm">
                             {enrollment.student?.student_code ?? "—"} · Ghi danh{" "}
                             {formatDate(enrollment.enrolled_on)}
                           </p>
                         </div>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-text-secondary text-sm">
                           Tiến độ {formatPercent(progress?.progress_percent)}
                         </span>
                         <StatusBadge
@@ -354,9 +422,11 @@ export default async function TeacherClassDetailPage({
         <TabsContent value="attendance" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ClipboardCheck className="size-4" aria-hidden />
-                Điểm danh theo buổi
+              <CardTitle asChild className="flex items-center gap-2 text-base">
+                <h2>
+                  <ClipboardCheck className="size-4" aria-hidden />
+                  Điểm danh theo buổi
+                </h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -386,7 +456,7 @@ export default async function TeacherClassDetailPage({
                             Buổi {session.session_number} ·{" "}
                             {formatDateTime(session.starts_at)}
                           </p>
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-text-secondary text-sm">
                             {openEnrollments.length === 0
                               ? "Lớp chưa có học viên đang mở"
                               : `Đã điểm danh ${markedCount}/${openEnrollments.length}`}
@@ -443,14 +513,16 @@ export default async function TeacherClassDetailPage({
                         <p className="truncate text-sm font-medium">
                           {assignment.title}
                         </p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-text-secondary text-sm">
                           Hạn {formatDateTime(assignment.due_at)} ·{" "}
                           {assignment.attempts.filter((attempt) => attempt.submitted_at).length} bài nộp
                         </p>
                       </div>
                       <StatusBadge
-                        label={assignment.status}
-                        tone={assignment.status === "results_published" ? "success" : "neutral"}
+                        label={
+                          EXERCISE_DELIVERY_STATUS_LABELS[assignment.status]
+                        }
+                        tone={EXERCISE_DELIVERY_STATUS_TONE[assignment.status]}
                       />
                     </li>
                   ))}
@@ -487,8 +559,8 @@ export default async function TeacherClassDetailPage({
                         <p className="truncate text-sm font-medium">
                           {assessment.title}
                         </p>
-                        <p className="text-muted-foreground text-xs">
-                          {assessment.exam_type} ·{" "}
+                        <p className="text-text-secondary text-sm">
+                          {ASSESSMENT_TYPE_LABELS[assessment.exam_type]} ·{" "}
                           {formatDate(assessment.opens_at)} ·{" "}
                           {assessment.attempts.filter((attempt) => attempt.graded_at).length} kết quả
                         </p>
@@ -522,7 +594,9 @@ export default async function TeacherClassDetailPage({
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Tiến độ học viên</CardTitle>
+                <CardTitle asChild className="text-base">
+                  <h2>Tiến độ học viên</h2>
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <ul className="divide-y">
@@ -542,7 +616,7 @@ export default async function TeacherClassDetailPage({
                             <p className="text-sm font-medium">
                               {enrollment?.student?.full_name ?? "Học viên"}
                             </p>
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-text-secondary text-sm">
                               {enrollment?.student?.student_code ?? "—"}
                             </p>
                           </div>
@@ -577,7 +651,7 @@ export default async function TeacherClassDetailPage({
                             style={{ width: `${percent}%` }}
                           />
                         </div>
-                        <div className="text-muted-foreground grid gap-1 text-xs sm:grid-cols-4">
+                        <div className="text-text-secondary grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
                           <span>
                             Điểm chuyên cần:{" "}
                             {formatAttendanceScore(
@@ -631,7 +705,7 @@ function Field({
 }) {
   return (
     <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="text-text-secondary text-sm">{label}</p>
       <p className="mt-0.5 text-sm break-words whitespace-pre-line">
         {value ?? "—"}
       </p>

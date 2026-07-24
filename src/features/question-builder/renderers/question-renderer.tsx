@@ -2,6 +2,7 @@
 
 import type { QuestionType } from "@/features/question-builder/domain/questions";
 import { SpeakingRecorder } from "@/features/question-builder/renderers/speaking-recorder";
+import { StudentAudioPlayer } from "@/components/shared/student-audio-player";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,7 @@ export function QuestionRenderer({
   onChange,
   disabled = false,
   promptContent = {},
+  audioPlayback = "native",
 }: {
   type: QuestionType;
   prompt: string;
@@ -24,6 +26,7 @@ export function QuestionRenderer({
   onChange?: (value: unknown) => void;
   disabled?: boolean;
   promptContent?: Record<string, unknown>;
+  audioPlayback?: "native" | "student-source";
 }) {
   const selected =
     typeof value === "object" && value && "value" in value
@@ -59,11 +62,17 @@ export function QuestionRenderer({
         />
       )}
       {["listening_choice", "dictation"].includes(type) &&
-        typeof promptContent.audio_url === "string" && (
+        typeof promptContent.audio_url === "string" &&
+        (audioPlayback === "student-source" ? (
+          <StudentAudioPlayer
+            src={promptContent.audio_url}
+            label={"Audio câu hỏi: " + prompt}
+          />
+        ) : (
           <audio controls preload="metadata" className="w-full">
             <source src={promptContent.audio_url} />
           </audio>
-        )}
+        ))}
       {["single_choice", "listening_choice", "true_false"].includes(type) && (
         <div className="space-y-2">
           {(type === "true_false"

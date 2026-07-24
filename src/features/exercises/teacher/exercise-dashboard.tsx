@@ -3,10 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ClipboardList } from "lucide-react";
+
 import { createExerciseDeliveryAction } from "@/features/exercises/server/actions";
+import { groupDeliveriesByClass } from "@/features/assessment-results/group-deliveries";
+import { EmptyState } from "@/components/shared/empty-state";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
   Dialog,
@@ -19,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Select,
   SelectContent,
@@ -26,7 +32,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatDateTime } from "@/lib/dates";
 import { useFormAction } from "@/lib/use-form-action";
+
+/**
+ * Ô tick gốc của trình duyệt nhưng có vòng focus và màu thương hiệu.
+ *
+ * Không dùng `ui/checkbox.tsx` (Radix) ở màn này: cả `class_ids` lẫn
+ * `allow_late` được `createExerciseDeliveryAction` đọc thẳng từ `FormData`, và
+ * `class_ids` là **nhiều giá trị cùng một tên** — cách gửi đó là hành vi
+ * nghiệp vụ, không phải chuyện trình bày.
+ */
+const CHECKBOX_CLASS =
+  "accent-primary border-input focus-visible:ring-ring size-4 shrink-0 rounded-[4px] focus-visible:ring-[3px] focus-visible:outline-none";
 
 type Props = {
   deliveries: Array<{
@@ -64,24 +82,7 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
   const noSets = sets.length === 0;
   const noClasses = classes.length === 0;
   const selectedSet = sets.find((set) => set.id === selectedSetId);
-  const deliveryGroups = deliveries.reduce<
-    Array<{ key: string; label: string; items: Props["deliveries"] }>
-  >((groups, delivery) => {
-    const key = delivery.class?.code ?? "unassigned";
-    let group = groups.find((item) => item.key === key);
-    if (!group) {
-      group = {
-        key,
-        label: delivery.class
-          ? `${delivery.class.code} — ${delivery.class.name}`
-          : "Chưa xác định lớp",
-        items: [],
-      };
-      groups.push(group);
-    }
-    group.items.push(delivery);
-    return groups;
-  }, []);
+  const deliveryGroups = groupDeliveriesByClass(deliveries);
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -113,14 +114,14 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
                 </Alert>
               )}
               <div className="space-y-2">
-                <Label>Bộ bài tập đã khóa</Label>
+                <Label htmlFor="ex-set-version">Bộ bài tập đã khóa</Label>
                 <Select
                   name="set_version_id"
                   value={selectedSetId}
                   onValueChange={setSelectedSetId}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="ex-set-version">
                     <SelectValue placeholder="Chọn bộ" />
                   </SelectTrigger>
                   <SelectContent>
@@ -134,93 +135,119 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label>Cách chọn điểm</Label>
-                  <select
+                  <Label htmlFor="ex-grading-method">Cách chọn điểm</Label>
+                  <NativeSelect
+                    id="ex-grading-method"
                     name="grading_method"
                     defaultValue="latest"
-                    className="bg-background h-9 w-full rounded-md border px-3 text-sm"
                   >
                     <option value="first">Lượt đầu</option>
                     <option value="latest">Lượt cuối</option>
                     <option value="highest">Lượt cao nhất</option>
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div className="space-y-2">
-                  <Label>Công bố điểm</Label>
-                  <select
+                  <Label htmlFor="ex-result-release">Công bố điểm</Label>
+                  <NativeSelect
+                    id="ex-result-release"
                     name="result_release_mode"
                     defaultValue="manual"
-                    className="bg-background h-9 w-full rounded-md border px-3 text-sm"
                   >
                     <option value="manual">Thủ công</option>
                     <option value="after_graded">Ngay sau chấm</option>
                     <option value="after_due">Sau hạn</option>
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div className="space-y-2">
-                  <Label>Công bố đáp án</Label>
-                  <select
+                  <Label htmlFor="ex-answer-release">Công bố đáp án</Label>
+                  <NativeSelect
+                    id="ex-answer-release"
                     name="answer_release_mode"
                     defaultValue="with_results"
-                    className="bg-background h-9 w-full rounded-md border px-3 text-sm"
                   >
                     <option value="never">Không công bố</option>
                     <option value="after_submit">Sau khi nộp</option>
                     <option value="after_due">Sau hạn</option>
                     <option value="with_results">Cùng kết quả</option>
-                  </select>
+                  </NativeSelect>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Lớp (có thể chọn nhiều)</Label>
+              {/*
+                `<fieldset>` + `<legend>` chứ không phải một `<Label>` lơ lửng:
+                đây là một NHÓM checkbox, và trước đây cái `<Label>` đó không
+                `htmlFor` gì cả nên trình đọc màn hình đọc từng ô là "checkbox
+                LOP-01" mà không bao giờ nói đang chọn cái gì.
+              */}
+              <fieldset className="space-y-2">
+                <legend className="mb-2 text-sm leading-none font-medium">
+                  Lớp (có thể chọn nhiều)
+                </legend>
                 <div className="grid gap-2 rounded-lg border p-3">
                   {classes.map((c) => (
                     <Label
                       key={c.id}
                       className="flex items-center gap-2 font-normal"
                     >
+                      {/*
+                        Cố ý giữ `<input type="checkbox">` gốc, KHÔNG đổi sang
+                        `ui/checkbox.tsx` (Radix): đây là nhóm nhiều ô cùng
+                        `name="class_ids"`, và cách gửi nhiều giá trị cùng tên
+                        là hành vi nghiệp vụ ("giao một lúc cho nhiều lớp").
+                        Đổi sang input ẩn của Radix là đổi thứ không được phép
+                        đổi trong task UI/UX (`DS-003`). Chỉ sửa phần trình bày.
+                      */}
                       <input
                         type="checkbox"
                         name="class_ids"
                         value={c.id}
-                        className="size-4"
+                        className={CHECKBOX_CLASS}
                       />
                       {c.code} — {c.name}
                     </Label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
               <div className="space-y-2">
-                <Label>Tiêu đề</Label>
-                <Input name="title" required />
+                <Label htmlFor="ex-title">Tiêu đề</Label>
+                <Input id="ex-title" name="title" required />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Mở từ</Label>
+                  <Label htmlFor="ex-available-from">Mở từ</Label>
                   <DateTimePicker
+                    id="ex-available-from"
                     name="available_from"
                     placeholder="Chọn ngày giờ"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Hạn nộp</Label>
-                  <DateTimePicker name="due_at" placeholder="Chọn ngày giờ" />
+                  <Label htmlFor="ex-due-at">Hạn nộp</Label>
+                  <DateTimePicker
+                    id="ex-due-at"
+                    name="due_at"
+                    placeholder="Chọn ngày giờ"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Điểm tối đa (theo bộ đã chọn)</Label>
+                  <Label htmlFor="ex-max-score">
+                    Điểm tối đa (theo bộ đã chọn)
+                  </Label>
                   <Input
+                    id="ex-max-score"
                     type="number"
                     value={selectedSet?.raw_max_score ?? ""}
                     placeholder="Chọn bộ bài tập"
                     readOnly
+                    aria-describedby="ex-max-score-hint"
                   />
-                  <p className="text-muted-foreground text-xs">
+                  <p id="ex-max-score-hint" className="text-text-secondary text-sm">
                     Tự động bằng tổng điểm giáo viên đã đặt cho các câu hỏi.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Số lượt</Label>
+                  <Label htmlFor="ex-attempt-limit">Số lượt</Label>
                   <Input
+                    id="ex-attempt-limit"
                     name="attempt_limit"
                     type="number"
                     min="1"
@@ -231,12 +258,17 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
                 </div>
               </div>
               <Label className="flex items-center gap-2">
-                <input type="checkbox" name="allow_late" />
+                <input
+                  type="checkbox"
+                  name="allow_late"
+                  className={CHECKBOX_CLASS}
+                />
                 Cho phép nộp trễ
               </Label>
               <div className="space-y-2">
-                <Label>Phạt trễ (%)</Label>
+                <Label htmlFor="ex-late-penalty">Phạt trễ (%)</Label>
                 <Input
+                  id="ex-late-penalty"
                   name="late_penalty"
                   type="number"
                   min="0"
@@ -254,40 +286,82 @@ export function ExerciseDashboard({ deliveries, classes, sets }: Props) {
         </Dialog>
       </div>
       {deliveries.length === 0 ? (
-        <p className="text-muted-foreground text-center">
-          Chưa có lần giao bài tập.
-        </p>
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={ClipboardList}
+              title="Chưa có lần giao bài tập"
+              description="Chọn một bộ bài tập đã khóa rồi bấm Giao bài tập để lớp của bạn bắt đầu làm."
+            />
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-5">
           {deliveryGroups.map((group) => (
-            <section key={group.key} className="overflow-hidden rounded-xl border bg-card">
-              <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-3">
-                <h2 className="font-semibold">{group.label}</h2>
-                <span className="text-muted-foreground text-sm">{group.items.length} bài tập</span>
+            <section
+              key={group.key}
+              aria-labelledby={`delivery-group-${group.key}`}
+              className="bg-card overflow-hidden rounded-xl border"
+            >
+              <div className="bg-surface-sunken flex items-center justify-between gap-3 border-b px-4 py-3">
+                <h2
+                  id={`delivery-group-${group.key}`}
+                  className="min-w-0 truncate font-semibold"
+                >
+                  {group.label}
+                </h2>
+                <span className="text-text-secondary shrink-0 text-sm">
+                  {group.items.length} bài tập
+                </span>
               </div>
-              <div className="divide-y">
+              <ul className="divide-y">
                 {group.items.map((delivery) => {
                   const waiting = delivery.attempts.filter(
                     (attempt) => attempt.status === "pending_manual_grading",
                   ).length;
-                  const late = delivery.attempts.filter((attempt) => attempt.is_late).length;
+                  const late = delivery.attempts.filter(
+                    (attempt) => attempt.is_late,
+                  ).length;
                   return (
-                    <div key={delivery.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                    <li
+                      key={delivery.id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                    >
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{delivery.title}</p>
-                        <p className="text-muted-foreground text-xs">
-                          Hạn {new Date(delivery.due_at).toLocaleString("vi-VN")} · {delivery.attempts.length} bài nộp
+                        {/*
+                          `text-sm` chứ không `text-xs`: đây là dòng giáo viên
+                          quét để quyết định mở bài nào trước (hạn, số bài chờ
+                          chấm), không phải chú thích phụ — `UX-M00-004`.
+                        */}
+                        <p className="text-text-secondary text-sm">
+                          {/*
+                            `formatDateTime` chứ không `toLocaleString("vi-VN")`:
+                            `D-12` bắt hiển thị theo `Asia/Ho_Chi_Minh` và định
+                            dạng `dd/MM/yyyy HH:mm`. Bản cũ lấy múi giờ của MÁY
+                            giáo viên nên hạn nộp lệch giờ khi máy đặt múi giờ
+                            khác, và in ra `20:05:00 22/7/2026`.
+                          */}
+                          Hạn {formatDateTime(delivery.due_at)} ·{" "}
+                          {delivery.attempts.length} bài nộp
                           {waiting > 0 ? ` · ${waiting} chờ chấm` : ""}
                           {late > 0 ? ` · ${late} nộp trễ` : ""}
                         </p>
                       </div>
-                      <Button asChild size="sm" variant={waiting > 0 ? "default" : "outline"}>
-                        <Link href={`/teacher/exercises/${delivery.id}`}>Mở lớp & chấm bài</Link>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant={waiting > 0 ? "default" : "outline"}
+                      >
+                        <Link href={`/teacher/exercises/${delivery.id}`}>
+                          <span className="sr-only">{delivery.title}: </span>
+                          Mở lớp &amp; chấm bài
+                        </Link>
                       </Button>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </section>
           ))}
         </div>

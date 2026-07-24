@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* Lượt thi đang chạy chỉ hiển thị đề và đồng hồ, không cho chuyển module từ dashboard. */
 html[data-exam-active="true"] [data-dashboard-chrome] {
   display: none !important;
@@ -41,11 +39,35 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --primary: #1a5fa8; /* xanh thương hiệu POLYMIND */
   --primary-foreground: #ffffff;
 
+  /* Thang xanh 50–950 dẫn xuất từ #1A5FA8, giữ nguyên hue 210.8°.
+   * --primary-600 khớp CHÍNH XÁC --primary — thang này bổ sung, không thay thế.
+   * Số sau mỗi dòng là contrast với nền trắng (WCAG 2.1). */
+  --primary-50: #f5f9fd; /* 1.06 — nền nhấn rất nhẹ */
+  --primary-100: #e6effa; /* 1.16 — hover nhẹ, nền badge info */
+  --primary-200: #c3dbf4; /* 1.42 — viền nhấn */
+  --primary-300: #91bbe8; /* 2.00 — viền control trạng thái nhấn */
+  --primary-400: #4d92db; /* 3.26 — icon/đồ hoạ; KHÔNG dùng cho chữ thường */
+  --primary-500: #2373c7; /* 4.83 — chữ primary khi cần nhạt hơn 600 */
+  --primary-600: #1a5fa8; /* 6.47 — = --primary */
+  --primary-700: #134b86; /* 8.83 — hover/active nút primary */
+  --primary-800: #103b68; /* 11.37 */
+  --primary-900: #0c2c4d; /* 14.16 */
+  --primary-950: #091d32; /* 17.03 */
+
   --secondary: #eef4fb;
   --secondary-foreground: #0d3f78;
 
-  --muted: #f1f5f9;
+  --muted: #edf1f7;
   --muted-foreground: #5b6b80;
+
+  /* Surface — nền trang phải là token có tên, không phải alpha đoán chừng. */
+  --surface-page: #f6f8fb;
+  --surface-sunken: #e4eaf2; /* header bảng, thanh filter */
+
+  /* Cấp chữ trung gian — trước đây chỉ có foreground và muted-foreground nên
+   * mọi thứ phụ đều dồn vào một màu, hoặc bị thu nhỏ cỡ chữ để phân cấp. */
+  --text-secondary: #43536b; /* 7.81 trên trắng */
+  --text-disabled: #8494a8; /* 3.10 — chỉ cho control disabled, luôn kèm [disabled] */
 
   /* shadcn --accent = nền hover trung tính, KHÔNG phải màu nhấn thương hiệu */
   --accent: #eef4fb;
@@ -54,8 +76,18 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
+  /* --border: đường kẻ TRANG TRÍ. 1.27:1 — WCAG không đòi 3:1 cho divider.
+   * --border-strong: viền CONTROL (input, checkbox, radio, select, bảng).
+   * WCAG 1.4.11 đòi >= 3:1 cho thành phần giao diện; #7C8DA4 = 3.39:1.
+   *
+   * --input PHẢI bằng --border-strong, không phải bằng --border: nó là màu viền
+   * của `input`, `textarea`, `checkbox`, `radio`, `select` và `calendar`
+   * (`border-input` trong 6 component ui/). Để nó ở #DDE5EE thì thêm
+   * --border-strong cũng vô nghĩa — token có mà không ai dùng, viền ô nhập vẫn
+   * 1.27:1 (DS-017). */
   --border: #dde5ee;
-  --input: #dde5ee;
+  --border-strong: #7c8da4;
+  --input: #7c8da4;
   --ring: #1a5fa8;
 
   /* Màu nhấn thương hiệu — dùng TIẾT CHẾ (badge HSK, highlight chữ Hán) */
@@ -68,13 +100,50 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --brand-orange: #fb9518;
   --brand-orange-foreground: #10243f;
 
+  /* Palette hỗ trợ cho trải nghiệm HỌC VIÊN (DS-027).
+   * Đây là semantic token student-only, không thay token thương hiệu/shared cũ.
+   * Ink/surface đều đạt WCAG AA: sky 8.04, cyan 4.97, amber 5.27,
+   * coral 5.25. Màu luôn đi cùng icon/chữ, không dùng làm tín hiệu duy nhất. */
+  --student-sky-surface: #eaf6ff;
+  --student-sky-border: #a8d7f5;
+  --student-sky-ink: #134b86;
+  --student-cyan-surface: #e8faf8;
+  --student-cyan-border: #9dded9;
+  --student-cyan-ink: #0e7490;
+  --student-amber-surface: #fff4dd;
+  --student-amber-border: #f3c96b;
+  --student-amber-ink: #a84a08;
+  --student-coral-surface: #fff0ec;
+  --student-coral-border: #f0b6aa;
+  --student-coral-ink: #b53a2d;
+
   /* Màu trạng thái — luôn đi kèm icon/chữ, KHÔNG dùng màu làm tín hiệu duy nhất */
   --success: #166534;
   --success-foreground: #ffffff;
   --warning: #92400e;
   --warning-foreground: #ffffff;
-  --info: #0284c7;
+  /* #0284C7 với chữ trắng chỉ đạt 4.10:1 — dưới ngưỡng AA (4.5). #0369A1 = 5.93:1. */
+  --info: #0369a1;
   --info-foreground: #ffffff;
+  /*
+    Chữ đỏ đặt TRÊN NỀN đỏ nhạt của badge `danger` (`bg-destructive/12` =
+    #FBE5E5). Ở đó `--destructive` (#DC2626) chỉ còn **4.01:1** — dưới AA cho
+    chữ 12px. #B91C1C cùng họ đỏ, chỉ đậm hơn, đạt **5.37:1**. Ba tone còn lại
+    đã đo và đều đạt: success 5.95 · warning 5.88 · info 5.58. Xem `DS-030`.
+  */
+  --danger-ink: #b91c1c;
+  /*
+   * Màu nền hàng khi rê chuột, dạng ĐẶC.
+   *
+   * Chính xác bằng `--muted` trộn 40% trên `--card`:
+   *   0.4×#edf1f7 + 0.6×#ffffff = #f8f9fc
+   *
+   * Phải đặc chứ không dùng `bg-muted/40`, vì ô định danh của bảng Quản trị là
+   * `position: sticky` — nền trong suốt thì chữ của các cột phía sau **trôi qua
+   * bên dưới nó** khi cuộn ngang. Đã chụp ảnh thấy tận mắt: hàng tiêu đề đọc ra
+   * "Mãên hệ" vì "Mã" và "Liên hệ" chồng lên nhau.
+   */
+  --row-hover: #f8f9fc;
 
   --chart-1: #1a5fa8;
   --chart-2: #0284c7;
@@ -83,45 +152,11 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --chart-5: #c8102e;
 }
 
-.dark {
-  --background: #0b1220;
-  --foreground: #e5e7eb;
-
-  --card: #111827;
-  --card-foreground: #e5e7eb;
-  --popover: #111827;
-  --popover-foreground: #e5e7eb;
-
-  --primary: #3b82f6;
-  --primary-foreground: #0b1220;
-
-  --secondary: #1e293b;
-  --secondary-foreground: #e5e7eb;
-
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-
-  --accent: #1e293b;
-  --accent-foreground: #e5e7eb;
-
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-
-  --border: #263449;
-  --input: #263449;
-  --ring: #3b82f6;
-
-  --brand-red: #ef4444;
-  --brand-red-foreground: #ffffff;
-  --brand-navy: #1e3a8a;
-
-  --brand-orange: #fb9518;
-  --brand-orange-foreground: #0b1220;
-
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --info: #38bdf8;
-}
+/* Dark mode đã được gỡ bỏ (DS-016). Khối `.dark` cũ là code KHÔNG TỚI ĐƯỢC:
+ * không có ThemeProvider, `<html>` không bao giờ nhận class `dark`, nên biến thể
+ * `dark:` (biên dịch thành `.dark *`) không bao giờ khớp. Nó còn đổi cả màu
+ * thương hiệu (#1A5FA8 → #3B82F6, #C8102E → #EF4444) và có 4 cặp fail contrast.
+ * Muốn có dark mode thật thì phải thiết kế lại từ đầu, không sửa lại bản chết. */
 
 @theme inline {
   --color-background: var(--background);
@@ -132,6 +167,18 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -141,8 +188,14 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-surface-page: var(--surface-page);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-disabled: var(--text-disabled);
 
   --color-brand-red: var(--brand-red);
   --color-brand-red-foreground: var(--brand-red-foreground);
@@ -151,12 +204,27 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --color-brand-orange: var(--brand-orange);
   --color-brand-orange-foreground: var(--brand-orange-foreground);
 
+  --color-student-sky-surface: var(--student-sky-surface);
+  --color-student-sky-border: var(--student-sky-border);
+  --color-student-sky-ink: var(--student-sky-ink);
+  --color-student-cyan-surface: var(--student-cyan-surface);
+  --color-student-cyan-border: var(--student-cyan-border);
+  --color-student-cyan-ink: var(--student-cyan-ink);
+  --color-student-amber-surface: var(--student-amber-surface);
+  --color-student-amber-border: var(--student-amber-border);
+  --color-student-amber-ink: var(--student-amber-ink);
+  --color-student-coral-surface: var(--student-coral-surface);
+  --color-student-coral-border: var(--student-coral-border);
+  --color-student-coral-ink: var(--student-coral-ink);
+
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-danger-ink: var(--danger-ink);
+  --color-row-hover: var(--row-hover);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -186,14 +254,49 @@ html[data-exam-active="true"] [data-dashboard-main] {
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Touch target tối thiểu 44px trên mobile (WCAG / dùng được giữa buổi dạy) */
+  /* Touch target tối thiểu 44px trên mobile (WCAG / dùng được giữa buổi dạy).
+   *
+   * Đây là NƠI DUY NHẤT ép 44px. Component (`button.tsx`, `input.tsx`,
+   * `select.tsx`) khai báo chiều cao cho CHUỘT (32/36/40/44px) để có phân cấp
+   * kích thước; `min-height` ở đây thắng `height` nên ngón tay vẫn luôn đủ 44px.
+   * Nhét 44px vào class Tailwind như trước sẽ xoá sạch phân cấp trên desktop. */
   @media (pointer: coarse) {
     button,
     [role="button"],
-    a[href],
-    input[type="checkbox"],
-    input[type="radio"] {
+    input,
+    textarea,
+    select,
+    [data-slot="select-trigger"] {
       min-height: 44px;
+    }
+
+    /* Nút icon vuông: thiếu min-width thì trên cảm ứng nó thành 44×32.
+     *
+     * ⚠️ Bắt theo `data-size`, KHÔNG kèm `[data-slot="button"]`. Lý do đo được:
+     * Radix `<XTrigger asChild>` hợp nhất props và **ghi đè `data-slot`** của
+     * Button bằng slot của chính nó — nút hamburger render ra
+     * `data-slot="sheet-trigger" data-size="icon"`, nên cặp selector cũ không
+     * khớp và luật 44px im lặng biến mất trên >8 nút icon (sheet/dropdown/
+     * dialog trigger). `data-size` sống sót qua `asChild`, và trong toàn bộ
+     * `src/` chỉ Button phát ra giá trị bắt đầu bằng `icon`
+     * (avatar/select/switch chỉ có `sm|default|lg`) nên selector vẫn đủ hẹp. */
+    [data-size^="icon"] {
+      min-width: 44px;
+    }
+
+    /* Link đóng vai control (chiếm cả hàng danh sách, nút dạng `asChild`, tab,
+     * link quay lại) phải đủ 44px. */
+    a[href] {
+      min-height: 44px;
+    }
+
+    /* ...nhưng link chữ chạy trong đoạn văn thì KHÔNG: kéo cao dòng chữ chứa
+     * nó là làm hỏng đoạn văn, không phải cải thiện touch target.
+     * Ghi chú kỹ thuật: `min-height` vốn không tác dụng lên inline box
+     * (CSS 2.1 §10.5), nên rule này chỉ thật sự cần cho link `inline-flex`
+     * nằm giữa đoạn văn — nhưng để tường minh thì tốt hơn là để ngầm định. */
+    p a[href] {
+      min-height: 0;
     }
   }
 }

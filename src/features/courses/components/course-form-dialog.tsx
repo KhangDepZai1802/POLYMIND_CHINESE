@@ -67,14 +67,16 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-destructive text-xs">{message}</p>;
 }
 
+/**
+ * ⛔ **Cố ý KHÔNG có prop `trigger`** — `UX-UIUX-M00-025`/`DS-051`. Xem ghi chú
+ * đầy đủ ở `class-form-dialog.tsx`.
+ */
 export function CourseFormDialog({
   levels,
   course,
-  trigger,
 }: {
   levels: Level[];
   course?: Course;
-  trigger?: React.ReactNode;
 }) {
   const isEdit = Boolean(course);
   const [open, setOpen] = useState(false);
@@ -92,7 +94,9 @@ export function CourseFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? (
+        {isEdit ? (
+          <Button variant="outline">Sửa khóa học</Button>
+        ) : (
           <Button>
             <Plus className="size-4" aria-hidden />
             Thêm khóa học

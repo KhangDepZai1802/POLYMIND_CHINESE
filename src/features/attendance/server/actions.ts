@@ -63,6 +63,27 @@ export async function saveAttendanceAction(
     records.push(parsed.data);
   }
 
+  // Ghi chú KHÔNG được rơi im lặng.
+  //
+  // Vòng lặp trên chỉ đọc field bắt đầu bằng `status_`; ai không có trạng thái
+  // thì `note_<id>` của họ không bao giờ được đọc tới. Giáo viên gõ "xin nghỉ,
+  // mẹ báo ốm" rồi bấm Lưu mà quên chọn trạng thái → chữ biến mất, không một
+  // cảnh báo nào. Ghi chú sống chung bản ghi với trạng thái nên không thể lưu
+  // riêng; thứ sửa được là ĐỪNG IM LẶNG: chặn cả lượt lưu và nói rõ phải làm gì.
+  // Form không reload khi action trả lỗi, nên chữ vừa gõ vẫn còn nguyên trong ô.
+  let orphanNotes = 0;
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith("note_") || typeof value !== "string") continue;
+    if (value.trim() === "") continue;
+    if (!formData.get(`status_${key.slice("note_".length)}`)) orphanNotes += 1;
+  }
+
+  if (orphanNotes > 0) {
+    return {
+      error: `${orphanNotes} học viên có ghi chú nhưng chưa chọn trạng thái. Ghi chú chỉ lưu được kèm trạng thái — hãy chọn trạng thái cho họ, hoặc xóa ghi chú, rồi lưu lại.`,
+    };
+  }
+
   if (records.length === 0) {
     return { error: "Chưa chọn trạng thái cho học viên nào." };
   }

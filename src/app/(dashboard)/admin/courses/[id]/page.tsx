@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollableNav } from "@/components/shared/scrollable-nav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireRole } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/dates";
@@ -57,7 +58,7 @@ export default async function CourseDetailPage({
     <>
       <Link
         href="/admin/courses"
-        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
+        className="text-text-secondary hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Danh sách khóa học
@@ -67,23 +68,21 @@ export default async function CourseDetailPage({
         title={course.title}
         description={course.title_en ?? undefined}
         action={
-          <CourseFormDialog
-            levels={levels}
-            course={course}
-            trigger={<Button variant="outline">Sửa khóa học</Button>}
-          />
+          /* ⛔ KHÔNG truyền `trigger` từ đây — `UX-UIUX-M00-025`. Xem ghi chú
+             đầy đủ ở `admin/classes/[id]/page.tsx`. */
+          <CourseFormDialog levels={levels} course={course} />
         }
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="bg-muted rounded px-2 py-1 font-mono text-xs font-medium">
+        <span className="bg-muted rounded px-2 py-1 font-mono text-sm font-medium">
           {course.code}
         </span>
         <StatusBadge
           label={COURSE_STATUS_LABELS[course.status]}
           tone={COURSE_STATUS_TONE[course.status]}
         />
-        <span className="text-muted-foreground text-sm">
+        <span className="text-text-secondary text-sm">
           {COURSE_PROGRAM_LABELS[course.program]}
           {course.course_type
             ? ` · ${COURSE_TYPE_LABELS[course.course_type]}`
@@ -93,35 +92,45 @@ export default async function CourseDetailPage({
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="curriculum">
-            Giáo trình ({lessonCount})
-          </TabsTrigger>
-          <TabsTrigger value="materials">
-            Tài liệu ({materials.length})
-          </TabsTrigger>
-          <TabsTrigger value="classes">
-            Lớp đã mở ({classes.length})
-          </TabsTrigger>
-        </TabsList>
+        {/*
+         * Dải 4 tab đo được **450px** trong khung 360px → trang tràn 106px.
+         * Cho cuộn ngang và **phải tới được bằng bàn phím**: Radix dùng roving
+         * tabindex nên "bên trong có nút" không cứu được vùng cuộn — đúng lỗi
+         * `UX-UIUX-M21-009` đã sửa ở khu học viên và lặp lại ở `P17-T5`.
+         * Dùng lại nguyên mẫu `/student/class` để hai khu không lệch nhau.
+         */}
+        <ScrollableNav label="Nội dung khóa học">
+          <TabsList className="min-w-max">
+            <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+            <TabsTrigger value="curriculum">
+              Giáo trình ({lessonCount})
+            </TabsTrigger>
+            <TabsTrigger value="materials">
+              Tài liệu ({materials.length})
+            </TabsTrigger>
+            <TabsTrigger value="classes">
+              Lớp đã mở ({classes.length})
+            </TabsTrigger>
+          </TabsList>
+        </ScrollableNav>
 
         <TabsContent value="overview" className="mt-4">
+          {/* `min-w-0`: DS-039 — đo được trang tràn 106px @360 trước khi sửa. */}
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardContent className="space-y-3 p-5">
-                <h3 className="font-semibold">Thông tin chương trình</h3>
+                <h2 className="font-semibold">Thông tin chương trình</h2>
                 <Field label="Đối tượng" value={course.target_audience} />
                 <Field label="Mục tiêu" value={course.objectives} />
                 <Field label="Mô tả" value={course.description} />
               </CardContent>
             </Card>
 
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <Card>
                 <CardContent className="space-y-3 p-5">
-                  <h3 className="font-semibold">Giá trị mặc định</h3>
-                  <p className="text-muted-foreground -mt-2 text-xs">
+                  <h2 className="font-semibold">Giá trị mặc định</h2>
+                  <p className="text-text-secondary -mt-2 text-sm">
                     Chỉ là gợi ý khi mở lớp. Số buổi thật chốt ở từng lớp.
                   </p>
                   <Field
@@ -153,7 +162,7 @@ export default async function CourseDetailPage({
 
               <Card>
                 <CardContent className="space-y-3 p-5">
-                  <h3 className="font-semibold">Điều kiện hoàn thành</h3>
+                  <h2 className="font-semibold">Điều kiện hoàn thành</h2>
                   <Field
                     label="Chuyên cần tối thiểu"
                     value={`${course.completion_min_attendance_rate}%`}
@@ -210,7 +219,7 @@ export default async function CourseDetailPage({
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs font-medium">
+                            <span className="font-mono text-sm font-medium">
                               {c.code}
                             </span>
                             <StatusBadge
@@ -219,7 +228,7 @@ export default async function CourseDetailPage({
                             />
                           </div>
                           <p className="mt-1 truncate font-medium">{c.name}</p>
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-text-secondary text-sm">
                             {DELIVERY_MODE_LABELS[c.delivery_mode]} · Sĩ số tối
                             đa {c.capacity} · Khai giảng{" "}
                             {formatDate(c.start_date)}
@@ -247,7 +256,7 @@ function Field({
 }) {
   return (
     <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="text-text-secondary text-sm">{label}</p>
       <p className="text-sm whitespace-pre-line">{value ?? "—"}</p>
     </div>
   );

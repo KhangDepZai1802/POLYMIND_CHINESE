@@ -9,6 +9,7 @@ vi.mock("@/features/attendance/server/actions", () => ({
 }));
 
 import { AttendanceRoster } from "@/features/attendance/components/attendance-roster";
+import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -40,9 +41,13 @@ const ROSTER = [
   },
 ];
 
+// `AttendanceRoster` hỏi lại trước khi đánh dấu hàng loạt ghi đè lựa chọn đã có
+// → cần `ConfirmationProvider`, đúng như `(dashboard)/layout.tsx` bọc ngoài thật.
 function renderRoster() {
   const { container } = render(
-    <AttendanceRoster sessionId={SESSION_ID} roster={ROSTER} />,
+    <ConfirmationProvider>
+      <AttendanceRoster sessionId={SESSION_ID} roster={ROSTER} />
+    </ConfirmationProvider>,
   );
   const form = container.querySelector("form");
   if (!form) throw new Error("Không tìm thấy form điểm danh");
@@ -102,5 +107,69 @@ describe("AttendanceRoster — chưa chọn ≠ vắng", () => {
     await user.click(within(rowA).getByRole("button", { name: /Có mặt/ }));
 
     expect(screen.getByText(/còn 2 người chưa điểm danh/i)).toBeInTheDocument();
+  });
+});
+
+describe("AttendanceRoster — đánh dấu nhanh không được nuốt lựa chọn tay", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function rowOf(name: string) {
+    const row = screen.getByText(name).closest("li");
+    if (!row) throw new Error(`Không tìm thấy dòng của ${name}`);
+    return row;
+  }
+
+  it("danh sách chưa ai được chọn → bấm là ăn ngay, KHÔNG hỏi lại", async () => {
+    const user = userEvent.setup();
+    const { payload } = renderRoster();
+
+    await user.click(screen.getByRole("button", { name: /Tất cả có mặt/ }));
+
+    // Nút này sinh ra để BỚT thao tác. Hỏi lại khi không có gì để mất là phản tác dụng.
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(payload()[`status_${ENROLLMENT_A}`]).toBe("present");
+  });
+
+  it("đã điểm danh tay rồi lỡ chạm → hỏi lại, chọn Giữ nguyên thì không mất gì", async () => {
+    const user = userEvent.setup();
+    const { payload } = renderRoster();
+
+    await user.click(within(rowOf("Trần Thị B")).getByRole("button", { name: /^Vắng$/ }));
+    await user.click(screen.getByRole("button", { name: /Tất cả có mặt/ }));
+    await user.click(await screen.findByRole("button", { name: "Giữ nguyên" }));
+
+    const sent = payload();
+    expect(sent[`status_${ENROLLMENT_B}`]).toBe("absent");
+    // Huỷ nghĩa là KHÔNG có gì xảy ra — không được âm thầm đánh dấu người khác.
+    expect(sent[`status_${ENROLLMENT_A}`]).toBeUndefined();
+    expect(sent[`status_${ENROLLMENT_C}`]).toBeUndefined();
+  });
+
+  it("chọn Ghi đè thì mới thật sự ghi đè", async () => {
+    const user = userEvent.setup();
+    const { payload } = renderRoster();
+
+    await user.click(within(rowOf("Trần Thị B")).getByRole("button", { name: /^Vắng$/ }));
+    await user.click(screen.getByRole("button", { name: /Tất cả có mặt/ }));
+    await user.click(await screen.findByRole("button", { name: "Ghi đè" }));
+
+    const sent = payload();
+    expect(sent[`status_${ENROLLMENT_A}`]).toBe("present");
+    expect(sent[`status_${ENROLLMENT_B}`]).toBe("present");
+    expect(sent[`status_${ENROLLMENT_C}`]).toBe("present");
+  });
+});
+
+describe("AttendanceRoster — ô ghi chú phân biệt được theo học viên", () => {
+  it("mỗi ô ghi chú mang tên học viên của nó, không phải 20 ô trùng tên", () => {
+    renderRoster();
+
+    // Placeholder giống hệt nhau ở mọi hàng → trình đọc màn hình không biết ô nào của ai.
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho Nguyễn Văn A" }),
+    ).toHaveAttribute("name", `note_${ENROLLMENT_A}`);
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho Trần Thị B" }),
+    ).toHaveAttribute("maxlength", "300");
   });
 });

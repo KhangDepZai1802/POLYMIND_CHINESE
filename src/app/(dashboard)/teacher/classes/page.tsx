@@ -47,13 +47,21 @@ export default async function TeacherClassesPage() {
             ).length;
 
             return (
-              <Link key={classRecord.id} href={`/teacher/classes/${classRecord.id}`}>
-                <Card className="h-full transition-colors hover:border-primary/40 hover:bg-muted/20">
+              /* `min-w-0`: grid item mặc định `min-width: auto` nên không co
+                 được dưới min-content. Tên khóa và địa điểm dài ("Tại doanh
+                 nghiệp · Trụ sở Vietcombank") đẩy thẻ rộng 414px trong khung
+                 360px — tràn 70px ở 360 và 40px ở 390 (`P17-T5`). */
+              <Link
+                key={classRecord.id}
+                href={`/teacher/classes/${classRecord.id}`}
+                className="focus-visible:ring-ring block min-w-0 rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <Card className="hover:border-primary-300 hover:bg-primary-50 h-full transition-colors">
                   <CardContent className="space-y-4 p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-semibold">
+                          <span className="font-mono text-sm font-semibold">
                             {classRecord.code}
                           </span>
                           <StatusBadge
@@ -61,8 +69,15 @@ export default async function TeacherClassesPage() {
                             tone={CLASS_STATUS_TONE[classRecord.status]}
                           />
                         </div>
-                        <h2 className="truncate font-semibold">{classRecord.name}</h2>
-                        <p className="text-muted-foreground mt-1 truncate text-sm">
+                        {/* Không `truncate`: đây là trang có nhiệm vụ DUY NHẤT
+                            là nhận diện lớp, mà phần bị cắt lại đúng là hậu tố
+                            phân biệt — ở 360px hai lớp ra thành "VCB — Đàm phán
+                            tài chính (Ban Gi…" và "VCB — Tiếng Trung ngân hàng…",
+                            mất "(Ban Giám đốc)" / "(Lớp 02)". Màn chi tiết và
+                            khối "Học viên cần chú ý" ở `/teacher` đều đã xuống
+                            dòng đủ chữ; đây là chỗ lệch (`P17-T5`). */}
+                        <h2 className="font-semibold">{classRecord.name}</h2>
+                        <p className="text-muted-foreground mt-1 text-sm">
                           {classRecord.course?.title ?? "Chưa có khóa học"}
                         </p>
                       </div>

@@ -1,8 +1,12 @@
+import { BrainCircuit, Layers } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentFlashcardReader } from "@/features/flashcards/components/student-flashcard-reader";
-import { getStudentFlashcardDeck } from "@/features/flashcards/server/queries";
+import {
+  getStudentFlashcardDeck,
+  getStudentStarredPageIds,
+} from "@/features/flashcards/server/queries";
 import { getMyEnrollment } from "@/features/student/server/queries";
 import { WrongAnswerReview } from "@/features/wrong-answer-review/components/wrong-answer-review";
 import { getMyWrongAnswerReviews } from "@/features/wrong-answer-review/server/queries";
@@ -17,7 +21,12 @@ export default async function StudentReviewPage() {
     getMyWrongAnswerReviews(),
   ]);
   const course = enrollment?.class.course ?? null;
-  const deck = course ? await getStudentFlashcardDeck(course.id) : null;
+  const [deck, starredPageIds] = course
+    ? await Promise.all([
+        getStudentFlashcardDeck(course.id),
+        getStudentStarredPageIds(),
+      ])
+    : [null, []];
 
   return (
     <>
@@ -26,16 +35,36 @@ export default async function StudentReviewPage() {
         description="Ôn từ vựng theo từng buổi và luyện lại các câu bạn từng làm sai."
       />
       <Tabs defaultValue="flashcards" className="space-y-4">
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="min-w-max">
-            <TabsTrigger value="flashcards">Flashcard Từ Vựng</TabsTrigger>
-            <TabsTrigger value="wrong-answers">Ôn Tập Câu Sai</TabsTrigger>
+        <nav
+          aria-label="Hình thức ôn tập"
+          tabIndex={0}
+          className="border-student-sky-border bg-student-sky-surface focus-visible:ring-ring overflow-x-auto rounded-xl border p-1 focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <TabsList className="min-w-max bg-transparent p-0">
+            <TabsTrigger
+              value="flashcards"
+              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+            >
+              <Layers className="size-4" aria-hidden />
+              Flashcard Từ Vựng
+            </TabsTrigger>
+            <TabsTrigger
+              value="wrong-answers"
+              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+            >
+              <BrainCircuit className="size-4" aria-hidden />
+              Ôn Tập Câu Sai
+              <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
+                {wrongAnswers.length}
+              </span>
+            </TabsTrigger>
           </TabsList>
-        </div>
+        </nav>
         <TabsContent value="flashcards">
           <StudentFlashcardReader
             deck={deck}
             courseName={course?.title ?? null}
+            starredPageIds={starredPageIds}
           />
         </TabsContent>
         <TabsContent value="wrong-answers">

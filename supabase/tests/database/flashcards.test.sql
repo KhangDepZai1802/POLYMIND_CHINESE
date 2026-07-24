@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(33);
+select plan(34);
 
 select is(
   (
@@ -131,7 +131,8 @@ values
   ('66600000-0000-4000-8000-000000000002', '66500000-0000-4000-8000-000000000001', 2, 'Buổi 2');
 
 insert into public.flashcard_pages (
-  id, section_id, kind, order_index, term,
+  id, section_id, kind, order_index,
+  hanzi, pinyin_syllables, meaning_vi,
   front_image_path, back_image_path, audio_path,
   front_alt, back_alt
 )
@@ -139,7 +140,7 @@ values
   (
     '66700000-0000-4000-8000-000000000001',
     '66600000-0000-4000-8000-000000000001',
-    'session_cover', 0, null,
+    'session_cover', 0, null, null, null,
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/front-a.png',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/back-a.png',
     null,
@@ -148,7 +149,7 @@ values
   (
     '66700000-0000-4000-8000-000000000002',
     '66600000-0000-4000-8000-000000000001',
-    'vocabulary', 1, '你好',
+    'vocabulary', 1, '你好', 'nǐ hǎo', 'Xin chào',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000002/front-b.png',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000002/back-b.png',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000002/audio-b.mp3',
@@ -157,7 +158,7 @@ values
   (
     '66700000-0000-4000-8000-000000000003',
     '66600000-0000-4000-8000-000000000001',
-    'vocabulary', 2, '谢谢',
+    'vocabulary', 2, '谢谢', 'xiè xie', 'Cảm ơn',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000003/front-c.png',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000003/back-c.png',
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000003/audio-c.mp3',
@@ -174,12 +175,10 @@ select
     'mimetype', case when media.path like '%.mp3' then 'audio/mpeg' else 'image/png' end,
     'size', 1024
   )
+-- `media_paths` là nguồn sự thật duy nhất về media của trang (migration 70),
+-- nên fixture storage dựng thẳng từ nó thay vì liệt kê lại từng cột.
 from (
-  select front_image_path as path from public.flashcard_pages
-  union all
-  select back_image_path from public.flashcard_pages
-  union all
-  select audio_path from public.flashcard_pages where audio_path is not null
+  select unnest(media_paths) as path from public.flashcard_pages
 ) media;
 
 select is(
@@ -211,7 +210,7 @@ select throws_ok(
   'không publish được buổi thiếu trang'
 );
 select throws_ok(
-  $$update public.flashcard_pages set term = 'Bị sửa' where id = '66700000-0000-4000-8000-000000000002'$$,
+  $$update public.flashcard_pages set hanzi = 'Bị sửa' where id = '66700000-0000-4000-8000-000000000002'$$,
   'P0001',
   'Đưa buổi flashcard về nháp trước khi sửa trang',
   'trang của section đã publish là bất biến'
@@ -335,12 +334,23 @@ select is(
   1,
   'archive tự compact thứ tự page còn lại'
 );
-select throws_ok(
+-- ⚠️ Luật "thẻ từ vựng phải có audio" ĐÃ CHUYỂN CHỖ ở migration 72: từ CHECK
+-- mức hàng sang `validate_flashcard_section_publish`. Lý do: đường nhập hàng
+-- loạt (`P16-T4`) không nhập được audio, nên thẻ phải tồn tại được khi buổi còn
+-- nháp. Lời hứa với học viên không đổi — buổi nháp thì học viên không đọc được.
+select lives_ok(
   $$update public.flashcard_pages set audio_path = null where id = '66700000-0000-4000-8000-000000000002'$$,
-  '23514',
-  null,
-  'trang từ vựng bắt buộc có audio phát âm'
+  'thẻ từ vựng ĐƯỢC PHÉP thiếu audio khi buổi còn nháp'
 );
+select throws_ok(
+  $$select public.publish_flashcard_section('66600000-0000-4000-8000-000000000001')$$,
+  'P0001',
+  'Còn 1 thẻ từ vựng chưa có audio phát âm',
+  'nhưng KHÔNG publish được buổi còn thẻ thiếu audio'
+);
+update public.flashcard_pages
+set audio_path = '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000002/audio-b.mp3'
+where id = '66700000-0000-4000-8000-000000000002';
 select throws_ok(
   $$update public.flashcard_pages
     set audio_path = '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/audio-a.mp3'

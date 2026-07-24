@@ -15,7 +15,7 @@ export async function NotificationPage({ role }: { role: UserRole }) {
     <>
       <PageHeader
         title="Thông báo"
-        description="Announcement liên quan, cập nhật dành riêng cho tài khoản và tùy chọn nhận thông báo in-app."
+        description="Thông báo chung liên quan, cập nhật dành riêng cho tài khoản và tùy chọn nhận thông báo trong ứng dụng."
       />
       <AnnouncementFeed announcements={announcements} />
       <NotificationCenter {...data} role={role} />

@@ -22,7 +22,10 @@ export function NotificationBell({
       >
         <Bell aria-hidden />
         {unreadCount > 0 && (
-          <span className="bg-destructive text-destructive-foreground absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-4 font-bold">
+          // Dùng --brand-red (accent thương hiệu) chứ không phải --destructive:
+          // số thông báo chưa đọc là một con số đếm, không phải trạng thái lỗi.
+          // Cùng sắc đỏ, chữ trắng trên #C8102E đạt 5.88:1.
+          <span className="bg-brand-red text-brand-red-foreground absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full px-1 text-xs leading-4 font-bold">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}

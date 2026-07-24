@@ -96,6 +96,20 @@ export const ASSESSMENT_TYPE_LABELS: Record<Enums["assessment_type"], string> =
     custom: "Khác",
   };
 
+export const EXERCISE_DELIVERY_STATUS_LABELS: Record<
+  Enums["exercise_delivery_status"],
+  string
+> = {
+  draft: "Nháp",
+  scheduled: "Đã lên lịch",
+  open: "Đang mở",
+  closed: "Đã đóng",
+  grading: "Đang chấm",
+  results_published: "Đã công bố kết quả",
+  cancelled: "Đã hủy",
+  archived: "Lưu trữ",
+};
+
 export const EVALUATION_RATING_LABELS: Record<
   Enums["evaluation_rating"],
   string
@@ -209,6 +223,20 @@ export const SESSION_STATUS_TONE: Record<Enums["session_status"], BadgeTone> = {
 export const COURSE_STATUS_TONE: Record<Enums["course_status"], BadgeTone> = {
   draft: "neutral",
   active: "success",
+  archived: "neutral",
+};
+
+export const EXERCISE_DELIVERY_STATUS_TONE: Record<
+  Enums["exercise_delivery_status"],
+  BadgeTone
+> = {
+  draft: "neutral",
+  scheduled: "neutral",
+  open: "info",
+  closed: "warning",
+  grading: "warning",
+  results_published: "success",
+  cancelled: "danger",
   archived: "neutral",
 };
 

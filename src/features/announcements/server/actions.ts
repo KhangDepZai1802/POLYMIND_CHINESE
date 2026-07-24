@@ -46,7 +46,7 @@ export async function saveAnnouncementAction(
   return {
     success: parsed.data.announcement_id
       ? "Đã cập nhật bản nháp."
-      : "Đã tạo bản nháp announcement.",
+      : "Đã tạo bản nháp thông báo chung.",
   };
 }
 
@@ -56,7 +56,7 @@ export async function publishAnnouncementAction(
 ): Promise<ActionState> {
   await requireRole("super_admin");
   const parsed = idSchema.safeParse(formData.get("id"));
-  if (!parsed.success) return { error: "Mã announcement không hợp lệ." };
+  if (!parsed.success) return { error: "Mã thông báo chung không hợp lệ." };
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("publish_announcement", {
@@ -74,7 +74,7 @@ export async function expireAnnouncementAction(
 ): Promise<ActionState> {
   await requireRole("super_admin");
   const parsed = idSchema.safeParse(formData.get("id"));
-  if (!parsed.success) return { error: "Mã announcement không hợp lệ." };
+  if (!parsed.success) return { error: "Mã thông báo chung không hợp lệ." };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("expire_announcement", {
@@ -83,5 +83,5 @@ export async function expireAnnouncementAction(
 
   if (error) return { error: dbErrorToMessage(error) };
   revalidateAnnouncementViews();
-  return { success: "Announcement đã hết hiệu lực." };
+  return { success: "Thông báo chung đã hết hiệu lực." };
 }

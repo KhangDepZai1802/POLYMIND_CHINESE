@@ -61,9 +61,14 @@ const basePage = {
   archived_at: null,
   created_at: "2026-07-21T00:00:00Z",
   updated_at: "2026-07-21T00:00:00Z",
+  media_paths: ["front.png", "back.png"],
+  sense_breakdown: [],
+  example_sentences: [],
+  common_phrases: [],
   frontUrl: null,
   backUrl: null,
   audioUrl: null,
+  mediaUrls: {},
 } as const;
 
 const deckWithPages = {
@@ -77,7 +82,9 @@ const deckWithPages = {
           id: "55555555-5555-4555-8555-555555555551",
           kind: "session_cover",
           order_index: 0,
-          term: null,
+          hanzi: null,
+          pinyin_syllables: null,
+          meaning_vi: null,
           audio_path: null,
         },
         {
@@ -85,7 +92,9 @@ const deckWithPages = {
           id: "55555555-5555-4555-8555-555555555552",
           kind: "vocabulary",
           order_index: 1,
-          term: "你好",
+          hanzi: "你好",
+          pinyin_syllables: "nǐ hǎo",
+          meaning_vi: "Xin chào",
           audio_path: "audio.mp3",
         },
       ],

@@ -263,14 +263,22 @@ Nguyên tắc bất di bất dịch:
 
 ### BR-13 — Flashcard và ôn câu sai
 
-- Mỗi Course có tối đa một deck flashcard; nội dung chia theo **buổi số 1…N**. Mỗi buổi có đúng một trang mở đầu và các trang từ vựng theo thứ tự. Mỗi trang được publish phải có **ảnh mặt trước + ảnh mặt sau**; riêng trang từ vựng bắt buộc thêm **từ/cụm từ + audio phát âm**, còn trang mở đầu không có audio (ràng buộc check ở DB). Mô tả ảnh (alt) do server sinh từ từ vựng/tên buổi, admin không nhập. Media nằm trong bucket private.
+- Mỗi Course có tối đa một deck flashcard; nội dung chia theo **buổi số 1…N**. Mỗi buổi có đúng một trang mở đầu và các trang từ vựng theo thứ tự. Trang mở đầu bắt buộc có **hai ảnh** và không có chữ/audio. Trang từ vựng là bản ghi có cấu trúc: **Hán tự + Pinyin tách âm tiết + nghĩa tiếng Việt + audio người thật**, ba danh sách con (Tách nghĩa · Câu ví dụ · Cụm từ thường dùng) và hai ảnh tuỳ chọn; nếu có đủ hai ảnh thì phải là hai file khác nhau. Import hàng loạt được phép tạo thẻ nháp thiếu audio, nhưng DB chặn publish cho tới khi mọi thẻ từ vựng có audio. Mô tả ảnh (alt) do server sinh, admin không nhập. Media nằm trong bucket private; ảnh câu ví dụ đi qua `media_paths` do trigger tổng hợp.
 - Super Admin chọn khóa và buổi khi quản trị, có thể chuẩn bị nháp từng buổi rồi publish. Học viên chỉ thấy buổi đã publish của Course thuộc lớp mình học; teacher/anonymous không có quyền.
 - Ở buổi **nháp**, Super Admin lưu trữ (xóa mềm) được **mọi trang, kể cả trang mở đầu** — thao tác qua cùng một RPC `archive_flashcard_page`. Bỏ trang mở đầu để lại chỗ trống ở vị trí 0 (trang từ vựng giữ nguyên thứ tự, không dồn về 0); buổi thiếu trang mở đầu vẫn sửa được nhưng **không publish được** cho tới khi thêm trang mở đầu mới.
 - Trên màn học viên, trang 1 là trang mở đầu; mũi tên phải lật **toàn bộ flashcard** hiện tại từ phải → trái quanh tâm để sang trang kế, mũi tên trái chạy chiều ngược lại. Đây là hiệu ứng lật flashcard, **không phải lật trang sách và không có gáy làm điểm xoay**. Bấm trực tiếp thẻ lật mặt trước/sau từ dưới → trên quanh tâm; bấm lại quay về mặt trước. Mặt đang xem được lưu riêng theo từng trang: đang ở mặt sau vẫn sang/lùi trang được, và đổi trang không tự ép mặt về trước. Bookmark buổi là các tab đánh dấu trang sách, không dùng dropdown.
+- Học viên có thể ★ thẻ khó của chính mình; khóa chính ghép `(student_id, page_id)` và RPC nhận trạng thái mong muốn bảo đảm idempotent. Xáo trộn chỉ áp dụng cho buổi đang chọn và chỉ giữ trong state React; đăng xuất/đăng nhập lại trở về thứ tự gốc, không ghi DB/`localStorage`/`sessionStorage`.
 - Animation phải dùng được bằng bàn phím/touch, có focus rõ, live text cho screen reader và tắt chuyển động khi `prefers-reduced-motion`.
 - Ôn câu sai chỉ nhận answer có `is_correct = false` từ loại câu **máy chấm được**. `essay_translation` và `speaking` không vào hàng đợi; Nghe/Đọc vẫn vào nếu chính dạng câu đó được DB chấm tự động.
 - Mỗi cặp `(student_id, question_version_id)` có một hàng đợi. Sai thêm thì tăng số lần và mở lại nếu đã thành thạo; làm đúng trong màn ôn thì ghi lịch sử và rời danh sách. Làm sai vẫn ở lại để thử tiếp.
 - Học viên không SELECT trực tiếp Question Bank/answer key. RPC lấy prompt/options đã lọc và chấm trên DB; answer key không đi xuống client. Queue/history chỉ đọc own qua RLS.
+
+### BR-14 — Tốc độ phát audio cho học viên
+
+- Mọi audio do **giáo viên hoặc Super Admin tải lên** và được phát cho học viên trong **Bài tập, Kiểm tra/Thi và Ôn tập (Flashcard + câu sai)** phải cho học viên chọn đúng ba tốc độ: **0.5×, 0.75×, 1×**; mặc định **1×**. Không hiển thị 1.25× hoặc 1.5×.
+- Điều chỉnh tốc độ chỉ diễn ra ở trình phát phía client bằng `HTMLMediaElement.playbackRate`, ưu tiên giữ nguyên cao độ giọng nói (`preservesPitch`). Không tạo bản sao, không chuyển mã và không sửa file gốc trong Storage.
+- Quy tắc áp dụng tại mọi bề mặt học viên nghe lại audio nguồn: lượt làm Bài tập/Thi, kết quả đã công bố, Flashcard và Ôn câu sai. **Không áp dụng cho bản ghi câu Nói do học viên tự thu**, vì đó không phải audio do giáo viên/admin tải lên.
+- Bộ chọn tốc độ phải dùng được bằng bàn phím và cảm ứng, có nhãn truy cập rõ, trạng thái đang chọn nhìn thấy được và touch target tối thiểu 44×44 px trên thiết bị cảm ứng.
 
 ---
 

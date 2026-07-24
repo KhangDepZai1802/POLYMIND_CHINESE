@@ -66,7 +66,7 @@ export function AnnouncementManager({
           <CardContent className="p-0">
             <EmptyState
               icon={Megaphone}
-              title="Chưa có announcement"
+              title="Chưa có thông báo chung"
               description="Soạn bản nháp, kiểm tra phạm vi rồi phát hành tới toàn hệ thống hoặc một lớp."
               action={<AnnouncementDialog classes={classes} />}
             />
@@ -224,11 +224,11 @@ function AnnouncementDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {announcement ? "Sửa bản nháp" : "Soạn announcement"}
+            {announcement ? "Sửa bản nháp" : "Soạn thông báo chung"}
           </DialogTitle>
           <DialogDescription>
-            Announcement là thông tin một chiều. Sau khi phát hành sẽ khóa nội
-            dung để giữ lịch sử.
+            Thông báo chung là thông tin một chiều. Sau khi phát hành sẽ khóa
+            nội dung để giữ lịch sử.
           </DialogDescription>
         </DialogHeader>
 
@@ -265,12 +265,17 @@ function AnnouncementDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Nơi nhận *</Label>
+            <Label htmlFor={`announcement-audience-${announcement?.id ?? "new"}`}>
+              Nơi nhận *
+            </Label>
             <Select
               name="class_id"
               defaultValue={announcement?.class_id ?? "all"}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id={`announcement-audience-${announcement?.id ?? "new"}`}
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

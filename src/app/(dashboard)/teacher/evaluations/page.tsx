@@ -30,9 +30,8 @@ export default async function TeacherEvaluationsPage({
   // RLS quy về `class_teachers` — lớp không có ở đây thì gõ thẳng `?class=` cũng
   // không mở được.
   const classes = await getClassOptions();
-  const selected = classes.find((item) => item.id === requestedClassId)
-    ? classes.find((item) => item.id === requestedClassId)
-    : classes[0];
+  const selected =
+    classes.find((item) => item.id === requestedClassId) ?? classes[0];
 
   const roster = selected ? await getEvaluationRoster(selected.id) : [];
 
@@ -65,7 +64,7 @@ export default async function TeacherEvaluationsPage({
       ) : (
         <>
           <div className="mb-5 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs font-semibold">
+            <span className="font-mono text-sm font-semibold">
               {selected.code}
             </span>
             <StatusBadge
@@ -111,7 +110,12 @@ export default async function TeacherEvaluationsPage({
                           <p className="truncate font-medium">
                             {enrollment.student?.full_name ?? "Học viên"}
                           </p>
-                          <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 text-xs">
+                          {/*
+                            Mã học viên, trạng thái ghi danh và số bản đánh giá là
+                            thông tin nghiệp vụ giáo viên phải đọc được, không phải
+                            chú thích trang trí — `text-sm` như M25/M26/M27 đã chốt.
+                          */}
+                          <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 text-sm">
                             <span>{enrollment.student?.student_code}</span>
                             <span>·</span>
                             <span>
@@ -126,15 +130,24 @@ export default async function TeacherEvaluationsPage({
                               <>
                                 <span>·</span>
                                 <span className="inline-flex items-center gap-1">
-                                  <Lock className="size-3" aria-hidden />
+                                  <Lock className="size-4" aria-hidden />
                                   {internalNotes} nội bộ
                                 </span>
                               </>
                             )}
                           </p>
                         </div>
+                        {/*
+                          Cả roster có N nút cùng chữ "Mở hồ sơ". Trình đọc màn
+                          hình liệt kê nút theo tên nên nghe ra N mục trùng nhau;
+                          thêm tên học viên vào tên gọi được. Vẫn CHỨA nguyên chữ
+                          nhìn thấy nên không phạm WCAG 2.5.3 (Label in Name).
+                        */}
                         <Button asChild size="sm" variant="outline">
-                          <Link href={`/teacher/evaluations/${enrollment.id}`}>
+                          <Link
+                            href={`/teacher/evaluations/${enrollment.id}`}
+                            aria-label={`Mở hồ sơ ${enrollment.student?.full_name ?? "học viên"}`}
+                          >
                             Mở hồ sơ
                           </Link>
                         </Button>

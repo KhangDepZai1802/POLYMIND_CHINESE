@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Plus } from "lucide-react";
+import { AlertCircle, Pencil, Plus } from "lucide-react";
 
 import {
   createClassAction,
@@ -51,14 +51,22 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-destructive text-xs">{message}</p>;
 }
 
+/**
+ * ⛔ **Cố ý KHÔNG có prop `trigger`** (`UX-UIUX-M00-025`, `DS-051`).
+ *
+ * Mọi chỗ gọi component này đều là Server Component. Nhận một React element từ
+ * đó rồi đặt vào `<DialogTrigger asChild>` thì element phải đi qua ranh giới
+ * RSC, và Radix `Children.only()` **có lúc** không thấy đúng một phần tử → ném
+ * *"Primitive.button failed to slot onto its children"* → React bỏ cả cây →
+ * `(dashboard)/error.tsx`. Đo được **47/120 lượt hỏng (39%)**; bỏ prop đi thì
+ * **0/120**. Nút mở dialog vì vậy dựng ngay tại đây, suy từ `isEdit`.
+ */
 export function ClassFormDialog({
   courses,
   classRecord,
-  trigger,
 }: {
   courses: CourseOption[];
   classRecord?: ClassRecord;
-  trigger?: React.ReactNode;
 }) {
   const isEdit = Boolean(classRecord);
   const [open, setOpen] = useState(false);
@@ -71,7 +79,12 @@ export function ClassFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? (
+        {isEdit ? (
+          <Button variant="outline">
+            <Pencil className="size-4" aria-hidden />
+            Sửa lớp
+          </Button>
+        ) : (
           <Button>
             <Plus className="size-4" aria-hidden />
             Mở lớp mới

@@ -367,9 +367,14 @@ function PaymentDialog({ invoice }: { invoice: TuitionInvoiceRecord }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Phương thức *</Label>
+              <Label htmlFor={`payment-method-${invoice.id}`}>
+                Phương thức *
+              </Label>
               <Select name="method" defaultValue="bank_transfer" required>
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  id={`payment-method-${invoice.id}`}
+                  className="w-full"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -572,7 +577,9 @@ function InvoiceDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label>Học viên *</Label>
+              <Label htmlFor={`invoice-student-${invoice?.id ?? "new"}`}>
+                Học viên *
+              </Label>
               <Select
                 name="student_id"
                 value={studentId}
@@ -582,7 +589,10 @@ function InvoiceDialog({
                 }}
                 required
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  id={`invoice-student-${invoice?.id ?? "new"}`}
+                  className="w-full"
+                >
                   <SelectValue placeholder="Chọn học viên" />
                 </SelectTrigger>
                 <SelectContent>
@@ -597,13 +607,18 @@ function InvoiceDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label>Ghi danh / lớp liên quan</Label>
+              <Label htmlFor={`invoice-enrollment-${invoice?.id ?? "new"}`}>
+                Ghi danh / lớp liên quan
+              </Label>
               <Select
                 name="enrollment_id"
                 value={enrollmentId}
                 onValueChange={setEnrollmentId}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  id={`invoice-enrollment-${invoice?.id ?? "new"}`}
+                  className="w-full"
+                >
                   <SelectValue placeholder="Không gắn ghi danh" />
                 </SelectTrigger>
                 <SelectContent>

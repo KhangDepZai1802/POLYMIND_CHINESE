@@ -185,7 +185,7 @@ export function QuestionPicker({
                           {q.current_version!.prompt_text}
                         </p>
                         {isAlreadySelected && (
-                          <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                          <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-700">
                             <CheckCircle2 className="size-3.5" aria-hidden />
                             Câu này đã được chọn vào bộ này rồi
                           </p>

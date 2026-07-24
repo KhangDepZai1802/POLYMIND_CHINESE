@@ -17,7 +17,7 @@ export function AnnouncementFeed({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Megaphone className="size-4" aria-hidden />
-          Announcement đang hiệu lực
+          Thông báo chung đang hiệu lực
         </CardTitle>
       </CardHeader>
       <CardContent>

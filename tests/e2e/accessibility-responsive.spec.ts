@@ -10,7 +10,7 @@ const accounts = [
 async function login(page: Page, email: string, path: string) {
   await page.goto("/login");
   await page.getByLabel("Tên đăng nhập").fill(email);
-  await page.getByLabel("Mật khẩu").fill("Polymind@2026");
+  await page.getByLabel("Mật khẩu", { exact: true }).fill("Polymind@2026");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await page.waitForURL(`**${path}`);
 }
@@ -22,15 +22,31 @@ async function expectWcagAA(page: Page) {
   expect(results.violations).toEqual([]);
 }
 
+/* Ngưỡng đi theo LOẠI CON TRỎ, đúng như `DS-013` đã chốt:
+ *
+ *   - Cảm ứng (`pointer: coarse`) → **44×44**. Ngón tay không nhắm chính xác
+ *     được; đây là luật `globals.css` đang ép và là chỗ lỗi thật hay xuất hiện.
+ *   - Chuột (`pointer: fine`) → **24×24**, tức WCAG 2.5.8 Target Size (Minimum),
+ *     mức AA. Bản 44px là 2.5.5 Enhanced — mức **AAA**, và `DS-013` đã cố ý
+ *     KHÔNG áp cho chuột: thang 32/36/40/44 tồn tại để tạo phân cấp kích thước
+ *     trên desktop. Trước `DS-013` cả 8 size đều 44px nên hàm này đo 44 ở mọi
+ *     nơi cũng xanh; sau `DS-013` thì con số 44 cho desktop là luật đã bị thay,
+ *     không phải lỗi giao diện.
+ *
+ * Giữ nguyên tinh thần: vẫn là một ngưỡng có thật của WCAG, chỉ là đúng mức và
+ * đúng ngữ cảnh — không phải nới cho test xanh. */
 async function expectTouchTargets(page: Page) {
+  const coarse = await page.evaluate(() => matchMedia("(pointer: coarse)").matches);
+  const minSize = coarse ? 44 : 24;
+
   const undersized = await page.locator(
     'button:not([disabled]):not([aria-label="Open Next.js Dev Tools"]), input:not([type="hidden"]):not([disabled]), [role="tab"], nav[aria-label^="Điều hướng"] a',
-  ).evaluateAll((elements) =>
+  ).evaluateAll((elements, limit) =>
     elements.flatMap((element) => {
       const rect = element.getBoundingClientRect();
       const style = window.getComputedStyle(element);
       if (style.visibility === "hidden" || style.display === "none" || rect.width === 0) return [];
-      return rect.width < 44 || rect.height < 44
+      return rect.width < limit || rect.height < limit
         ? [{
             element: element.getAttribute("aria-label") || element.textContent?.trim() || element.tagName,
             width: Math.round(rect.width),
@@ -38,8 +54,8 @@ async function expectTouchTargets(page: Page) {
           }]
         : [];
     }),
-  );
-  expect(undersized).toEqual([]);
+  minSize);
+  expect(undersized, `ngưỡng ${minSize}px (${coarse ? "cảm ứng" : "chuột"})`).toEqual([]);
 }
 
 test("WCAG AA, keyboard, touch target và responsive cho cả 3 role", async ({ page }, testInfo) => {

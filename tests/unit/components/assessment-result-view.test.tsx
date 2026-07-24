@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { AssessmentResultView } from "@/features/assessment-results/components/result-view";
@@ -14,23 +14,25 @@ describe("AssessmentResultView", () => {
           final_score: 8,
           max_score: 10,
           published_at: "2026-07-18T06:47:00Z",
-          answers: [{
-            set_item_id: "item-1",
-            order_index: 1,
-            points: 2,
-            question_type: "multiple_choice",
-            prompt_text: "Chọn các số đúng",
-            options: [
-              { option_key: "1", content: "Một" },
-              { option_key: "2", content: "Hai" },
-              { option_key: "3", content: "Ba" },
-            ],
-            answer: { values: ["2"] },
-            score: 1,
-            feedback: "Em cần chọn thêm một đáp án.",
-            answer_key: { values: ["1", "2", "3"] },
-            explanation: "Đây là ba đáp án đúng.",
-          }],
+          answers: [
+            {
+              set_item_id: "item-1",
+              order_index: 1,
+              points: 2,
+              question_type: "multiple_choice",
+              prompt_text: "Chọn các số đúng",
+              options: [
+                { option_key: "1", content: "Một" },
+                { option_key: "2", content: "Hai" },
+                { option_key: "3", content: "Ba" },
+              ],
+              answer: { values: ["2"] },
+              score: 1,
+              feedback: "Em cần chọn thêm một đáp án.",
+              answer_key: { values: ["1", "2", "3"] },
+              explanation: "Đây là ba đáp án đúng.",
+            },
+          ],
         }}
       />,
     );
@@ -40,6 +42,12 @@ describe("AssessmentResultView", () => {
     expect(screen.getByText("Hai")).toBeInTheDocument();
     expect(screen.getByText("Một; Hai; Ba")).toBeInTheDocument();
     expect(screen.getByText("Nhận xét của giáo viên")).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", { name: "Tỷ lệ điểm đạt được" }),
+    ).toHaveAttribute("aria-valuenow", "80");
+    expect(
+      screen.getByRole("heading", { name: "Câu 1", level: 3 }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("graded")).not.toBeInTheDocument();
     expect(screen.queryByText(/"values"/)).not.toBeInTheDocument();
   });
@@ -91,5 +99,10 @@ describe("AssessmentResultView", () => {
     expect(screen.getByText("Audio đề bài")).toBeInTheDocument();
     expect(screen.getByText("Bản ghi âm đã nộp")).toBeInTheDocument();
     expect(container.querySelectorAll("audio")).toHaveLength(2);
+    const speedGroups = screen.getAllByRole("group", {
+      name: /Tốc độ phát/,
+    });
+    expect(speedGroups).toHaveLength(1);
+    expect(within(speedGroups[0]!).getAllByRole("button")).toHaveLength(3);
   });
 });

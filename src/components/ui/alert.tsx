@@ -9,8 +9,12 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "bg-card text-card-foreground",
+        // `text-destructive/90` từng làm chữ mô tả thành `#e03c3c` trên nền
+        // `bg-card` trắng = **4.30:1**, dưới ngưỡng AA 4.5:1 — opacity modifier
+        // phá đúng cái contrast mà token `--destructive` được chọn để đạt.
+        // Dùng thẳng token: `#dc2626` trên trắng = **4.83:1**. Xem `DS-030`.
         destructive:
-          "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
+          "bg-card text-destructive *:data-[slot=alert-description]:text-destructive [&>svg]:text-current",
       },
     },
     defaultVariants: {

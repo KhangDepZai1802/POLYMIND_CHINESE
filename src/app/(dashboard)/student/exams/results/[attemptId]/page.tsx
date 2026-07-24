@@ -21,7 +21,7 @@ export default async function ExamResultPage({
     return notFound();
   }
   return (
-    <>
+    <div className="mx-auto w-full max-w-5xl">
       <PageHeader
         title="Kết quả kỳ thi"
         description="Kết quả chỉ hiển thị sau khi giáo viên công bố."
@@ -35,6 +35,6 @@ export default async function ExamResultPage({
         }
       />
       <AssessmentResultView kind="exam" result={result as never} />
-    </>
+    </div>
   );
 }

@@ -184,7 +184,15 @@ function EnrollmentRow({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-1">
+        {/*
+         * KHÔNG `shrink-0` ở đây. `shrink-0` và `flex-wrap` triệt tiêu nhau:
+         * `flex-wrap` cho các nút xuống dòng, nhưng `shrink-0` giữ chính khối
+         * này ở bề rộng max-content nên nó **không bao giờ xuống dòng thật**.
+         * Đo được khối này rộng **516px trong khung 360px** → `/admin/classes/[id]`
+         * tràn 193px. Cùng hình dạng lỗi với `UX-UIUX-M16-002`
+         * (`div.flex.shrink-0` rộng 398px trong khung 360px).
+         */}
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
           {transitions.map((next) => (
             <StatusChangeDialog
               key={next}

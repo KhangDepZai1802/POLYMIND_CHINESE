@@ -46,16 +46,25 @@ export default async function TeacherDashboardPage() {
         description="Lịch dạy hôm nay, buổi chưa điểm danh và bài chờ chấm."
       />
 
+      {/* `min-w-0` trên hai cột là bắt buộc, không phải trang trí: grid item mặc
+          định `min-width: auto` nên KHÔNG co được dưới bề rộng min-content của
+          nội dung. Tên lớp và địa điểm dài đẩy cột rộng ra và cả trang tràn
+          ngang 31px ở 360px — đo được ở `P17-T5`, mà thang 3 mốc cũ không bắt
+          vì lỗi chỉ lộ ở bề rộng hẹp nhất. */}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.7fr)]">
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           {/* --- Lịch dạy hôm nay --- */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarClock className="size-4" aria-hidden />
-                Lịch dạy hôm nay ({today.length})
+              {/* asChild → <h2> thật: trang này có 5 khu vực lớn, nếu tiêu đề
+                  chỉ là <div> thì trình đọc màn hình không nhảy khối được. */}
+              <CardTitle asChild className="flex items-center gap-2 text-base">
+                <h2>
+                  <CalendarClock className="size-4" aria-hidden />
+                  Lịch dạy hôm nay ({today.length})
+                </h2>
               </CardTitle>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="text-text-secondary mt-1 text-sm">
                 Giờ hiển thị theo múi giờ Việt Nam.
               </p>
             </CardHeader>
@@ -71,7 +80,7 @@ export default async function TeacherDashboardPage() {
                   {today.map((s) => (
                     <li
                       key={s.id}
-                      className="flex flex-wrap items-center gap-3 px-5 py-4"
+                      className="flex flex-wrap items-center gap-3 px-6 py-4"
                     >
                       <span className="w-24 shrink-0 text-sm font-medium tabular-nums">
                         {formatTime(s.startsAt)}–{formatTime(s.endsAt)}
@@ -79,18 +88,23 @@ export default async function TeacherDashboardPage() {
 
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">
-                          <span className="font-mono text-xs">
+                          {/* Mã lớp là thứ nhận dạng hàng — trước đây nó là chữ
+                              NHỎ NHẤT trên hàng (12px cạnh 16px). */}
+                          <span className="font-mono text-sm">
                             {s.classCode}
                           </span>{" "}
                           · Buổi {s.sessionNumber}
                         </p>
-                        <p className="text-muted-foreground truncate text-xs">
+                        <p
+                          className="text-text-secondary truncate text-sm"
+                          title={s.topic ?? s.className}
+                        >
                           {s.topic ?? s.className}
                         </p>
                       </div>
 
                       {s.isFullyMarked ? (
-                        <span className="text-success flex shrink-0 items-center gap-1 text-xs">
+                        <span className="text-success flex shrink-0 items-center gap-1 text-sm">
                           <CheckCircle2 className="size-4" aria-hidden />
                           Đã điểm danh {s.marked}/{s.expected}
                         </span>
@@ -103,10 +117,13 @@ export default async function TeacherDashboardPage() {
                           </Link>
                         </Button>
                       )}
+                      {/* Hành động phụ trong hàng danh sách = cấp ghost
+                          (02 §8). Trước đây nó là `outline`, đứng ngang hàng
+                          với "Điểm danh" nên hai nút cạnh tranh nhau. */}
                       <Button
                         asChild
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         className="shrink-0"
                       >
                         <Link href={`/teacher/sessions/${s.id}`}>
@@ -124,11 +141,13 @@ export default async function TeacherDashboardPage() {
           {/* --- Buổi chưa điểm danh --- */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ClipboardCheck className="size-4" aria-hidden />
-                Buổi chưa điểm danh ({needAttendance.length})
+              <CardTitle asChild className="flex items-center gap-2 text-base">
+                <h2>
+                  <ClipboardCheck className="size-4" aria-hidden />
+                  Buổi chưa điểm danh ({needAttendance.length})
+                </h2>
               </CardTitle>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="text-text-secondary mt-1 text-sm">
                 Buổi đã diễn ra mà còn thiếu điểm danh. Buổi sắp tới không tính.
               </p>
             </CardHeader>
@@ -144,16 +163,14 @@ export default async function TeacherDashboardPage() {
                   {needAttendance.map((s) => (
                     <li
                       key={s.id}
-                      className="flex flex-wrap items-center gap-3 px-5 py-3"
+                      className="flex flex-wrap items-center gap-3 px-6 py-3"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">
-                          <span className="font-mono text-xs">
-                            {s.classCode}
-                          </span>{" "}
-                          · Buổi {s.sessionNumber}
+                          <span className="font-mono">{s.classCode}</span> · Buổi{" "}
+                          {s.sessionNumber}
                         </p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-text-secondary text-sm">
                           {formatDate(s.startsAt)} · Đã điểm danh {s.marked}/
                           {s.expected}
                         </p>
@@ -173,9 +190,11 @@ export default async function TeacherDashboardPage() {
           {/* --- Bài chờ chấm --- */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileCheck2 className="size-4" aria-hidden />
-                Bài chờ chấm ({pendingGrading.length})
+              <CardTitle asChild className="flex items-center gap-2 text-base">
+                <h2>
+                  <FileCheck2 className="size-4" aria-hidden />
+                  Bài chờ chấm ({pendingGrading.length})
+                </h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -190,13 +209,16 @@ export default async function TeacherDashboardPage() {
                   {pendingGrading.map((s) => (
                     <li
                       key={s.id}
-                      className="flex flex-wrap items-center gap-3 px-5 py-3"
+                      className="flex flex-wrap items-center gap-3 px-6 py-3"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">
                           {s.enrollment?.student?.full_name ?? "Học viên"}
                         </p>
-                        <p className="text-muted-foreground truncate text-xs">
+                        <p
+                          className="text-text-secondary truncate text-sm"
+                          title={s.delivery?.title}
+                        >
                           {s.delivery?.title} · Nộp{" "}
                           {formatDate(s.submitted_at)}
                         </p>
@@ -223,12 +245,15 @@ export default async function TeacherDashboardPage() {
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           {/* --- Lớp của tôi --- */}
-          <Card>
+          {/* overflow-hidden: hàng cuối có nền hover chạy sát mép, không có nó
+              thì nền vuông phủ ra ngoài góc bo `rounded-xl` của Card. An toàn
+              vì focus ring của hàng dùng `ring-inset` nên không bị cắt. */}
+          <Card className="overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-base">
-                Lớp của tôi ({myClasses.length})
+              <CardTitle asChild className="text-base">
+                <h2>Lớp của tôi ({myClasses.length})</h2>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -242,13 +267,15 @@ export default async function TeacherDashboardPage() {
                 <ul className="divide-y border-t">
                   {myClasses.map((c) => (
                     <li key={c.id}>
+                      {/* Cả hàng là link. Trước đây đi bằng bàn phím qua danh
+                          sách lớp KHÔNG thấy mình đang ở đâu — chỉ có hover. */}
                       <Link
                         href={`/teacher/classes/${c.id}`}
-                        className="hover:bg-muted/40 flex items-center justify-between gap-3 px-5 py-3"
+                        className="hover:bg-primary-50 focus-visible:ring-ring flex items-center justify-between gap-3 px-6 py-3 focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none"
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs font-medium">
+                            <span className="font-mono text-sm font-medium">
                               {c.code}
                             </span>
                             <StatusBadge
@@ -256,9 +283,11 @@ export default async function TeacherDashboardPage() {
                               tone={CLASS_STATUS_TONE[c.status]}
                             />
                           </div>
-                          <p className="truncate text-sm">{c.name}</p>
+                          <p className="truncate text-sm" title={c.name}>
+                            {c.name}
+                          </p>
                         </div>
-                        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                        <span className="text-text-secondary shrink-0 text-sm tabular-nums">
                           {c.openCount}/{c.capacity}
                         </span>
                       </Link>
@@ -272,11 +301,13 @@ export default async function TeacherDashboardPage() {
           {/* --- Học viên cần chú ý --- */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <AlertTriangle className="text-warning size-4" aria-hidden />
-                Học viên cần chú ý ({atRisk.length})
+              <CardTitle asChild className="flex items-center gap-2 text-base">
+                <h2>
+                  <AlertTriangle className="text-warning size-4" aria-hidden />
+                  Học viên cần chú ý ({atRisk.length})
+                </h2>
               </CardTitle>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="text-text-secondary mt-1 text-sm">
                 Hệ thống chỉ cảnh báo — quyết định vẫn là của bạn.
               </p>
             </CardHeader>
@@ -290,9 +321,9 @@ export default async function TeacherDashboardPage() {
               ) : (
                 <ul className="divide-y border-t">
                   {atRisk.map((s) => (
-                    <li key={s.enrollment_id} className="px-5 py-3">
+                    <li key={s.enrollment_id} className="px-6 py-3">
                       <p className="text-sm font-medium">{s.full_name}</p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-text-secondary text-sm">
                         {s.student_code} · {s.class_name}
                       </p>
                       <div className="mt-1 flex flex-wrap gap-1">

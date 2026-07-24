@@ -42,7 +42,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FLASHCARD_MEDIA_BUCKET } from "@/features/flashcards/domain/media";
+import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
+import {
+  VocabularySublistEditor,
+  type SublistDraft,
+} from "@/features/flashcards/components/vocabulary-sublist-editor";
+import {
+  exampleMediaSlot,
+  FLASHCARD_MEDIA_BUCKET,
+  MAX_FLASHCARD_EXAMPLE_SENTENCES,
+  MAX_FLASHCARD_PHRASE_ITEMS,
+  MAX_FLASHCARD_SENSE_ITEMS,
+  type FlashcardMediaSlot,
+} from "@/features/flashcards/domain/media";
+import { readFlashcardSublists } from "@/features/flashcards/domain/sublists";
 import {
   archiveFlashcardPageAction,
   createFlashcardUploadTicketsAction,
@@ -62,8 +75,6 @@ import type {
 } from "@/features/flashcards/server/queries";
 import type { ActionState } from "@/lib/action-state";
 import { createClient } from "@/lib/supabase/client";
-
-type MediaFiles = Partial<Record<"front" | "back" | "audio", File>>;
 
 export function FlashcardAdminManager({
   courses,
@@ -420,7 +431,10 @@ function SectionWorkspace({
             section={section}
           />
           {section.status === "draft" && (
-            <PageDialog deckId={deck.id} section={section} />
+            <>
+              <PageDialog deckId={deck.id} section={section} />
+              <FlashcardImportDialog sectionId={section.id} />
+            </>
           )}
           <Button
             type="button"
@@ -487,7 +501,8 @@ function FlashcardPageRow({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const isCover = page.kind === "session_cover";
-  const pageLabel = isCover ? "trang mở đầu" : (page.term ?? "trang từ vựng");
+  const pageLabel = isCover ? "trang mở đầu" : (page.hanzi ?? "trang từ vựng");
+  const sublists = readFlashcardSublists(page);
   // Còn trang mở đầu thì vị trí 0 bị khóa; đã lưu trữ thì từ vựng được đứng đầu.
   const minIndex = section.pages.some((item) => item.kind === "session_cover")
     ? 1
@@ -515,18 +530,44 @@ function FlashcardPageRow({
         {index + 1}
       </div>
       <div className="grid min-w-0 gap-3 sm:grid-cols-[120px_120px_minmax(0,1fr)] sm:items-center">
-        <MediaPreview url={page.frontUrl} alt={page.front_alt} />
-        <MediaPreview url={page.backUrl} alt={page.back_alt} />
+        <MediaPreview
+          url={page.frontUrl}
+          alt={page.front_alt}
+          emptyLabel={isCover ? "Thiếu ảnh" : "Không có ảnh"}
+        />
+        <MediaPreview
+          url={page.backUrl}
+          alt={page.back_alt}
+          emptyLabel={isCover ? "Thiếu ảnh" : "Không có ảnh"}
+        />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">
-              {page.kind === "session_cover" ? "Trang mở đầu" : page.term}
+              {isCover ? "Trang mở đầu" : page.hanzi}
             </p>
             <StatusBadge
-              label={page.kind === "session_cover" ? "Mục lục" : "Từ vựng"}
-              tone={page.kind === "session_cover" ? "info" : "neutral"}
+              label={isCover ? "Mục lục" : "Từ vựng"}
+              tone={isCover ? "info" : "neutral"}
             />
+            {/*
+              Thẻ nhập hàng loạt chưa có audio. Nói ngay ở đây thay vì để admin
+              chỉ biết lúc bấm Công bố rồi bị từ chối.
+            */}
+            {!isCover && !page.audio_path && (
+              <StatusBadge label="Thiếu audio" tone="warning" />
+            )}
           </div>
+          {!isCover && (
+            <>
+              <p className="text-muted-foreground text-sm">
+                {page.pinyin_syllables} · {page.meaning_vi}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Tách nghĩa {sublists.senses.length} · Câu ví dụ{" "}
+                {sublists.examples.length} · Cụm từ {sublists.phrases.length}
+              </p>
+            </>
+          )}
           {page.audioUrl ? (
             <audio controls preload="none" className="mt-2 h-9 w-full max-w-sm">
               <source src={page.audioUrl} />
@@ -581,7 +622,7 @@ function FlashcardPageRow({
             onClick={() => {
               const confirmText = isCover
                 ? "Lưu trữ trang mở đầu? Buổi sẽ không công bố được cho tới khi thêm trang mở đầu mới."
-                : `Lưu trữ trang “${page.term}”?`;
+                : `Lưu trữ thẻ “${page.hanzi}”?`;
               if (window.confirm(confirmText)) {
                 mutate(archiveFlashcardPageAction);
               }
@@ -595,21 +636,51 @@ function FlashcardPageRow({
   );
 }
 
-function MediaPreview({ url, alt }: { url: string | null; alt: string }) {
+function MediaPreview({
+  url,
+  alt,
+  emptyLabel,
+}: {
+  url: string | null;
+  alt: string | null;
+  emptyLabel: string;
+}) {
   return url ? (
     <Image
       src={url}
-      alt={alt}
+      alt={alt ?? ""}
       width={120}
       height={84}
       unoptimized
       className="h-20 w-full rounded-md border object-cover"
     />
   ) : (
-    <div className="bg-muted text-muted-foreground flex h-20 items-center justify-center rounded-md text-xs">
-      Thiếu ảnh
+    <div className="bg-muted text-muted-foreground flex h-20 items-center justify-center rounded-md px-2 text-center text-sm">
+      {emptyLabel}
     </div>
   );
+}
+
+const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+const AUDIO_ACCEPT = "audio/mpeg,audio/mp4,.mp3,.m4a";
+
+type FixedMediaFiles = Partial<Record<"front" | "back" | "audio", File>>;
+
+function toDrafts(
+  items: Array<{
+    hanzi: string;
+    pinyin: string;
+    meaning_vi: string;
+    image_path?: string | null;
+  }>,
+): SublistDraft[] {
+  return items.map((item) => ({
+    key: crypto.randomUUID(),
+    hanzi: item.hanzi,
+    pinyin: item.pinyin,
+    meaning_vi: item.meaning_vi,
+    image_path: item.image_path ?? null,
+  }));
 }
 
 function PageDialog({
@@ -625,55 +696,97 @@ function PageDialog({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [state, setState] = useState<ActionState>({});
-  const [files, setFiles] = useState<MediaFiles>({});
+  const [files, setFiles] = useState<FixedMediaFiles>({});
+  const [clearedFaces, setClearedFaces] = useState({
+    front: false,
+    back: false,
+  });
+
   const isEdit = Boolean(page);
   const hasCover = section.pages.some((item) => item.kind === "session_cover");
   const defaultKind = page?.kind ?? (hasCover ? "vocabulary" : "session_cover");
-  const [kind, setKind] = useState(defaultKind);
-  const accepted = useMemo(
-    () => ({
-      front: "image/jpeg,image/png,image/webp",
-      back: "image/jpeg,image/png,image/webp",
-      audio: "audio/mpeg,audio/mp4,.mp3,.m4a",
-    }),
-    [],
+  const [kind, setKind] = useState<"session_cover" | "vocabulary">(defaultKind);
+
+  const stored = useMemo(
+    () =>
+      page
+        ? readFlashcardSublists(page)
+        : { senses: [], examples: [], phrases: [] },
+    [page],
   );
+  const [senses, setSenses] = useState<SublistDraft[]>(() =>
+    toDrafts(stored.senses),
+  );
+  const [examples, setExamples] = useState<SublistDraft[]>(() =>
+    toDrafts(stored.examples),
+  );
+  const [phrases, setPhrases] = useState<SublistDraft[]>(() =>
+    toDrafts(stored.phrases),
+  );
+
+  const fieldId = (name: string) => `${name}-${page?.id ?? "new"}`;
 
   function reset() {
     setFiles({});
     setState({});
     setKind(defaultKind);
+    setClearedFaces({ front: false, back: false });
+    setSenses(toDrafts(stored.senses));
+    setExamples(toDrafts(stored.examples));
+    setPhrases(toDrafts(stored.phrases));
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    // Trang mở đầu chỉ nhận hai ảnh; audio là phần riêng của trang từ vựng.
-    const selected = Object.entries(files).filter(
-      (entry): entry is ["front" | "back" | "audio", File] =>
-        Boolean(entry[1]) && (kind === "vocabulary" || entry[0] !== "audio"),
-    );
-    const requiredSlots = kind === "vocabulary" ? 3 : 2;
-    if (!isEdit && selected.length !== requiredSlots) {
-      setState({
-        error:
-          kind === "vocabulary"
-            ? "Trang từ vựng cần đủ ảnh mặt trước, ảnh mặt sau và audio."
-            : "Trang mở đầu cần đủ ảnh mặt trước và ảnh mặt sau.",
+
+    // Trang mở đầu bắt buộc đủ hai ảnh; thẻ từ vựng bắt buộc audio, còn ảnh là
+    // tuỳ chọn (§7ter). Chặn ở đây để không tải file lên rồi mới báo lỗi.
+    if (!isEdit) {
+      if (kind === "session_cover" && !(files.front && files.back)) {
+        setState({
+          error: "Trang mở đầu cần đủ ảnh mặt trước và ảnh mặt sau.",
+        });
+        return;
+      }
+    }
+
+    const uploads: Array<{ slot: FlashcardMediaSlot; file: File }> = [];
+    if (files.front) uploads.push({ slot: "front", file: files.front });
+    if (files.back) uploads.push({ slot: "back", file: files.back });
+    if (kind === "vocabulary" && files.audio) {
+      uploads.push({ slot: "audio", file: files.audio });
+    }
+    if (kind === "vocabulary") {
+      examples.forEach((example, index) => {
+        if (example.file) {
+          uploads.push({ slot: exampleMediaSlot(index), file: example.file });
+        }
       });
-      return;
     }
 
     setSaving(true);
     setState({});
     let pageId = page?.id;
     const uploadedPaths: string[] = [];
+    const uploadedBySlot = new Map<string, string>();
+
+    const discard = async () => {
+      if (!pageId || uploadedPaths.length === 0) return;
+      await discardFlashcardUploadsAction({
+        deckId,
+        sectionId: section.id,
+        pageId,
+        paths: uploadedPaths,
+      });
+    };
+
     try {
-      if (selected.length > 0) {
+      if (uploads.length > 0) {
         const result = await createFlashcardUploadTicketsAction({
           sectionId: section.id,
           pageId,
-          files: selected.map(([slot, file]) => ({
+          files: uploads.map(({ slot, file }) => ({
             slot,
             fileName: file.name,
             mimeType: file.type,
@@ -685,59 +798,96 @@ function PageDialog({
           return;
         }
         pageId = result.pageId;
+
         const supabase = createClient();
+        const fileBySlot = new Map(
+          uploads.map(({ slot, file }) => [slot as string, file]),
+        );
         for (const ticket of result.tickets) {
-          const file = files[ticket.slot]!;
+          const file = fileBySlot.get(ticket.slot);
+          if (!file) continue;
           const { error } = await supabase.storage
             .from(FLASHCARD_MEDIA_BUCKET)
             .uploadToSignedUrl(ticket.path, ticket.token, file, {
               contentType: ticket.contentType,
             });
           if (error) {
-            await discardFlashcardUploadsAction({
-              deckId,
-              sectionId: section.id,
-              pageId,
-              paths: uploadedPaths,
-            });
+            await discard();
             setState({
               error: "Tải media thất bại. Kiểm tra kết nối rồi thử lại.",
             });
             return;
           }
           uploadedPaths.push(ticket.path);
-          formData.set(`${ticket.slot}_image_path`, ticket.path);
-          if (ticket.slot === "audio") {
-            formData.delete("audio_image_path");
-            formData.set("audio_path", ticket.path);
-          }
+          uploadedBySlot.set(ticket.slot, ticket.path);
         }
       }
 
-      if (!pageId) {
-        setState({ error: "Không tạo được mã trang flashcard." });
-        return;
-      }
+      // Thẻ chữ thuần (không ảnh, không audio — hợp lệ từ khi audio thành tuỳ
+      // chọn) không đi qua luồng upload nên chưa có `pageId`. Sinh một mã ở đây;
+      // `saveFlashcardPageAction` chấp nhận id do client cấp cho trang mới.
+      pageId ??= crypto.randomUUID();
+
       formData.set("id", pageId);
       formData.set("section_id", section.id);
-      if (!formData.get("front_image_path") && page) {
-        formData.set("front_image_path", page.front_image_path);
-      }
-      if (!formData.get("back_image_path") && page) {
-        formData.set("back_image_path", page.back_image_path);
-      }
-      if (!formData.get("audio_path") && page?.audio_path) {
-        formData.set("audio_path", page.audio_path);
+      formData.set("kind", kind);
+
+      const keptFace = (face: "front" | "back") => {
+        const uploaded = uploadedBySlot.get(face);
+        if (uploaded) return uploaded;
+        if (kind === "vocabulary" && clearedFaces[face]) return "";
+        return (
+          (face === "front" ? page?.front_image_path : page?.back_image_path) ??
+          ""
+        );
+      };
+      formData.set("front_image_path", keptFace("front"));
+      formData.set("back_image_path", keptFace("back"));
+
+      if (kind === "vocabulary") {
+        formData.set(
+          "audio_path",
+          uploadedBySlot.get("audio") ?? page?.audio_path ?? "",
+        );
+        formData.set(
+          "sense_breakdown",
+          JSON.stringify(
+            senses.map((item) => ({
+              hanzi: item.hanzi,
+              pinyin: item.pinyin,
+              meaning_vi: item.meaning_vi,
+            })),
+          ),
+        );
+        formData.set(
+          "common_phrases",
+          JSON.stringify(
+            phrases.map((item) => ({
+              hanzi: item.hanzi,
+              pinyin: item.pinyin,
+              meaning_vi: item.meaning_vi,
+            })),
+          ),
+        );
+        formData.set(
+          "example_sentences",
+          JSON.stringify(
+            examples.map((item, index) => ({
+              hanzi: item.hanzi,
+              pinyin: item.pinyin,
+              meaning_vi: item.meaning_vi,
+              image_path:
+                uploadedBySlot.get(exampleMediaSlot(index)) ??
+                item.image_path ??
+                null,
+            })),
+          ),
+        );
       }
 
       const result = await saveFlashcardPageAction(formData);
       if (result.error) {
-        await discardFlashcardUploadsAction({
-          deckId,
-          sectionId: section.id,
-          pageId,
-          paths: uploadedPaths,
-        });
+        await discard();
         setState(result);
         return;
       }
@@ -746,14 +896,7 @@ function PageDialog({
       reset();
       router.refresh();
     } catch {
-      if (pageId && uploadedPaths.length > 0) {
-        await discardFlashcardUploadsAction({
-          deckId,
-          sectionId: section.id,
-          pageId,
-          paths: uploadedPaths,
-        });
-      }
+      await discard();
       setState({ error: "Không thể lưu trang lúc này. Vui lòng thử lại." });
     } finally {
       setSaving(false);
@@ -768,6 +911,10 @@ function PageDialog({
         if (!next) reset();
       }}
     >
+      {/*
+        `DS-051`: nút mở dialog do CHÍNH component client này dựng, suy từ cờ
+        `isEdit` — không nhận React element qua prop rồi đưa xuống `asChild`.
+      */}
       <DialogTrigger asChild>
         {isEdit ? (
           <Button
@@ -775,7 +922,7 @@ function PageDialog({
             variant="ghost"
             size="icon"
             className="size-11"
-            aria-label={`Sửa ${page?.term ?? "trang mở đầu"}`}
+            aria-label={`Sửa ${page?.hanzi ?? "trang mở đầu"}`}
           >
             <Pencil className="size-4" aria-hidden />
           </Button>
@@ -786,27 +933,28 @@ function PageDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Chỉnh sửa trang" : "Thêm trang flashcard"}
           </DialogTitle>
           <DialogDescription>
             {kind === "vocabulary"
-              ? "Ảnh tối đa 8 MB; audio MP3/M4A tối đa 20 MB. File tải thẳng vào kho riêng tư."
-              : "Trang mở đầu chỉ cần ảnh mặt trước và mặt sau, tối đa 8 MB mỗi ảnh. File tải thẳng vào kho riêng tư."}
+              ? "Thẻ từ vựng cần Hán tự, pinyin và nghĩa. Ảnh là tuỳ chọn; audio phát âm là bắt buộc."
+              : "Trang mở đầu chỉ gồm hai ảnh, không nhập chữ và không có audio."}
           </DialogDescription>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {state.error && (
             <Alert variant="destructive">
               <AlertDescription>{state.error}</AlertDescription>
             </Alert>
           )}
+
           <div className="space-y-2">
-            <Label htmlFor={`page-kind-${page?.id ?? "new"}`}>Loại trang</Label>
+            <Label htmlFor={fieldId("page-kind")}>Loại trang</Label>
             <Select
-              name="kind"
               value={kind}
               onValueChange={(value) => {
                 setKind(value as "session_cover" | "vocabulary");
@@ -816,7 +964,7 @@ function PageDialog({
               }}
               disabled={isEdit}
             >
-              <SelectTrigger id={`page-kind-${page?.id ?? "new"}`}>
+              <SelectTrigger id={fieldId("page-kind")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -825,54 +973,180 @@ function PageDialog({
                     Trang mở đầu buổi
                   </SelectItem>
                 ) : null}
-                <SelectItem value="vocabulary">Trang từ vựng</SelectItem>
+                <SelectItem value="vocabulary">Thẻ từ vựng</SelectItem>
               </SelectContent>
             </Select>
-            {isEdit && <input type="hidden" name="kind" value={page!.kind} />}
           </div>
+
           {kind === "vocabulary" && (
-            <div className="space-y-2">
-              <Label htmlFor={`term-${page?.id ?? "new"}`}>Từ/cụm từ *</Label>
-              <Input
-                id={`term-${page?.id ?? "new"}`}
-                name="term"
-                defaultValue={page?.term ?? ""}
-                placeholder="Ví dụ: 你好"
-                required
-              />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor={fieldId("hanzi")}>Hán tự *</Label>
+                <Input
+                  id={fieldId("hanzi")}
+                  name="hanzi"
+                  defaultValue={page?.hanzi ?? ""}
+                  placeholder="Ví dụ: 胡萝卜"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={fieldId("pinyin")}>
+                  Pinyin — tách theo âm tiết *
+                </Label>
+                <Input
+                  id={fieldId("pinyin")}
+                  name="pinyin_syllables"
+                  defaultValue={page?.pinyin_syllables ?? ""}
+                  placeholder="hú luó bo"
+                  aria-describedby={fieldId("pinyin-help")}
+                  required
+                />
+                <p
+                  id={fieldId("pinyin-help")}
+                  className="text-muted-foreground text-sm"
+                >
+                  Mỗi âm tiết cách nhau một dấu cách, đúng số chữ Hán ở trên.
+                  Mặt sau tự ghép lại thành dạng viết liền.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={fieldId("meaning")}>Nghĩa tiếng Việt *</Label>
+                <Input
+                  id={fieldId("meaning")}
+                  name="meaning_vi"
+                  defaultValue={page?.meaning_vi ?? ""}
+                  placeholder="Củ cà rốt"
+                  required
+                />
+              </div>
             </div>
           )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <MediaFileField
-              id={`front-${page?.id ?? "new"}`}
+              id={fieldId("front")}
               label="Ảnh mặt trước"
-              accept={accepted.front}
-              required={!isEdit}
+              accept={IMAGE_ACCEPT}
+              required={!isEdit && kind === "session_cover"}
+              optionalHint={
+                kind === "vocabulary"
+                  ? "tuỳ chọn"
+                  : isEdit
+                    ? "để trống nếu giữ ảnh cũ"
+                    : undefined
+              }
               onFile={(file) =>
                 setFiles((current) => ({ ...current, front: file }))
               }
             />
             <MediaFileField
-              id={`back-${page?.id ?? "new"}`}
+              id={fieldId("back")}
               label="Ảnh mặt sau"
-              accept={accepted.back}
-              required={!isEdit}
+              accept={IMAGE_ACCEPT}
+              required={!isEdit && kind === "session_cover"}
+              optionalHint={
+                kind === "vocabulary"
+                  ? "tuỳ chọn, phải khác ảnh mặt trước"
+                  : isEdit
+                    ? "để trống nếu giữ ảnh cũ"
+                    : undefined
+              }
               onFile={(file) =>
                 setFiles((current) => ({ ...current, back: file }))
               }
             />
           </div>
+
+          {kind === "vocabulary" && isEdit && (
+            <div className="flex flex-wrap gap-4">
+              {(["front", "back"] as const).map((face) => {
+                const existing =
+                  face === "front"
+                    ? page?.front_image_path
+                    : page?.back_image_path;
+                if (!existing) return null;
+                const faceLabel =
+                  face === "front" ? "ảnh mặt trước" : "ảnh mặt sau";
+                return (
+                  <label
+                    key={face}
+                    className="flex items-center gap-2 text-sm"
+                    htmlFor={fieldId(`clear-${face}`)}
+                  >
+                    <input
+                      id={fieldId(`clear-${face}`)}
+                      type="checkbox"
+                      className="size-4"
+                      checked={clearedFaces[face]}
+                      onChange={(event) =>
+                        setClearedFaces((current) => ({
+                          ...current,
+                          [face]: event.target.checked,
+                        }))
+                      }
+                    />
+                    Bỏ {faceLabel} khỏi thẻ
+                  </label>
+                );
+              })}
+            </div>
+          )}
+
           {kind === "vocabulary" && (
             <MediaFileField
-              id={`audio-${page?.id ?? "new"}`}
+              id={fieldId("audio")}
               label="Audio phát âm"
-              accept={accepted.audio}
-              required={!isEdit}
+              accept={AUDIO_ACCEPT}
+              required={false}
+              // Audio gắn được sau, nhưng buổi KHÔNG công bố được khi còn thẻ
+              // thiếu audio — `validate_flashcard_section_publish` chặn.
+              optionalHint="bắt buộc trước khi công bố buổi"
               onFile={(file) =>
                 setFiles((current) => ({ ...current, audio: file }))
               }
             />
           )}
+
+          {kind === "vocabulary" && (
+            <div className="space-y-3">
+              <VocabularySublistEditor
+                idPrefix={fieldId("sense")}
+                legend="Tách nghĩa"
+                description="Từng thành tố của từ. Thành tố có thể dài hơn một chữ (ví dụ 萝卜), nên bạn tự cắt."
+                itemNoun="thành tố"
+                hanziLabel="Thành tố Hán tự"
+                meaningLabel="Nghĩa của thành tố"
+                items={senses}
+                max={MAX_FLASHCARD_SENSE_ITEMS}
+                onChange={setSenses}
+              />
+              <VocabularySublistEditor
+                idPrefix={fieldId("example")}
+                legend="Câu ví dụ"
+                description="Mỗi câu gồm câu Hán, pinyin, nghĩa tiếng Việt và ảnh minh hoạ tuỳ chọn."
+                itemNoun="câu ví dụ"
+                hanziLabel="Câu ví dụ (Hán tự)"
+                meaningLabel="Nghĩa tiếng Việt"
+                items={examples}
+                max={MAX_FLASHCARD_EXAMPLE_SENTENCES}
+                withImage
+                onChange={setExamples}
+              />
+              <VocabularySublistEditor
+                idPrefix={fieldId("phrase")}
+                legend="Cụm từ thường dùng"
+                description="Các cụm hay gặp chứa từ này."
+                itemNoun="cụm từ"
+                hanziLabel="Cụm từ (Hán tự)"
+                meaningLabel="Nghĩa tiếng Việt"
+                items={phrases}
+                max={MAX_FLASHCARD_PHRASE_ITEMS}
+                onChange={setPhrases}
+              />
+            </div>
+          )}
+
           <DialogFooter>
             <Button type="submit" disabled={saving}>
               {saving ? (
@@ -894,18 +1168,20 @@ function MediaFileField({
   label,
   accept,
   required,
+  optionalHint,
   onFile,
 }: {
   id: string;
   label: string;
   accept: string;
   required: boolean;
+  optionalHint?: string;
   onFile: (file: File | undefined) => void;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>
-        {label} {required ? "*" : "(để trống nếu giữ file cũ)"}
+        {label} {required ? "*" : optionalHint ? `(${optionalHint})` : null}
       </Label>
       <Input
         id={id}

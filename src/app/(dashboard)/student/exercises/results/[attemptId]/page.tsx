@@ -21,7 +21,7 @@ export default async function ExerciseResultPage({
     return notFound();
   }
   return (
-    <>
+    <div className="mx-auto w-full max-w-5xl">
       <PageHeader
         title="Kết quả bài tập"
         description="Xem điểm, nhận xét và đáp án theo lựa chọn công bố của giáo viên."
@@ -35,6 +35,6 @@ export default async function ExerciseResultPage({
         }
       />
       <AssessmentResultView kind="exercise" result={result as never} />
-    </>
+    </div>
   );
 }

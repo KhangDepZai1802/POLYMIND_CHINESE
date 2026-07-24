@@ -4,18 +4,18 @@ import { BookOpen, ChevronRight } from "lucide-react";
 
 import { CourseFormDialog } from "@/features/courses/components/course-form-dialog";
 import { getCourses, getLevels } from "@/features/courses/server/queries";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/session";
 import { formatCurrency } from "@/lib/dates";
 import {
@@ -87,113 +87,85 @@ function CourseSection({
     <section>
       <div className="mb-3">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <p className="text-text-secondary text-sm">{description}</p>
       </div>
 
-      <Card>
+      <Card className="py-0">
         <CardContent className="p-0">
-          {/* Desktop: bảng đầy đủ */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã</TableHead>
-                  <TableHead>Tên khóa học</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Bậc</TableHead>
-                  <TableHead className="text-right">Số buổi</TableHead>
-                  <TableHead className="text-right">Học phí</TableHead>
-                  <TableHead className="text-right">Lớp đã mở</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {courses.map((c) => (
-                  <TableRow key={c.id} className="hover:bg-muted/40">
-                    <TableCell className="font-mono text-xs font-medium">
-                      {c.code}
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/admin/courses/${c.id}`}
-                        className="hover:text-primary font-medium hover:underline"
-                      >
-                        {c.title}
-                      </Link>
-                      {c.title_en && (
-                        <p className="text-muted-foreground text-xs">
-                          {c.title_en}
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {c.course_type ? COURSE_TYPE_LABELS[c.course_type] : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {c.level?.name ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {c.default_session_count ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {formatCurrency(c.default_tuition_amount)}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {c.classes.length}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        label={COURSE_STATUS_LABELS[c.status]}
-                        tone={COURSE_STATUS_TONE[c.status]}
+          {/*
+           * MỘT bảng cho mọi bề rộng (`DS-044`). Bản điện thoại cũ bỏ hẳn
+           * **Học phí** và **Số buổi** — hai con số quyết định khi tư vấn tuyển
+           * sinh — nên trên điện thoại quản trị viên không tra được giá khóa học.
+           */}
+          <DataTable
+            caption={`${title}: mã, tên khóa học, loại, bậc, số buổi, học phí, số lớp đã mở và trạng thái`}
+            minWidthClass="min-w-[60rem]"
+          >
+            <DataTableHeader>
+              <tr>
+                <DataTableHead sticky>Mã</DataTableHead>
+                <DataTableHead>Tên khóa học</DataTableHead>
+                <DataTableHead>Loại</DataTableHead>
+                <DataTableHead>Bậc</DataTableHead>
+                <DataTableHead numeric>Số buổi</DataTableHead>
+                <DataTableHead numeric>Học phí</DataTableHead>
+                <DataTableHead numeric>Lớp đã mở</DataTableHead>
+                <DataTableHead>Trạng thái</DataTableHead>
+                <DataTableHead className="w-10">
+                  <span className="sr-only">Xem chi tiết</span>
+                </DataTableHead>
+              </tr>
+            </DataTableHeader>
+            <DataTableBody>
+              {courses.map((c) => (
+                <DataTableRow key={c.id}>
+                  <DataTableCell sticky className="font-mono text-sm font-medium">
+                    {c.code}
+                  </DataTableCell>
+                  <DataTableCell>
+                    <Link
+                      href={`/admin/courses/${c.id}`}
+                      className="hover:text-primary focus-visible:ring-ring rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                      {c.title}
+                    </Link>
+                    {c.title_en && (
+                      <p className="text-text-secondary text-sm">{c.title_en}</p>
+                    )}
+                  </DataTableCell>
+                  <DataTableCell>
+                    {c.course_type ? COURSE_TYPE_LABELS[c.course_type] : "—"}
+                  </DataTableCell>
+                  <DataTableCell>{c.level?.name ?? "—"}</DataTableCell>
+                  <DataTableCell numeric>
+                    {c.default_session_count ?? "—"}
+                  </DataTableCell>
+                  <DataTableCell numeric>
+                    {formatCurrency(c.default_tuition_amount)}
+                  </DataTableCell>
+                  <DataTableCell numeric>{c.classes.length}</DataTableCell>
+                  <DataTableCell>
+                    <StatusBadge
+                      label={COURSE_STATUS_LABELS[c.status]}
+                      tone={COURSE_STATUS_TONE[c.status]}
+                    />
+                  </DataTableCell>
+                  <DataTableCell>
+                    <Link
+                      href={`/admin/courses/${c.id}`}
+                      aria-label={`Xem ${c.title}`}
+                      className="focus-visible:ring-ring inline-flex rounded-sm focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                      <ChevronRight
+                        className="text-text-secondary size-4"
+                        aria-hidden
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/admin/courses/${c.id}`}
-                        aria-label={`Xem ${c.title}`}
-                      >
-                        <ChevronRight className="text-muted-foreground size-4" />
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Mobile: card — bảng 9 cột không dùng nổi trên điện thoại */}
-          <ul className="divide-y md:hidden">
-            {courses.map((c) => (
-              <li key={c.id}>
-                <Link
-                  href={`/admin/courses/${c.id}`}
-                  className="hover:bg-muted/40 flex items-center gap-3 p-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-medium">
-                        {c.code}
-                      </span>
-                      <StatusBadge
-                        label={COURSE_STATUS_LABELS[c.status]}
-                        tone={COURSE_STATUS_TONE[c.status]}
-                      />
-                    </div>
-                    <p className="mt-1 truncate font-medium">{c.title}</p>
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      {c.course_type
-                        ? COURSE_TYPE_LABELS[c.course_type]
-                        : "Doanh nghiệp"}
-                      {c.level ? ` · ${c.level.name}` : ""}
-                      {` · ${c.classes.length} lớp`}
-                    </p>
-                  </div>
-                  <ChevronRight className="text-muted-foreground size-4 shrink-0" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+                    </Link>
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
         </CardContent>
       </Card>
     </section>

@@ -146,40 +146,67 @@ export function GradingWorkspace({
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="size-4" aria-hidden /> Học viên đã nộp
             </CardTitle>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               Chọn học viên để xem và chấm toàn bộ bài làm.
             </p>
           </CardHeader>
           <CardContent className="max-h-[52vh] space-y-1 overflow-y-auto">
             {gradableAttempts.length === 0 && (
-              <p className="text-muted-foreground py-4 text-center text-sm">Chưa có bài nộp.</p>
+              <p className="text-text-secondary py-4 text-center text-sm">Chưa có bài nộp.</p>
             )}
-            {gradableAttempts.map((attempt) => {
-              const left = unansweredCount(attempt);
-              return (
-                <Button
-                  key={attempt.id}
-                  type="button"
-                  variant={attempt.id === selectedId ? "secondary" : "ghost"}
-                  className="h-auto w-full justify-between gap-2 px-3 py-2.5 text-left"
-                  onClick={() => setSelectedId(attempt.id)}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">
-                      {attempt.enrollment?.student?.full_name ?? "Học viên"}
-                    </span>
-                    <span className="text-muted-foreground block text-xs">
-                      {attempt.enrollment?.student?.student_code || "Chưa có mã"}
-                    </span>
-                  </span>
-                  {left > 0 ? (
-                    <Badge variant="destructive" className="shrink-0">{left} chưa chấm</Badge>
-                  ) : (
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" aria-label="Đã chấm xong" />
-                  )}
-                </Button>
-              );
-            })}
+            {/* Danh sách thật: trình đọc màn hình nói được "danh sách N học viên". */}
+            <ul className="space-y-1">
+              {gradableAttempts.map((attempt) => {
+                const left = unansweredCount(attempt);
+                const isSelected = attempt.id === selectedId;
+                return (
+                  <li key={attempt.id}>
+                    <Button
+                      type="button"
+                      variant={isSelected ? "secondary" : "ghost"}
+                      /*
+                        `aria-current` là phần sửa lỗi thật ở đây: trước đó học
+                        viên đang được chọn CHỈ được đánh dấu bằng `variant`,
+                        tức bằng màu nền. Người dùng trình đọc màn hình bấm qua
+                        20 nút mà không có nút nào tự nói "đang chọn" — vi phạm
+                        `color-not-only`. Bấm xong cũng không có thông báo gì.
+                      */
+                      aria-current={isSelected ? "true" : undefined}
+                      className="h-auto w-full justify-between gap-2 px-3 py-2.5 text-left"
+                      onClick={() => setSelectedId(attempt.id)}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">
+                          {attempt.enrollment?.student?.full_name ?? "Học viên"}
+                        </span>
+                        {/*
+                          `text-sm`: mã học viên là thứ giáo viên dùng để phân
+                          biệt hai bạn trùng tên, không phải chú thích phụ.
+                        */}
+                        <span className="text-text-secondary block text-sm">
+                          {attempt.enrollment?.student?.student_code || "Chưa có mã"}
+                        </span>
+                      </span>
+                      {left > 0 ? (
+                        <Badge variant="destructive" className="shrink-0">{left} chưa chấm</Badge>
+                      ) : (
+                        /*
+                          `role="img"`: `aria-label` trên một `<svg>` không có
+                          role thì phần lớn trình đọc màn hình bỏ qua — trạng
+                          thái "đã chấm xong" khi đó chỉ còn tồn tại dưới dạng
+                          một dấu tick màu xanh, tức lại là màu-đơn-thuần.
+                        */
+                        <CheckCircle2
+                          role="img"
+                          aria-label="Đã chấm xong"
+                          className="text-success size-4 shrink-0"
+                        />
+                      )}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
           </CardContent>
         </Card>
 
@@ -188,7 +215,7 @@ export function GradingWorkspace({
             <Button type="button" variant="outline" className="w-full" onClick={exportCsv}>
               <Download className="size-4" aria-hidden /> Tải bảng điểm lớp
             </Button>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               {pending > 0 ? `Còn ${pending} học viên có câu chưa chấm.` : "Tất cả bài nộp đã được chấm."}
             </p>
             {kind === "exam" && (
@@ -220,19 +247,28 @@ export function GradingWorkspace({
         </Card>
       </aside>
 
-      <main className="min-w-0 space-y-4">
+      {/*
+        `<section>` chứ KHÔNG phải `<main>`: component này render bên trong
+        `<main>` của `app/(dashboard)/layout.tsx:76`, nên bản cũ tạo ra hai
+        landmark `main` lồng nhau trên cùng một trang. Đây là chỗ duy nhất
+        trong cả `src/` mắc lỗi này, và nó ảnh hưởng cả màn chấm Bài tập (M16)
+        lẫn màn chấm Thi (M17) vì workspace dùng chung.
+      */}
+      <section aria-labelledby="grading-delivery-title" className="min-w-0 space-y-4">
         <div>
-          <h2 className="text-xl font-semibold">{delivery.title}</h2>
-          <p className="text-muted-foreground text-sm">
+          <h2 id="grading-delivery-title" className="text-xl font-semibold">
+            {delivery.title}
+          </h2>
+          <p className="text-text-secondary text-sm">
             {delivery.class?.code} — {delivery.class?.name}
           </p>
         </div>
         {!selected ? (
-          <Card><CardContent className="py-10 text-center text-muted-foreground">Chọn một học viên để bắt đầu chấm.</CardContent></Card>
+          <Card><CardContent className="text-text-secondary py-10 text-center">Chọn một học viên để bắt đầu chấm.</CardContent></Card>
         ) : (
           <StudentGradingForm key={selected.id} kind={kind} deliveryId={delivery.id} attempt={selected} />
         )}
-      </main>
+      </section>
     </div>
   );
 }
@@ -305,7 +341,7 @@ function StudentGradingForm({
             <p className="font-semibold">
               {attempt.enrollment?.student?.full_name ?? "Học viên"}
             </p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               {manualAnswers.length === 0
                 ? "Các câu đã được hệ thống chấm. Giáo viên có thể xem hoặc điều chỉnh khi cần."
                 : `Đã nhập điểm ${entered}/${manualAnswers.length} câu cần giáo viên chấm.`}
@@ -361,14 +397,14 @@ function StudentGradingForm({
                       label="Bản ghi âm học viên đã nộp"
                     />
                   ) : (
-                    <p className="whitespace-pre-wrap break-words">
+                    <p className="whitespace-pre-wrap wrap-break-word">
                       {formatAnswer(answer.answer_payload, answer.item?.question_version?.options ?? [])}
                     </p>
                   )}
                 </div>
 
                 {isAutomatic && !draft.adjusting ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-success/30 bg-success/8 rounded-lg border p-3">
                     <p className="text-sm">Hệ thống đã chấm câu này: <strong>{answer.auto_score}/{answer.item?.points ?? 0} điểm</strong></p>
                     <Button type="button" variant="outline" size="sm" onClick={() => updateDraft(answer.id, { adjusting: true, score: String(answer.final_score ?? answer.auto_score ?? "") })}>
                       Điều chỉnh điểm
@@ -388,7 +424,7 @@ function StudentGradingForm({
                         placeholder="Chưa chấm"
                         onChange={(event) => updateDraft(answer.id, { score: event.target.value })}
                       />
-                      <p className="text-muted-foreground text-xs">Nhập từ 0 đến {answer.item?.points ?? 0} điểm.</p>
+                      <p className="text-text-secondary text-sm">Nhập từ 0 đến {answer.item?.points ?? 0} điểm.</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`feedback-${answer.id}`}>Nhận xét cho học viên</Label>
@@ -431,7 +467,7 @@ function StudentGradingForm({
       <AlertDialog open={warningOpen} onOpenChange={setWarningOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2"><CircleAlert className="size-5 text-amber-600" aria-hidden /> Còn {ungraded} câu chưa chấm</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2"><CircleAlert className="text-warning size-5" aria-hidden /> Còn {ungraded} câu chưa chấm</AlertDialogTitle>
             <AlertDialogDescription>
               Các câu còn trống sẽ tiếp tục hiển thị “Chưa chấm”. Hệ thống chưa cho công bố kết quả cho đến khi giáo viên chấm đủ.
             </AlertDialogDescription>

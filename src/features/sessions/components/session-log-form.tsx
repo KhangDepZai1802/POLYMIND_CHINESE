@@ -82,7 +82,14 @@ export function SessionLogForm({
             name="lesson_id"
             defaultValue={session.lessonId ?? lessons[0]?.id}
           >
-            <SelectTrigger id="lesson_id" className="w-full">
+            <SelectTrigger
+              id="lesson_id"
+              className="w-full"
+              aria-invalid={Boolean(fieldErrors["lesson_id"])}
+              aria-describedby={
+                fieldErrors["lesson_id"] ? "lesson_id-error" : undefined
+              }
+            >
               <SelectValue placeholder="Chọn bài học" />
             </SelectTrigger>
             <SelectContent>
@@ -99,8 +106,8 @@ export function SessionLogForm({
             </SelectContent>
           </Select>
         )}
-        <FieldError message={fieldErrors["lesson_id"]} />
-        <p className="text-muted-foreground text-xs">
+        <FieldError id="lesson_id-error" message={fieldErrors["lesson_id"]} />
+        <p className="text-text-secondary text-sm">
           Khi hoàn tất, bài học này được đánh dấu hoàn thành cho các lượt ghi
           danh đang mở của lớp. Chuyên cần vẫn được tính riêng từ điểm danh.
         </p>
@@ -116,8 +123,12 @@ export function SessionLogForm({
           maxLength={5000}
           defaultValue={session.lessonLog ?? ""}
           placeholder="Ví dụ: Ôn từ vựng bài 3; luyện hội thoại mở tài khoản; hoàn thành trang 24–29…"
+          aria-invalid={Boolean(fieldErrors["lesson_log"])}
+          aria-describedby={
+            fieldErrors["lesson_log"] ? "lesson_log-error" : undefined
+          }
         />
-        <FieldError message={fieldErrors["lesson_log"]} />
+        <FieldError id="lesson_log-error" message={fieldErrors["lesson_log"]} />
       </div>
 
       <div className="space-y-2">
@@ -129,8 +140,15 @@ export function SessionLogForm({
           maxLength={2000}
           defaultValue={session.teacherNote ?? ""}
           placeholder="Điểm cần lưu ý cho buổi sau (học viên không nhìn thấy ghi chú này)"
+          aria-invalid={Boolean(fieldErrors["teacher_note"])}
+          aria-describedby={
+            fieldErrors["teacher_note"] ? "teacher_note-error" : undefined
+          }
         />
-        <FieldError message={fieldErrors["teacher_note"]} />
+        <FieldError
+          id="teacher_note-error"
+          message={fieldErrors["teacher_note"]}
+        />
       </div>
 
       <SessionSubmitActions disabled={lessons.length === 0} />
@@ -150,7 +168,6 @@ function SessionSubmitActions({ disabled }: { disabled: boolean }) {
         value="draft"
         variant="outline"
         disabled={pending || disabled}
-        className="h-11"
       >
         {pending ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -164,7 +181,6 @@ function SessionSubmitActions({ disabled }: { disabled: boolean }) {
         name="intent"
         value="complete"
         disabled={pending || disabled}
-        className="h-11"
         onClick={async (event) => {
           event.preventDefault();
           const button = event.currentTarget;
@@ -188,7 +204,17 @@ function SessionSubmitActions({ disabled }: { disabled: boolean }) {
   );
 }
 
-function FieldError({ message }: { message?: string }) {
+/**
+ * `role="alert"` để trình đọc màn hình đọc lỗi lên ngay khi server trả
+ * `fieldErrors` — trước đây lỗi chỉ đổi màu chữ, người dùng bàn phím bấm
+ * "Hoàn tất buổi" xong chỉ thấy như không có gì xảy ra. `id` để control trỏ
+ * `aria-describedby` về đây.
+ */
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
-  return <p className="text-destructive text-xs">{message}</p>;
+  return (
+    <p id={id} role="alert" className="text-destructive text-sm">
+      {message}
+    </p>
+  );
 }

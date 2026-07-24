@@ -19,6 +19,28 @@ export function formatDate(value: string | Date | null | undefined): string {
   return formatInTimeZone(date, APP_TIMEZONE, "dd/MM/yyyy");
 }
 
+/**
+ * Ngày LỊCH từ cột `date` của Postgres ("2026-07-15") → "15/07/2026".
+ *
+ * **Không quy đổi múi giờ, và đó là điều cố ý.** Cột `date` không mang thời
+ * điểm — "ngày phát hành hóa đơn 15/07" là ngày 15/07 ở bất cứ đâu. Đẩy nó qua
+ * `formatDate` là **sai loại dữ liệu**: `parseISO("2026-07-15")` cho nửa đêm
+ * theo giờ MÁY, rồi đổi sang giờ Việt Nam thì máy ở phía đông +07 bị lùi một
+ * ngày. Đã đo thật bằng `TZ=... node`:
+ *
+ *   UTC · New York · Berlin · Ho_Chi_Minh → 15/07/2026  ✅
+ *   Pacific/Auckland (+12) · Kiritimati (+14) → **14/07/2026**  ❌
+ *
+ * Nên cột `date` đi lối này, cột `timestamptz` mới đi `formatDate`.
+ */
+export function formatDateOnly(value: string | null | undefined): string {
+  if (!value) return "—";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return value;
+  const [, year, month, day] = match;
+  return `${day}/${month}/${year}`;
+}
+
 /** Ngày + giờ: 20/07/2026 08:00 */
 export function formatDateTime(
   value: string | Date | null | undefined,

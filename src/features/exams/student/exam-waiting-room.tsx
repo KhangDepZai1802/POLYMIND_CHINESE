@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckCircle2, Headphones, Mic2, ShieldCheck } from "lucide-react";
 import { MicrophoneCheck } from "@/components/shared/microphone-check";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { startExamAction } from "@/features/exams/server/actions";
@@ -54,7 +55,7 @@ export function ExamWaitingRoom({
           {canStart ? "Vào phòng chờ" : "Chưa đến giờ"}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Phòng chờ kỳ thi</DialogTitle>
           <DialogDescription>
@@ -62,27 +63,42 @@ export function ExamWaitingRoom({
             lượt thi.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 text-sm">
-          <Button type="button" variant="outline" onClick={testAudio}>
-            {audioChecked
-              ? "✓ Đã phát âm thanh kiểm tra"
-              : "Phát âm thanh kiểm tra"}
-          </Button>
+        <div className="space-y-3 text-sm">
+          <WaitingStep
+            icon={Headphones}
+            title="1. Kiểm tra âm thanh"
+            tone="sky"
+          >
+            <Button type="button" variant="outline" onClick={testAudio}>
+              {audioChecked && <CheckCircle2 className="size-4" aria-hidden />}
+              {audioChecked
+                ? "Đã phát âm thanh kiểm tra"
+                : "Phát âm thanh kiểm tra"}
+            </Button>
+          </WaitingStep>
           {requiresMicrophone && (
-            <MicrophoneCheck onReadyChange={setMicrophoneReady} />
+            <WaitingStep icon={Mic2} title="2. Kiểm tra micro" tone="cyan">
+              <MicrophoneCheck onReadyChange={setMicrophoneReady} />
+            </WaitingStep>
           )}
-          <Label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 size-4"
-              checked={accepted}
-              onChange={(event) => setAccepted(event.target.checked)}
-            />
-            <span>
-              Tôi hiểu bài thi không cho copy/cut/paste/drop; sự kiện chỉ được
-              ghi để tham khảo và không tự động kết luận gian lận.
-            </span>
-          </Label>
+          <WaitingStep
+            icon={ShieldCheck}
+            title={`${requiresMicrophone ? "3" : "2"}. Xác nhận quy định`}
+            tone="amber"
+          >
+            <Label className="flex items-start gap-3 leading-relaxed">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-5 shrink-0"
+                checked={accepted}
+                onChange={(event) => setAccepted(event.target.checked)}
+              />
+              <span>
+                Tôi hiểu bài thi không cho copy/cut/paste/drop; sự kiện chỉ được
+                ghi để tham khảo và không tự động kết luận gian lận.
+              </span>
+            </Label>
+          </WaitingStep>
         </div>
         <DialogFooter>
           <form action={startExamAction} onSubmit={enterFocusMode}>
@@ -101,5 +117,33 @@ export function ExamWaitingRoom({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function WaitingStep({
+  icon: Icon,
+  title,
+  tone,
+  children,
+}: {
+  icon: typeof Headphones;
+  title: string;
+  tone: "sky" | "cyan" | "amber";
+  children: React.ReactNode;
+}) {
+  const style = {
+    sky: "border-student-sky-border bg-student-sky-surface text-student-sky-ink",
+    cyan: "border-student-cyan-border bg-student-cyan-surface text-student-cyan-ink",
+    amber:
+      "border-student-amber-border bg-student-amber-surface text-student-amber-ink",
+  }[tone];
+  return (
+    <section className={`${style} space-y-3 rounded-xl border p-3`}>
+      <h3 className="flex items-center gap-2 font-semibold">
+        <Icon className="size-4" aria-hidden />
+        {title}
+      </h3>
+      <div className="text-foreground">{children}</div>
+    </section>
   );
 }

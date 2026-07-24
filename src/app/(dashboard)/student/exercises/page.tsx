@@ -22,12 +22,12 @@ export default async function StudentExercisesPage({
     ? (query.tab as "todo" | "doing" | "submitted" | "graded" | "overdue")
     : "todo";
   return (
-    <>
+    <div className="mx-auto w-full max-w-7xl">
       <PageHeader
         title="Bài tập"
         description="Cần làm · Đang làm · Đã nộp · Đã chấm · Quá hạn"
       />
       <StudentExerciseList deliveries={deliveries} initialTab={initialTab} />
-    </>
+    </div>
   );
 }
