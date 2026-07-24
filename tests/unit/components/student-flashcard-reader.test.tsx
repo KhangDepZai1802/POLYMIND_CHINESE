@@ -47,7 +47,6 @@ const deck = {
           hanzi: null,
           pinyin_syllables: null,
           meaning_vi: null,
-          sense_breakdown: [],
           example_sentences: [],
           common_phrases: [],
           front_image_path: "front-cover.jpg",
@@ -72,10 +71,6 @@ const deck = {
           hanzi: "你好",
           pinyin_syllables: "nǐ hǎo",
           meaning_vi: "Xin chào",
-          sense_breakdown: [
-            { hanzi: "你", pinyin: "nǐ", meaning_vi: "bạn" },
-            { hanzi: "好", pinyin: "hǎo", meaning_vi: "tốt" },
-          ],
           example_sentences: [
             {
               hanzi: "你好吗？",
@@ -198,8 +193,13 @@ describe("StudentFlashcardReader", () => {
       { key: "ArrowRight" },
     );
 
+    // Chữ HIỆN RA trên nút cố ý không còn là chữ Hán của thẻ: `label` dài ngắn
+    // tuỳ trang nên nút đổi bề rộng theo từng thẻ, đó là một trong các nguyên
+    // nhân hàng nút trông so le. Chữ Hán vẫn nằm trong TÊN GỌI cho trình đọc
+    // màn hình (`getByRole` bên dưới đã ghim), và chữ hiện ra là phần đầu của
+    // tên gọi đó nên không phạm WCAG 2.5.3.
     const playButton = screen.getByRole("button", { name: "Phát audio 你好" });
-    expect(playButton).toHaveTextContent("你好");
+    expect(playButton).toHaveTextContent("Phát audio");
     const speedGroup = screen.getByRole("group", {
       name: "Tốc độ phát 你好",
     });
@@ -239,12 +239,61 @@ describe("StudentFlashcardReader", () => {
 
     // Mặt sau khối 1: pinyin VIẾT LIỀN, dẫn xuất chứ không phải cột riêng.
     expect(back.getByText(/nǐhǎo/)).toBeInTheDocument();
-    // Khối 3, 4, 5 của §7ter.
-    expect(back.getByText(/bạn/)).toBeInTheDocument();
+    // Khối "Câu ví dụ" và "Cụm từ".
     expect(back.getByText("你好吗？")).toBeInTheDocument();
     expect(back.getByText(/chào cậu/)).toBeInTheDocument();
+    // ⛔ Khối "Tách nghĩa" đã BỎ khỏi sản phẩm (user chốt 2026-07-24). Ghim
+    // chiều phủ định để không ai vô tình dựng lại nó.
+    expect(back.queryByText("Tách nghĩa")).not.toBeInTheDocument();
     // Mặt trước KHÔNG được mang nội dung của mặt sau.
     expect(front.queryByText("你好吗？")).not.toBeInTheDocument();
+  });
+
+  it("nút Thứ tự gốc luôn có mặt, mờ đi khi chưa xáo trộn", () => {
+    render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
+
+    // Bản cũ chỉ dựng nút này SAU khi đã xáo trộn, nên người dùng không thấy
+    // trước rằng việc xáo trộn có đường lùi.
+    const restore = screen.getByRole("button", { name: "Thứ tự gốc" });
+    expect(restore).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xáo trộn" }));
+    expect(
+      screen.getByRole("button", { name: "Thứ tự gốc" }),
+    ).not.toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Thứ tự gốc" }));
+    // Về thứ tự gốc thì nút Xáo trộn trở lại chữ ban đầu và nút lùi lại mờ đi.
+    expect(screen.getByRole("button", { name: "Xáo trộn" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Thứ tự gốc" })).toBeDisabled();
+  });
+
+  it("phát tự động đọc audio của trang khi đang ở mặt trước, và im khi tắt", () => {
+    const play = vi
+      .spyOn(window.HTMLMediaElement.prototype, "play")
+      .mockImplementation(() => Promise.resolve());
+    const pause = vi
+      .spyOn(window.HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => {});
+
+    render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
+    // Sang thẻ từ vựng — trang mở đầu không có audio.
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
+      { key: "ArrowRight" },
+    );
+    expect(play).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Phát tự động" }));
+    expect(play).toHaveBeenCalledTimes(1);
+
+    // Tắt phát tự động phải làm tiếng đang đọc dở im NGAY (WCAG 2.2.2), chứ
+    // không phải đọc nốt rồi mới dừng.
+    fireEvent.click(screen.getByRole("button", { name: "Dừng phát" }));
+    expect(pause).toHaveBeenCalled();
+
+    play.mockRestore();
+    pause.mockRestore();
   });
 
   it("ký được ảnh của câu ví dụ nằm trong jsonb", () => {

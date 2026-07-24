@@ -3,14 +3,12 @@ import type { z } from "zod";
 import {
   flashcardExampleItemSchema,
   flashcardPhraseItemSchema,
-  flashcardSenseItemSchema,
   type FlashcardExampleItem,
   type FlashcardPhraseItem,
-  type FlashcardSenseItem,
 } from "@/features/flashcards/schema";
 
 /**
- * Đọc ba danh sách con từ `jsonb`.
+ * Đọc hai danh sách con từ `jsonb`.
  *
  * Đường GHI đã đi qua Zod (`DS-050` điểm 1) nên mục sai hình dạng chỉ có thể đến
  * từ thao tác ghi thẳng vào DB. Ở đường ĐỌC ta bỏ qua đúng mục hỏng thay vì ném
@@ -31,18 +29,20 @@ function readList<TSchema extends z.ZodType>(
 }
 
 export type FlashcardSublists = {
-  senses: FlashcardSenseItem[];
   examples: FlashcardExampleItem[];
   phrases: FlashcardPhraseItem[];
 };
 
+/**
+ * ⛔ Khối "Tách nghĩa" (`sense_breakdown`) đã bị BỎ khỏi sản phẩm (user chốt
+ * 2026-07-24) và cột DB cũng đã xoá hẳn ở migration `…074` — user đếm trên cloud
+ * ra `tong_the_tu_vung = 206 · co_tach_nghia = 0` nên không mất dữ liệu nào.
+ */
 export function readFlashcardSublists(page: {
-  sense_breakdown: unknown;
   example_sentences: unknown;
   common_phrases: unknown;
 }): FlashcardSublists {
   return {
-    senses: readList(flashcardSenseItemSchema, page.sense_breakdown),
     examples: readList(flashcardExampleItemSchema, page.example_sentences),
     phrases: readList(flashcardPhraseItemSchema, page.common_phrases),
   };

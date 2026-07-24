@@ -126,6 +126,7 @@ export async function getAdminFlashcardDeck(
     .from("flashcard_sections")
     .select("*")
     .eq("deck_id", deck.id)
+    .is("archived_at", null)
     .order("session_number");
   if (sectionError) throw new Error("Không tải được mục lục flashcard.");
 
@@ -191,6 +192,7 @@ export async function getStudentFlashcardDeck(
     .select("*")
     .eq("deck_id", deck.id)
     .eq("status", "published")
+    .is("archived_at", null)
     .order("session_number");
   if (sectionError) {
     throw new Error("Không tải được mục lục flashcard của bạn.");

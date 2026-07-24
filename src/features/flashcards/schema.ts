@@ -4,7 +4,6 @@ import {
   isFlashcardMediaSlot,
   MAX_FLASHCARD_EXAMPLE_SENTENCES,
   MAX_FLASHCARD_PHRASE_ITEMS,
-  MAX_FLASHCARD_SENSE_ITEMS,
   MAX_FLASHCARD_UPLOAD_FILES,
   type FlashcardMediaSlot,
 } from "@/features/flashcards/domain/media";
@@ -23,17 +22,15 @@ export const flashcardSectionSchema = z.object({
 });
 
 // =====================================================================
-// Ba danh sách con của thẻ từ vựng (§7ter khối 3, 4, 5)
+// Hai danh sách con của thẻ từ vựng (§7ter khối "Câu ví dụ" và "Cụm từ")
 // =====================================================================
-// ⚠️ Ba danh sách này lưu ở cột `jsonb`, mà `jsonb` KHÔNG có FK và KHÔNG có
+// ⚠️ Hai danh sách này lưu ở cột `jsonb`, mà `jsonb` KHÔNG có FK và KHÔNG có
 // CHECK hình dạng ở tầng DB. Các schema dưới đây là chỗ cưỡng chế DUY NHẤT
 // (`DS-050` điểm 1) — mọi đường ghi phải đi qua chúng (`BUG_M10_01`).
-
-export const flashcardSenseItemSchema = z.object({
-  hanzi: z.string().trim().min(1, "Nhập thành tố Hán tự.").max(40),
-  pinyin: z.string().trim().min(1, "Nhập pinyin của thành tố.").max(80),
-  meaning_vi: z.string().trim().min(1, "Nhập nghĩa của thành tố.").max(200),
-});
+//
+// ⛔ Khối thứ ba "Tách nghĩa" (`sense_breakdown`) đã bị BỎ khỏi sản phẩm (user
+// chốt 2026-07-24): mặt sau chỉ còn Thẻ · Nghĩa · Câu ví dụ · Cụm từ. Cột DB
+// cũng đã xoá hẳn ở migration `…074`.
 
 export const flashcardExampleItemSchema = z.object({
   hanzi: z.string().trim().min(1, "Nhập câu ví dụ bằng Hán tự.").max(200),
@@ -57,12 +54,11 @@ export const flashcardPhraseItemSchema = z.object({
   meaning_vi: z.string().trim().min(1, "Nhập nghĩa của cụm từ.").max(200),
 });
 
-export type FlashcardSenseItem = z.infer<typeof flashcardSenseItemSchema>;
 export type FlashcardExampleItem = z.infer<typeof flashcardExampleItemSchema>;
 export type FlashcardPhraseItem = z.infer<typeof flashcardPhraseItemSchema>;
 
 /**
- * Ba danh sách con đi qua `FormData` dưới dạng chuỗi JSON. Preprocess đọc cả ba
+ * Hai danh sách con đi qua `FormData` dưới dạng chuỗi JSON. Preprocess đọc cả ba
  * hình dạng gặp thật: mảng sẵn (gọi từ server), chuỗi JSON (form), rỗng.
  * JSON hỏng thì trả `null` để `z.array` báo đúng câu tiếng Việt bên dưới —
  * không bao giờ đẩy nguyên văn lỗi parse ra giao diện (`EX-21`).
@@ -129,11 +125,6 @@ export const flashcardVocabularyPageSchema = z.object({
   audio_path: optionalMediaPath,
   front_image_path: optionalMediaPath,
   back_image_path: optionalMediaPath,
-  sense_breakdown: jsonList(
-    flashcardSenseItemSchema,
-    MAX_FLASHCARD_SENSE_ITEMS,
-    "Tách nghĩa",
-  ),
   example_sentences: jsonList(
     flashcardExampleItemSchema,
     MAX_FLASHCARD_EXAMPLE_SENTENCES,
@@ -172,11 +163,15 @@ export const flashcardPageSchema = z
 export type FlashcardPageInput = z.infer<typeof flashcardPageSchema>;
 
 /**
- * Một dòng của ô "Nhập hàng loạt" (`P16-T4`).
+ * Một dòng của ô "Nhập hàng loạt" (`P16-T4`, mở rộng `D-35` điểm 1).
  *
  * ⛔ Cố ý KHÔNG có `audio_path` và không có ảnh: đường nhập hàng loạt chỉ mang
- * chữ, audio gắn sau bằng màn soạn thẻ. Vì vậy thẻ vừa nhập là thẻ **chưa đủ để
- * công bố** — `validate_flashcard_section_publish` chặn ở bước công bố.
+ * chữ, audio và ảnh gắn sau bằng màn soạn thẻ. Vì vậy thẻ vừa nhập là thẻ **chưa
+ * đủ để công bố** — `validate_flashcard_section_publish` chặn ở bước công bố.
+ *
+ * Hai danh sách con dùng LẠI đúng schema của màn soạn thẻ, không viết bản thứ
+ * hai: một hình dạng dữ liệu chỉ được có một chỗ cưỡng chế (`BUG_M10_01`).
+ * `.default([])` giữ đường 3 cột cũ chạy y hệt — dòng không có cột 4/5 vẫn hợp lệ.
  */
 export const flashcardImportRowSchema = z.object({
   hanzi: z.string().trim().min(1, "Thiếu Hán tự.").max(60),
@@ -186,6 +181,20 @@ export const flashcardImportRowSchema = z.object({
     .min(1, "Thiếu pinyin.")
     .max(160),
   meaning_vi: z.string().trim().min(1, "Thiếu nghĩa tiếng Việt.").max(300),
+  example_sentences: z
+    .array(flashcardExampleItemSchema)
+    .max(
+      MAX_FLASHCARD_EXAMPLE_SENTENCES,
+      `Tối đa ${MAX_FLASHCARD_EXAMPLE_SENTENCES} câu ví dụ.`,
+    )
+    .default([]),
+  common_phrases: z
+    .array(flashcardPhraseItemSchema)
+    .max(
+      MAX_FLASHCARD_PHRASE_ITEMS,
+      `Tối đa ${MAX_FLASHCARD_PHRASE_ITEMS} cụm từ.`,
+    )
+    .default([]),
 });
 
 export type FlashcardImportRow = z.infer<typeof flashcardImportRowSchema>;

@@ -13,7 +13,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(28);
+select plan(29);
 
 -- =====================================================================
 -- Hình dạng schema
@@ -21,7 +21,10 @@ select plan(28);
 select has_column('public', 'flashcard_pages', 'hanzi', 'có cột hanzi');
 select has_column('public', 'flashcard_pages', 'pinyin_syllables', 'có cột pinyin_syllables');
 select has_column('public', 'flashcard_pages', 'meaning_vi', 'có cột meaning_vi');
-select has_column('public', 'flashcard_pages', 'sense_breakdown', 'có cột sense_breakdown');
+select hasnt_column(
+  'public', 'flashcard_pages', 'sense_breakdown',
+  'cột sense_breakdown đã XOÁ HẲN — khối "Tách nghĩa" không còn trong sản phẩm'
+);
 select has_column('public', 'flashcard_pages', 'example_sentences', 'có cột example_sentences');
 select has_column('public', 'flashcard_pages', 'common_phrases', 'có cột common_phrases');
 select has_column('public', 'flashcard_pages', 'media_paths', 'có cột media_paths');
@@ -142,7 +145,7 @@ values
 insert into public.flashcard_pages (
   id, section_id, kind, order_index,
   hanzi, pinyin_syllables, meaning_vi,
-  sense_breakdown, example_sentences, common_phrases,
+  example_sentences, common_phrases,
   front_image_path, back_image_path, audio_path,
   front_alt, back_alt
 )
@@ -152,7 +155,7 @@ values
     '70600000-0000-4000-8000-000000000001',
     'session_cover', 0,
     null, null, null,
-    '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+    '[]'::jsonb, '[]'::jsonb,
     '70000000-0000-4000-8000-000000000001/s1/cover/front-1.png',
     '70000000-0000-4000-8000-000000000001/s1/cover/back-1.png',
     null,
@@ -163,7 +166,6 @@ values
     '70600000-0000-4000-8000-000000000001',
     'vocabulary', 1,
     '苹果', 'píng guǒ', 'Quả táo',
-    '[{"hanzi":"苹","pinyin":"píng","meaning_vi":"cây táo"}]'::jsonb,
     '[{"hanzi":"我吃苹果。","pinyin":"wǒ chī píngguǒ","meaning_vi":"Tôi ăn táo.","image_path":"70000000-0000-4000-8000-000000000001/s1/v1/example-1-aaa.png"}]'::jsonb,
     '[{"hanzi":"吃苹果","pinyin":"chī píngguǒ","meaning_vi":"ăn táo"}]'::jsonb,
     '70000000-0000-4000-8000-000000000001/s1/v1/front-2.png',
@@ -275,11 +277,21 @@ select throws_ok(
 
 select throws_ok(
   $$update public.flashcard_pages
-    set sense_breakdown = '{"khong":"phai mang"}'::jsonb
+    set common_phrases = '{"khong":"phai mang"}'::jsonb
     where id = '70700000-0000-4000-8000-000000000004'$$,
   '23514',
   null,
-  'ba cột danh sách con luôn phải là MẢNG jsonb'
+  'hai cột danh sách con luôn phải là MẢNG jsonb'
+);
+
+-- Cột đã xoá thì mọi đường ghi cũ phải chết THẲNG, không âm thầm bỏ qua.
+select throws_ok(
+  $$update public.flashcard_pages
+    set sense_breakdown = '[]'::jsonb
+    where id = '70700000-0000-4000-8000-000000000004'$$,
+  '42703',
+  null,
+  'ghi vào sense_breakdown báo lỗi "column does not exist" — cột đã xoá hẳn'
 );
 
 -- §7ter: ảnh của thẻ từ vựng là TUỲ CHỌN.

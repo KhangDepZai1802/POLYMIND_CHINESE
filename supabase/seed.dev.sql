@@ -288,12 +288,14 @@ insert into public.flashcard_sections (id, deck_id, session_number, title)
 values
   ('a1100000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 1, 'Buổi 1 — Ở ngân hàng'),
   ('a1100000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000001', 2, 'Buổi 2 — Giao dịch (bản nháp)')
-on conflict (deck_id, session_number) do nothing;
+-- Khoá số buổi là PARTIAL index từ migration `…076` (buổi đã xoá không chiếm
+-- số nữa), nên `ON CONFLICT` phải kèm đúng vế `where` mới suy ra được index.
+on conflict (deck_id, session_number) where archived_at is null do nothing;
 
 insert into public.flashcard_pages (
   id, section_id, kind, order_index,
   hanzi, pinyin_syllables, meaning_vi,
-  sense_breakdown, example_sentences, common_phrases,
+  example_sentences, common_phrases,
   front_image_path, back_image_path, audio_path, front_alt, back_alt
 )
 values
@@ -301,7 +303,7 @@ values
     'a1200000-0000-4000-8000-000000000001',
     'a1100000-0000-4000-8000-000000000001',
     'session_cover', 0, null, null, null,
-    '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+    '[]'::jsonb, '[]'::jsonb,
     '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000001/front-a1300000-0000-4000-8000-000000000001.png',
     '11111111-1111-1111-1111-111111111111/a1000000-0000-4000-8000-000000000001/a1100000-0000-4000-8000-000000000001/a1200000-0000-4000-8000-000000000001/back-a1300000-0000-4000-8000-000000000002.png',
     null,
@@ -313,8 +315,6 @@ values
     'a1100000-0000-4000-8000-000000000001',
     'vocabulary', 1,
     '银行', 'yín háng', 'Ngân hàng',
-    '[{"hanzi":"银","pinyin":"yín","meaning_vi":"bạc, kim loại bạc"},
-      {"hanzi":"行","pinyin":"háng","meaning_vi":"hàng, ngành nghề"}]'::jsonb,
     '[{"hanzi":"我去银行取钱。","pinyin":"wǒ qù yínháng qǔ qián","meaning_vi":"Tôi đến ngân hàng rút tiền."},
       {"hanzi":"这家银行几点开门？","pinyin":"zhè jiā yínháng jǐ diǎn kāimén","meaning_vi":"Ngân hàng này mấy giờ mở cửa?"}]'::jsonb,
     '[{"hanzi":"银行卡","pinyin":"yínháng kǎ","meaning_vi":"thẻ ngân hàng"},
@@ -331,8 +331,6 @@ values
     'a1100000-0000-4000-8000-000000000001',
     'vocabulary', 2,
     '客户', 'kè hù', 'Khách hàng',
-    '[{"hanzi":"客","pinyin":"kè","meaning_vi":"khách"},
-      {"hanzi":"户","pinyin":"hù","meaning_vi":"hộ, tài khoản"}]'::jsonb,
     '[{"hanzi":"这位客户要开户。","pinyin":"zhè wèi kèhù yào kāihù","meaning_vi":"Vị khách hàng này muốn mở tài khoản."}]'::jsonb,
     '[{"hanzi":"新客户","pinyin":"xīn kèhù","meaning_vi":"khách hàng mới"},
       {"hanzi":"客户服务","pinyin":"kèhù fúwù","meaning_vi":"dịch vụ khách hàng"}]'::jsonb,
@@ -345,8 +343,6 @@ values
     'a1100000-0000-4000-8000-000000000001',
     'vocabulary', 3,
     '存钱', 'cún qián', 'Gửi tiền',
-    '[{"hanzi":"存","pinyin":"cún","meaning_vi":"gửi, cất giữ"},
-      {"hanzi":"钱","pinyin":"qián","meaning_vi":"tiền"}]'::jsonb,
     '[{"hanzi":"我想存钱。","pinyin":"wǒ xiǎng cún qián","meaning_vi":"Tôi muốn gửi tiền."},
       {"hanzi":"存钱要带身份证吗？","pinyin":"cún qián yào dài shēnfènzhèng ma","meaning_vi":"Gửi tiền có cần mang chứng minh thư không?"}]'::jsonb,
     '[{"hanzi":"存钱进去","pinyin":"cún qián jìnqù","meaning_vi":"gửi tiền vào"},
@@ -361,7 +357,7 @@ values
     'a1100000-0000-4000-8000-000000000002',
     'vocabulary', 1,
     '汇款', 'huì kuǎn', 'Chuyển khoản',
-    '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+    '[]'::jsonb, '[]'::jsonb,
     null, null, null, null, null
   )
 on conflict (id) do nothing;

@@ -95,7 +95,6 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
     expect(parsed.data.audio_path).toBe(`${PREFIX}/audio-a.mp3`);
     expect(parsed.data.front_image_path).toBeNull();
     expect(parsed.data.back_image_path).toBeNull();
-    expect(parsed.data.sense_breakdown).toEqual([]);
     expect(parsed.data.example_sentences).toEqual([]);
     expect(parsed.data.common_phrases).toEqual([]);
   });
@@ -129,9 +128,6 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
       pinyin_syllables: "hú luó bo",
       meaning_vi: "Củ cà rốt",
       audio_path: `${PREFIX}/audio-a.mp3`,
-      sense_breakdown: JSON.stringify([
-        { hanzi: "萝卜", pinyin: "luóbo", meaning_vi: "củ cải" },
-      ]),
       example_sentences: JSON.stringify([
         {
           hanzi: "我喜欢吃胡萝卜。",
@@ -147,7 +143,6 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
 
     expect(parsed.success).toBe(true);
     if (!parsed.success || parsed.data.kind !== "vocabulary") return;
-    expect(parsed.data.sense_breakdown).toHaveLength(1);
     expect(parsed.data.example_sentences[0]?.image_path).toBe(
       `${PREFIX}/example-0-a.png`,
     );
@@ -210,11 +205,14 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
       pinyin_syllables: "hú luó bo",
       meaning_vi: "Củ cà rốt",
       audio_path: `${PREFIX}/audio-a.mp3`,
-      sense_breakdown: JSON.stringify([{ hanzi: "萝卜", pinyin: "luóbo" }]),
+      // Mục cụm từ thiếu `meaning_vi` — Zod là chỗ cưỡng chế duy nhất cho hình
+      // dạng của `jsonb`, nên bài này phải chỉ đúng vào trường thiếu.
+      common_phrases: JSON.stringify([{ hanzi: "萝卜", pinyin: "luóbo" }]),
     });
 
     expect(parsed.success).toBe(false);
-    expect(issuePaths(parsed).some((path) => path.startsWith("sense_breakdown")))
-      .toBe(true);
+    expect(
+      issuePaths(parsed).some((path) => path.startsWith("common_phrases")),
+    ).toBe(true);
   });
 });

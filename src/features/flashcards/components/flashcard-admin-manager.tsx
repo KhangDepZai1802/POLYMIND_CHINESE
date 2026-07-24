@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -8,11 +7,13 @@ import {
   ArrowUp,
   BookOpen,
   ImagePlus,
+  ListPlus,
   Loader2,
   Pencil,
   Plus,
   Send,
   Trash2,
+  TriangleAlert,
   Undo2,
   Volume2,
 } from "lucide-react";
@@ -20,6 +21,16 @@ import { toast } from "sonner";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +53,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  FlashcardFaceCard,
+  type Face,
+} from "@/features/flashcards/components/flashcard-face";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
+import { flashcardImportKey } from "@/features/flashcards/domain/bulk-import";
 import {
   VocabularySublistEditor,
   type SublistDraft,
@@ -52,12 +68,14 @@ import {
   FLASHCARD_MEDIA_BUCKET,
   MAX_FLASHCARD_EXAMPLE_SENTENCES,
   MAX_FLASHCARD_PHRASE_ITEMS,
-  MAX_FLASHCARD_SENSE_ITEMS,
   type FlashcardMediaSlot,
 } from "@/features/flashcards/domain/media";
 import { readFlashcardSublists } from "@/features/flashcards/domain/sublists";
 import {
+  archiveFlashcardDeckSectionsAction,
   archiveFlashcardPageAction,
+  archiveFlashcardSectionPagesAction,
+  createFlashcardSectionsAction,
   createFlashcardUploadTicketsAction,
   discardFlashcardUploadsAction,
   moveFlashcardPageAction,
@@ -172,12 +190,24 @@ export function FlashcardAdminManager({
                 {deck.description || "Chưa có mô tả."}
               </p>
             </div>
+            {/*
+              MỘT hành động chính mỗi vùng: "Thêm buổi" là nút mặc định, "Tạo
+              nhiều buổi" đứng cạnh ở dạng viền. Hành động PHÁ HUỶ không nằm ở
+              đây — chúng ở "Vùng nguy hiểm" cuối trang.
+            */}
             {nextSession ? (
-              <SectionDialog
-                deckId={deck.id}
-                maxSessions={selectedCourse.defaultSessionCount}
-                nextSession={nextSession}
-              />
+              <div className="flex flex-wrap gap-2">
+                <SectionDialog
+                  deckId={deck.id}
+                  maxSessions={selectedCourse.defaultSessionCount}
+                  nextSession={nextSession}
+                />
+                <SectionRangeDialog
+                  deckId={deck.id}
+                  maxSessions={selectedCourse.defaultSessionCount}
+                  nextSession={nextSession}
+                />
+              </div>
             ) : (
               <StatusBadge label="Đã đủ số buổi" tone="success" />
             )}
@@ -212,11 +242,14 @@ export function FlashcardAdminManager({
                 ))}
               </nav>
               {section && (
-                <SectionWorkspace
-                  deck={deck}
-                  section={section}
-                  maxSessions={selectedCourse.defaultSessionCount}
-                />
+                <>
+                  <SectionWorkspace
+                    deck={deck}
+                    section={section}
+                    maxSessions={selectedCourse.defaultSessionCount}
+                  />
+                  <FlashcardDangerZone deck={deck} section={section} />
+                </>
               )}
             </>
           )}
@@ -385,6 +418,256 @@ function SectionDialog({
   );
 }
 
+/** Tạo NHIỀU buổi trong một lượt: nhập "từ buổi X đến buổi Y". */
+function SectionRangeDialog({
+  deckId,
+  maxSessions,
+  nextSession,
+}: {
+  deckId: string;
+  maxSessions: number;
+  nextSession: number;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [state, setState] = useState<ActionState>({});
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setState({});
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline">
+          <ListPlus className="size-4" aria-hidden />
+          Tạo nhiều buổi
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Tạo nhiều buổi cùng lúc</DialogTitle>
+          <DialogDescription>
+            Tạo liền một dải buổi, ví dụ từ buổi {nextSession} đến buổi{" "}
+            {maxSessions}. Buổi nào đã có sẵn sẽ được giữ nguyên, không tạo
+            trùng.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            startTransition(async () => {
+              const result = await createFlashcardSectionsAction(data);
+              setState(result);
+              if (result.success) {
+                toast.success(result.success);
+                setOpen(false);
+                router.refresh();
+              }
+            });
+          }}
+        >
+          <input type="hidden" name="deck_id" value={deckId} />
+          {state.error && (
+            <Alert variant="destructive">
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="range-from">Từ buổi *</Label>
+              <Input
+                id="range-from"
+                name="from_session"
+                type="number"
+                min={1}
+                max={maxSessions}
+                defaultValue={nextSession}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="range-to">Đến buổi *</Label>
+              <Input
+                id="range-to"
+                name="to_session"
+                type="number"
+                min={1}
+                max={maxSessions}
+                defaultValue={maxSessions}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={pending}>
+              {pending && (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              )}
+              Tạo các buổi
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * VÙNG NGUY HIỂM — hai hành động phá huỷ, đặt TÁCH khỏi cụm nút thường.
+ *
+ * Luật áp dụng (`ui-ux-pro-max`): `destructive-nav-separation` (hành động nguy
+ * hiểm phải tách cả về THỊ GIÁC lẫn VỊ TRÍ khỏi nút thường), `primary-action`
+ * (mỗi vùng chỉ một CTA chính — ở khu trên là "Công bố buổi"), và
+ * `confirmation-dialogs`. Đặt "Xoá tất cả trang" cạnh "Thêm trang" là công thức
+ * để một cú bấm nhầm xoá sạch buổi vừa soạn.
+ *
+ * User chốt (`D-35` điểm 4): chỉ cần hộp thoại xác nhận thường với nút Xoá màu
+ * destructive — KHÔNG bắt gõ lại tên.
+ */
+function FlashcardDangerZone({
+  deck,
+  section,
+}: {
+  deck: FlashcardDeckView;
+  section: FlashcardSectionView;
+}) {
+  const draftSections = deck.sections.filter(
+    (item) => item.status === "draft",
+  ).length;
+  const publishedSections = deck.sections.length - draftSections;
+  const canClearPages =
+    section.status === "draft" && section.pages.length > 0;
+
+  if (!canClearPages && draftSections === 0) return null;
+
+  return (
+    <section
+      aria-labelledby="flashcard-danger-zone"
+      className="border-destructive/40 bg-destructive/5 rounded-lg border p-4"
+    >
+      {/*
+        `text-danger-ink` (#b91c1c) chứ KHÔNG phải `text-destructive` (#dc2626):
+        trên nền `bg-destructive/5` (trộn ra #f5edf0) thì #dc2626 chỉ được
+        **4.19:1**, hụt AA — axe bắt đúng chỗ này. `--danger-ink` là token đã
+        được tạo sẵn ở `DS-030` cho đúng tình huống "chữ đỏ trên nền đỏ nhạt";
+        đo lại trên nền này được **5.62:1**. Nút bên dưới vẫn dùng
+        `text-destructive` vì nền của chúng là `bg-background` trắng (4.83:1).
+      */}
+      <h3
+        id="flashcard-danger-zone"
+        className="text-danger-ink flex items-center gap-2 text-sm font-semibold"
+      >
+        <TriangleAlert className="size-4" aria-hidden />
+        Vùng nguy hiểm
+      </h3>
+      <p className="text-muted-foreground mt-1 text-sm">
+        Các thao tác dưới đây xoá hàng loạt và không tự hoàn tác được. Buổi đã
+        công bố luôn được giữ lại — muốn xoá thì đưa về nháp trước.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {canClearPages && (
+          <DangerAction
+            label={`Xoá tất cả trang trong buổi ${section.session_number}`}
+            title={`Xoá tất cả ${section.pages.length} trang của buổi ${section.session_number}?`}
+            description={`Toàn bộ trang mở đầu và thẻ từ vựng của "${section.title}" sẽ bị xoá, kèm ảnh và audio đã tải lên. Buổi vẫn còn, nhưng trống.`}
+            fields={{ id: section.id }}
+            action={archiveFlashcardSectionPagesAction}
+          />
+        )}
+        {draftSections > 0 && (
+          <DangerAction
+            label="Xoá tất cả buổi của bộ thẻ"
+            title={`Xoá ${draftSections} buổi nháp của "${deck.title}"?`}
+            description={
+              publishedSections > 0
+                ? `Mọi buổi đang nháp cùng toàn bộ trang bên trong sẽ bị xoá. ${publishedSections} buổi đã công bố được giữ nguyên.`
+                : "Mọi buổi cùng toàn bộ trang bên trong sẽ bị xoá. Số buổi được giải phóng nên bạn tạo lại từ đầu được."
+            }
+            fields={{ deck_id: deck.id }}
+            action={archiveFlashcardDeckSectionsAction}
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function DangerAction({
+  label,
+  title,
+  description,
+  fields,
+  action,
+}: {
+  label: string;
+  title: string;
+  description: string;
+  fields: Record<string, string>;
+  action: (data: FormData) => Promise<ActionState>;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <>
+      {/*
+        `alert-dialog.tsx` cố ý KHÔNG export `AlertDialogTrigger` — nút mở do
+        chính component client này dựng và điều khiển bằng state (`DS-051`).
+      */}
+      <Button
+        type="button"
+        variant="outline"
+        className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 className="size-4" aria-hidden />
+        {label}
+      </Button>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{title}</AlertDialogTitle>
+            <AlertDialogDescription>{description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pending}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+              onClick={(event) => {
+                event.preventDefault();
+                const data = new FormData();
+                for (const [key, value] of Object.entries(fields)) {
+                  data.set(key, value);
+                }
+                startTransition(async () => {
+                  const result = await action(data);
+                  if (result.error) toast.error(result.error);
+                  if (result.success) toast.success(result.success);
+                  setOpen(false);
+                  router.refresh();
+                });
+              }}
+            >
+              {pending && (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              )}
+              Xoá
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 function SectionWorkspace({
   deck,
   section,
@@ -396,6 +679,23 @@ function SectionWorkspace({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  /**
+   * Khoá của thẻ đã có trong buổi, để ô "Nhập hàng loạt" báo trước dòng nào sẽ
+   * bị bỏ qua. Chỗ chặn thật vẫn là unique index ở DB (`BUG_M09_01`) — danh sách
+   * này chỉ để nói trước, nên có cũ đi cũng không sinh thẻ trùng.
+   */
+  const existingVocabKeys = useMemo(
+    () =>
+      new Set(
+        section.pages
+          .filter((page) => page.kind === "vocabulary")
+          .map((page) =>
+            flashcardImportKey(page.hanzi ?? "", page.pinyin_syllables ?? ""),
+          ),
+      ),
+    [section.pages],
+  );
 
   function run(action: (data: FormData) => Promise<ActionState>) {
     const data = new FormData();
@@ -433,7 +733,10 @@ function SectionWorkspace({
           {section.status === "draft" && (
             <>
               <PageDialog deckId={deck.id} section={section} />
-              <FlashcardImportDialog sectionId={section.id} />
+              <FlashcardImportDialog
+                sectionId={section.id}
+                existingKeys={existingVocabKeys}
+              />
             </>
           )}
           <Button
@@ -529,17 +832,8 @@ function FlashcardPageRow({
       <div className="bg-muted flex size-11 items-center justify-center rounded-md font-semibold tabular-nums">
         {index + 1}
       </div>
-      <div className="grid min-w-0 gap-3 sm:grid-cols-[120px_120px_minmax(0,1fr)] sm:items-center">
-        <MediaPreview
-          url={page.frontUrl}
-          alt={page.front_alt}
-          emptyLabel={isCover ? "Thiếu ảnh" : "Không có ảnh"}
-        />
-        <MediaPreview
-          url={page.backUrl}
-          alt={page.back_alt}
-          emptyLabel={isCover ? "Thiếu ảnh" : "Không có ảnh"}
-        />
+      <div className="grid min-w-0 gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+        <FlashcardFacePreviewPair page={page} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">
@@ -563,8 +857,8 @@ function FlashcardPageRow({
                 {page.pinyin_syllables} · {page.meaning_vi}
               </p>
               <p className="text-muted-foreground text-sm">
-                Tách nghĩa {sublists.senses.length} · Câu ví dụ{" "}
-                {sublists.examples.length} · Cụm từ {sublists.phrases.length}
+                Câu ví dụ {sublists.examples.length} · Cụm từ{" "}
+                {sublists.phrases.length}
               </p>
             </>
           )}
@@ -636,28 +930,94 @@ function FlashcardPageRow({
   );
 }
 
-function MediaPreview({
-  url,
-  alt,
-  emptyLabel,
+/**
+ * XEM TRƯỚC ĐÚNG THỨ HỌC VIÊN NHÌN THẤY.
+ *
+ * Bản cũ ở đây là hai ô `MediaPreview` — ảnh THÔ của hai cột, kèm chữ "Không có
+ * ảnh" cho thẻ chữ thuần. Tức admin soạn xong không cách nào biết thẻ hiện ra
+ * thế nào, vì từ Phase 16 mặt thẻ được dựng BẰNG CHỮ chứ không còn là ảnh.
+ *
+ * Nay hai ô này là chính `FlashcardFaceCard` mà màn học viên dùng, thu nhỏ lại.
+ * Vẽ một bản thứ hai cho Quản trị là tự tạo hai nguồn sự thật (`BUG_M10_01`).
+ */
+const PREVIEW_NATURAL_WIDTH = 600;
+const PREVIEW_BOX_WIDTH = 160;
+const PREVIEW_SCALE = PREVIEW_BOX_WIDTH / PREVIEW_NATURAL_WIDTH;
+
+function FlashcardFaceThumbnail({
+  page,
+  face,
 }: {
-  url: string | null;
-  alt: string | null;
-  emptyLabel: string;
+  page: FlashcardPageView;
+  face: Face;
 }) {
-  return url ? (
-    <Image
-      src={url}
-      alt={alt ?? ""}
-      width={120}
-      height={84}
-      unoptimized
-      className="h-20 w-full rounded-md border object-cover"
-    />
-  ) : (
-    <div className="bg-muted text-muted-foreground flex h-20 items-center justify-center rounded-md px-2 text-center text-sm">
-      {emptyLabel}
-    </div>
+  return (
+    // Khung cắt nằm BÊN TRONG nút, không bọc ngoài: `overflow-hidden` bọc quanh
+    // một nút sẽ cắt mất vòng focus 3px của chính nút đó.
+    <span
+      aria-hidden
+      className="bg-card block h-37.5 w-40 overflow-hidden rounded-md border"
+    >
+      <span
+        className="block origin-top-left"
+        style={{
+          width: PREVIEW_NATURAL_WIDTH,
+          transform: `scale(${PREVIEW_SCALE})`,
+        }}
+      >
+        <FlashcardFaceCard page={page} face={face} />
+      </span>
+    </span>
+  );
+}
+
+function FlashcardFacePreviewPair({ page }: { page: FlashcardPageView }) {
+  const [open, setOpen] = useState(false);
+  const name =
+    page.kind === "session_cover"
+      ? "trang mở đầu"
+      : `thẻ ${page.hanzi ?? "từ vựng"}`;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {(["front", "back"] as const).map((face) => (
+          <DialogTrigger asChild key={face}>
+            <button
+              type="button"
+              className="focus-visible:ring-ring cursor-pointer rounded-md focus-visible:ring-2 focus-visible:ring-offset-2"
+            >
+              <FlashcardFaceThumbnail page={page} face={face} />
+              <span className="sr-only">
+                Phóng to mặt {face === "front" ? "trước" : "sau"} của {name}
+              </span>
+            </button>
+          </DialogTrigger>
+        ))}
+      </div>
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Xem trước {name}</DialogTitle>
+          <DialogDescription>
+            Đúng bằng thứ học viên nhìn thấy khi buổi đã công bố.
+          </DialogDescription>
+        </DialogHeader>
+        {/*
+          Hiện CẢ HAI mặt cùng lúc thay vì bắt lật: admin đang soát nội dung, cần
+          so hai mặt với nhau, không cần diễn lại thao tác học.
+        */}
+        <div className="space-y-4">
+          {(["front", "back"] as const).map((face) => (
+            <section key={face} className="space-y-2">
+              <h3 className="text-sm font-semibold">
+                {face === "front" ? "Mặt trước" : "Mặt sau"}
+              </h3>
+              <FlashcardFaceCard page={page} face={face} />
+            </section>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -708,14 +1068,8 @@ function PageDialog({
   const [kind, setKind] = useState<"session_cover" | "vocabulary">(defaultKind);
 
   const stored = useMemo(
-    () =>
-      page
-        ? readFlashcardSublists(page)
-        : { senses: [], examples: [], phrases: [] },
+    () => (page ? readFlashcardSublists(page) : { examples: [], phrases: [] }),
     [page],
-  );
-  const [senses, setSenses] = useState<SublistDraft[]>(() =>
-    toDrafts(stored.senses),
   );
   const [examples, setExamples] = useState<SublistDraft[]>(() =>
     toDrafts(stored.examples),
@@ -731,7 +1085,6 @@ function PageDialog({
     setState({});
     setKind(defaultKind);
     setClearedFaces({ front: false, back: false });
-    setSenses(toDrafts(stored.senses));
     setExamples(toDrafts(stored.examples));
     setPhrases(toDrafts(stored.phrases));
   }
@@ -848,16 +1201,6 @@ function PageDialog({
         formData.set(
           "audio_path",
           uploadedBySlot.get("audio") ?? page?.audio_path ?? "",
-        );
-        formData.set(
-          "sense_breakdown",
-          JSON.stringify(
-            senses.map((item) => ({
-              hanzi: item.hanzi,
-              pinyin: item.pinyin,
-              meaning_vi: item.meaning_vi,
-            })),
-          ),
         );
         formData.set(
           "common_phrases",
@@ -1110,17 +1453,6 @@ function PageDialog({
 
           {kind === "vocabulary" && (
             <div className="space-y-3">
-              <VocabularySublistEditor
-                idPrefix={fieldId("sense")}
-                legend="Tách nghĩa"
-                description="Từng thành tố của từ. Thành tố có thể dài hơn một chữ (ví dụ 萝卜), nên bạn tự cắt."
-                itemNoun="thành tố"
-                hanziLabel="Thành tố Hán tự"
-                meaningLabel="Nghĩa của thành tố"
-                items={senses}
-                max={MAX_FLASHCARD_SENSE_ITEMS}
-                onChange={setSenses}
-              />
               <VocabularySublistEditor
                 idPrefix={fieldId("example")}
                 legend="Câu ví dụ"

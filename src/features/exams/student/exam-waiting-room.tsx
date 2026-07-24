@@ -93,10 +93,7 @@ export function ExamWaitingRoom({
                 checked={accepted}
                 onChange={(event) => setAccepted(event.target.checked)}
               />
-              <span>
-                Tôi hiểu bài thi không cho copy/cut/paste/drop; sự kiện chỉ được
-                ghi để tham khảo và không tự động kết luận gian lận.
-              </span>
+              <span>Tôi hiểu bài thi không cho copy/cut/paste/drop.</span>
             </Label>
           </WaitingStep>
         </div>

@@ -186,6 +186,43 @@ Nếu thiết kế lại `student-flashcard-reader.tsx` theo Learning Journey Be
 
 ---
 
+## 7quater. ĐỊNH DẠNG NHẬP HÀNG LOẠT — bản chốt (user chọn 2026-07-24, `D-35` điểm 1)
+
+User chọn kiểu **"MỘT DÒNG CHỨA TẤT CẢ"**, khác đề xuất của Claude (dòng phụ có tiền tố).
+Điểm yếu đã biết của kiểu này: dòng dài, gõ sai ở giữa thì khó dò. Điều kiện đánh đổi
+Claude cam kết và **đã cài**: mọi thông báo lỗi phải chỉ đúng **mục con** nào hỏng.
+
+```
+hanzi | pinyin | nghĩa | <câu ví dụ> | <cụm từ>
+```
+
+| Ký hiệu | Nghĩa | Ghi chú |
+|---|---|---|
+| `\|` hoặc **Tab** | ngăn **CỘT** | ⛔ **không** tách theo dấu cách — pinyin tách âm tiết và nghĩa tiếng Việt đều chứa dấu cách |
+| `;;` | ngăn các **MỤC** trong một danh sách | thừa `;;` hoặc `;;` ở cuối dòng đều bỏ qua, không sinh mục rỗng |
+| `~` | ngăn 3 **TRƯỜNG** của một mục | đúng thứ tự `Hán tự ~ pinyin ~ nghĩa` |
+
+- **Cột 1–3 bắt buộc. Cột 4 và 5 tuỳ chọn** — dòng 3 cột cũ chạy y hệt như trước (có bài kiểm ngược khoá điều này).
+- Tối đa **8 câu ví dụ** và **8 cụm từ** mỗi thẻ; tối đa **200 dòng** mỗi lượt.
+- Đường này **chỉ nhập chữ** — ảnh và audio gắn sau ở màn soạn thẻ; buổi chỉ công bố được khi mọi thẻ đã có audio.
+- Thẻ **đã tồn tại** trong buổi (trùng `hanzi` + `pinyin`) → **bỏ qua cả khối**, bảng xem trước ghi rõ *"Trùng thẻ đã có trong buổi — bỏ qua."* Cố ý **không ghi đè**: ghi đè sẽ xoá mất câu ví dụ/cụm từ mà người soạn đã sửa tay.
+
+**Ví dụ đủ 5 cột:**
+
+```
+你好 | nǐ hǎo | Xin chào | 你好吗？~nǐ hǎo ma~Bạn khỏe không?;;你好，老师~nǐ hǎo lǎo shī~Chào thầy | 你好啊~nǐ hǎo a~Chào cậu
+```
+
+**Ví dụ thông báo lỗi (chỉ đúng mục con):**
+
+```
+Dòng 3, câu ví dụ #2: thiếu nghĩa tiếng Việt.
+Dòng 2, cụm từ #1: thiếu pinyin.
+Dòng 1, câu ví dụ #1: có 4 phần, cần đúng 3 phần ngăn bằng dấu ~ (Hán tự ~ pinyin ~ nghĩa).
+```
+
+---
+
 ## 7ter. Thẻ mẫu thật của POLYMIND — user gửi 2 ảnh, "làm theo mẫu này"
 
 > **Đây mới là đặc tả thẻ, không phải Quizlet.** Quizlet chỉ đóng góp *cách nhập liệu dạng bảng* và *cách học*. Nội dung thẻ đi theo mẫu này.
@@ -229,9 +266,10 @@ Mặt trước cần pinyin **tách rời từng âm tiết** để căn thẳng
 Mặt trước ghi `bǔ` (thanh 3), mặt sau ghi `bo` (thanh nhẹ); trong `萝卜` chữ `卜` đọc **thanh nhẹ `bo`** nên mặt trước sai. **User chốt không xử lý**: hai ảnh `胡萝卜` chỉ là **mẫu bố cục**, dùng thật sẽ thay ảnh khác.
 ⛔ **Hệ quả phải nhớ:** ảnh mẫu là chuẩn cho **CÁCH DỰNG thẻ**, **không** phải chuẩn cho **nội dung thẻ** — không được nhân bản nội dung của nó vào `seed.dev.sql` ở `P16-T9`.
 
-**3. Ba danh sách con → ✅ ĐÃ CHỐT: 3 cột `jsonb` + Zod (2026-07-23, `DS-050`).**
-Chọn hướng (b) — 3 cột `jsonb` trên `flashcard_pages` (`sense_breakdown`, `example_sentences`, `common_phrases`), không tách bảng con: ba danh sách luôn được đọc/ghi **cùng lúc với thẻ**, không truy vấn độc lập, không phân quyền riêng.
-⚠️ **Trách nhiệm đi kèm:** `jsonb` **không có FK và không có CHECK hình dạng ở tầng DB**, nên **Zod là chỗ cưỡng chế DUY NHẤT** — mọi đường ghi phải đi qua nó (`BUG_M10_01`). DB chỉ giữ một cái sàn (`flashcard_pages_sublists_array_check`: ba cột luôn là mảng).
+**3. Danh sách con → ✅ ĐÃ CHỐT: cột `jsonb` + Zod (2026-07-23, `DS-050`); còn HAI danh sách (2026-07-24, `D-35`).**
+Chọn hướng (b) — cột `jsonb` trên `flashcard_pages` (`example_sentences`, `common_phrases`), không tách bảng con: các danh sách luôn được đọc/ghi **cùng lúc với thẻ**, không truy vấn độc lập, không phân quyền riêng.
+⛔ **Danh sách thứ ba `sense_breakdown` ("Tách nghĩa") đã BỎ khỏi sản phẩm** (user chốt 2026-07-24): bỏ khỏi code ở đợt 16, xoá cột ở migration `…074` sau khi user đếm trên cloud ra `tong_the_tu_vung = 206 · co_tach_nghia = 0`. Mặt sau nay 4 khối: Thẻ · Nghĩa · Câu ví dụ · Cụm từ.
+⚠️ **Trách nhiệm đi kèm:** `jsonb` **không có FK và không có CHECK hình dạng ở tầng DB**, nên **Zod là chỗ cưỡng chế DUY NHẤT** — mọi đường ghi phải đi qua nó (`BUG_M10_01`). DB chỉ giữ một cái sàn (`flashcard_pages_sublists_array_check`: hai cột luôn là mảng).
 
 **4. Ảnh trong câu ví dụ phải đi qua `media_paths` (2026-07-23, `DS-050` điểm 2).**
 Ảnh của khối 4 nằm trong `jsonb` nên chính sách cũ — vốn liệt kê cứng ba cột `front_image_path`/`back_image_path`/`audio_path` — **không thấy nó**, khiến học viên nhận **403** trong khi admin vẫn xem được. Nay `flashcard_pages.media_paths text[]` do **trigger** tổng hợp mọi nguồn media, có index GIN, và `app.can_student_read_flashcard_media()` kiểm bằng `media_paths @> array[<path>]`. Khoá bằng pgTAP `flashcard_structured_vocabulary.test.sql` (đã kiểm ngược: khôi phục hàm cũ → đỏ đúng 2 bài).

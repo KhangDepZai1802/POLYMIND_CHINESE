@@ -2,8 +2,7 @@ export const FLASHCARD_MEDIA_BUCKET = "flashcard-media";
 export const MAX_FLASHCARD_IMAGE_BYTES = 8 * 1024 * 1024;
 export const MAX_FLASHCARD_AUDIO_BYTES = 20 * 1024 * 1024;
 
-/** Số mục tối đa của ba danh sách con §7ter — Zod cưỡng chế, DB không biết. */
-export const MAX_FLASHCARD_SENSE_ITEMS = 8;
+/** Số mục tối đa của hai danh sách con §7ter — Zod cưỡng chế, DB không biết. */
 export const MAX_FLASHCARD_EXAMPLE_SENTENCES = 8;
 export const MAX_FLASHCARD_PHRASE_ITEMS = 8;
 

@@ -7,7 +7,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(19);
 
 select ok(
   exists (
@@ -186,12 +186,66 @@ select is(
 );
 
 -- =====================================================================
+-- 🔴 `D-35` điểm 1 — nhập hàng loạt phải GHI ĐƯỢC câu ví dụ và cụm từ
+-- =====================================================================
+-- `…072` chỉ chèn 3 cột chữ nên hai danh sách con rơi mất mà không báo gì.
+-- Bốn bài dưới đây khoá đúng chỗ đó.
+select is(
+  (
+    select count(*)::integer
+    from public.import_flashcard_vocabulary(
+      '73600000-0000-4000-8000-000000000001',
+      '[{"hanzi":"你好","pinyin_syllables":"nǐ hǎo","meaning_vi":"xin chào",
+         "example_sentences":[
+           {"hanzi":"你好吗？","pinyin":"nǐ hǎo ma","meaning_vi":"Bạn khỏe không?","image_path":null},
+           {"hanzi":"你好，老师","pinyin":"nǐ hǎo lǎo shī","meaning_vi":"Chào thầy","image_path":null}],
+         "common_phrases":[
+           {"hanzi":"你好啊","pinyin":"nǐ hǎo a","meaning_vi":"Chào cậu"}]}]'::jsonb
+    )
+    where row_status = 'created'
+  ),
+  1,
+  'nhập được dòng có kèm câu ví dụ và cụm từ'
+);
+
+select is(
+  (
+    select jsonb_array_length(example_sentences)
+    from public.flashcard_pages
+    where hanzi = '你好'
+  ),
+  2,
+  'hai câu ví dụ ĐƯỢC GHI XUỐNG DB, không rơi mất ở RPC'
+);
+
+select is(
+  (
+    select common_phrases -> 0 ->> 'meaning_vi'
+    from public.flashcard_pages
+    where hanzi = '你好'
+  ),
+  'Chào cậu',
+  'cụm từ ghi xuống đúng nội dung, không chỉ đúng số lượng'
+);
+
+-- Dòng 3 cột cũ vẫn phải chạy y hệt: hai cột jsonb nhận mặc định `[]`.
+select is(
+  (
+    select array[jsonb_array_length(example_sentences), jsonb_array_length(common_phrases)]
+    from public.flashcard_pages
+    where hanzi = '西瓜'
+  ),
+  array[0, 0],
+  'dòng 3 cột (không có danh sách con) vẫn ra mảng rỗng — tương thích ngược'
+);
+
+-- =====================================================================
 -- Luật audio nay ở mức CÔNG BỐ
 -- =====================================================================
 select throws_ok(
   $$select public.publish_flashcard_section('73600000-0000-4000-8000-000000000001')$$,
   'P0001',
-  'Còn 5 thẻ từ vựng chưa có audio phát âm',
+  'Còn 6 thẻ từ vựng chưa có audio phát âm',
   'không publish được khi còn thẻ thiếu audio, và báo đúng SỐ thẻ'
 );
 

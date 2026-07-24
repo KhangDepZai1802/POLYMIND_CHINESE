@@ -1459,7 +1459,6 @@ export type Database = {
           order_index: number
           pinyin_syllables: string | null
           section_id: string
-          sense_breakdown: Json
           updated_at: string
         }
         Insert: {
@@ -1481,7 +1480,6 @@ export type Database = {
           order_index: number
           pinyin_syllables?: string | null
           section_id: string
-          sense_breakdown?: Json
           updated_at?: string
         }
         Update: {
@@ -1503,7 +1501,6 @@ export type Database = {
           order_index?: number
           pinyin_syllables?: string | null
           section_id?: string
-          sense_breakdown?: Json
           updated_at?: string
         }
         Relationships: [
@@ -1518,6 +1515,7 @@ export type Database = {
       }
       flashcard_sections: {
         Row: {
+          archived_at: string | null
           created_at: string
           created_by: string
           deck_id: string
@@ -1529,6 +1527,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           deck_id: string
@@ -1540,6 +1539,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           deck_id?: string
@@ -3496,9 +3496,24 @@ export type Database = {
       }
     }
     Functions: {
+      archive_flashcard_deck_sections: {
+        Args: { p_deck_id: string }
+        Returns: {
+          archived_count: number
+          kept_published_count: number
+          removed_paths: string[]
+        }[]
+      }
       archive_flashcard_page: {
         Args: { p_page_id: string }
         Returns: undefined
+      }
+      archive_flashcard_section_pages: {
+        Args: { p_section_id: string }
+        Returns: {
+          archived_count: number
+          removed_paths: string[]
+        }[]
       }
       attach_answer_media: {
         Args: {
@@ -3562,6 +3577,14 @@ export type Database = {
           p_title: string
         }
         Returns: string
+      }
+      create_flashcard_sections: {
+        Args: { p_deck_id: string; p_from: number; p_to: number }
+        Returns: {
+          row_status: string
+          section_id: string
+          session_no: number
+        }[]
       }
       create_multi_class_exam_deliveries: {
         Args: {

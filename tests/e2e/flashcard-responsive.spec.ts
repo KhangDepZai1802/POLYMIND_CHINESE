@@ -208,7 +208,7 @@ test.describe("Flashcard — học viên", () => {
     });
   }
 
-  test("thẻ dựng bằng CHỮ: pinyin căn trên từng chữ Hán, mặt sau đủ 5 khối", async ({
+  test("thẻ dựng bằng CHỮ: pinyin căn trên từng chữ Hán, mặt sau đủ 4 khối", async ({
     page,
   }) => {
     await loginStudent(page);
@@ -232,10 +232,14 @@ test.describe("Flashcard — học viên", () => {
     // cụm "银行 — yínháng" chứ không phải mọi chỗ có "yínháng" (câu ví dụ và cụm
     // từ cũng chứa chuỗi đó).
     await expect(back.getByText("银行 — yínháng")).toBeVisible();
-    // Khối 3, 4, 5.
-    await expect(back.getByText(/kim loại bạc/)).toBeVisible();
+    // Khối "Câu ví dụ" và "Cụm từ thường dùng".
     await expect(back.getByText("我去银行取钱。")).toBeVisible();
     await expect(back.getByText(/thẻ ngân hàng/)).toBeVisible();
+    // ⛔ Khối "Tách nghĩa" đã bỏ (user chốt 2026-07-24). Ghim chiều phủ định
+    // NGAY TRÊN MẶT THẺ THẬT: seed vẫn còn dữ liệu tách nghĩa ở cột cũ, nên nếu
+    // ai đó dựng lại khối này thì bài đỏ chứ không im lặng.
+    await expect(back.getByText("Tách nghĩa")).toHaveCount(0);
+    await expect(back.getByText(/kim loại bạc/)).toHaveCount(0);
   });
 
   test("chữ KHÔNG bị cắt: thẻ cao đủ chứa nội dung mặt sau", async ({
@@ -360,7 +364,12 @@ test.describe("Flashcard — học viên", () => {
 
 test.describe("Flashcard — quản trị", () => {
   test.beforeEach(() => {
-    purgeTestPages(["测试", "新词", "汇率"]);
+    // ⚠️ Danh sách này phải gồm MỌI Hán tự mà các bài dưới tạo ra. Từ khi bảng
+    // xem trước biết trước thẻ đã tồn tại (`D-35` điểm 3), một thẻ sót lại từ
+    // project chạy trước sẽ bị đếm là "trùng — bỏ qua" và làm lệch con số
+    // "N dòng sẵn sàng" ở project sau. Thiếu 汇款单/存单 đúng là cách bài này
+    // đỏ ở project `mobile` trong khi `chromium` xanh.
+    purgeTestPages(["测试", "新词", "汇率", "汇款单", "存单"]);
   });
 
   async function openAdminDeck(page: Page) {
@@ -414,22 +423,22 @@ test.describe("Flashcard — quản trị", () => {
     );
 
     await importButton.click();
-    await page
-      .getByLabel("Danh sách thẻ")
-      .fill(
-        [
-          "测试 | cè shì | Kiểm tra",
-          "thiếu cột",
-          "新词 | xīn cí | Từ mới",
-        ].join("\n"),
-      );
+    await page.getByLabel("Danh sách thẻ").fill(
+      [
+        "测试 | cè shì | Kiểm tra",
+        "thiếu cột",
+        "新词 | xīn cí | Từ mới",
+        // Dòng 5 cột (`D-35` điểm 1): 2 câu ví dụ + 1 cụm từ trên CÙNG một dòng.
+        "汇款单 | huì kuǎn dān | Giấy chuyển tiền | 请填写汇款单。~qǐng tiánxiě huìkuǎndān~Xin hãy điền giấy chuyển tiền.;;这是汇款单~zhè shì huìkuǎndān~Đây là giấy chuyển tiền | 汇款单号~huìkuǎndān hào~số giấy chuyển tiền",
+      ].join("\n"),
+    );
 
     // Báo lỗi THEO TỪNG DÒNG, không nuốt cả lô.
     await expect(
-      page.getByText("2 dòng sẵn sàng · 1 dòng bị bỏ qua"),
+      page.getByText("3 dòng sẵn sàng · 1 dòng bị bỏ qua"),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Tạo 2 thẻ" }).click();
-    await expect(page.getByText(/Đã tạo 2 thẻ/)).toBeVisible();
+    await page.getByRole("button", { name: "Tạo 3 thẻ" }).click();
+    await expect(page.getByText(/Đã tạo 3 thẻ/)).toBeVisible();
 
     await expect
       .poll(() =>
@@ -437,21 +446,50 @@ test.describe("Flashcard — quản trị", () => {
           `select count(*) from public.flashcard_pages where section_id = '${SECTION_2}';`,
         ),
       )
-      .toBe(String(Number(before) + 2));
+      .toBe(String(Number(before) + 3));
 
-    // 🔴 `BUG_M09_01`: dán lại đúng danh sách cũ không được sinh thẻ trùng.
+    // Hai danh sách con của dòng 5 cột phải NẰM TRONG DB, không rơi mất ở RPC.
+    expect(
+      sql(`
+        select jsonb_array_length(example_sentences)
+               || '|' || jsonb_array_length(common_phrases)
+        from public.flashcard_pages
+        where section_id = '${SECTION_2}' and hanzi = '汇款单';
+      `),
+    ).toBe("2|1");
+
+    // 🔴 `BUG_M09_01` + `D-35` điểm 3: dán lại danh sách cũ thì thẻ đã tồn tại
+    // bị bỏ qua CẢ KHỐI, và bảng xem trước phải nói ra ngay — không để admin bấm
+    // rồi mới biết. Chặn cuối vẫn ở DB (unique index), pgTAP khoá riêng vế đó.
     await page.getByRole("button", { name: "Nhập hàng loạt" }).click();
     await page
       .getByLabel("Danh sách thẻ")
-      .fill(["测试 | cè shì | Kiểm tra", "新词 | xīn cí | Từ mới"].join("\n"));
-    await page.getByRole("button", { name: "Tạo 2 thẻ" }).click();
-    await expect(page.getByText(/bỏ qua 2 thẻ đã có sẵn/)).toBeVisible();
+      .fill(
+        ["测试 | cè shì | Kiểm tra", "存单 | cún dān | Sổ tiết kiệm"].join("\n"),
+      );
+    await expect(
+      page.getByText("Trùng thẻ đã có trong buổi — bỏ qua."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("1 dòng sẵn sàng · 1 dòng bị bỏ qua"),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Tạo 1 thẻ" }).click();
+    await expect(page.getByText(/Đã tạo 1 thẻ/)).toBeVisible();
 
+    // Đúng MỘT thẻ mới được thêm — dòng trùng không nhân đôi 测试.
+    await expect
+      .poll(() =>
+        sql(
+          `select count(*) from public.flashcard_pages where section_id = '${SECTION_2}';`,
+        ),
+      )
+      .toBe(String(Number(before) + 4));
     expect(
-      sql(
-        `select count(*) from public.flashcard_pages where section_id = '${SECTION_2}';`,
-      ),
-    ).toBe(String(Number(before) + 2));
+      sql(`
+        select count(*) from public.flashcard_pages
+        where section_id = '${SECTION_2}' and hanzi = '测试';
+      `),
+    ).toBe("1");
 
     // Thẻ nhập hàng loạt chưa có audio — màn phải nói ra, không để admin đoán.
     await expect(page.getByText("Thiếu audio").first()).toBeVisible();
@@ -475,11 +513,14 @@ test.describe("Flashcard — quản trị", () => {
     await page.getByLabel("Pinyin — tách theo âm tiết *").fill("huì lǜ");
     await page.getByLabel("Nghĩa tiếng Việt *").fill("Tỷ giá");
 
-    // Một mục ở khối "Tách nghĩa" để chứng minh jsonb đi đúng đường Zod.
-    await page.getByRole("button", { name: "Thêm thành tố" }).click();
-    await page.getByLabel("Thành tố Hán tự").fill("率");
-    await page.getByLabel("Pinyin", { exact: true }).last().fill("lǜ");
-    await page.getByLabel("Nghĩa của thành tố").fill("tỷ lệ");
+    // Một mục ở khối "Cụm từ thường dùng" để chứng minh jsonb đi đúng đường Zod.
+    // (Trước 2026-07-24 bài này dùng khối "Tách nghĩa"; khối đó đã bị bỏ khỏi
+    // sản phẩm nên phải đổi sang một danh sách con CÒN SỐNG — không được bỏ hẳn
+    // vế kiểm jsonb, vì đó mới là thứ bài này sinh ra để canh.)
+    await page.getByRole("button", { name: "Thêm cụm từ" }).click();
+    await page.getByLabel("Cụm từ (Hán tự)").fill("汇率表");
+    await page.getByLabel("Pinyin", { exact: true }).last().fill("huì lǜ biǎo");
+    await page.getByLabel("Nghĩa tiếng Việt").last().fill("bảng tỷ giá");
 
     await page.getByRole("button", { name: "Lưu trang" }).click();
     await expect(page.getByText(/Đã thêm trang flashcard/)).toBeVisible();
@@ -488,7 +529,7 @@ test.describe("Flashcard — quản trị", () => {
       .poll(() =>
         sql(`
           select hanzi || '|' || pinyin_syllables || '|' || meaning_vi
-                 || '|' || jsonb_array_length(sense_breakdown)
+                 || '|' || jsonb_array_length(common_phrases)
           from public.flashcard_pages
           where section_id = '${SECTION_2}' and hanzi = '汇率';
         `),

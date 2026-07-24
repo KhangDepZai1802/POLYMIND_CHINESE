@@ -107,6 +107,7 @@ export async function saveFlashcardSectionAction(
       })
       .eq("id", parsed.data.id)
       .eq("deck_id", parsed.data.deck_id)
+      .is("archived_at", null)
       .select("id,title,session_number")
       .maybeSingle();
     if (error || !data) {
@@ -145,6 +146,115 @@ export async function saveFlashcardSectionAction(
   return { success: "Đã thêm buổi flashcard." };
 }
 
+const sectionIdSchema = z.object({ id: z.uuid() });
+
+const sectionRangeSchema = z.object({
+  deck_id: z.uuid("Bộ flashcard không hợp lệ."),
+  from_session: z.coerce
+    .number()
+    .int()
+    .positive("Buổi bắt đầu phải lớn hơn 0."),
+  to_session: z.coerce.number().int().positive("Buổi kết thúc phải lớn hơn 0."),
+});
+
+/**
+ * Tạo NHIỀU buổi trong một lượt (yêu cầu user 2026-07-24).
+ *
+ * Idempotency nằm ở **partial unique index của DB** + `ON CONFLICT DO NOTHING`
+ * (`BUG_M09_01`), không phải ở việc app đếm trước xem buổi nào đã có — nên bấm
+ * hai lần, hoặc hai admin bấm cùng lúc, đều không sinh buổi trùng.
+ */
+export async function createFlashcardSectionsAction(
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("super_admin");
+  const parsed = sectionRangeSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return zodToActionState(parsed.error);
+  if (parsed.data.to_session < parsed.data.from_session) {
+    return { error: "Buổi kết thúc phải lớn hơn hoặc bằng buổi bắt đầu." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_flashcard_sections", {
+    p_deck_id: parsed.data.deck_id,
+    p_from: parsed.data.from_session,
+    p_to: parsed.data.to_session,
+  });
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không tạo được các buổi.") };
+  }
+
+  const rows = data ?? [];
+  const created = rows.filter((row) => row.row_status === "created").length;
+  const existing = rows.length - created;
+  revalidateFlashcards();
+  return {
+    success:
+      existing === 0
+        ? `Đã tạo ${created} buổi.`
+        : `Đã tạo ${created} buổi, bỏ qua ${existing} buổi đã có sẵn.`,
+  };
+}
+
+/** Xoá TẤT CẢ trang trong một buổi. Xoá mềm ở DB; file media dọn khỏi bucket. */
+export async function archiveFlashcardSectionPagesAction(
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("super_admin");
+  const parsed = sectionIdSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Buổi flashcard không hợp lệ." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "archive_flashcard_section_pages",
+    { p_section_id: parsed.data.id },
+  );
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không xoá được các trang.") };
+  }
+
+  const outcome = data?.[0];
+  await removeFlashcardObjects(outcome?.removed_paths ?? []);
+  revalidateFlashcards();
+  return {
+    success: outcome?.archived_count
+      ? `Đã xoá ${outcome.archived_count} trang của buổi này.`
+      : "Buổi này không còn trang nào để xoá.",
+  };
+}
+
+/** Xoá TẤT CẢ buổi NHÁP của một bộ thẻ. Buổi đã công bố được giữ nguyên. */
+export async function archiveFlashcardDeckSectionsAction(
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("super_admin");
+  const parsed = z
+    .object({ deck_id: z.uuid() })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Bộ flashcard không hợp lệ." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "archive_flashcard_deck_sections",
+    { p_deck_id: parsed.data.deck_id },
+  );
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không xoá được các buổi.") };
+  }
+
+  const outcome = data?.[0];
+  await removeFlashcardObjects(outcome?.removed_paths ?? []);
+  revalidateFlashcards();
+
+  const kept = outcome?.kept_published_count ?? 0;
+  return {
+    success:
+      kept === 0
+        ? `Đã xoá ${outcome?.archived_count ?? 0} buổi.`
+        : `Đã xoá ${outcome?.archived_count ?? 0} buổi nháp; giữ lại ${kept} buổi đã công bố.`,
+  };
+}
+
 export type FlashcardUploadTicket = {
   slot: FlashcardMediaSlot;
   path: string;
@@ -175,6 +285,7 @@ export async function createFlashcardUploadTicketsAction(
     .from("flashcard_sections")
     .select("id,status,deck:flashcard_decks(id)")
     .eq("id", parsed.data.sectionId)
+    .is("archived_at", null)
     .maybeSingle();
   if (!section?.deck || section.status !== "draft") {
     return { error: "Chỉ tải media cho buổi flashcard đang nháp." };
@@ -341,8 +452,8 @@ function pageValues(input: FlashcardPageInput, sectionTitle: string) {
     // alt phải rỗng. Sinh alt cho ảnh không tồn tại là tự tạo dữ liệu ma.
     front_alt: frontPath ? altFor("front") : null,
     back_alt: backPath ? altFor("back") : null,
-    sense_breakdown:
-      input.kind === "vocabulary" ? input.sense_breakdown : [],
+    // Khối "Tách nghĩa" (`sense_breakdown`) đã xoá khỏi cả code lẫn DB
+    // (migration `…074`, sau khi user đếm cloud ra 0 hàng mang dữ liệu).
     example_sentences:
       input.kind === "vocabulary" ? input.example_sentences : [],
     common_phrases: input.kind === "vocabulary" ? input.common_phrases : [],
@@ -362,6 +473,7 @@ export async function saveFlashcardPageAction(
     .from("flashcard_sections")
     .select("id,status,title,deck:flashcard_decks(id)")
     .eq("id", input.section_id)
+    .is("archived_at", null)
     .maybeSingle();
   if (!section?.deck || section.status !== "draft") {
     return { error: "Chỉ sửa trang trong buổi flashcard đang nháp." };
@@ -601,8 +713,6 @@ export async function setFlashcardStarAction(
   };
 }
 
-const sectionIdSchema = z.object({ id: z.uuid() });
-
 export async function publishFlashcardSectionAction(
   formData: FormData,
 ): Promise<ActionState> {
@@ -630,7 +740,8 @@ export async function unpublishFlashcardSectionAction(
   const { error } = await supabase
     .from("flashcard_sections")
     .update({ status: "draft", published_at: null })
-    .eq("id", parsed.data.id);
+    .eq("id", parsed.data.id)
+    .is("archived_at", null);
   if (error) {
     return { error: dbErrorToMessage(error, "Không đưa buổi về nháp.") };
   }
