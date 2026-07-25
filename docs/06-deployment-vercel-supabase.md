@@ -1,6 +1,7 @@
 # 06 — Deploy: Vercel + Supabase
 
-> **Trạng thái hiện tại (2026-07-18): đã deploy production.** Supabase migration 1–59 đã áp lên cloud; alias Vercel `https://polymind-chinese-one.vercel.app` đã qua health/anonymous/cron-secret smoke; backup trước cleanup nằm ngoài repo tại `C:\tmp\polymind-chinese-backup-20260716`.
+> **Trạng thái hiện tại (2026-07-25): đã deploy production trên DOMAIN THẬT `https://www.polymind.vn`.** Xem **§11** để biết cấu hình domain, luồng redeploy và các bẫy đã gặp.
+> Mốc trước đó (2026-07-18): Supabase migration 1–59 đã áp lên cloud; alias Vercel `https://polymind-chinese-one.vercel.app` đã qua health/anonymous/cron-secret smoke; backup trước cleanup nằm ngoài repo tại `C:\tmp\polymind-chinese-backup-20260716`.
 > Cho tới khi có credential, trạng thái đúng là **"ready to deploy, blocked by credentials"** — **không được gọi là "đã deploy"**.
 
 ---
@@ -252,3 +253,118 @@ Thứ tự release production:
 | 6 | Tài khoản Vercel + quyền link repo | vercel.com | BLK-2 |
 
 Có đủ 6 mục này → release/deploy lại được an toàn; lần gần nhất hoàn tất ngày 2026-07-16.
+
+---
+
+## 11. Hiện trạng production + luồng redeploy (chốt 2026-07-25)
+
+### 11.1. Toạ độ hệ thống
+
+| Hạng mục | Giá trị |
+|---|---|
+| Domain chính | `https://www.polymind.vn` |
+| Domain phụ | `https://polymind.vn` (hiện **cùng phục vụ nội dung**, xem §11.5) |
+| Alias hệ thống | `polymind-chinese-one.vercel.app` · `polymind-chinese-git-main-thongdat.vercel.app` |
+| Vercel account | `datathongdat-6773` · team **THONGDAT** (`team_t1ypvlVch3GF720BCSq0yxq2`) |
+| Vercel project | `polymind-chinese` (`prj_M3q4nDo5Gx9rEwtBg44Wlqk0T5be`) |
+| GitHub repo | `github.com/KhangDepZai1802/POLYMIND_CHINESE` — branch `main` |
+| Supabase project ref | `jmrftblsmsusulzwzvtv` |
+| Registrar / DNS | **Mắt Bão**, nameserver `ns1.matbao.vn` · `ns2.matbao.vn` |
+
+⚠️ **KHÔNG đổi nameserver sang `ns*.vercel-dns.com`.** Vercel có hiển thị dòng *"Intended Nameservers"* kèm dấu ☓ — đó là **thông tin, không phải lỗi**. Domain đang chạy bằng bản ghi A/CNAME, đổi NS sẽ **mất toàn bộ bản ghi MX/email** đang cấu hình ở Mắt Bão.
+
+### 11.2. Bản ghi DNS đang chạy (Mắt Bão → tab "Bản ghi DNS")
+
+| Tên | Loại | Giá trị |
+|---|---|---|
+| `@` | A | `216.198.79.1` |
+| `www` | CNAME | `c1640d8969f8eeb1.vercel-dns-017.com` |
+
+Không có bản ghi `_vercel` TXT — domain không cần xác minh TXT vì DNS đã trỏ thẳng vào Vercel.
+
+### 11.3. 🔴 Bẫy đã tốn thời gian: gỡ domain phải làm ở **HAI TẦNG**
+
+Domain trước đây nằm ở một **account Vercel khác** (`khangdepzai1802`, team `khang-deploy`, gói Hobby), gắn vào một project cùng tên `polymind-chinese` nhưng **không có deployment nào** → `polymind.vn` trả 404 `DEPLOYMENT_NOT_FOUND`.
+
+Khi chuyển sang account THONGDAT:
+
+1. Gỡ ở **Project → Settings → Domains** của account cũ → **CHƯA ĐỦ**. Trang project sạch nhưng CLI vẫn trả:
+   ```
+   403 domain_not_owned — Not authorized to use www.polymind.vn
+   ```
+2. Phải gỡ tiếp ở **cấp TEAM**: `https://vercel.com/<team-slug>/~/domains` → dòng `polymind.vn` → ⋯ → **Remove Domain**.
+   Dấu hiệu đúng trang: URL chứa `/~/domains`, tiêu đề chỉ có tên team, **không** có tên project.
+3. Sau đó mới add được ở account mới.
+
+**Hai account khác email thì KHÔNG có nút "Move domain"**, và gói Hobby **không mời thành viên được** → bắt buộc gỡ thủ công theo đúng 2 tầng trên.
+
+✅ **CNAME cũ vẫn dùng được sau khi đổi account** — chuỗi hash `c1640d8969f8eeb1` không chết như dự đoán ban đầu, nên **không phải sửa bản ghi DNS nào** ở Mắt Bão. Ghi lại vì lần sau dễ sửa thừa.
+
+### 11.4. Luồng redeploy — code vs database
+
+> 🔴 **Push GitHub redeploy CODE. Push GitHub KHÔNG đụng tới DATABASE.** Hai đường hoàn toàn tách biệt.
+
+**Code — tự động:**
+
+Project đã nối Git. Push lên `main` → Vercel tự build + deploy Production, không cần chạy lệnh gì. Nhận biết deployment nguồn Git: nó mang alias `polymind-chinese-git-main-thongdat.vercel.app`.
+
+```bash
+git push origin main       # → tự deploy production
+```
+
+`vercel --prod` chỉ dùng khi cần deploy **code chưa commit** (bỏ qua git) — nó upload thẳng working directory, kể cả file untracked. Bỏ `--prod` thì ra URL preview riêng, không đụng domain thật.
+
+**Database — thủ công, không có gì tự động:**
+
+```bash
+# Đường ĐANG DÙNG ĐƯỢC (2026-07-25) — bỏ qua management API đang 403, xem §11.6
+SUPABASE_DB_PASSWORD='<db-password>' npx supabase db push --dry-run   # xem sẽ áp gì
+SUPABASE_DB_PASSWORD='<db-password>' npx supabase db push
+
+# Đối chiếu local ↔ remote. `migration list --linked` đang 403 → truy thẳng bảng:
+psql "$(cat supabase/.temp/pooler-url)" \
+  -c "select version from supabase_migrations.schema_migrations order by 1 desc limit 5;"
+
+# ⚠️ BẮT BUỘC sau khi push DDL: nạp lại schema cache của PostgREST.
+# Không làm thì app vẫn trả 500 "relation does not exist" dù bảng đã tồn tại.
+psql "$(cat supabase/.temp/pooler-url)" -c "notify pgrst, 'reload schema';"
+```
+
+**Thứ tự bắt buộc khi có cả migration lẫn code mới:**
+
+| Loại thay đổi | Chạy trước | Chạy sau |
+|---|---|---|
+| Thêm bảng/cột mới (expand) | `supabase db push` | `git push` |
+| Xoá bảng/cột (contract, breaking) | `git push` (code bỏ dùng cột trước) | `supabase db push` |
+
+Sai thứ tự dòng 1 → app query cột chưa tồn tại → 500 hàng loạt. Sai thứ tự dòng 2 → code còn đọc cột vừa bị drop → cũng 500. Migration `…078` (`drop_vocabulary_back_image`) thuộc nhóm 2. Nguyên tắc gốc ở **§5**.
+
+### 11.5. Việc còn để ngỏ
+
+- **`polymind.vn` và `www.polymind.vn` hiện cùng phục vụ nội dung** (cả hai trả 307 → `/login`), thay vì apex redirect 308 sang `www` như cấu hình cũ. Không ảnh hưởng người dùng nhưng **chia đôi tín hiệu SEO**. Muốn khôi phục: Vercel → Settings → Domains → dòng `polymind.vn` → **Edit** → *Redirect to* `www.polymind.vn`, mã 308. **CLI không set được**, phải làm trên dashboard.
+- **`NEXT_PUBLIC_APP_URL` chưa được xác minh sau khi đổi domain.** Biến này set từ 2026-07-15, nhiều khả năng vẫn trỏ `.vercel.app`. Sai thì link trong **email xác thực/mời** và **link chia sẻ flashcard công khai `/t/<token>`** sẽ trỏ sai host. Sửa xong **phải redeploy** thì biến mới có hiệu lực.
+
+### 11.6. ⛔ Supabase CLI đang 403
+
+```
+npx supabase migration list --linked
+→ LegacyDbConfigLoginRoleStatusError: unexpected login role status 403:
+  "Your account does not have the necessary privileges to access this endpoint"
+```
+
+✅ **ĐÃ CÓ ĐƯỜNG ĐI VÒNG, đo thật 2026-07-25 (đợt 23) — sửa lại phán đoán cũ.** Bản trước của mục này viết *"`db push` cũng sẽ fail y hệt"* — **SAI**. Lỗi 403 nằm ở endpoint *login role* của **management API**, thứ mà CLI chỉ gọi khi phải tự đi lấy connection string. Đặt sẵn `SUPABASE_DB_PASSWORD` thì CLI nối thẳng vào Postgres và **`db push` chạy bình thường**:
+
+```bash
+SUPABASE_DB_PASSWORD='<db-password>' npx supabase db push
+```
+
+Đây chính là đường đã dùng để gỡ `BLK-4` (đợt 15) và `BLK-5` (đợt 23) — push được `…078`/`…079`/`…080` trong khi `migration list --linked` vẫn 403.
+
+Cái **thật sự** còn chết là `migration list --linked` (nó bắt buộc đi qua management API). Thay bằng truy thẳng bảng lịch sử — xem đoạn lệnh ở **§11.4**:
+
+```bash
+psql "$(cat supabase/.temp/pooler-url)" \
+  -c "select version from supabase_migrations.schema_migrations order by 1 desc limit 5;"
+```
+
+Warning `failed to cache migrations catalog: … pgdelta-target-ca.crt: ENOENT` in ra sau khi push là **vô hại** (chỉ là bước cache catalog của `pg-delta`), migration vẫn áp đủ — đã ghi từ `BLK-4`. Muốn hết hẳn 403 thì vẫn nên `npx supabase login` lại.

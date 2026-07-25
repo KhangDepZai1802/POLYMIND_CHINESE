@@ -2,11 +2,19 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
 import { FlashcardAdminManager } from "@/features/flashcards/components/flashcard-admin-manager";
 import { archiveFlashcardSectionPagesAction } from "@/features/flashcards/server/actions";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
+// Bề mặt chia sẻ công khai (`D-36`) nằm ở module action RIÊNG, nên phải mock
+// riêng: không mock thì chuỗi import kéo `@/lib/supabase/server` (có
+// `import "server-only"`) vào môi trường jsdom và cả file test đỏ.
+vi.mock("@/features/flashcards/server/public-link-actions", () => ({
+  createFlashcardPublicLinkAction: vi.fn(),
+  revokeFlashcardPublicLinkAction: vi.fn(),
 }));
 vi.mock("@/features/flashcards/server/actions", () => ({
   archiveFlashcardDeckSectionsAction: vi.fn(),
@@ -110,9 +118,21 @@ const deckWithPages = {
   ],
 } as const;
 
+/**
+ * `SectionWorkspace` dùng `useConfirmation()` để cảnh báo trước khi đưa buổi
+ * đang công khai về nháp (mã QR đã in trong sách sẽ chết). Hook đó fail-closed:
+ * gọi ngoài provider là ném lỗi, không im lặng bỏ qua xác nhận.
+ *
+ * Trong sản phẩm, provider do `(dashboard)/layout.tsx` bọc sẵn — nên bọc ở đây
+ * là dựng lại đúng môi trường thật, không phải nới lỏng bài kiểm.
+ */
+function renderWithConfirmation(ui: React.ReactElement) {
+  return render(<ConfirmationProvider>{ui}</ConfirmationProvider>);
+}
+
 describe("FlashcardAdminManager", () => {
   it("hiển thị mục lục buổi, trạng thái và khóa nút thêm khi đã đủ số buổi", () => {
-    render(
+    renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
@@ -133,7 +153,7 @@ describe("FlashcardAdminManager", () => {
   });
 
   it("cho phép lưu trữ cả trang mở đầu lẫn trang từ vựng ở buổi nháp", () => {
-    render(
+    renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
@@ -150,7 +170,7 @@ describe("FlashcardAdminManager", () => {
   });
 
   it("🔴 danh sách trang xem trước ĐÚNG MẶT THẺ học viên thấy, không phải ảnh thô", () => {
-    render(
+    renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
@@ -190,7 +210,7 @@ describe("FlashcardAdminManager", () => {
   });
 
   it("🔴 nút xoá hàng loạt nằm ở VÙNG NGUY HIỂM, tách khỏi cụm nút thường", () => {
-    render(
+    renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
@@ -231,7 +251,7 @@ describe("FlashcardAdminManager", () => {
 
   it("nút xoá mở hộp thoại xác nhận, KHÔNG xoá thẳng khi bấm", async () => {
     const user = userEvent.setup();
-    render(
+    renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}

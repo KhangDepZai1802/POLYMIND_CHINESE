@@ -19,7 +19,6 @@ const DB = "supabase_db_Polymind_Chinese";
 
 /** Liên kết công khai mẫu do `seed.dev.sql` dựng. */
 const SEEDED_TOKEN = "qr7dem3k5np2";
-const SECTION_1 = "a1100000-0000-4000-8000-000000000001";
 const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
 
 /** Mã đúng hình dạng nhưng không tồn tại. */
