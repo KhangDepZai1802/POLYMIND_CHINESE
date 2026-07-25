@@ -122,7 +122,7 @@ function FlashcardImageFace({
   priority: boolean;
 }) {
   return (
-    <div className="relative h-full min-h-[360px] w-full sm:min-h-[560px]">
+    <div className="relative h-full min-h-[var(--fc-face-min-h)] w-full">
       {url ? (
         <Image
           src={url}
@@ -154,7 +154,7 @@ function VocabularyFront({ page }: { page: FlashcardFaceData }) {
   const imageUrl = page.frontUrl;
 
   return (
-    <div className="flex min-h-[360px] flex-col items-center justify-center gap-5 p-6 text-center sm:min-h-[560px] sm:p-8">
+    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col items-center justify-center gap-5 p-6 text-center sm:p-8">
       {alignment ? (
         <p className="flex flex-wrap items-end justify-center gap-x-3 gap-y-4">
           {alignment.map((cell, index) => (
@@ -270,7 +270,7 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
   const joined = joinPinyin(page.pinyin_syllables ?? "");
 
   return (
-    <div className="flex min-h-[360px] flex-col gap-3 p-4 sm:min-h-[560px] sm:p-6">
+    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col gap-3 p-4 sm:p-6">
       {/* Khối 1 — đầu thẻ */}
       <BackBlock title="Thẻ" tone="neutral">
         <p className="text-2xl font-bold break-words sm:text-3xl">

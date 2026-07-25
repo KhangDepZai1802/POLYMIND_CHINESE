@@ -15,12 +15,20 @@ const PUBLIC_PATHS = [
   "/auth",
   "/api/health",
   "/api/cron",
+  // Trang flashcard công khai cho mã QR in trong sách (`D-36`). Route nằm ở
+  // `src/app/(public)/t/[token]` — NGOÀI `(dashboard)`, nên không có
+  // `requireUser()` nào phía sau.
+  "/t",
 ];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
+}
+
+function isPublicFlashcardPath(pathname: string) {
+  return pathname === "/t" || pathname.startsWith("/t/");
 }
 
 /**
@@ -32,6 +40,19 @@ function isPublicPath(pathname: string) {
  * trùng việc vừa buộc thêm một network round-trip tuần tự.
  */
 export async function updateSession(request: NextRequest) {
+  // Trang flashcard công khai không có phiên để làm mới: nó đọc bằng client mù
+  // cookie (`public-client.ts`). Dựng Supabase client và verify JWT ở đây là
+  // việc thừa nằm ngay trên đường nóng của mã QR.
+  //
+  // Đây là TỐI ƯU, không phải phân quyền — quyền vẫn do RLS quyết định, và
+  // route `/t` nằm ngoài `(dashboard)` nên không có `requireUser()` bị bỏ qua.
+  //
+  // Chỉ áp cho `/t`, KHÔNG áp cho các path public khác: `/login` vẫn phải đọc
+  // phiên để đá người đã đăng nhập về đúng trang chủ.
+  if (isPublicFlashcardPath(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const env = getPublicEnv();

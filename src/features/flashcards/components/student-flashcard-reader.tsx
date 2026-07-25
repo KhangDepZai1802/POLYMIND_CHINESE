@@ -21,10 +21,12 @@ import { StudentAudioPlayer } from "@/components/shared/student-audio-player";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { type Face } from "@/features/flashcards/components/flashcard-face";
 import {
-  FlashcardFaceContent,
-  type Face,
-} from "@/features/flashcards/components/flashcard-face";
+  FlashcardFaces,
+  FlashcardSizer,
+  FlashcardSurface,
+} from "@/features/flashcards/components/flashcard-surface";
 import { setFlashcardStarAction } from "@/features/flashcards/server/actions";
 import type { FlashcardDeckView } from "@/features/flashcards/server/queries";
 
@@ -443,7 +445,7 @@ export function StudentFlashcardReader({
               aria-label={`Mặt ${face === "front" ? "trước" : "sau"} của ${
                 page.kind === "session_cover" ? "trang mở đầu" : page.hanzi
               }. Nhấn Enter hoặc phím cách để lật mặt.`}
-              className={`focus-visible:ring-ring relative min-h-[360px] rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 sm:min-h-[560px] ${
+              className={`focus-visible:ring-ring relative min-h-[var(--fc-face-min-h)] rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 ${
                 pageTransition ? "cursor-default" : "cursor-pointer"
               }`}
               onClick={handleCardClick}
@@ -582,15 +584,6 @@ export function StudentFlashcardReader({
   );
 }
 
-function FlashcardSurface({ page, face }: { page: FlashcardPage; face: Face }) {
-  return (
-    <div className="relative min-h-[360px] rounded-2xl sm:min-h-[560px]">
-      <FlashcardSizer page={page} />
-      <FlashcardFaces page={page} face={face} />
-    </div>
-  );
-}
-
 function FlashcardAudioButton({
   url,
   label,
@@ -607,76 +600,5 @@ function FlashcardAudioButton({
       appearance="button"
       autoPlayToken={autoPlayToken}
     />
-  );
-}
-
-/**
- * Chiều cao THẬT của thẻ.
- *
- * Hai mặt đều `absolute inset-0` (bắt buộc, để lật 3D được), nên tự chúng không
- * đẩy được chiều cao nào. Trước Phase 16 thẻ là ẢNH nên một `min-height` cố định
- * là đủ; nay mặt sau là CHỮ và dài ngắn tuỳ thẻ. Khối này dựng cả hai mặt trong
- * CÙNG một ô grid, để trong luồng nhưng ẩn đi — ô grid vì thế cao bằng mặt cao
- * hơn, và thẻ luôn vừa đủ chứa chữ.
- *
- * Đây chính là chỗ sửa lời than gốc: chữ TỰ XUỐNG DÒNG và thẻ nở theo, thay vì
- * `object-cover` cắt cụt nội dung.
- */
-function FlashcardSizer({ page }: { page: FlashcardPage }) {
-  return (
-    <div aria-hidden className="pointer-events-none invisible grid">
-      {/*
-        `border` để box-model KHỚP với `FlashcardFaceShell` (shell có viền 1px).
-        Thiếu nó thì ô sizer cao hơn shell đúng 2px viền → mặt sau tràn 1–2px và
-        bài "chữ không bị cắt" đỏ vì làm tròn.
-      */}
-      <div className="col-start-1 row-start-1 rounded-2xl border">
-        <FlashcardFaceContent page={page} face="front" />
-      </div>
-      <div className="col-start-1 row-start-1 rounded-2xl border">
-        <FlashcardFaceContent page={page} face="back" />
-      </div>
-    </div>
-  );
-}
-
-function FlashcardFaces({ page, face }: { page: FlashcardPage; face: Face }) {
-  return (
-    <div
-      data-face={face}
-      className="absolute inset-0 origin-center transition-transform duration-500 [transform-style:preserve-3d] motion-reduce:transition-none"
-      style={{
-        transform: `rotateX(${face === "back" ? 180 : 0}deg)`,
-      }}
-    >
-      <FlashcardFaceShell>
-        {/* Ảnh trang mở đầu là LCP của màn học viên — giữ `priority`. */}
-        <FlashcardFaceContent page={page} face="front" priority />
-      </FlashcardFaceShell>
-      <FlashcardFaceShell back>
-        <FlashcardFaceContent page={page} face="back" />
-      </FlashcardFaceShell>
-    </div>
-  );
-}
-
-function FlashcardFaceShell({
-  children,
-  back = false,
-}: {
-  children: React.ReactNode;
-  back?: boolean;
-}) {
-  return (
-    <div
-      // Mốc để bài kiểm soi đúng MỘT mặt: cùng một chữ Hán có mặt ở cả mặt
-      // trước lẫn khối "Thẻ" của mặt sau.
-      data-face-side={back ? "back" : "front"}
-      className={`bg-card absolute inset-0 overflow-hidden rounded-2xl border shadow-lg [backface-visibility:hidden] ${
-        back ? "[transform:rotateX(180deg)]" : ""
-      }`}
-    >
-      {children}
-    </div>
   );
 }

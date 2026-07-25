@@ -318,6 +318,7 @@ html[data-exam-active="true"] [data-dashboard-main] {
   --fc-hanzi: 3rem;
   --fc-pinyin: 1.125rem;
   --fc-meaning: 1.5rem;
+  --fc-face-min-h: 360px;
 }
 
 @media (min-width: 40rem) {
@@ -325,6 +326,7 @@ html[data-exam-active="true"] [data-dashboard-main] {
     --fc-hanzi: 4.5rem;
     --fc-pinyin: 1.25rem;
     --fc-meaning: 1.875rem;
+    --fc-face-min-h: 560px;
   }
 }
 

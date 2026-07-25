@@ -1,6 +1,5 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { z } from "zod";
 
 import { FLASHCARD_MEDIA_BUCKET } from "@/features/flashcards/domain/media";
@@ -68,19 +67,20 @@ export type PublicFlashcardSectionView = {
 const SIGNED_URL_TTL_SECONDS = 900;
 
 /**
- * Cache **DỮ LIỆU**, không cache HTML.
+ * ⛔ CỐ Ý KHÔNG CACHE — đọc thẳng DB mỗi lượt xem.
  *
- * Trang dùng `force-dynamic` nên URL đã ký được sinh lại cho mỗi lượt xem —
- * nếu cache cả HTML thì trang cũ sẽ phục vụ URL đã hết hạn, ảnh và audio hỏng
- * theo đồng hồ. Cache riêng phần đọc DB thì một mã QR chỉ chạm DB ~1 lần/5 phút
- * dù cả lớp cùng quét.
+ * Bản thiết kế ban đầu định bọc `unstable_cache` 5 phút để chặn tải xuống DB.
+ * Bỏ đi vì **thu hồi**: cache 5 phút nghĩa là mã QR vừa bị gỡ vẫn mở ra nội
+ * dung thêm 5 phút nữa. Next 16 đổi chữ ký `revalidateTag(tag, profile)` và
+ * ngữ nghĩa của tham số thứ hai chưa xác minh được ở đây — đoán sai trên đúng
+ * đường thu hồi thì cái hỏng là một bảo đảm bảo mật, không phải một con số
+ * hiệu năng.
  *
- * Tag theo mã để **thu hồi có hiệu lực tức thì** (`revalidateTag` trong
- * `public-link-actions.ts`), không phải chờ hết 5 phút.
+ * Đổi lại: mỗi lượt quét là một câu truy vấn. Nó rẻ (tra `ux_..._token` rồi
+ * join theo khoá chính) và trang đã có `Cache-Control: no-store` nên CDN cũng
+ * không giữ bản cũ. Nếu về sau lưu lượng thật đủ lớn để cần cache, hãy đo
+ * trước rồi mới thêm, và phải có bài E2E chứng minh thu hồi vẫn tức thì.
  */
-export function publicFlashcardCacheTag(token: string) {
-  return `public-flashcard:${token}`;
-}
 
 async function fetchPublicSession(
   token: string,
@@ -106,12 +106,7 @@ export async function getPublicFlashcardSection(
   const token = normalizeFlashcardPublicToken(rawToken);
   if (!token) return null;
 
-  const payload = await unstable_cache(
-    () => fetchPublicSession(token),
-    ["public-flashcard-session", token],
-    { revalidate: 300, tags: [publicFlashcardCacheTag(token)] },
-  )();
-
+  const payload = await fetchPublicSession(token);
   if (!payload) return null;
 
   const supabase = createPublicClient();

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
@@ -58,6 +59,7 @@ import {
   type Face,
 } from "@/features/flashcards/components/flashcard-face";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
+import { FlashcardPublicLinkPanel } from "@/features/flashcards/components/flashcard-public-link-panel";
 import { flashcardImportKey } from "@/features/flashcards/domain/bulk-import";
 import {
   VocabularySublistEditor,
@@ -678,6 +680,7 @@ function SectionWorkspace({
   maxSessions: number;
 }) {
   const router = useRouter();
+  const confirm = useConfirmation();
   const [pending, startTransition] = useTransition();
 
   /**
@@ -744,13 +747,27 @@ function SectionWorkspace({
             type="button"
             variant={section.status === "published" ? "outline" : "default"}
             disabled={pending}
-            onClick={() =>
-              run(
-                section.status === "published"
-                  ? unpublishFlashcardSectionAction
-                  : publishFlashcardSectionAction,
-              )
-            }
+            onClick={async () => {
+              if (section.status !== "published") {
+                run(publishFlashcardSectionAction);
+                return;
+              }
+              // Đưa về nháp sẽ CẮT luôn liên kết công khai — hành vi DB đúng
+              // (fail-closed), nhưng người bấm phải biết hậu quả vật lý: mã QR
+              // đã in trong sách sẽ chết.
+              if (section.publicLink) {
+                const ok = await confirm({
+                  title: "Buổi này đang có liên kết công khai",
+                  description:
+                    "Đưa về nháp sẽ làm mã QR đã in trong sách NGỪNG hoạt động " +
+                    "ngay lập tức. Công bố lại thì mã cũ hoạt động trở lại.",
+                  confirmLabel: "Vẫn đưa về nháp",
+                  variant: "destructive",
+                });
+                if (!ok) return;
+              }
+              run(unpublishFlashcardSectionAction);
+            }}
           >
             {pending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -784,6 +801,7 @@ function SectionWorkspace({
             ))}
           </div>
         )}
+        <FlashcardPublicLinkPanel section={section} />
       </CardContent>
     </Card>
   );

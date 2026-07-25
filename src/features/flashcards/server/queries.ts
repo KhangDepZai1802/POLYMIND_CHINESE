@@ -22,8 +22,16 @@ export type FlashcardPageView = PageRow & {
   mediaUrls: Record<string, string>;
 };
 
+/** Liên kết công khai CÒN HIỆU LỰC của buổi, nếu có (`D-36`). */
+export type FlashcardPublicLinkView = {
+  id: string;
+  token: string;
+  created_at: string;
+};
+
 export type FlashcardSectionView = SectionRow & {
   pages: FlashcardPageView[];
+  publicLink: FlashcardPublicLinkView | null;
 };
 
 export type FlashcardDeckView = DeckRow & {
@@ -178,11 +186,33 @@ export async function getAdminFlashcardDeck(
     300,
   );
 
+  // Liên kết công khai còn hiệu lực. RLS đã giới hạn về super_admin nên không
+  // lặp lại điều kiện đó ở đây; `revoked_at is null` là vế nghiệp vụ, không
+  // phải vế phân quyền.
+  const linkResult =
+    sectionIds.length === 0
+      ? { data: [], error: null }
+      : await supabase
+          .from("flashcard_public_links")
+          .select("id,token,created_at,section_id")
+          .in("section_id", sectionIds)
+          .is("revoked_at", null);
+  if (linkResult.error) {
+    throw new Error("Không tải được liên kết công khai.");
+  }
+  const linkBySection = new Map(
+    (linkResult.data ?? []).map((row) => [
+      row.section_id,
+      { id: row.id, token: row.token, created_at: row.created_at },
+    ]),
+  );
+
   return {
     ...deck,
     sections: sections.map((section) => ({
       ...section,
       pages: pagesBySection.get(section.id) ?? [],
+      publicLink: linkBySection.get(section.id) ?? null,
     })),
   };
 }
@@ -253,6 +283,8 @@ export async function getStudentFlashcardDeck(
     sections: sections.map((section) => ({
       ...section,
       pages: pagesBySection.get(section.id) ?? [],
+      // Học viên không cần biết buổi này có được chia sẻ công khai hay không.
+      publicLink: null,
     })),
   };
 }

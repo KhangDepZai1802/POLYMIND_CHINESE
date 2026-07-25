@@ -492,6 +492,17 @@ User đổi cơ chế mặt sau: nay dựng bằng CHỮ (4 khối §7ter) nên 
 | --- | --- | --- | --- |
 | P16-T12 | **Thẻ từ vựng không còn `back_image_path`** | ⛔ KHÔNG drop cột (dùng chung với trang mở đầu — vẫn hai ảnh). Thêm vế `kind='vocabulary' ⇒ back null` vào `flashcard_pages_image_kind_check` (`…078`). Đo cloud trước khi siết (`co_anh_mat_sau=0`). Bỏ khỏi Zod nhánh vocabulary, `pageValues`/`declaredMedia`, ô UI (giữ cho cover), `VocabularyBack`, seed. `distinct_media_check` giữ nguyên cho cover | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 19). `…078`. pgTAP `flashcard_structured_vocabulary` cập nhật (bài mới "thẻ từ vựng KHÔNG được mang ảnh mặt sau"); Vitest `299/299`, pgTAP `516/516`, E2E `34/34`. **Kiểm ngược:** làm yếu constraint → đỏ đúng bài 11. ⛔ CHƯA push cloud |
 
+### `BUG-P16-002` — Nhập hàng loạt báo "N file tải lên không hợp lệ hoặc đã mất" (user báo 2026-07-25)
+
+User thả 34 file (17 ảnh + 17 mp3) vào tab "Ảnh & Audio", chờ rất lâu rồi nhận `31 file tải lên không hợp lệ hoặc đã mất` và **mất sạch** công tải lên. Kèm yêu cầu thứ hai: *"load 34 ảnh và mp3 lên cùng lúc rất chậm"*.
+
+| Task | Nội dung | Definition of Done | Trạng thái |
+| --- | --- | --- | --- |
+| BUG-P16-002a | **Không xoá dữ liệu vì một lỗi chưa rõ** | Bước xác minh cũ coi **mọi** lỗi (kể cả trục trặc đường truyền) là "file hỏng" rồi `removeFlashcardObjects` — client thấy lỗi lại dọn nốt phần còn lại. Nay tách hai vế: soi được mà sai → xoá; **không soi được → giữ nguyên, không ghi gì**, trả `keepUploads` để client đừng dọn. Một khe hỏng chỉ loại **khe đó**, 33 file lành vẫn được gắn | ☑ **FIXED, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 20) |
+| BUG-P16-002b | **MIME lúc tải lên phải khớp bucket** | 🔴 `uploadToSignedUrl` **bỏ qua** tuỳ chọn `contentType` khi thân request là Blob/File — nó gói FormData và để trình duyệt khai theo `File.type`, mà `File.type` lấy từ registry Windows. Đo trên máy user: `.webp` **không có** mục Content Type → rỗng → bucket từ chối `mime type application/octet-stream is not supported`, dù `matchFlashcardMediaFiles` đã bảo "hợp lệ". Nay `file.slice(0, size, ticket.contentType)` ép đúng kiểu server suy từ đuôi file (không sao chép byte) | ☑ **FIXED, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 20). Dựng lại thật: cũ HỎNG, mới OK và bucket lưu `image/webp` |
+| BUG-P16-002c | **Bớt round-trip** | Soi file: 34 lượt `storage.info()` → **1 lượt** RPC `flashcard_media_objects_info` (`…079`, `security invoker` nên RLS `storage.objects` vẫn áp dụng). Ký vé: nối đuôi → theo lô 8. Tải lên: 4 → 6 song song | ☑ **FIXED, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 20). Đo 5 vòng, trung vị **761 ms → 244 ms (3,1×)** cho bước soi; ký vé 616 → 496 ms trên localhost (chênh lệch lớn hơn nhiều trên cloud vì RTT chiếm phần chính) |
+| BUG-P16-002d | **Lỗi phải đọc được** | Bản cũ nói "31 file hỏng" mà không nói **file nào** — chính vì vậy không truy được nguyên nhân từ ảnh chụp màn hình. Nay server trả `rejectedPaths`, client đổi ngược về tên file người soạn đã thả; nhánh lỗi không còn vứt `failedFiles` | ☑ **FIXED, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 20) |
+
 **Thứ tự bắt buộc:** `T0` → `T1` → `T2` → (`T3` ∥ `T5`) → (`T4` ∥ `T6` ∥ `T7`) → `T8` → `T9` → `T10` → `T11` → `T12`.
 `T3` và `T5` chạy song song được vì một bên soạn, một bên đọc — nhưng **cả hai đều phải đợi `T2`**, nếu không sẽ có hai cách hiểu khác nhau về cùng một bản ghi, đúng mẫu hỏng `UX-UIUX-M25-010`.
 

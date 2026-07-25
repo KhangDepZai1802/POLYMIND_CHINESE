@@ -306,8 +306,15 @@ Nút *"Thử lại 1 thẻ"* chỉ chạy lại phần đỏ.
   / `common_phrases` — đúng mẫu hỏng mà `…074` vừa phải viết cả migration để
   tránh. Chỉ ghi đúng cột được gắn.
 - Bắt buộc sinh `front_alt` bằng `flashcardAltText` (§2.3).
-- Verify từng object bằng `storage.info()` y như đường một thẻ
-  ([`actions.ts:525-541`](../src/features/flashcards/server/actions.ts#L525-L541)).
+- Verify object đã tải lên bằng **một lượt** RPC `flashcard_media_objects_info`
+  ([`…079`](../supabase/migrations/20260725000079_flashcard_media_objects_info.sql)),
+  không phải `storage.info()` cho từng file.
+  ✏️ **Sửa 2026-07-25 (`BUG-P16-002`).** Bản đầu gọi `.info()` mỗi file — buổi 17
+  thẻ tốn 34 round-trip (đo được: **761 ms → 244 ms**, ~3,1× khi gộp một lượt), và
+  tệ hơn: nó coi **mọi** lỗi gọi là "file hỏng" rồi **xoá file đó**, nên một trục
+  trặc đường truyền thổi bay cả lượt tải người soạn vừa ngồi chờ. Nay chia hai vế
+  rạch ròi: soi được mà sai → xoá; **không soi được → giữ nguyên, không ghi gì,
+  bảo người dùng bấm chạy lại**. Xem `classifyUploadedFlashcardMedia`.
 - Xoá file cũ **chỉ khi** `allowOverwrite`.
 - `logAudit` mỗi thẻ, action `flashcard.page.media.bulk_attach`.
 

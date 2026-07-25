@@ -19,17 +19,34 @@ import { describe, expect, it } from "vitest";
 const ROOT = join(process.cwd(), "src", "features", "flashcards", "components");
 
 const SHARED_FACE = "flashcard-face.tsx";
+
+/**
+ * Cơ chế LẬT thẻ tách ra đây khi làm trang công khai `/t/<mã>` — cùng lý do:
+ * `FlashcardSizer` là khối quyết định chiều cao thẻ, tốn cả một đợt QA mới
+ * đúng, và chép bản thứ hai là mời gọi hai bản trôi khác nhau.
+ */
+const SHARED_SURFACE = "flashcard-surface.tsx";
+
 const CONSUMERS = [
   "student-flashcard-reader.tsx",
   "flashcard-admin-manager.tsx",
+  "public-flashcard-reader.tsx",
 ] as const;
 
-/** Các khối chỉ được phép định nghĩa trong file dùng chung. */
+/** Các khối chỉ được phép định nghĩa trong `flashcard-face.tsx`. */
 const FACE_BUILDERS = [
   "VocabularyFront",
   "VocabularyBack",
   "FlashcardFaceContent",
   "BackBlock",
+] as const;
+
+/** Các khối chỉ được phép định nghĩa trong `flashcard-surface.tsx`. */
+const SURFACE_BUILDERS = [
+  "FlashcardSizer",
+  "FlashcardFaces",
+  "FlashcardFaceShell",
+  "FlashcardSurface",
 ] as const;
 
 function source(file: string): string {
@@ -44,16 +61,25 @@ describe("mặt thẻ flashcard chỉ có MỘT nguồn sự thật", () => {
     }
   });
 
+  it("file dùng chung định nghĩa đủ các khối lật thẻ", () => {
+    const shared = source(SHARED_SURFACE);
+    for (const builder of SURFACE_BUILDERS) {
+      expect(shared).toContain(`function ${builder}(`);
+    }
+  });
+
   it.each(CONSUMERS)("%s KHÔNG tự định nghĩa lại mặt thẻ", (file) => {
     const text = source(file);
-    for (const builder of FACE_BUILDERS) {
+    for (const builder of [...FACE_BUILDERS, ...SURFACE_BUILDERS]) {
       expect(text).not.toContain(`function ${builder}(`);
     }
   });
 
-  it.each(CONSUMERS)("%s lấy mặt thẻ từ file dùng chung", (file) => {
-    expect(source(file)).toContain(
-      "@/features/flashcards/components/flashcard-face",
-    );
+  it.each(CONSUMERS)("%s lấy mặt/khung thẻ từ file dùng chung", (file) => {
+    const text = source(file);
+    expect(
+      text.includes("@/features/flashcards/components/flashcard-face") ||
+        text.includes("@/features/flashcards/components/flashcard-surface"),
+    ).toBe(true);
   });
 });

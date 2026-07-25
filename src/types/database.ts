@@ -3720,6 +3720,14 @@ export type Database = {
       }
       finalize_assessment_attempts: { Args: never; Returns: Json }
       finalize_expired_exam_attempts: { Args: never; Returns: number }
+      flashcard_media_objects_info: {
+        Args: { p_paths: string[] }
+        Returns: {
+          mime_type: string
+          object_path: string
+          size_bytes: number
+        }[]
+      }
       generate_class_sessions: { Args: { p_class_id: string }; Returns: number }
       get_exam_attempt_payload: {
         Args: { p_attempt_id: string }
