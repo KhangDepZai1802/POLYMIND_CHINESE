@@ -3527,6 +3527,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      attach_flashcard_section_media: {
+        Args: {
+          p_allow_overwrite?: boolean
+          p_assignments: Json
+          p_section_id: string
+        }
+        Returns: {
+          attached_audio: boolean
+          attached_front: boolean
+          page_id: string
+          removed_paths: string[]
+          skipped_audio: boolean
+          skipped_front: boolean
+        }[]
+      }
       bulk_mark_attendance: {
         Args: { p_records: Json; p_session_id: string }
         Returns: number

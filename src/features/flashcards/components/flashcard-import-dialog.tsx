@@ -18,13 +18,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { FlashcardBulkMediaTab } from "@/features/flashcards/components/flashcard-bulk-media-tab";
 import {
   importableRows,
   MAX_FLASHCARD_IMPORT_ROWS,
   parseFlashcardImportText,
 } from "@/features/flashcards/domain/bulk-import";
 import { importFlashcardVocabularyAction } from "@/features/flashcards/server/actions";
+import type { FlashcardSectionView } from "@/features/flashcards/server/queries";
 
 const PLACEHOLDER = [
   "胡萝卜 | hú luó bo | Củ cà rốt",
@@ -32,16 +40,33 @@ const PLACEHOLDER = [
   "你好 | nǐ hǎo | Xin chào | 你好吗？~nǐ hǎo ma~Bạn khỏe không?;;你好，老师~nǐ hǎo lǎo shī~Chào thầy | 你好啊~nǐ hǎo a~Chào cậu",
 ].join("\n");
 
+/**
+ * Hai đường nhập hàng loạt của một buổi, gom vào MỘT dialog hai tab.
+ *
+ * Vì sao không tách thành nút thứ năm ở cụm nút của buổi (user chốt 2026-07-24):
+ * cụm đó đã có bốn nút và CTA chính là "Công bố buổi" — thêm nút nữa vi phạm
+ * `primary-action` và ở 375px thì xuống ba dòng. Quan trọng hơn: hai tab này là
+ * **hai bước liên tiếp của cùng một việc** (dán chữ tạo thẻ → gắn ảnh/audio cho
+ * chính những thẻ đó), nên đặt cạnh nhau đúng thứ tự thì bản thân giao diện đã
+ * dạy quy trình.
+ *
+ * ⚠️ Đánh đổi: một tab **tạo** thẻ, một tab **sửa** thẻ. Chặn nhầm lẫn bằng câu
+ * mô tả ngay đầu mỗi tab, không để người dùng phải suy ra từ nhãn.
+ */
 export function FlashcardImportDialog({
-  sectionId,
+  deckId,
+  section,
   existingKeys,
 }: {
-  sectionId: string;
+  deckId: string;
+  section: FlashcardSectionView;
   /** Khoá `hanzi pinyin` của thẻ ĐÃ CÓ trong buổi — để xem trước báo "bỏ qua". */
   existingKeys: ReadonlySet<string>;
 }) {
   const router = useRouter();
+  const sectionId = section.id;
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("text");
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -72,14 +97,34 @@ export function FlashcardImportDialog({
           Nhập hàng loạt
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Nhập hàng loạt thẻ từ vựng</DialogTitle>
+          <DialogTitle>Nhập hàng loạt — Buổi {section.session_number}</DialogTitle>
           <DialogDescription>
-            Mỗi dòng một thẻ, các cột ngăn nhau bằng Tab hoặc dấu{" "}
-            <code>|</code>. Tối đa {MAX_FLASHCARD_IMPORT_ROWS} dòng mỗi lượt.
+            Dán danh sách chữ để tạo thẻ, rồi thả ảnh và audio để gắn cho chính
+            những thẻ đó.
           </DialogDescription>
         </DialogHeader>
+
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList>
+            <TabsTrigger value="text">Danh sách chữ</TabsTrigger>
+            <TabsTrigger value="media">Ảnh &amp; Audio</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="media">
+            <FlashcardBulkMediaTab
+              deckId={deckId}
+              section={section}
+              onDone={() => setOpen(false)}
+            />
+          </TabsContent>
+
+          <TabsContent value="text" className="space-y-4">
+        <p className="text-muted-foreground text-sm">
+          Mỗi dòng một thẻ, các cột ngăn nhau bằng Tab hoặc dấu <code>|</code>.
+          Tối đa {MAX_FLASHCARD_IMPORT_ROWS} dòng mỗi lượt.
+        </p>
 
         <Alert>
           <AlertDescription className="space-y-2">
@@ -202,6 +247,8 @@ export function FlashcardImportDialog({
             Tạo {ready.length} thẻ
           </Button>
         </DialogFooter>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

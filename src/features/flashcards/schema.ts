@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import {
+  BULK_MEDIA_SLOTS,
+  MAX_FLASHCARD_BULK_UPLOAD_FILES,
+} from "@/features/flashcards/domain/bulk-media";
+import {
   isFlashcardMediaSlot,
   MAX_FLASHCARD_EXAMPLE_SENTENCES,
   MAX_FLASHCARD_PHRASE_ITEMS,
@@ -215,4 +219,50 @@ export const flashcardUploadRequestSchema = z.object({
     )
     .min(1)
     .max(MAX_FLASHCARD_UPLOAD_FILES),
+});
+
+/**
+ * Xin vé tải media cho **NHIỀU trang trong một lượt** (`P16-T11`).
+ *
+ * 🔴 Vì sao phải có schema riêng thay vì gọi lặp `flashcardUploadRequestSchema`:
+ * `consumeRateLimit(supabase, "material_upload")` tiêu **một đơn vị mỗi LƯỢT
+ * GỌI** action, mà trần là **20 lượt/giờ** (`…034_rate_limits.sql`). Gọi lặp cho
+ * từng thẻ thì buổi từ 21 thẻ trở lên không bao giờ chạy xong, và admin bị khoá
+ * upload cả tiếng — kể cả đường soạn thẻ lẻ. Cả buổi phải là ĐÚNG MỘT lượt gọi.
+ *
+ * Khe giới hạn ở `front` và `audio`: ảnh mặt sau không đi đường hàng loạt.
+ */
+export const flashcardBulkUploadRequestSchema = z.object({
+  sectionId: z.uuid(),
+  items: z
+    .array(
+      z.object({
+        pageId: z.uuid(),
+        slot: z.enum(BULK_MEDIA_SLOTS),
+        fileName: z.string().min(1),
+        mimeType: z.string(),
+        sizeBytes: z.number().int().positive(),
+      }),
+    )
+    .min(1, "Chưa có file nào để tải.")
+    .max(
+      MAX_FLASHCARD_BULK_UPLOAD_FILES,
+      `Mỗi lượt tối đa ${MAX_FLASHCARD_BULK_UPLOAD_FILES} file.`,
+    ),
+});
+
+/** Bảng kê "thẻ nào nhận đường dẫn nào" gửi xuống RPC `…077`. */
+export const flashcardMediaAssignmentSchema = z.object({
+  sectionId: z.uuid(),
+  allowOverwrite: z.boolean().default(false),
+  assignments: z
+    .array(
+      z.object({
+        pageId: z.uuid(),
+        frontImagePath: z.string().trim().max(400).nullish(),
+        audioPath: z.string().trim().max(400).nullish(),
+      }),
+    )
+    .min(1)
+    .max(MAX_FLASHCARD_BULK_UPLOAD_FILES),
 });

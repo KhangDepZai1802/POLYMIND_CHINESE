@@ -734,7 +734,8 @@ function SectionWorkspace({
             <>
               <PageDialog deckId={deck.id} section={section} />
               <FlashcardImportDialog
-                sectionId={section.id}
+                deckId={deck.id}
+                section={section}
                 existingKeys={existingVocabKeys}
               />
             </>

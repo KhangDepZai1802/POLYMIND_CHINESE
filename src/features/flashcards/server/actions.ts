@@ -16,8 +16,10 @@ import {
 } from "@/features/flashcards/domain/media";
 import { MAX_FLASHCARD_IMPORT_ROWS } from "@/features/flashcards/domain/bulk-import";
 import {
+  flashcardBulkUploadRequestSchema,
   flashcardDeckSchema,
   flashcardImportRowSchema,
+  flashcardMediaAssignmentSchema,
   flashcardPageSchema,
   flashcardSectionSchema,
   flashcardUploadRequestSchema,
@@ -393,6 +395,326 @@ async function removeFlashcardObjects(paths: string[]) {
   if (paths.length === 0) return;
   const supabase = await createClient();
   await supabase.storage.from(FLASHCARD_MEDIA_BUCKET).remove(paths);
+}
+
+// =====================================================================
+// Gắn media HÀNG LOẠT cho cả buổi (`P16-T11`)
+// =====================================================================
+
+export type FlashcardBulkUploadTicket = FlashcardUploadTicket & {
+  pageId: string;
+};
+
+/**
+ * Xin vé tải cho **cả buổi trong MỘT lượt gọi**.
+ *
+ * 🔴 Một lượt gọi là ràng buộc cứng, không phải tối ưu: `consumeRateLimit` tiêu
+ * một đơn vị `material_upload` mỗi lượt gọi và trần là 20 lượt/giờ. Gọi lặp cho
+ * từng thẻ thì buổi ≥21 thẻ không chạy xong và admin bị khoá upload cả tiếng.
+ *
+ * Quy ước đường dẫn **giữ nguyên** (`actor/deck/section/page/slot-uuid.ext`) nên
+ * `isOwnedFlashcardMediaPath` và policy Storage không phải sửa dòng nào.
+ */
+export async function createFlashcardBulkUploadTicketsAction(
+  input: unknown,
+): Promise<{ error: string } | { tickets: FlashcardBulkUploadTicket[] }> {
+  const actor = await requireRole("super_admin");
+  const parsed = flashcardBulkUploadRequestSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Yêu cầu không hợp lệ." };
+  }
+
+  // Một thẻ chỉ nhận một file cho mỗi khe. Trùng ở đây nghĩa là client tính sai
+  // — `matchFlashcardMediaFiles` đã loại ca đó — nên nói thẳng thay vì chọn bừa.
+  const seen = new Set<string>();
+  for (const item of parsed.data.items) {
+    const key = `${item.pageId}:${item.slot}`;
+    if (seen.has(key)) {
+      return { error: "Mỗi khe media của một thẻ chỉ nhận một file." };
+    }
+    seen.add(key);
+  }
+
+  const supabase = await createClient();
+  const { data: section } = await supabase
+    .from("flashcard_sections")
+    .select("id,status,deck:flashcard_decks(id)")
+    .eq("id", parsed.data.sectionId)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!section?.deck || section.status !== "draft") {
+    return { error: "Chỉ tải media cho buổi flashcard đang nháp." };
+  }
+
+  // Mọi trang phải thuộc đúng buổi này VÀ là thẻ từ vựng. Kiểm một lượt bằng
+  // truy vấn tập hợp, không lặp từng trang — RPC `…077` kiểm lại lần nữa, đây
+  // chỉ là chỗ trả câu tiếng Việt trước khi tốn công ký vé.
+  const pageIds = [...new Set(parsed.data.items.map((item) => item.pageId))];
+  const { data: pages } = await supabase
+    .from("flashcard_pages")
+    .select("id,kind")
+    .eq("section_id", section.id)
+    .is("archived_at", null)
+    .in("id", pageIds);
+  const usable = new Set(
+    (pages ?? [])
+      .filter((page) => page.kind === "vocabulary")
+      .map((page) => page.id),
+  );
+  if (usable.size !== pageIds.length) {
+    return { error: "Có thẻ không thuộc buổi đã chọn hoặc không nhận media." };
+  }
+
+  const prepared: Array<{
+    pageId: string;
+    slot: FlashcardMediaSlot;
+    contentType: string;
+    path: string;
+  }> = [];
+  for (const item of parsed.data.items) {
+    const format = flashcardMediaFormat(
+      item.slot,
+      item.fileName,
+      item.mimeType,
+    );
+    if (!format) {
+      return {
+        error: `File "${item.fileName}" sai định dạng — ảnh JPG/PNG/WEBP hoặc audio MP3/M4A.`,
+      };
+    }
+    if (item.sizeBytes > flashcardMediaSizeLimit(item.slot)) {
+      return {
+        error:
+          item.slot === "audio"
+            ? `Audio "${item.fileName}" vượt 20 MB.`
+            : `Ảnh "${item.fileName}" vượt 8 MB.`,
+      };
+    }
+    prepared.push({
+      pageId: item.pageId,
+      slot: item.slot,
+      contentType: format.mimeType,
+      path: `${actor.id}/${section.deck.id}/${section.id}/${item.pageId}/${item.slot}-${crypto.randomUUID()}.${format.extension}`,
+    });
+  }
+
+  if (!(await consumeRateLimit(supabase, "material_upload"))) {
+    return { error: "Bạn đã tạo quá nhiều lượt tải file. Vui lòng thử lại." };
+  }
+
+  const tickets: FlashcardBulkUploadTicket[] = [];
+  for (const item of prepared) {
+    const { data, error } = await supabase.storage
+      .from(FLASHCARD_MEDIA_BUCKET)
+      .createSignedUploadUrl(item.path);
+    if (error || !data) {
+      return { error: "Không tạo được liên kết tải media. Vui lòng thử lại." };
+    }
+    tickets.push({
+      pageId: item.pageId,
+      slot: item.slot,
+      path: data.path,
+      token: data.token,
+      contentType: item.contentType,
+    });
+  }
+
+  return { tickets };
+}
+
+export type FlashcardBulkMediaOutcome = {
+  attachedPageCount: number;
+  attachedFrontCount: number;
+  attachedAudioCount: number;
+  skippedCount: number;
+};
+
+/**
+ * Ghi đường dẫn đã tải vào từng thẻ, qua RPC `attach_flashcard_section_media`.
+ *
+ * ⛔ Cố ý **không** đi qua `flashcardPageSchema`: schema đó là payload CẢ TRANG,
+ * dùng ở đây thì một lượt gắn audio sẽ ghi rỗng đè lên `example_sentences` /
+ * `common_phrases` mà người soạn đã gõ tay — mất dữ liệu im lặng.
+ *
+ * `front_alt` tính ở ĐÂY bằng `flashcardAltText`, đúng một chỗ sinh alt cho cả
+ * sản phẩm; RPC chỉ ghi thứ được đưa xuống và DB giữ vế cứng "có ảnh phải có alt".
+ */
+export async function attachFlashcardSectionMediaAction(
+  input: unknown,
+): Promise<ActionState & { outcome?: FlashcardBulkMediaOutcome }> {
+  const actor = await requireRole("super_admin");
+  const parsed = flashcardMediaAssignmentSchema.safeParse(input);
+  if (!parsed.success) return zodToActionState(parsed.error);
+
+  const supabase = await createClient();
+  const { data: section } = await supabase
+    .from("flashcard_sections")
+    .select("id,title,status,deck:flashcard_decks(id)")
+    .eq("id", parsed.data.sectionId)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!section?.deck || section.status !== "draft") {
+    return { error: "Chỉ gắn media cho buổi flashcard đang nháp." };
+  }
+
+  const pageIds = parsed.data.assignments.map((item) => item.pageId);
+  const { data: pages } = await supabase
+    .from("flashcard_pages")
+    .select("id,kind,hanzi,meaning_vi,back_image_path")
+    .eq("section_id", section.id)
+    .is("archived_at", null)
+    .in("id", pageIds);
+  const pageById = new Map((pages ?? []).map((page) => [page.id, page]));
+
+  const assignments: Array<{
+    page_id: string;
+    front_image_path: string | null;
+    front_alt: string | null;
+    audio_path: string | null;
+  }> = [];
+
+  for (const item of parsed.data.assignments) {
+    const page = pageById.get(item.pageId);
+    if (!page || page.kind !== "vocabulary") {
+      return { error: "Có thẻ không thuộc buổi đã chọn hoặc không nhận media." };
+    }
+
+    const frontPath = item.frontImagePath?.trim() || null;
+    const audioPath = item.audioPath?.trim() || null;
+    if (!frontPath && !audioPath) continue;
+
+    // `flashcard_pages_distinct_media_check`: hai mặt phải là hai file khác
+    // nhau. Đường dẫn hàng loạt luôn mang uuid mới nên gần như không đụng vế
+    // này — nhưng để DB báo bằng thông báo constraint thì người soạn đọc không
+    // hiểu, còn chặn ở đây thì đọc được (`EX-21`).
+    if (frontPath && page.back_image_path === frontPath) {
+      return {
+        error: `Thẻ "${page.hanzi ?? ""}" đang dùng đúng file đó cho mặt sau — hai mặt phải khác nhau.`,
+      };
+    }
+
+    for (const [slot, path] of [
+      ["front", frontPath],
+      ["audio", audioPath],
+    ] as const) {
+      if (!path) continue;
+      if (
+        !isOwnedFlashcardMediaPath(path, {
+          actorId: actor.id,
+          deckId: section.deck.id,
+          sectionId: section.id,
+          pageId: item.pageId,
+          slot,
+        })
+      ) {
+        return { error: "Đường dẫn media flashcard không hợp lệ." };
+      }
+    }
+
+    assignments.push({
+      page_id: item.pageId,
+      front_image_path: frontPath,
+      front_alt: frontPath
+        ? flashcardAltText({
+            kind: "vocabulary",
+            face: "front",
+            hanzi: page.hanzi,
+            meaningVi: page.meaning_vi,
+            sectionTitle: section.title,
+          })
+        : null,
+      audio_path: audioPath,
+    });
+  }
+
+  if (assignments.length === 0) {
+    return { error: "Không có thẻ nào cần gắn media." };
+  }
+
+  // Đường dẫn phải trỏ tới file CÓ THẬT, đúng định dạng và trong hạn dung lượng
+  // — y hệt bước kiểm của đường một thẻ. Bỏ bước này thì một yêu cầu tự chế
+  // (đường dẫn đúng hình dạng nhưng chưa từng tải gì lên) sẽ ghi được vào DB, và
+  // hậu quả nặng nhất không phải ảnh vỡ: `validate_flashcard_section_publish`
+  // tưởng thẻ đã có audio nên cho CÔNG BỐ một buổi mà học viên bấm nghe không ra
+  // tiếng. Chạy song song vì mỗi lượt là một round-trip độc lập.
+  const verifications = await Promise.all(
+    assignments.flatMap((item) =>
+      (
+        [
+          ["front", item.front_image_path],
+          ["audio", item.audio_path],
+        ] as const
+      )
+        .filter(([, path]) => Boolean(path))
+        .map(async ([slot, path]) => {
+          const { data: info, error: infoError } = await supabase.storage
+            .from(FLASHCARD_MEDIA_BUCKET)
+            .info(path!);
+          const format = flashcardMediaFormat(slot, path!, info?.contentType);
+          const ok =
+            !infoError &&
+            info &&
+            format &&
+            typeof info.size === "number" &&
+            info.size > 0 &&
+            info.size <= flashcardMediaSizeLimit(slot);
+          return ok ? null : path!;
+        }),
+    ),
+  );
+  const broken = verifications.filter((path): path is string => path !== null);
+  if (broken.length > 0) {
+    await removeFlashcardObjects(broken);
+    return {
+      error: `${broken.length} file tải lên không hợp lệ hoặc đã mất. Thử lại các thẻ đó.`,
+    };
+  }
+
+  const { data, error } = await supabase.rpc(
+    "attach_flashcard_section_media",
+    {
+      p_section_id: parsed.data.sectionId,
+      p_assignments: assignments,
+      p_allow_overwrite: parsed.data.allowOverwrite,
+    },
+  );
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không gắn được media cho buổi.") };
+  }
+
+  const results = data ?? [];
+  const outcome: FlashcardBulkMediaOutcome = {
+    attachedPageCount: results.filter(
+      (row) => row.attached_front || row.attached_audio,
+    ).length,
+    attachedFrontCount: results.filter((row) => row.attached_front).length,
+    attachedAudioCount: results.filter((row) => row.attached_audio).length,
+    skippedCount: results.filter(
+      (row) => row.skipped_front || row.skipped_audio,
+    ).length,
+  };
+
+  // File cũ vừa bị thay: dọn khỏi bucket private. RPC trả danh sách vì chỉ nó
+  // biết chắc đường dẫn nào thật sự bị bỏ ra sau khi đã áp luật ghi đè.
+  await removeFlashcardObjects([
+    ...new Set(results.flatMap((row) => row.removed_paths ?? [])),
+  ]);
+
+  await logAudit(supabase, {
+    action: "flashcard.page.media.bulk_attach",
+    resourceType: "flashcard_section",
+    resourceId: parsed.data.sectionId,
+    after: outcome,
+  });
+  revalidateFlashcards();
+
+  return {
+    success:
+      outcome.skippedCount === 0
+        ? `Đã gắn media cho ${outcome.attachedPageCount} thẻ.`
+        : `Đã gắn media cho ${outcome.attachedPageCount} thẻ, bỏ qua ${outcome.skippedCount} thẻ đã có sẵn.`,
+    outcome,
+  };
 }
 
 /**

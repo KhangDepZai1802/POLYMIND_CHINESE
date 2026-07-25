@@ -113,6 +113,29 @@ async function loginAdmin(page: Page) {
 }
 
 /**
+ * Đăng nhập admin cho bài kiểm CÓ TẢI FILE THẬT.
+ *
+ * `blockMedia` chặn **mọi** request `storage/v1`, kể cả cú PUT lên URL đã ký —
+ * dùng nó ở đây thì bài kiểm "tải file" không tải được file nào. Nhưng bỏ chặn
+ * hẳn cũng sai: ảnh của bộ thẻ seed chỉ có HÀNG trong `storage.objects` chứ
+ * không có byte, nên mỗi `<img>` là một request treo và chúng tích luỹ làm nghẽn
+ * `next dev` (nguyên nhân thật của lượt đỏ ở `P16-T8`).
+ *
+ * Nên chặn theo PHƯƠNG THỨC: `GET` (đọc ảnh seed) vẫn chặn, còn `POST`/`PUT`
+ * (tải lên) thì cho qua.
+ */
+async function loginAdminAllowingUploads(page: Page) {
+  await page.route("**/storage/v1/**", (route) =>
+    route.request().method() === "GET" ? route.abort() : route.continue(),
+  );
+  await page.goto("/login");
+  await page.getByLabel("Tên đăng nhập").fill("admin@polymind.test");
+  await page.getByLabel("Mật khẩu", { exact: true }).fill("Polymind@2026");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await page.waitForURL("**/admin");
+}
+
+/**
  * Mở tab Flashcard của màn Ôn tập và chờ **thẻ thật** hiện ra.
  *
  * Mỏ neo là nút lật thẻ chứ không phải `<h1>`: `<h1>` do layout cấp nên nó hiện
@@ -537,6 +560,131 @@ test.describe("Flashcard — quản trị", () => {
       .toBe("汇率|huì lǜ|Tỷ giá|1");
 
     purgeTestPages(["汇率"]);
+  });
+
+  /**
+   * `P16-T11` — LỜI THAN GỐC CỦA USER, đo đúng vòng khép kín.
+   *
+   * User: *"thêm ghi âm cho tất cả trang trong buổi phải vào sửa từng trang,
+   * lưu, đợi thoát ra, vào tiếp"*. Bài này chứng minh cả buổi xong trong MỘT
+   * lượt, và quan trọng hơn: chứng minh nó **gỡ được đúng cái chốt** đang chặn
+   * — buổi chỉ công bố được khi mọi thẻ đã có audio.
+   *
+   * Ba tên file cố ý đi ba đường ghép khác nhau (Hán tự · pinyin không dấu · số
+   * thứ tự đang hiện) để một bài phủ cả ba tầng khoá.
+   */
+  test("gắn audio hàng loạt: một lượt cho cả buổi, hết 'Thiếu audio', công bố được", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    // Dọn TRƯỚC chứ không dọn sau (bài học `globalSetup` ở `P16-T8`): lượt trước
+    // có thể đã để lại trang mở đầu, audio đã gắn, hoặc buổi đang ở trạng thái
+    // published — cả ba đều làm bài này đỏ vì lý do không liên quan.
+    sql(`
+      set session_replication_role = replica;
+      update public.flashcard_sections
+        set status = 'draft', published_at = null
+        where id = '${SECTION_2}';
+      delete from public.flashcard_pages
+        where section_id = '${SECTION_2}' and kind = 'session_cover';
+      update public.flashcard_pages
+        set audio_path = null, front_image_path = null, front_alt = null,
+            media_paths = '{}'::text[]
+        where section_id = '${SECTION_2}';
+      set session_replication_role = origin;
+    `);
+
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    const mp3 = Buffer.from("ID3      ghi-am-gia");
+
+    await loginAdminAllowingUploads(page);
+    await openAdminDeck(page);
+    await openDraftSection(page);
+
+    // --- Trang mở đầu: buổi không có nó thì không công bố được, nên phải dựng
+    // để vế "công bố được" ở cuối bài đo đúng chốt AUDIO chứ không phải chốt bìa.
+    await page.getByRole("button", { name: "Thêm trang" }).click();
+    await page.getByLabel("Ảnh mặt trước").setInputFiles({
+      name: "bia-truoc.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await page.getByLabel("Ảnh mặt sau").setInputFiles({
+      name: "bia-sau.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await page.getByRole("button", { name: "Lưu trang" }).click();
+    await expect(page.getByText(/Đã thêm trang flashcard/)).toBeVisible({
+      timeout: 30_000,
+    });
+
+    // --- Hai thẻ chữ thuần qua tab "Danh sách chữ" (đường nhập hàng loạt cũ).
+    await page.getByRole("button", { name: "Nhập hàng loạt" }).click();
+    await page
+      .getByLabel("Danh sách thẻ")
+      .fill(["汇率 | huì lǜ | Tỷ giá", "存单 | cún dān | Sổ tiết kiệm"].join("\n"));
+    await page.getByRole("button", { name: "Tạo 2 thẻ" }).click();
+    await expect(page.getByText(/Đã tạo 2 thẻ/)).toBeVisible();
+
+    // Ba thẻ từ vựng, cả ba đều chưa có audio → cả ba badge phải hiện.
+    await expect(page.getByText("Thiếu audio")).toHaveCount(3);
+
+    // --- Tab thứ hai: thả 3 file cho cả buổi trong MỘT lượt.
+    await page.getByRole("button", { name: "Nhập hàng loạt" }).click();
+    await page.getByRole("tab", { name: "Ảnh & Audio" }).click();
+
+    const dialog = page.getByRole("dialog");
+    await dialog.locator('input[type="file"]').setInputFiles([
+      // (1) khớp theo Hán tự — thẻ seed 汇款
+      { name: "汇款.mp3", mimeType: "audio/mpeg", buffer: mp3 },
+      // (2) khớp theo pinyin bỏ dấu — 汇率 có pinyin "huì lǜ" → "huilu"
+      { name: "huilu.mp3", mimeType: "audio/mpeg", buffer: mp3 },
+      // (3) khớp theo SỐ ĐANG HIỆN — trang mở đầu là #1, nên 存单 là #4
+      { name: "4.mp3", mimeType: "audio/mpeg", buffer: mp3 },
+    ]);
+
+    await expect(
+      dialog.getByText("3 file · gắn được 3 · chưa khớp 0"),
+    ).toBeVisible();
+
+    await dialog.getByRole("button", { name: /^Gắn cho 3 thẻ/ }).click();
+    await expect(dialog.getByText(/Đã gắn media cho 3 thẻ/)).toBeVisible({
+      timeout: 60_000,
+    });
+    await dialog.getByRole("button", { name: "Xong" }).click();
+
+    // --- Đọc DB: cả ba thẻ có audio thật, không thẻ nào bị bỏ sót.
+    await expect
+      .poll(() =>
+        sql(`
+          select count(*) from public.flashcard_pages
+          where section_id = '${SECTION_2}'
+            and kind = 'vocabulary' and audio_path is null;
+        `),
+      )
+      .toBe("0");
+
+    // --- Giao diện phải nói ra điều đó: không còn badge nào.
+    await expect(page.getByText("Thiếu audio")).toHaveCount(0);
+
+    // --- Vòng khép kín: chốt đã gỡ thì buổi công bố được.
+    await page.getByRole("button", { name: "Công bố buổi" }).click();
+    await expect(page.getByText("Đã công bố")).toBeVisible({ timeout: 30_000 });
+
+    // Trả buổi về nháp cho lượt sau — và cho chính `openDraftSection`.
+    sql(`
+      set session_replication_role = replica;
+      update public.flashcard_sections
+        set status = 'draft', published_at = null
+        where id = '${SECTION_2}';
+      set session_replication_role = origin;
+    `);
+    purgeTestPages(["汇率", "存单"]);
   });
 
   test("sạch axe ở 1280", async ({ page }) => {
