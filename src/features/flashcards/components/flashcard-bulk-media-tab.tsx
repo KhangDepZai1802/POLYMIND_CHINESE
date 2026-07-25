@@ -32,7 +32,7 @@ import { createClient } from "@/lib/supabase/client";
 const ACCEPT = "image/jpeg,image/png,image/webp,audio/mpeg,audio/mp4,.mp3,.m4a";
 
 /** Bao nhiêu file tải song song. Đủ nhanh mà không mở 40 kết nối một lúc. */
-const UPLOAD_CONCURRENCY = 4;
+const UPLOAD_CONCURRENCY = 6;
 
 type Phase = "select" | "uploading" | "done";
 
@@ -220,9 +220,20 @@ export function FlashcardBulkMediaTab({
           const fileName = uploadByKey.get(`${ticket.pageId}:${ticket.slot}`);
           const file = fileName ? fileByName.get(fileName) : undefined;
           if (!file) return;
+          // 🔴 `contentType` trong tuỳ chọn KHÔNG có tác dụng khi thân request là
+          // Blob/File: `uploadToSignedUrl` gói vào FormData và để trình duyệt tự
+          // khai kiểu theo `File.type`. Mà `File.type` lấy từ registry Windows —
+          // ở đây `.webp` KHÔNG có mục Content Type nên ra chuỗi rỗng, và bucket
+          // từ chối thẳng (`mime type application/octet-stream is not supported`)
+          // dù `matchFlashcardMediaFiles` đã bảo "hợp lệ, sẽ gắn".
+          //
+          // `slice` trả về Blob cùng dữ liệu nhưng ĐỔI kiểu, không sao chép byte.
+          // Kiểu dùng là kiểu server tự suy từ đuôi file, nên thứ nằm trong bucket
+          // luôn khớp với thứ bước xác minh mong đợi.
+          const body = file.slice(0, file.size, ticket.contentType);
           const { error: uploadError } = await supabase.storage
             .from(FLASHCARD_MEDIA_BUCKET)
-            .uploadToSignedUrl(ticket.path, ticket.token, file, {
+            .uploadToSignedUrl(ticket.path, ticket.token, body, {
               contentType: ticket.contentType,
             });
           if (uploadError) failedFiles.push(file.name);
@@ -265,22 +276,48 @@ export function FlashcardBulkMediaTab({
     if (attached.error) {
       // Ghi thất bại thì file vừa tải thành rác trong bucket riêng. Dọn theo
       // từng trang vì đó là đơn vị mà `discardFlashcardUploadsAction` nhận.
-      await Promise.all(
-        [...byPage.values()].map((entry) =>
-          discardFlashcardUploadsAction({
-            deckId,
-            sectionId: section.id,
-            pageId: entry.pageId,
-            paths: [entry.frontImagePath, entry.audioPath].filter(Boolean),
-          }),
-        ),
+      //
+      // ⛔ TRỪ khi server báo `keepUploads`: lúc đó nó chưa soi được file chứ
+      // không phải file hỏng, và đã dặn người soạn "bấm chạy lại". Dọn ở đây thì
+      // lần chạy lại chẳng còn gì để gắn.
+      if (!attached.keepUploads) {
+        await Promise.all(
+          [...byPage.values()].map((entry) =>
+            discardFlashcardUploadsAction({
+              deckId,
+              sectionId: section.id,
+              pageId: entry.pageId,
+              paths: [entry.frontImagePath, entry.audioPath].filter(Boolean),
+            }),
+          ),
+        );
+      }
+      // Tên file tải hỏng phải đi kèm: bản cũ vứt `failedFiles` ở nhánh này, nên
+      // người soạn đọc được "31 file hỏng" mà không biết 31 file NÀO.
+      setError(
+        failedFiles.length > 0
+          ? `${attached.error} Ngoài ra ${failedFiles.length} file không tải lên được: ${failedFiles.join(", ")}.`
+          : attached.error,
       );
-      setError(attached.error);
       setPhase("select");
       return;
     }
 
-    setResult({ message: attached.success ?? "Đã gắn media.", failedFiles });
+    // Đường dẫn do server loại → đổi ngược về tên file người soạn đã thả vào.
+    const nameByPath = new Map(
+      uploaded.map((item) => [
+        item.path,
+        uploadByKey.get(`${item.pageId}:${item.slot}`) ?? item.path,
+      ]),
+    );
+    const rejectedNames = (attached.outcome?.rejectedPaths ?? []).map(
+      (path) => nameByPath.get(path) ?? path,
+    );
+
+    setResult({
+      message: attached.success ?? "Đã gắn media.",
+      failedFiles: [...failedFiles, ...rejectedNames],
+    });
     setPhase("done");
     router.refresh();
   }

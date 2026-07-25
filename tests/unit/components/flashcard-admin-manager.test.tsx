@@ -100,6 +100,10 @@ const deckWithPages = {
           pinyin_syllables: "nǐ hǎo",
           meaning_vi: "Xin chào",
           audio_path: "audio.mp3",
+          // Thẻ từ vựng không còn ảnh mặt sau (`…078`).
+          back_image_path: null,
+          back_alt: null,
+          media_paths: ["front.png"],
         },
       ],
     },

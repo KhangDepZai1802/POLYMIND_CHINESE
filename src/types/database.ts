@@ -1513,6 +1513,47 @@ export type Database = {
           },
         ]
       }
+      flashcard_public_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          label: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          section_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          section_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          section_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_public_links_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flashcard_sections: {
         Row: {
           archived_at: string | null
@@ -3593,6 +3634,13 @@ export type Database = {
         }
         Returns: string
       }
+      create_flashcard_public_link: {
+        Args: { p_label?: string; p_section_id: string }
+        Returns: {
+          link_id: string
+          link_token: string
+        }[]
+      }
       create_flashcard_sections: {
         Args: { p_deck_id: string; p_from: number; p_to: number }
         Returns: {
@@ -3689,6 +3737,7 @@ export type Database = {
         Returns: Json
       }
       get_my_wrong_answer_reviews: { Args: never; Returns: Json }
+      get_public_flashcard_session: { Args: { p_token: string }; Returns: Json }
       get_student_assessment_overview: { Args: never; Returns: Json }
       grade_exam_answer: {
         Args: {
@@ -3800,6 +3849,10 @@ export type Database = {
       }
       review_global_question: {
         Args: { p_approve: boolean; p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
+      revoke_flashcard_public_link: {
+        Args: { p_link_id: string }
         Returns: undefined
       }
       run_exam_regrade: {

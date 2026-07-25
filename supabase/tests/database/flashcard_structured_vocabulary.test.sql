@@ -168,10 +168,11 @@ values
     '苹果', 'píng guǒ', 'Quả táo',
     '[{"hanzi":"我吃苹果。","pinyin":"wǒ chī píngguǒ","meaning_vi":"Tôi ăn táo.","image_path":"70000000-0000-4000-8000-000000000001/s1/v1/example-1-aaa.png"}]'::jsonb,
     '[{"hanzi":"吃苹果","pinyin":"chī píngguǒ","meaning_vi":"ăn táo"}]'::jsonb,
+    -- Thẻ từ vựng chỉ còn ảnh mặt TRƯỚC (`…078`): mặt sau là chữ, back = null.
     '70000000-0000-4000-8000-000000000001/s1/v1/front-2.png',
-    '70000000-0000-4000-8000-000000000001/s1/v1/back-2.png',
+    null,
     '70000000-0000-4000-8000-000000000001/s1/v1/audio-2.mp3',
-    'Mặt trước thẻ từ vựng 苹果', 'Mặt sau thẻ từ vựng 苹果'
+    'Mặt trước thẻ từ vựng 苹果', null
   );
 
 -- Buổi 2: giữ NHÁP cả file, dùng cho bài kiểm ngược (b).
@@ -201,14 +202,16 @@ values
     '香蕉', 'xiāng jiāo', 'Quả chuối',
     '[{"hanzi":"我吃香蕉。","pinyin":"wǒ chī xiāngjiāo","meaning_vi":"Tôi ăn chuối.","image_path":"70000000-0000-4000-8000-000000000001/s2/v1/example-1-bbb.png"}]'::jsonb,
     '70000000-0000-4000-8000-000000000001/s2/v1/front-4.png',
-    '70000000-0000-4000-8000-000000000001/s2/v1/back-4.png',
+    null,
     '70000000-0000-4000-8000-000000000001/s2/v1/audio-4.mp3',
-    'Mặt trước thẻ từ vựng 香蕉', 'Mặt sau thẻ từ vựng 香蕉'
+    'Mặt trước thẻ từ vựng 香蕉', null
   );
 
 -- =====================================================================
 -- Ràng buộc nội dung theo `kind`
 -- =====================================================================
+-- User chốt 2026-07-25: thẻ từ vựng KHÔNG còn ảnh mặt sau (mặt sau là chữ).
+-- `flashcard_pages_image_kind_check` (`…078`) ép back = null cho vocabulary.
 select throws_ok(
   $$insert into public.flashcard_pages (
       id, section_id, kind, order_index, hanzi, pinyin_syllables, meaning_vi,
@@ -218,13 +221,13 @@ select throws_ok(
       '70600000-0000-4000-8000-000000000002',
       'vocabulary', 2, '同', 'tóng', 'giống',
       '70000000-0000-4000-8000-000000000001/s2/v2/front-x.png',
-      '70000000-0000-4000-8000-000000000001/s2/v2/front-x.png',
+      '70000000-0000-4000-8000-000000000001/s2/v2/back-x.png',
       '70000000-0000-4000-8000-000000000001/s2/v2/audio-x.mp3',
       'a', 'b'
     )$$,
   '23514',
   null,
-  'thẻ từ vựng KHÔNG được dùng chung một file cho hai mặt (chốt user P16-T1)'
+  'thẻ từ vựng KHÔNG được mang ảnh mặt sau (chốt user 2026-07-25)'
 );
 
 select throws_ok(
@@ -317,8 +320,8 @@ select is(
     from public.flashcard_pages
     where id = '70700000-0000-4000-8000-000000000002'
   ),
-  4,
-  'media_paths gom đủ 4 nguồn: 2 ảnh mặt + audio + ảnh câu ví dụ'
+  3,
+  'media_paths gom đủ 3 nguồn: ảnh mặt trước + audio + ảnh câu ví dụ (không còn mặt sau)'
 );
 
 select ok(
@@ -334,12 +337,15 @@ select ok(
 -- Thiếu câu này thì bài kiểm dưới có thể xanh nhờ đường cũ mà ta không hay biết.
 select ok(
   (
+    -- Không kê `back_image_path` ở đây: thẻ từ vựng nay luôn null, mà `x not in
+    -- (a, NULL, c)` trả NULL chứ không phải TRUE — làm bài kiểm sai vì lý do
+    -- không liên quan. Hai cột còn lại đủ chứng minh ảnh câu ví dụ đi đường mới.
     select '70000000-0000-4000-8000-000000000001/s1/v1/example-1-aaa.png'
-             not in (front_image_path, back_image_path, audio_path)
+             not in (front_image_path, audio_path)
     from public.flashcard_pages
     where id = '70700000-0000-4000-8000-000000000002'
   ),
-  'ảnh câu ví dụ KHÔNG nằm ở 3 cột cũ — cách cũ chắc chắn trả 403'
+  'ảnh câu ví dụ KHÔNG nằm ở cột cũ — cách cũ chắc chắn trả 403'
 );
 
 select is(

@@ -64,27 +64,57 @@ async function signPagesBySection(
 
   const pagesBySection = new Map<string, FlashcardPageView[]>();
   for (const page of pages) {
-    const mediaUrls: Record<string, string> = {};
-    for (const path of page.media_paths) {
-      const url = signed.get(path);
-      if (url) mediaUrls[path] = url;
-    }
-
     const group = pagesBySection.get(page.section_id) ?? [];
-    group.push({
-      ...page,
-      frontUrl: page.front_image_path
-        ? (mediaUrls[page.front_image_path] ?? null)
-        : null,
-      backUrl: page.back_image_path
-        ? (mediaUrls[page.back_image_path] ?? null)
-        : null,
-      audioUrl: page.audio_path ? (mediaUrls[page.audio_path] ?? null) : null,
-      mediaUrls,
-    });
+    group.push(attachSignedMedia(page, signed));
     pagesBySection.set(page.section_id, group);
   }
   return pagesBySection;
+}
+
+/**
+ * Gắn URL đã ký vào một trang.
+ *
+ * Tách khỏi `signPagesBySection` để **trang công khai** (`public-queries.ts`)
+ * dùng lại nguyên vẹn thay vì chép bản thứ hai. Chép ra hai bản là đúng hình
+ * dạng `UX-UIUX-M25-010` mà comment ngay phía trên đang cảnh báo — chỉ khác là
+ * lần này chỗ trôi sẽ là ảnh của học sinh quét mã QR.
+ *
+ * Nhận `T extends { … }` chứ không phải `PageRow` vì payload công khai cố ý
+ * KHÔNG mang `id`/`section_id`/`created_by`.
+ */
+export function attachSignedMedia<
+  T extends {
+    front_image_path: string | null;
+    back_image_path: string | null;
+    audio_path: string | null;
+    media_paths: string[];
+  },
+>(
+  page: T,
+  signed: Map<string, string>,
+): T & {
+  frontUrl: string | null;
+  backUrl: string | null;
+  audioUrl: string | null;
+  mediaUrls: Record<string, string>;
+} {
+  const mediaUrls: Record<string, string> = {};
+  for (const path of page.media_paths) {
+    const url = signed.get(path);
+    if (url) mediaUrls[path] = url;
+  }
+
+  return {
+    ...page,
+    frontUrl: page.front_image_path
+      ? (mediaUrls[page.front_image_path] ?? null)
+      : null,
+    backUrl: page.back_image_path
+      ? (mediaUrls[page.back_image_path] ?? null)
+      : null,
+    audioUrl: page.audio_path ? (mediaUrls[page.audio_path] ?? null) : null,
+    mediaUrls,
+  };
 }
 
 export async function getFlashcardCourseOptions(): Promise<

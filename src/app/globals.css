@@ -301,6 +301,33 @@ html[data-exam-active="true"] [data-dashboard-main] {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Thang chữ MẶT THẺ.
+ *
+ * Ba biến này giữ ĐÚNG cỡ chữ cũ của màn học viên và màn Quản trị
+ * (`text-5xl → sm:text-7xl`, `text-lg → sm:text-xl`, `text-2xl → sm:text-3xl`)
+ * nên hai màn đó không đổi một pixel nào.
+ *
+ * Chúng tồn tại để **trang công khai `/t/<mã>` ghi đè được** (xem
+ * `src/app/(public)/public-flashcard.css`): mốc `sm` là 640px, mà MỌI điện
+ * thoại đều dưới 640px — nghĩa là máy 320px và máy 430px đang nhận đúng một cỡ
+ * chữ. Máy nhỏ tràn, máy lớn phí chỗ. Trang công khai thay bằng `clamp()` chạy
+ * liên tục theo bề rộng.
+ * ------------------------------------------------------------------------- */
+:root {
+  --fc-hanzi: 3rem;
+  --fc-pinyin: 1.125rem;
+  --fc-meaning: 1.5rem;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --fc-hanzi: 4.5rem;
+    --fc-pinyin: 1.25rem;
+    --fc-meaning: 1.875rem;
+  }
+}
+
 /* Chữ Hán — ưu tiên font CJK, cỡ chữ lớn hơn một chút cho dễ đọc */
 .font-hanzi {
   font-family:

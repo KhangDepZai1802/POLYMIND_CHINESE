@@ -484,7 +484,15 @@ Lời than gốc: *"thêm ghi âm cho tất cả trang trong buổi phải vào 
 | P16-T11c | **Ghi qua RPC `…077`** | `attach_flashcard_section_media` — fail-closed trong DB (super_admin + draft + trang thuộc buổi + không phải trang mở đầu, vi phạm thì **huỷ cả lượt**). ⛔ **Không** đi qua `flashcardPageSchema`: payload cả trang sẽ ghi rỗng đè `example_sentences`/`common_phrases`. `front_alt` do tầng app tính rồi truyền xuống (một chỗ sinh alt duy nhất); DB giữ vế `alt_pairing_check`. Trả `removed_paths` để dọn bucket | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-24 (đợt 18). pgTAP mới **23/23**; catalog guard bump `70→71` sau khi **đo thật** trên DB sạch. **Kiểm ngược:** bỏ vế bắt buộc `front_alt` → đỏ **đúng bài 10** |
 | P16-T11d | **Giao diện tab thứ 2** | Bảng đối chiếu từng thẻ trước khi chạy (dùng lại mô hình của tab "Danh sách chữ"). 5 trạng thái đều có **chữ**, không chỉ màu. 🔴 Ô "Ghi đè" **mặc định TẮT** vì thay = xoá hẳn file cũ, không undo được. Nguyên tử **theo từng thẻ**, không theo cả lô. Kéo–thả chỉ là bổ trợ, luôn có `<input type=file>` thật. `Progress` mới có `role="progressbar"` + số "14/38" | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-24 (đợt 18). E2E `34/34` cả hai project (32 → +2), phủ cả 3 tầng khoá trong một bài và khép vòng **"hết Thiếu audio → công bố được"** |
 
-**Thứ tự bắt buộc:** `T0` → `T1` → `T2` → (`T3` ∥ `T5`) → (`T4` ∥ `T6` ∥ `T7`) → `T8` → `T9` → `T10` → `T11`.
+### `P16-T12` — Bỏ ảnh mặt sau khỏi thẻ từ vựng (user chốt 2026-07-25)
+
+User đổi cơ chế mặt sau: nay dựng bằng CHỮ (4 khối §7ter) nên ô ảnh mặt sau thẻ từ vựng là thứ thừa — *"không cần ảnh nữa, để thì thừa"*. Thay thế hẳn quyết định `P16-T1` (2026-07-23, khi đó mặt sau còn mang được ảnh riêng).
+
+| Task | Nội dung | Definition of Done | Trạng thái |
+| --- | --- | --- | --- |
+| P16-T12 | **Thẻ từ vựng không còn `back_image_path`** | ⛔ KHÔNG drop cột (dùng chung với trang mở đầu — vẫn hai ảnh). Thêm vế `kind='vocabulary' ⇒ back null` vào `flashcard_pages_image_kind_check` (`…078`). Đo cloud trước khi siết (`co_anh_mat_sau=0`). Bỏ khỏi Zod nhánh vocabulary, `pageValues`/`declaredMedia`, ô UI (giữ cho cover), `VocabularyBack`, seed. `distinct_media_check` giữ nguyên cho cover | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 19). `…078`. pgTAP `flashcard_structured_vocabulary` cập nhật (bài mới "thẻ từ vựng KHÔNG được mang ảnh mặt sau"); Vitest `299/299`, pgTAP `516/516`, E2E `34/34`. **Kiểm ngược:** làm yếu constraint → đỏ đúng bài 11. ⛔ CHƯA push cloud |
+
+**Thứ tự bắt buộc:** `T0` → `T1` → `T2` → (`T3` ∥ `T5`) → (`T4` ∥ `T6` ∥ `T7`) → `T8` → `T9` → `T10` → `T11` → `T12`.
 `T3` và `T5` chạy song song được vì một bên soạn, một bên đọc — nhưng **cả hai đều phải đợi `T2`**, nếu không sẽ có hai cách hiểu khác nhau về cùng một bản ghi, đúng mẫu hỏng `UX-UIUX-M25-010`.
 
 ---

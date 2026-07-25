@@ -16,6 +16,10 @@ import {
 } from "@/features/flashcards/domain/media";
 import { MAX_FLASHCARD_IMPORT_ROWS } from "@/features/flashcards/domain/bulk-import";
 import {
+  classifyUploadedFlashcardMedia,
+  type UploadedMediaCheck,
+} from "@/features/flashcards/domain/bulk-media";
+import {
   flashcardBulkUploadRequestSchema,
   flashcardDeckSchema,
   flashcardImportRowSchema,
@@ -36,6 +40,12 @@ import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 const FLASHCARD_PATH = "/admin/flashcards";
+
+/**
+ * Bao nhiêu chữ ký tải lên xin cùng lúc. Đủ để không phải chờ 34 round-trip nối
+ * đuôi, vẫn đủ thấp để không mở một nắm kết nối tới Storage cùng lúc.
+ */
+const SIGN_CONCURRENCY = 8;
 
 function revalidateFlashcards() {
   revalidatePath(FLASHCARD_PATH);
@@ -502,24 +512,35 @@ export async function createFlashcardBulkUploadTicketsAction(
     return { error: "Bạn đã tạo quá nhiều lượt tải file. Vui lòng thử lại." };
   }
 
-  const tickets: FlashcardBulkUploadTicket[] = [];
-  for (const item of prepared) {
-    const { data, error } = await supabase.storage
-      .from(FLASHCARD_MEDIA_BUCKET)
-      .createSignedUploadUrl(item.path);
-    if (error || !data) {
-      return { error: "Không tạo được liên kết tải media. Vui lòng thử lại." };
-    }
-    tickets.push({
-      pageId: item.pageId,
-      slot: item.slot,
-      path: data.path,
-      token: data.token,
-      contentType: item.contentType,
-    });
+  // Ký theo LÔ, không nối đuôi. Mỗi chữ ký là một round-trip độc lập, nên buổi
+  // 17 thẻ trước đây phải chờ 34 round-trip xong xuôi mới tải được byte đầu
+  // tiên — trên Supabase cloud (RTT ~200ms) là ngót 7 giây chết. Vẫn chặn trần
+  // song song để không mở 34 kết nối một lúc.
+  const signed: Array<FlashcardBulkUploadTicket | null> = [];
+  for (let start = 0; start < prepared.length; start += SIGN_CONCURRENCY) {
+    const batch = await Promise.all(
+      prepared.slice(start, start + SIGN_CONCURRENCY).map(async (item) => {
+        const { data, error } = await supabase.storage
+          .from(FLASHCARD_MEDIA_BUCKET)
+          .createSignedUploadUrl(item.path);
+        if (error || !data) return null;
+        return {
+          pageId: item.pageId,
+          slot: item.slot,
+          path: data.path,
+          token: data.token,
+          contentType: item.contentType,
+        };
+      }),
+    );
+    signed.push(...batch);
   }
 
-  return { tickets };
+  if (signed.some((ticket) => ticket === null)) {
+    return { error: "Không tạo được liên kết tải media. Vui lòng thử lại." };
+  }
+
+  return { tickets: signed as FlashcardBulkUploadTicket[] };
 }
 
 export type FlashcardBulkMediaOutcome = {
@@ -527,6 +548,12 @@ export type FlashcardBulkMediaOutcome = {
   attachedFrontCount: number;
   attachedAudioCount: number;
   skippedCount: number;
+  /**
+   * Đường dẫn bị loại vì soi ra hỏng. Trả về ĐƯỜNG DẪN chứ không phải câu chữ:
+   * chỉ client mới biết đường dẫn nào ứng với tên file người soạn đã thả vào, và
+   * "file nào" mới là thứ họ cần để chọn lại.
+   */
+  rejectedPaths: string[];
 };
 
 /**
@@ -541,7 +568,17 @@ export type FlashcardBulkMediaOutcome = {
  */
 export async function attachFlashcardSectionMediaAction(
   input: unknown,
-): Promise<ActionState & { outcome?: FlashcardBulkMediaOutcome }> {
+): Promise<
+  ActionState & {
+    outcome?: FlashcardBulkMediaOutcome;
+    /**
+     * Lỗi này KHÔNG đụng tới file đã tải lên — client phải giữ nguyên, đừng dọn.
+     * Thiếu cờ này thì câu "bấm chạy lại, file vẫn còn" thành nói dối: client sẽ
+     * xoá sạch ngay sau khi đọc nó.
+     */
+    keepUploads?: boolean;
+  }
+> {
   const actor = await requireRole("super_admin");
   const parsed = flashcardMediaAssignmentSchema.safeParse(input);
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -560,7 +597,7 @@ export async function attachFlashcardSectionMediaAction(
   const pageIds = parsed.data.assignments.map((item) => item.pageId);
   const { data: pages } = await supabase
     .from("flashcard_pages")
-    .select("id,kind,hanzi,meaning_vi,back_image_path")
+    .select("id,kind,hanzi,meaning_vi")
     .eq("section_id", section.id)
     .is("archived_at", null)
     .in("id", pageIds);
@@ -583,16 +620,8 @@ export async function attachFlashcardSectionMediaAction(
     const audioPath = item.audioPath?.trim() || null;
     if (!frontPath && !audioPath) continue;
 
-    // `flashcard_pages_distinct_media_check`: hai mặt phải là hai file khác
-    // nhau. Đường dẫn hàng loạt luôn mang uuid mới nên gần như không đụng vế
-    // này — nhưng để DB báo bằng thông báo constraint thì người soạn đọc không
-    // hiểu, còn chặn ở đây thì đọc được (`EX-21`).
-    if (frontPath && page.back_image_path === frontPath) {
-      return {
-        error: `Thẻ "${page.hanzi ?? ""}" đang dùng đúng file đó cho mặt sau — hai mặt phải khác nhau.`,
-      };
-    }
-
+    // Thẻ từ vựng chỉ có ảnh mặt TRƯỚC; mặt sau là chữ (`…078`) nên không còn
+    // vế "hai mặt phải khác file" ở đây — chỉ trang mở đầu mới có hai ảnh.
     for (const [slot, path] of [
       ["front", frontPath],
       ["audio", audioPath],
@@ -636,37 +665,88 @@ export async function attachFlashcardSectionMediaAction(
   // (đường dẫn đúng hình dạng nhưng chưa từng tải gì lên) sẽ ghi được vào DB, và
   // hậu quả nặng nhất không phải ảnh vỡ: `validate_flashcard_section_publish`
   // tưởng thẻ đã có audio nên cho CÔNG BỐ một buổi mà học viên bấm nghe không ra
-  // tiếng. Chạy song song vì mỗi lượt là một round-trip độc lập.
-  const verifications = await Promise.all(
-    assignments.flatMap((item) =>
-      (
-        [
-          ["front", item.front_image_path],
-          ["audio", item.audio_path],
-        ] as const
-      )
-        .filter(([, path]) => Boolean(path))
-        .map(async ([slot, path]) => {
-          const { data: info, error: infoError } = await supabase.storage
-            .from(FLASHCARD_MEDIA_BUCKET)
-            .info(path!);
-          const format = flashcardMediaFormat(slot, path!, info?.contentType);
-          const ok =
-            !infoError &&
-            info &&
-            format &&
-            typeof info.size === "number" &&
-            info.size > 0 &&
-            info.size <= flashcardMediaSizeLimit(slot);
-          return ok ? null : path!;
-        }),
+  // tiếng.
+  //
+  // MỘT lượt gọi cho cả buổi (`…079`), không phải mỗi file một lượt `.info()`.
+  // Buổi 17 thẻ trước đây tốn 34 round-trip nối đuôi bước tải lên vốn đã lâu, và
+  // mỗi round-trip là một cơ hội hỏng riêng.
+  const checks: UploadedMediaCheck[] = assignments.flatMap((item) => [
+    ...(item.front_image_path
+      ? [
+          {
+            pageId: item.page_id,
+            slot: "front" as const,
+            path: item.front_image_path,
+          },
+        ]
+      : []),
+    ...(item.audio_path
+      ? [
+          {
+            pageId: item.page_id,
+            slot: "audio" as const,
+            path: item.audio_path,
+          },
+        ]
+      : []),
+  ]);
+
+  const { data: infoRows, error: infoError } = await supabase.rpc(
+    "flashcard_media_objects_info",
+    { p_paths: checks.map((check) => check.path) },
+  );
+
+  // ⛔ Không soi được thì KHÔNG ghi gì (fail-closed) và cũng KHÔNG xoá gì. Bản
+  // cũ coi mọi lỗi là "file hỏng" rồi xoá — một trục trặc đường truyền đủ để
+  // thổi bay cả lượt tải mà người soạn vừa ngồi chờ xong. File vẫn nằm nguyên
+  // trong bucket nên bấm chạy lại là gắn được, không phải tải lại từ đầu.
+  if (infoError) {
+    return {
+      error:
+        "Chưa kiểm tra được file vừa tải lên. Bấm chạy lại — file vẫn còn trên máy chủ, không phải chọn lại.",
+      keepUploads: true,
+    };
+  }
+
+  const verdict = classifyUploadedFlashcardMedia(
+    checks,
+    new Map(
+      (infoRows ?? []).map((row) => [
+        row.object_path,
+        { sizeBytes: row.size_bytes, mimeType: row.mime_type },
+      ]),
     ),
   );
-  const broken = verifications.filter((path): path is string => path !== null);
-  if (broken.length > 0) {
-    await removeFlashcardObjects(broken);
+
+  await removeFlashcardObjects(verdict.invalid.map((check) => check.path));
+
+  // Bỏ RIÊNG khe hỏng, giữ nguyên phần đã soi sạch — đúng nguyên tắc "nguyên tử
+  // theo TỪNG THẺ" mà bước tải lên đã theo. Bản cũ trả lỗi cho cả lượt, nên một
+  // file hỏng vứt luôn 33 file lành.
+  const usableByPage = new Map<string, { front?: string; audio?: string }>();
+  for (const check of verdict.usable) {
+    const entry = usableByPage.get(check.pageId) ?? {};
+    entry[check.slot] = check.path;
+    usableByPage.set(check.pageId, entry);
+  }
+
+  const keptAssignments = assignments
+    .map((item) => {
+      const usable = usableByPage.get(item.page_id);
+      const frontPath = usable?.front ?? null;
+      return {
+        ...item,
+        front_image_path: frontPath,
+        // DB đòi "có ảnh phải có alt"; bỏ ảnh thì phải bỏ cả alt.
+        front_alt: frontPath ? item.front_alt : null,
+        audio_path: usable?.audio ?? null,
+      };
+    })
+    .filter((item) => item.front_image_path || item.audio_path);
+
+  if (keptAssignments.length === 0) {
     return {
-      error: `${broken.length} file tải lên không hợp lệ hoặc đã mất. Thử lại các thẻ đó.`,
+      error: `${verdict.invalid.length} file tải lên không hợp lệ hoặc đã mất. Thử lại các thẻ đó.`,
     };
   }
 
@@ -674,7 +754,7 @@ export async function attachFlashcardSectionMediaAction(
     "attach_flashcard_section_media",
     {
       p_section_id: parsed.data.sectionId,
-      p_assignments: assignments,
+      p_assignments: keptAssignments,
       p_allow_overwrite: parsed.data.allowOverwrite,
     },
   );
@@ -692,6 +772,7 @@ export async function attachFlashcardSectionMediaAction(
     skippedCount: results.filter(
       (row) => row.skipped_front || row.skipped_audio,
     ).length,
+    rejectedPaths: verdict.invalid.map((check) => check.path),
   };
 
   // File cũ vừa bị thay: dọn khỏi bucket private. RPC trả danh sách vì chỉ nó
@@ -708,11 +789,20 @@ export async function attachFlashcardSectionMediaAction(
   });
   revalidateFlashcards();
 
+  const notes = [
+    outcome.skippedCount > 0
+      ? `bỏ qua ${outcome.skippedCount} thẻ đã có sẵn`
+      : null,
+    outcome.rejectedPaths.length > 0
+      ? `loại ${outcome.rejectedPaths.length} file hỏng`
+      : null,
+  ].filter((note): note is string => note !== null);
+
   return {
     success:
-      outcome.skippedCount === 0
+      notes.length === 0
         ? `Đã gắn media cho ${outcome.attachedPageCount} thẻ.`
-        : `Đã gắn media cho ${outcome.attachedPageCount} thẻ, bỏ qua ${outcome.skippedCount} thẻ đã có sẵn.`,
+        : `Đã gắn media cho ${outcome.attachedPageCount} thẻ, ${notes.join(", ")}.`,
     outcome,
   };
 }
@@ -741,9 +831,7 @@ function declaredMedia(
   if (input.front_image_path) {
     media.push({ slot: "front", path: input.front_image_path });
   }
-  if (input.back_image_path) {
-    media.push({ slot: "back", path: input.back_image_path });
-  }
+  // Thẻ từ vựng không còn ảnh mặt sau (`…078`): mặt sau là chữ.
   input.example_sentences.forEach((example, index) => {
     if (example.image_path) {
       media.push({ slot: exampleMediaSlot(index), path: example.image_path });
@@ -756,7 +844,9 @@ function pageValues(input: FlashcardPageInput, sectionTitle: string) {
   const hanzi = input.kind === "vocabulary" ? input.hanzi : null;
   const meaningVi = input.kind === "vocabulary" ? input.meaning_vi : null;
   const frontPath = input.front_image_path ?? null;
-  const backPath = input.back_image_path ?? null;
+  // Ảnh mặt sau CHỈ có ở trang mở đầu (`…078`): thẻ từ vựng luôn null.
+  const backPath =
+    input.kind === "session_cover" ? input.back_image_path : null;
 
   const altFor = (face: "front" | "back") =>
     flashcardAltText({ kind: input.kind, face, hanzi, meaningVi, sectionTitle });

@@ -244,15 +244,16 @@ Thẻ mẫu: từ `胡萝卜` (củ cà rốt).
 | # | Khối | Trong ảnh | Cấu trúc dữ liệu |
 | --- | --- | --- | --- |
 | 1 | **Đầu thẻ** (nền be) | `胡萝卜 — húluóbo` | Hán tự + pinyin **viết liền**, không phải trường mới — dẫn xuất từ mặt trước. |
-| 2 | **Nghĩa** (viền xanh lá) | `Củ cà rốt` + ảnh nhỏ | Dùng lại **nghĩa** của mặt trước, nhưng **ảnh là ảnh RIÊNG của mặt sau** — xem ghi chú ⬇️. |
+| 2 | **Nghĩa** (viền xanh lá) | `Củ cà rốt` | Dùng lại **nghĩa** của mặt trước. **Không còn ảnh mặt sau** — xem ghi chú ⬇️. |
 
-> ⚠️ **Sửa 2026-07-23 (user chốt ở `P16-T1`) — trước đây ô này ghi "dùng lại ảnh của mặt trước".**
-> Câu đó **trái với ràng buộc DB** `flashcard_pages_distinct_media_check`, vốn ép
-> `front_image_path <> back_image_path`. User đã được trình bày ba phương án
-> (để trống ảnh mặt sau · nới CHECK cho `vocabulary` · sửa mô tả này) và **chọn giữ
-> nguyên CHECK, sửa mô tả**. Vì vậy: **thẻ từ vựng có ảnh thì mặt trước và mặt sau là
-> HAI FILE KHÁC NHAU.** Ảnh vẫn là **tuỳ chọn** — thẻ không có ảnh nào vẫn hợp lệ, và
-> hai cột ảnh độc lập nhau; chỉ khi cả hai cùng có mặt thì DB mới bắt chúng phải khác file.
+> ⚠️ **Sửa 2026-07-25 (user chốt) — thẻ từ vựng KHÔNG còn ảnh mặt sau.**
+> User đổi cơ chế mặt sau: nó dựng bằng CHỮ (4 khối §7ter), nên ô ảnh mặt sau là
+> thứ thừa — *"không cần ảnh nữa, để thì thừa"*. Migration `…078` thêm vế
+> `kind='vocabulary' ⇒ back_image_path is null` vào `flashcard_pages_image_kind_check`
+> (đo cloud trước khi siết: `co_anh_mat_sau = 0`). Cột `back_image_path` **giữ nguyên**
+> cho `session_cover` (trang mở đầu vẫn hai ảnh, và `distinct_media_check` vẫn ép
+> hai ảnh đó khác file). Đây thay thế hẳn quyết định 2026-07-23 (khi đó mặt sau
+> còn có thể mang ảnh riêng). Ảnh mặt TRƯỚC của thẻ từ vựng vẫn tuỳ chọn.
 | 3 | **Tách nghĩa** (viền xanh dương) | `胡 (hú): từ chỉ nguồn gốc bên ngoài` · `萝卜 (luóbo): củ cải, rau củ` | **Danh sách 0..n**, mỗi mục = `{ thành tố Hán tự, pinyin, nghĩa }`. ⚠️ Thành tố **không phải luôn 1 chữ** — `萝卜` là 2 chữ. Nên đây là **chuỗi con do người soạn tự cắt**, máy không tự tách được. |
 | 4 | **Câu ví dụ** (viền tím) | `我喜欢吃胡萝卜。` / `Wǒ xǐhuan chī húluóbo` / `Tôi thích ăn cà rốt.` + ảnh | **Danh sách 0..n**, mỗi mục = `{ câu Hán, pinyin câu, nghĩa tiếng Việt, ảnh (tuỳ chọn) }`. |
 | 5 | **Cụm từ thường dùng** (viền cam) | 4 dòng: `吃胡萝卜 — chī húluóbo — ăn cà rốt` … | **Danh sách 0..n**, mỗi mục = `{ cụm Hán tự, pinyin, nghĩa tiếng Việt }`. |

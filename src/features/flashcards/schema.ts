@@ -113,7 +113,14 @@ export const flashcardSessionCoverPageSchema = z.object({
   back_image_path: z.string().trim().min(1, "Trang mở đầu cần ảnh mặt sau."),
 });
 
-/** Thẻ từ vựng: bản ghi có cấu trúc theo §7ter. Ảnh là TUỲ CHỌN. */
+/**
+ * Thẻ từ vựng: bản ghi có cấu trúc theo §7ter. Ảnh mặt trước là TUỲ CHỌN.
+ *
+ * ⛔ KHÔNG có `back_image_path`: từ 2026-07-25 mặt sau thẻ từ vựng dựng bằng CHỮ
+ * (4 khối §7ter), ảnh mặt sau là thứ thừa. DB chặn bằng
+ * `flashcard_pages_image_kind_check` (migration `…078`); bỏ hẳn khỏi Zod để một
+ * payload cũ mang `back_image_path` không lặng lẽ được ghi.
+ */
 export const flashcardVocabularyPageSchema = z.object({
   ...pageIdentity,
   kind: z.literal("vocabulary"),
@@ -128,7 +135,6 @@ export const flashcardVocabularyPageSchema = z.object({
   // nhập hàng loạt chưa có audio; ép ở đây thì admin không mở ra sửa nghĩa được.
   audio_path: optionalMediaPath,
   front_image_path: optionalMediaPath,
-  back_image_path: optionalMediaPath,
   example_sentences: jsonList(
     flashcardExampleItemSchema,
     MAX_FLASHCARD_EXAMPLE_SENTENCES,
@@ -141,28 +147,10 @@ export const flashcardVocabularyPageSchema = z.object({
   ),
 });
 
-export const flashcardPageSchema = z
-  .discriminatedUnion("kind", [
-    flashcardSessionCoverPageSchema,
-    flashcardVocabularyPageSchema,
-  ])
-  .superRefine((value, ctx) => {
-    if (value.kind !== "vocabulary") return;
-    // DB cũng chặn bằng `flashcard_pages_distinct_media_check`, nhưng người soạn
-    // phải nghe câu tiếng Việt chứ không phải thông báo constraint (`EX-21`).
-    if (
-      value.front_image_path &&
-      value.back_image_path &&
-      value.front_image_path === value.back_image_path
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["back_image_path"],
-        message:
-          "Hai mặt thẻ phải dùng hai ảnh khác nhau. Chọn ảnh riêng cho mặt sau, hoặc bỏ trống.",
-      });
-    }
-  });
+export const flashcardPageSchema = z.discriminatedUnion("kind", [
+  flashcardSessionCoverPageSchema,
+  flashcardVocabularyPageSchema,
+]);
 
 export type FlashcardPageInput = z.infer<typeof flashcardPageSchema>;
 

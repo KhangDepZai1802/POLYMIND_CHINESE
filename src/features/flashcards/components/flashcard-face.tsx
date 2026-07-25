@@ -5,7 +5,6 @@ import {
   joinPinyin,
 } from "@/features/flashcards/domain/pinyin";
 import { readFlashcardSublists } from "@/features/flashcards/domain/sublists";
-import type { FlashcardPageView } from "@/features/flashcards/server/queries";
 
 /**
  * MẶT THẺ — nguồn sự thật DUY NHẤT cho cả màn học viên lẫn màn Quản trị.
@@ -26,12 +25,47 @@ import type { FlashcardPageView } from "@/features/flashcards/server/queries";
 
 export type Face = "front" | "back";
 
+/**
+ * Đúng những trường mặt thẻ THẬT SỰ đọc — không hơn.
+ *
+ * Trước đây prop là `FlashcardPageView` (= `PageRow & {…}`), tức kéo theo cả
+ * `id`, `section_id`, `created_by`. Payload của **trang công khai** cố ý không
+ * mang UUID nào (`…080`), nên nếu giữ kiểu rộng thì trang công khai buộc phải
+ * bịa ra UUID giả chỉ để hợp kiểu — vừa vô nghĩa vừa mở đường cho UUID thật lọt
+ * ra sau này. `FlashcardPageView` vẫn thoả kiểu này về mặt cấu trúc nên hai màn
+ * cũ không phải sửa gì.
+ */
+export type FlashcardFaceData = {
+  kind: "session_cover" | "vocabulary";
+  hanzi: string | null;
+  pinyin_syllables: string | null;
+  meaning_vi: string | null;
+  front_alt: string | null;
+  back_alt: string | null;
+  example_sentences: unknown;
+  common_phrases: unknown;
+  frontUrl: string | null;
+  backUrl: string | null;
+  mediaUrls: Record<string, string>;
+};
+
+/**
+ * Chữ Hán phải tự khai `lang="zh-Hans"`.
+ *
+ * `<html lang="vi">` nên nếu không khai lại ở đây, trình duyệt Android (không
+ * có "PingFang SC"/"Noto Sans SC" đúng tên, chỉ có Noto Sans CJK gộp chung) sẽ
+ * chọn biến thể glyph theo tiếng Việt → rơi về hình dạng **tiếng Nhật** với
+ * những chữ khác nhau giữa hai vùng (骨, 直, 今). Sai chữ, trên đúng cái sản phẩm
+ * dạy chữ. Kèm `.font-hanzi` để ưu tiên font CJK trước Be Vietnam Pro.
+ */
+const HANZI_ATTRS = { lang: "zh-Hans" } as const;
+
 export function FlashcardFaceContent({
   page,
   face,
   priority = false,
 }: {
-  page: FlashcardPageView;
+  page: FlashcardFaceData;
   face: Face;
   priority?: boolean;
 }) {
@@ -65,7 +99,7 @@ export function FlashcardFaceCard({
   face,
   className = "",
 }: {
-  page: FlashcardPageView;
+  page: FlashcardFaceData;
   face: Face;
   className?: string;
 }) {
@@ -113,7 +147,7 @@ function FlashcardImageFace({
  * Mặt trước §7ter: pinyin căn thẳng TRÊN TỪNG chữ Hán, Hán tự cỡ lớn nhất,
  * nghĩa tiếng Việt màu cam, ảnh minh hoạ tuỳ chọn.
  */
-function VocabularyFront({ page }: { page: FlashcardPageView }) {
+function VocabularyFront({ page }: { page: FlashcardFaceData }) {
   const hanzi = page.hanzi ?? "";
   const pinyin = page.pinyin_syllables ?? "";
   const alignment = alignPinyinToHanzi(hanzi, pinyin);
@@ -128,10 +162,13 @@ function VocabularyFront({ page }: { page: FlashcardPageView }) {
               key={`${cell.hanzi}-${index}`}
               className="flex flex-col items-center gap-1"
             >
-              <span className="text-muted-foreground text-lg leading-none sm:text-xl">
+              <span className="text-muted-foreground text-[length:var(--fc-pinyin)] leading-none">
                 {cell.pinyin}
               </span>
-              <span className="text-5xl leading-none font-bold sm:text-7xl">
+              <span
+                {...HANZI_ATTRS}
+                className="font-hanzi text-[length:var(--fc-hanzi)] leading-none font-bold"
+              >
                 {cell.hanzi}
               </span>
             </span>
@@ -141,16 +178,19 @@ function VocabularyFront({ page }: { page: FlashcardPageView }) {
         // Số âm tiết không khớp số chữ Hán: hiện pinyin nguyên dòng thay vì căn
         // lệch. Sai lệch nhìn thấy được tốt hơn sai lệch im lặng.
         <>
-          <p className="text-muted-foreground text-lg break-words sm:text-xl">
+          <p className="text-muted-foreground text-[length:var(--fc-pinyin)] break-words">
             {pinyin}
           </p>
-          <p className="text-5xl leading-tight font-bold break-words sm:text-7xl">
+          <p
+            {...HANZI_ATTRS}
+            className="font-hanzi text-[length:var(--fc-hanzi)] leading-tight font-bold break-words"
+          >
             {hanzi}
           </p>
         </>
       )}
 
-      <p className="text-student-amber-ink text-2xl font-semibold break-words sm:text-3xl">
+      <p className="text-student-amber-ink text-[length:var(--fc-meaning)] font-semibold break-words">
         {page.meaning_vi}
       </p>
 
@@ -209,7 +249,9 @@ function SublistLine({
 }) {
   return (
     <>
-      <p className="text-lg font-semibold break-words">{hanzi}</p>
+      <p {...HANZI_ATTRS} className="font-hanzi text-lg font-semibold break-words">
+        {hanzi}
+      </p>
       <p className="text-muted-foreground text-sm break-words">{pinyin}</p>
       <p className="text-sm break-words">{meaningVi}</p>
     </>
@@ -221,19 +263,20 @@ function SublistLine({
  *
  * Khối "Tách nghĩa" (vốn là khối 3) đã BỎ theo yêu cầu user 2026-07-24.
  */
-function VocabularyBack({ page }: { page: FlashcardPageView }) {
+function VocabularyBack({ page }: { page: FlashcardFaceData }) {
   const { examples, phrases } = readFlashcardSublists(page);
   const hanzi = page.hanzi ?? "";
   // Mặt sau dùng pinyin VIẾT LIỀN — dẫn xuất từ dạng tách, không phải cột riêng.
   const joined = joinPinyin(page.pinyin_syllables ?? "");
-  const backImageUrl = page.backUrl;
 
   return (
     <div className="flex min-h-[360px] flex-col gap-3 p-4 sm:min-h-[560px] sm:p-6">
       {/* Khối 1 — đầu thẻ */}
       <BackBlock title="Thẻ" tone="neutral">
         <p className="text-2xl font-bold break-words sm:text-3xl">
-          {hanzi}
+          <span {...HANZI_ATTRS} className="font-hanzi">
+            {hanzi}
+          </span>
           {joined ? (
             <span className="text-muted-foreground font-normal">
               {" — "}
@@ -243,23 +286,9 @@ function VocabularyBack({ page }: { page: FlashcardPageView }) {
         </p>
       </BackBlock>
 
-      {/* Khối 2 — nghĩa */}
+      {/* Khối 2 — nghĩa. Không còn ảnh mặt sau: user đổi cơ chế (`…078`). */}
       <BackBlock title="Nghĩa" tone="cyan">
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="min-w-0 flex-1 text-lg font-semibold break-words">
-            {page.meaning_vi}
-          </p>
-          {backImageUrl && (
-            <Image
-              src={backImageUrl}
-              alt={page.back_alt ?? ""}
-              width={120}
-              height={90}
-              unoptimized
-              className="h-auto max-h-24 w-auto rounded-lg object-contain"
-            />
-          )}
-        </div>
+        <p className="text-lg font-semibold break-words">{page.meaning_vi}</p>
       </BackBlock>
 
       {/* Khối 3 — câu ví dụ */}

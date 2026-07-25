@@ -384,6 +384,76 @@ export function plannedUploads(plan: BulkMediaPlan): BulkMediaUpload[] {
   return uploads;
 }
 
+// =====================================================================
+// Soi file ĐÃ TẢI LÊN (`BUG-P16-002`)
+// =====================================================================
+
+/** Một khe đã tải xong, chờ soi trước khi cho phép ghi vào DB. */
+export type UploadedMediaCheck = {
+  pageId: string;
+  slot: BulkMediaSlot;
+  path: string;
+};
+
+/** Thứ `flashcard_media_objects_info` trả về cho một đường dẫn. */
+export type UploadedMediaInfo = {
+  sizeBytes: number | null;
+  mimeType: string | null;
+};
+
+export type UploadedMediaVerdict = {
+  /** Soi sạch → được phép ghi vào DB. */
+  usable: UploadedMediaCheck[];
+  /**
+   * Sai thật: không có trong bucket, sai định dạng, 0 byte hoặc quá cỡ.
+   * Chỉ nhóm này mới bị xoá khỏi bucket.
+   */
+  invalid: UploadedMediaCheck[];
+};
+
+/**
+ * Chia các khe đã tải lên thành "dùng được" / "hỏng thật".
+ *
+ * 🔴 Cố ý CHỈ có hai nhóm. Bản cũ gộp "file hỏng" chung với "không hỏi được
+ * storage" rồi **xoá** cả hai, nên một trục trặc đường truyền thổi bay nguyên
+ * lượt tải 34 file mà người soạn vừa ngồi chờ. Vế "không hỏi được" nay không
+ * bao giờ tới được hàm này: tầng gọi dừng từ trước và không xoá gì cả — xem
+ * `attachFlashcardSectionMediaAction`.
+ *
+ * Thiếu dòng trong `infoByPath` nghĩa là object không tồn tại (hàm SQL đã chạy
+ * xong và trả đủ những gì nó thấy), nên xếp vào `invalid` là đúng chứ không
+ * phải phỏng đoán.
+ */
+export function classifyUploadedFlashcardMedia(
+  checks: UploadedMediaCheck[],
+  infoByPath: ReadonlyMap<string, UploadedMediaInfo>,
+): UploadedMediaVerdict {
+  const usable: UploadedMediaCheck[] = [];
+  const invalid: UploadedMediaCheck[] = [];
+
+  for (const check of checks) {
+    const info = infoByPath.get(check.path);
+    // 🔴 Bất đối xứng CÓ CHỦ Ý với lúc chọn file: `flashcardMediaFormat` nhận
+    // MIME rỗng, vì trình duyệt hay trả rỗng (registry Windows không có mục
+    // Content Type cho `.webp`). Nhưng object đã nằm trong bucket thì rỗng là
+    // bất thường — `allowed_mime_types` không cho lưu giá trị rỗng — nên ở đây
+    // rỗng phải bị loại, không mượn lại vế nới lỏng của bước chọn.
+    const mimeType = info?.mimeType?.trim() ?? "";
+    const format = mimeType
+      ? flashcardMediaFormat(check.slot, check.path, mimeType)
+      : null;
+    const size = info?.sizeBytes;
+    const ok =
+      Boolean(format) &&
+      typeof size === "number" &&
+      size > 0 &&
+      size <= flashcardMediaSizeLimit(check.slot);
+    (ok ? usable : invalid).push(check);
+  }
+
+  return { usable, invalid };
+}
+
 export type BulkMediaSummary = {
   /** Số THẺ sẽ đổi (không phải số file) — con số in trên nút xác nhận. */
   pageCount: number;

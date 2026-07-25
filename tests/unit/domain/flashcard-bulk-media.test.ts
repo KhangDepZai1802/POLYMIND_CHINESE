@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   bulkMediaSlotOf,
+  classifyUploadedFlashcardMedia,
   matchFlashcardMediaFiles,
   normalizePinyinKey,
   plannedUploads,
   summarizeBulkMedia,
   type BulkMediaFile,
   type BulkMediaTarget,
+  type UploadedMediaCheck,
+  type UploadedMediaInfo,
 } from "@/features/flashcards/domain/bulk-media";
 
 // Buổi mẫu dùng chung: trang mở đầu ở số 1, ba thẻ từ vựng ở số 2/3/4.
@@ -420,5 +423,114 @@ describe("bảng kê gửi lên server", () => {
 
   it("buổi không có file nào thì không gửi gì", () => {
     expect(plannedUploads(plan([]))).toEqual([]);
+  });
+});
+
+// =====================================================================
+// Soi file đã tải lên (`BUG-P16-002`)
+// =====================================================================
+
+const ACTOR = "11111111-1111-1111-1111-111111111111";
+const OBJ = `${ACTOR}/deck/section/page-carot`;
+
+function check(
+  slot: "front" | "audio",
+  fileName: string,
+  pageId = "page-carot",
+): UploadedMediaCheck {
+  return { pageId, slot, path: `${OBJ}/${fileName}` };
+}
+
+function info(
+  sizeBytes: number | null,
+  mimeType: string | null,
+): UploadedMediaInfo {
+  return { sizeBytes, mimeType };
+}
+
+describe("soi file đã tải lên", () => {
+  const frontOk = check("front", "front-a.png");
+  const audioOk = check("audio", "audio-a.mp3");
+
+  it("file có thật, đúng MIME, đúng cỡ thì dùng được", () => {
+    const verdict = classifyUploadedFlashcardMedia(
+      [frontOk, audioOk],
+      new Map([
+        [frontOk.path, info(1024, "image/png")],
+        [audioOk.path, info(2048, "audio/mpeg")],
+      ]),
+    );
+
+    expect(verdict.usable).toHaveLength(2);
+    expect(verdict.invalid).toEqual([]);
+  });
+
+  it("thiếu dòng trả về nghĩa là object không tồn tại → hỏng", () => {
+    const verdict = classifyUploadedFlashcardMedia([frontOk], new Map());
+
+    expect(verdict.usable).toEqual([]);
+    expect(verdict.invalid).toEqual([frontOk]);
+  });
+
+  it("0 byte là hỏng, dù MIME đúng", () => {
+    const verdict = classifyUploadedFlashcardMedia(
+      [frontOk],
+      new Map([[frontOk.path, info(0, "image/png")]]),
+    );
+
+    expect(verdict.invalid).toEqual([frontOk]);
+  });
+
+  it("ảnh quá 8 MB là hỏng; audio cùng cỡ đó thì không", () => {
+    const tooBig = 9 * 1024 * 1024;
+
+    expect(
+      classifyUploadedFlashcardMedia(
+        [frontOk],
+        new Map([[frontOk.path, info(tooBig, "image/png")]]),
+      ).invalid,
+    ).toEqual([frontOk]);
+
+    expect(
+      classifyUploadedFlashcardMedia(
+        [audioOk],
+        new Map([[audioOk.path, info(tooBig, "audio/mpeg")]]),
+      ).usable,
+    ).toEqual([audioOk]);
+  });
+
+  it("MIME lệch khe là hỏng — audio nằm trong ô ảnh không lọt được", () => {
+    const verdict = classifyUploadedFlashcardMedia(
+      [frontOk],
+      new Map([[frontOk.path, info(1024, "audio/mpeg")]]),
+    );
+
+    expect(verdict.invalid).toEqual([frontOk]);
+  });
+
+  it("một khe hỏng KHÔNG kéo theo khe lành của thẻ khác", () => {
+    const other = check("audio", "audio-b.mp3", "page-apple");
+    const verdict = classifyUploadedFlashcardMedia(
+      [frontOk, other],
+      new Map([
+        [frontOk.path, info(0, "image/png")],
+        [other.path, info(2048, "audio/mpeg")],
+      ]),
+    );
+
+    expect(verdict.invalid).toEqual([frontOk]);
+    expect(verdict.usable).toEqual([other]);
+  });
+
+  it("MIME rỗng là hỏng — bucket không bao giờ lưu được giá trị đó", () => {
+    // Vì sao cần bài này: `flashcardMediaFormat` CỐ Ý nhận chuỗi rỗng lúc CHỌN
+    // file (trình duyệt hay trả rỗng cho .webp). Nhưng sau khi đã nằm trong
+    // bucket thì rỗng nghĩa là hỏng, vì `allowed_mime_types` không cho lưu.
+    const verdict = classifyUploadedFlashcardMedia(
+      [frontOk],
+      new Map([[frontOk.path, info(1024, "")]]),
+    );
+
+    expect(verdict.invalid).toEqual([frontOk]);
   });
 });

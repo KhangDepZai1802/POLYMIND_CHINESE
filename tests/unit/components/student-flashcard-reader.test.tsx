@@ -82,23 +82,18 @@ const deck = {
           common_phrases: [
             { hanzi: "你好啊", pinyin: "nǐ hǎo a", meaning_vi: "chào cậu" },
           ],
+          // Thẻ từ vựng chỉ còn ảnh mặt TRƯỚC (`…078`): mặt sau là chữ.
           front_image_path: "front-word.jpg",
-          back_image_path: "back-word.jpg",
+          back_image_path: null,
           audio_path: "word.mp3",
-          media_paths: [
-            "front-word.jpg",
-            "back-word.jpg",
-            "word.mp3",
-            "example-0-word.jpg",
-          ],
+          media_paths: ["front-word.jpg", "word.mp3", "example-0-word.jpg"],
           front_alt: "Ảnh từ vựng mặt trước",
-          back_alt: "Ảnh từ vựng mặt sau",
+          back_alt: null,
           frontUrl: "https://signed.test/front-word.jpg",
-          backUrl: "https://signed.test/back-word.jpg",
+          backUrl: null,
           audioUrl: "https://signed.test/word.mp3",
           mediaUrls: {
             "front-word.jpg": "https://signed.test/front-word.jpg",
-            "back-word.jpg": "https://signed.test/back-word.jpg",
             "word.mp3": "https://signed.test/word.mp3",
             "example-0-word.jpg": "https://signed.test/example-0-word.jpg",
           },

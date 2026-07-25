@@ -1,15 +1,15 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(20);
 
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public'),
-  57,
-  'catalog có đúng 57 bảng public đã review'
+  58,
+  'catalog có đúng 58 bảng public đã review'
 );
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public' and rowsecurity),
-  57,
+  58,
   'mọi bảng public đều bật RLS'
 );
 select is(
@@ -82,26 +82,42 @@ select is(
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'),
-  71,
-  'catalog có đúng 71 RPC public đã review'
+  75,
+  'catalog có đúng 75 RPC public đã review'
 );
+/*
+ * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở
+ * trang flashcard công khai (`D-36`, migration `…080`).
+ *
+ * Cố ý KHÔNG đổi thành `count = 1`: đếm bằng 1 thì đổi tên hàm, hoặc thay bằng
+ * một hàm anon khác hẳn, test vẫn xanh. Ghim tên là chặt hơn bản gốc, không
+ * phải nới lỏng.
+ */
 select is(
-  (select count(*)::integer
+  (select coalesce(array_agg(function_record.proname order by function_record.proname),
+                   array[]::name[])
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'
      and has_function_privilege('anon', function_record.oid, 'EXECUTE')),
-  0,
-  'anonymous không execute RPC nghiệp vụ'
+  array['get_public_flashcard_session']::name[],
+  'anonymous chỉ execute ĐÚNG một RPC công khai đã review'
 );
 select is(
-  (select count(*)::integer
+  (select coalesce(array_agg(function_record.proname order by function_record.proname),
+                   array[]::name[])
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'
      and not has_function_privilege('authenticated', function_record.oid, 'EXECUTE')),
-  4,
-  'authenticated chỉ bị chặn đúng bốn RPC hệ thống'
+  array[
+    'finalize_assessment_attempts',
+    'finalize_expired_exam_attempts',
+    'get_public_flashcard_session',
+    'run_invoice_overdue',
+    'run_session_reminders'
+  ]::name[],
+  'authenticated bị chặn đúng bốn RPC hệ thống + RPC công khai'
 );
 select is(
   (select count(*)::integer
@@ -135,6 +151,49 @@ select is(
      and roles = array['authenticated'::name]),
   24,
   'đủ 24 policy Storage và tất cả chỉ áp cho authenticated'
+);
+
+/*
+ * Bề mặt CÔNG KHAI (`D-36`) — bốn bài dưới đây giữ cho nó không phình ra.
+ * Bài 24 policy ở trên vẫn nguyên 24 vì policy mới có `roles = {anon}`, không
+ * lọt vào phép đếm đó.
+ */
+select is(
+  (select coalesce(array_agg(policyname order by policyname), array[]::name[])
+   from pg_policies
+   where schemaname = 'storage' and tablename = 'objects'
+     and roles <> array['authenticated'::name]),
+  array['flashcard_media_public_link_read']::name[],
+  'chỉ đúng một policy Storage nằm ngoài authenticated'
+);
+select is(
+  (select array_agg(distinct cmd)
+   from pg_policies
+   where schemaname = 'storage' and tablename = 'objects'
+     and policyname = 'flashcard_media_public_link_read'),
+  array['SELECT']::text[],
+  'policy Storage công khai CHỈ đọc — không insert/update/delete'
+);
+select is(
+  (select roles
+   from pg_policies
+   where schemaname = 'storage' and tablename = 'objects'
+     and policyname = 'flashcard_media_public_link_read'),
+  array['anon'::name],
+  'policy Storage công khai chỉ áp cho anon'
+);
+select is(
+  (select coalesce(array_agg(function_record.proname order by function_record.proname),
+                   array[]::name[])
+   from pg_proc function_record
+   join pg_namespace namespace on namespace.oid = function_record.pronamespace
+   where namespace.nspname = 'share'),
+  array['can_read_public_flashcard_media']::name[],
+  'schema share chứa ĐÚNG một hàm — bán kính nổ của bề mặt công khai bằng 0'
+);
+select ok(
+  not has_schema_privilege('anon', 'app', 'USAGE'),
+  'anon vẫn KHÔNG chạm được schema app'
 );
 
 select * from finish();

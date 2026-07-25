@@ -1196,7 +1196,11 @@ function PageDialog({
         );
       };
       formData.set("front_image_path", keptFace("front"));
-      formData.set("back_image_path", keptFace("back"));
+      // Ảnh mặt sau chỉ gửi cho trang mở đầu — thẻ từ vựng không còn khe này
+      // (`…078`). Schema thẻ từ vựng cũng đã bỏ `back_image_path`.
+      if (kind === "session_cover") {
+        formData.set("back_image_path", keptFace("back"));
+      }
 
       if (kind === "vocabulary") {
         formData.set(
@@ -1384,56 +1388,45 @@ function PageDialog({
                 setFiles((current) => ({ ...current, front: file }))
               }
             />
-            <MediaFileField
-              id={fieldId("back")}
-              label="Ảnh mặt sau"
-              accept={IMAGE_ACCEPT}
-              required={!isEdit && kind === "session_cover"}
-              optionalHint={
-                kind === "vocabulary"
-                  ? "tuỳ chọn, phải khác ảnh mặt trước"
-                  : isEdit
-                    ? "để trống nếu giữ ảnh cũ"
-                    : undefined
-              }
-              onFile={(file) =>
-                setFiles((current) => ({ ...current, back: file }))
-              }
-            />
+            {/*
+              Ảnh mặt sau CHỈ có ở trang mở đầu (hai ảnh không chữ, chốt `Q5`).
+              Thẻ từ vựng bỏ ô này từ 2026-07-25: mặt sau là chữ (`…078`).
+            */}
+            {kind === "session_cover" && (
+              <MediaFileField
+                id={fieldId("back")}
+                label="Ảnh mặt sau"
+                accept={IMAGE_ACCEPT}
+                required={!isEdit}
+                optionalHint={isEdit ? "để trống nếu giữ ảnh cũ" : undefined}
+                onFile={(file) =>
+                  setFiles((current) => ({ ...current, back: file }))
+                }
+              />
+            )}
           </div>
 
-          {kind === "vocabulary" && isEdit && (
+          {/* Thẻ từ vựng chỉ còn MỘT ảnh (mặt trước) nên chỉ hiện một ô "bỏ ảnh". */}
+          {kind === "vocabulary" && isEdit && page?.front_image_path && (
             <div className="flex flex-wrap gap-4">
-              {(["front", "back"] as const).map((face) => {
-                const existing =
-                  face === "front"
-                    ? page?.front_image_path
-                    : page?.back_image_path;
-                if (!existing) return null;
-                const faceLabel =
-                  face === "front" ? "ảnh mặt trước" : "ảnh mặt sau";
-                return (
-                  <label
-                    key={face}
-                    className="flex items-center gap-2 text-sm"
-                    htmlFor={fieldId(`clear-${face}`)}
-                  >
-                    <input
-                      id={fieldId(`clear-${face}`)}
-                      type="checkbox"
-                      className="size-4"
-                      checked={clearedFaces[face]}
-                      onChange={(event) =>
-                        setClearedFaces((current) => ({
-                          ...current,
-                          [face]: event.target.checked,
-                        }))
-                      }
-                    />
-                    Bỏ {faceLabel} khỏi thẻ
-                  </label>
-                );
-              })}
+              <label
+                className="flex items-center gap-2 text-sm"
+                htmlFor={fieldId("clear-front")}
+              >
+                <input
+                  id={fieldId("clear-front")}
+                  type="checkbox"
+                  className="size-4"
+                  checked={clearedFaces.front}
+                  onChange={(event) =>
+                    setClearedFaces((current) => ({
+                      ...current,
+                      front: event.target.checked,
+                    }))
+                  }
+                />
+                Bỏ ảnh mặt trước khỏi thẻ
+              </label>
             </div>
           )}
 

@@ -94,15 +94,15 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
     if (!parsed.success || parsed.data.kind !== "vocabulary") return;
     expect(parsed.data.audio_path).toBe(`${PREFIX}/audio-a.mp3`);
     expect(parsed.data.front_image_path).toBeNull();
-    expect(parsed.data.back_image_path).toBeNull();
     expect(parsed.data.example_sentences).toEqual([]);
     expect(parsed.data.common_phrases).toEqual([]);
   });
 
-  it("từ chối hai mặt dùng CHUNG một file ảnh", () => {
-    // Chốt user 2026-07-23 ở `P16-T1`: giữ nguyên
-    // `flashcard_pages_distinct_media_check`, §7ter khối 2 sửa theo. Zod chặn
-    // trước để người soạn nghe câu tiếng Việt chứ không phải lỗi constraint.
+  it("thẻ từ vựng KHÔNG có khe ảnh mặt sau — client gửi back_image_path thì bị bỏ", () => {
+    // User chốt 2026-07-25: mặt sau thẻ từ vựng là chữ, không còn ảnh. Nhánh Zod
+    // của thẻ từ vựng bỏ hẳn `back_image_path`, nên một payload cũ mang nó sẽ bị
+    // strip chứ không lọt vào đường ghi. DB còn chặn lần nữa
+    // (`flashcard_pages_image_kind_check`, `…078`).
     const parsed = flashcardPageSchema.safeParse({
       id: ID,
       section_id: SECTION_ID,
@@ -112,11 +112,12 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
       meaning_vi: "Củ cà rốt",
       audio_path: `${PREFIX}/audio-a.mp3`,
       front_image_path: `${PREFIX}/front-a.png`,
-      back_image_path: `${PREFIX}/front-a.png`,
+      back_image_path: `${PREFIX}/back-a.png`,
     });
 
-    expect(parsed.success).toBe(false);
-    expect(issuePaths(parsed)).toContain("back_image_path");
+    expect(parsed.success).toBe(true);
+    if (!parsed.success || parsed.data.kind !== "vocabulary") return;
+    expect("back_image_path" in parsed.data).toBe(false);
   });
 
   it("đọc ba danh sách con từ chuỗi JSON của FormData", () => {
