@@ -372,6 +372,33 @@ test.describe("vừa mọi kích thước điện thoại", () => {
         `tràn ngang ở ${phone.width}px`,
       ).toBeLessThanOrEqual(overflow.clientWidth + 1);
 
+      /*
+       * 🔴 Nút mũi tên phải phải nằm TRỌN trong màn — bài này sinh ra từ lỗi
+       * thật user báo 2026-07-25 (ảnh chụp máy 1080px: mất hẳn nút ▶).
+       *
+       * Ba khẳng định ở trên KHÔNG bắt được nó, và lý do đáng ghi lại: khung
+       * ngoài có `overflow-hidden`, nên phần tràn bị CẮT chứ không sinh ra cuộn
+       * ngang — `scrollWidth` vẫn bằng `clientWidth`. Chỉ toạ độ của chính nút
+       * mới nói được sự thật. Thẻ đang xem là thẻ 2, thẻ CÓ audio, tức đúng thẻ
+       * mà trình phát chen vào hàng nút và đẩy nút ▶ ra ngoài.
+       */
+      for (const name of ["Thẻ trước", "Thẻ tiếp theo"]) {
+        const arrow = await page.getByRole("button", { name }).boundingBox();
+        expect(arrow, `mất nút "${name}" ở ${phone.width}px`).not.toBeNull();
+        expect(
+          arrow!.x,
+          `nút "${name}" tràn mép TRÁI ở ${phone.width}px`,
+        ).toBeGreaterThanOrEqual(-1);
+        expect(
+          arrow!.x + arrow!.width,
+          `nút "${name}" bị cắt ở mép PHẢI tại ${phone.width}px`,
+        ).toBeLessThanOrEqual(phone.width + 1);
+        expect(
+          Math.min(arrow!.width, arrow!.height),
+          `nút "${name}" nhỏ hơn 44px ở ${phone.width}px`,
+        ).toBeGreaterThanOrEqual(44);
+      }
+
       const flip = page.getByRole("button", { name: "Lật thẻ" });
       const box = await flip.boundingBox();
       expect(box, "không thấy nút Lật thẻ").not.toBeNull();
@@ -392,6 +419,52 @@ test.describe("vừa mọi kích thước điện thoại", () => {
       await close();
     });
   }
+
+  /**
+   * 🔴 "Thẻ 1/18 trắng tinh" — lỗi thật user báo 2026-07-25 (ảnh chụp máy).
+   *
+   * Trang mở đầu là thứ duy nhất còn dựng bằng ẢNH, mà ảnh dùng `fill` nên
+   * `position:absolute` — không đẩy được chiều cao nào. Trang công khai đặt
+   * `--fc-face-min-h: 0px`, nên khung ảnh cao đúng 0px và cả thẻ sụp còn hai
+   * đường viền.
+   *
+   * Bài này đo CHIỀU CAO của mặt thẻ, không đo chữ hay `src`: đó là lý do bộ cũ
+   * bỏ lọt — `<img>` vẫn có `src` đã ký, chỉ có điều nó nằm trong một cái hộp
+   * 0px. `blockMediaBytes` chặn byte ảnh nên bài này còn chứng minh thêm một vế:
+   * chỗ của thẻ được giữ SẴN, không phụ thuộc ảnh về hay không (CLS = 0).
+   */
+  test("trang mở đầu (thẻ 1) có chiều cao thật, không phải trang trắng", async ({
+    browser,
+  }) => {
+    const { page, close } = await anonymousPage(browser, {
+      width: 390,
+      height: 844,
+    });
+    await page.goto(`/t/${SEEDED_TOKEN}`);
+    await expect(page.getByRole("heading", { name: /Buổi 1/ })).toBeVisible();
+
+    // Thẻ 1 của seed là `session_cover`; không bấm "Thẻ tiếp theo" ở bài này.
+    await expect(page.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "1",
+    );
+
+    const front = await faceSide(page, "front").boundingBox();
+    expect(front, "không thấy mặt trước thẻ 1").not.toBeNull();
+    expect(
+      front!.height,
+      "thẻ 1 sụp chiều cao — học sinh thấy trang trắng",
+    ).toBeGreaterThan(200);
+
+    // …và vẫn nằm trong màn: chiều cao có thật nhưng tràn màn thì cũng là lỗi.
+    const nav = await page
+      .getByRole("button", { name: "Lật thẻ" })
+      .boundingBox();
+    expect(nav).not.toBeNull();
+    expect(nav!.y + nav!.height).toBeLessThanOrEqual(845);
+
+    await close();
+  });
 
   test("xoay ngang 667×375 vẫn dùng được", async ({ browser }) => {
     const { page, close } = await anonymousPage(browser, {

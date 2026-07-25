@@ -316,16 +316,19 @@ html[data-exam-active="true"] [data-dashboard-main] {
  * ------------------------------------------------------------------------- */
 :root {
   --fc-hanzi: 3rem;
-  --fc-pinyin: 1.125rem;
-  --fc-meaning: 1.5rem;
+  /* Pinyin là thứ học sinh đọc theo để phát âm, nên nó phải ĐỌC ĐƯỢC chứ không
+   * phải chú thích nhỏ dưới chân chữ Hán (user chốt 2026-07-25). Nghĩa tiếng
+   * Việt thì ngược lại: hạ xuống để không tranh chỗ với cặp Hán tự + pinyin. */
+  --fc-pinyin: 1.75rem;
+  --fc-meaning: 1.125rem;
   --fc-face-min-h: 360px;
 }
 
 @media (min-width: 40rem) {
   :root {
     --fc-hanzi: 4.5rem;
-    --fc-pinyin: 1.25rem;
-    --fc-meaning: 1.875rem;
+    --fc-pinyin: 2.25rem;
+    --fc-meaning: 1.375rem;
     --fc-face-min-h: 560px;
   }
 }

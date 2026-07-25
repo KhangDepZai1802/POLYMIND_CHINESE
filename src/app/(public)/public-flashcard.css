@@ -26,8 +26,8 @@
    * ý, vì cặp pinyin↔Hán tự vẫn dính nhau theo cột nên không lệch.
    * --------------------------------------------------------------------- */
   --fc-hanzi: clamp(2.25rem, 12.5vw, 4rem);
-  --fc-pinyin: clamp(0.9rem, 4.2vw, 1.3rem);
-  --fc-meaning: clamp(1.15rem, 5.4vw, 1.6rem);
+  --fc-pinyin: clamp(1.25rem, 6.2vw, 2.25rem);
+  --fc-meaning: clamp(0.95rem, 4vw, 1.375rem);
 
   /* Thẻ cao tự nhiên theo nội dung, KHÔNG có sàn cứng 360px: sàn cứng chính là
    * thứ làm vỡ máy màn ngắn và chế độ nằm ngang. Vùng thẻ đã cuộn nội bộ nên
@@ -56,9 +56,49 @@
 @media (orientation: landscape) and (max-height: 480px) {
   .fc-public {
     --fc-hanzi: clamp(1.75rem, 9vh, 2.75rem);
-    --fc-pinyin: clamp(0.8rem, 3.2vh, 1rem);
-    --fc-meaning: clamp(1rem, 4vh, 1.25rem);
+    --fc-pinyin: clamp(1rem, 4.5vh, 1.5rem);
+    --fc-meaning: clamp(0.85rem, 3vh, 1.05rem);
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * 🔴 TRANG MỞ ĐẦU — sửa lỗi "thẻ 1/18 trắng tinh" (user báo 2026-07-25).
+ *
+ * Trang mở đầu là thứ DUY NHẤT còn dựng bằng ảnh (chốt `Q5`), và ảnh đó dùng
+ * `fill` của `next/image` — tức `position:absolute`, không đẩy được chiều cao
+ * nào. Ở màn học viên/Quản trị chiều cao đến từ `--fc-face-min-h` (360/560px);
+ * trang này cố ý đặt biến đó về `0px` (xem khối trên), nên khung ảnh cao đúng
+ * **0px** và học sinh quét mã QR thấy một trang trắng có mỗi đường kẻ mảnh —
+ * chính là hai đường viền của thẻ sụp lại. Không phải lỗi tải ảnh: URL vẫn
+ * được ký, `<img>` vẫn có `src`.
+ *
+ * Cấp chiều cao bằng `aspect-ratio` chứ KHÔNG bằng `min-height` cứng:
+ *   • `aspect-ratio` giữ chỗ SẴN theo bề rộng ⇒ không nhảy bố cục khi ảnh về
+ *     (CLS = 0), điều `min-height` + ảnh cao thật không làm được;
+ *   • trần `55dvh` là vế chống vỡ máy màn ngắn và chế độ nằm ngang — đúng lý do
+ *     sàn cứng 360px đã bị bỏ. Nằm ngang 667×375: bề rộng thẻ 576px mà trần chỉ
+ *     206px, nên thẻ vẫn nằm trọn trong màn.
+ *
+ * Trong hai mặt lật 3D thì khối này mang `h-full` (mặt thẻ `absolute inset-0`
+ * đã có chiều cao definite) nên `aspect-ratio` tự nhường — nó chỉ có tác dụng ở
+ * `FlashcardSizer`, đúng chỗ quyết định thẻ cao bao nhiêu.
+ * ------------------------------------------------------------------------- */
+.fc-public [data-fc-image-face] {
+  aspect-ratio: 4 / 5;
+  max-height: 55dvh;
+}
+
+/*
+ * `object-contain` cho khung ảnh của TRANG NÀY.
+ *
+ * Bản dùng chung là `object-cover` trên mobile (khung cao cố định 360px thì phủ
+ * đầy đẹp hơn). Nhưng khung ở đây do `aspect-ratio` sinh ra nên gần như không
+ * bao giờ khớp đúng tỉ lệ ảnh thật — `cover` sẽ CẮT mất chữ trên trang mở đầu,
+ * mà trang mở đầu là tài liệu dạy học, không phải ảnh trang trí. Phần dư là nền
+ * trắng của thẻ nên nhìn ra thành khoảng đệm, không thành khung xám.
+ */
+.fc-public [data-fc-image-face] img {
+  object-fit: contain;
 }
 
 /* ---------------------------------------------------------------------------

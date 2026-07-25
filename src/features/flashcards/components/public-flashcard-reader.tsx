@@ -134,7 +134,16 @@ export function PublicFlashcardReader({
           được dưới nội dung, thẻ dài sẽ đẩy thanh điều khiển ra khỏi màn hình.
           --------------------------------------------------------------- */}
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[max(1rem,env(safe-area-inset-left))] py-2">
-        <div className="mx-auto flex h-full w-full max-w-xl items-center">
+        {/*
+          `min-h-full` chứ KHÔNG `h-full`.
+
+          Với `h-full` + `items-center`, thẻ cao hơn vùng cuộn sẽ bị căn giữa
+          RỒI tràn cả hai đầu — mà phần tràn lên trên thì không cuộn tới được
+          (lỗi kinh điển của flex-centering trong vùng cuộn). `min-h-full` cho
+          khung nở theo thẻ: thẻ ngắn vẫn căn giữa, thẻ dài thì cuộn đủ từ đầu
+          tới cuối.
+        */}
+        <div className="mx-auto flex min-h-full w-full max-w-xl items-center">
           <div
             className="fc-public-card focus-visible:ring-ring w-full cursor-pointer rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             role="button"
@@ -209,52 +218,78 @@ export function PublicFlashcardReader({
         aria-label="Điều khiển thẻ"
         className="bg-card/95 shrink-0 border-t px-[max(1rem,env(safe-area-inset-left))] py-2 backdrop-blur"
       >
-        <div className="mx-auto flex w-full max-w-xl items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-14 shrink-0 rounded-full"
-            disabled={index === 0}
-            onClick={() => goTo(index - 1)}
-            aria-label="Thẻ trước"
-          >
-            <ChevronLeft className="size-6" aria-hidden />
-          </Button>
+        {/*
+          🔴 HAI HÀNG, không phải một — sửa lỗi "mất nút mũi tên phải" (user báo
+          2026-07-25).
 
-          {/* CTA chính DUY NHẤT của màn hình — hai nút mũi tên và audio là phụ. */}
-          <Button
-            type="button"
-            className="h-14 flex-1 gap-2 text-base"
-            onClick={flip}
-          >
-            <RotateCw className="size-5" aria-hidden />
-            Lật thẻ
-          </Button>
+          Bản cũ đổ cả bốn thứ vào MỘT hàng `flex`: [◀] [Lật thẻ] [trình phát]
+          [▶]. Nhưng `StudentAudioPlayer` không phải một nút — nó là một khối
+          `flex-wrap` gồm nút phát + chữ "Tốc độ" + ba nút tốc độ, rộng tối thiểu
+          ~390px và KHÔNG co nhỏ hơn được. Trên máy 360px, hàng đó cần ~500px
+          trong 328px có thật: hai nút mũi tên mang `shrink-0`, "Lật thẻ" đã co
+          hết cỡ, nên phần dư tràn sang phải và bị `overflow-hidden` của khung
+          ngoài **cắt đứt nút ▶**. Lỗi im lặng đúng nghĩa: không cuộn ngang,
+          không cảnh báo, `scrollWidth` vẫn bằng `clientWidth` nên bài kiểm cũ
+          vẫn xanh — chỉ người dùng là mất nút.
 
+          Cách xếp mới đặt mỗi hàng một việc, nên không hàng nào phải giành chỗ:
+            • hàng trên: audio (chỉ hiện khi thẻ có audio) — `density="compact"`
+              để vừa 288px của máy 320px;
+            • hàng dưới: điều hướng [◀] [Lật thẻ] [▶] — CTA chính nằm SÁT ĐÁY,
+              chỗ ngón tay với tới dễ nhất, và hai mũi tên luôn ở đúng hai mép.
+        */}
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-2">
           {audioUrl ? (
             <StudentAudioPlayer
               src={audioUrl}
               label={`Phát âm ${cardLabel}`}
               appearance="button"
+              density="compact"
               autoPlayToken={audioToken}
             />
           ) : null}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-14 shrink-0 rounded-full"
-            disabled={index === pages.length - 1}
-            onClick={() => {
-              goTo(index + 1);
-              setAudioToken(null);
-            }}
-            aria-label="Thẻ tiếp theo"
-          >
-            <ChevronRight className="size-6" aria-hidden />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              // 48px trên điện thoại (vẫn trên ngưỡng 44px), 56px từ `sm` trở
+              // lên: hàng ba nút phải vừa 288px của máy 320px kể cả khi nhãn
+              // "Lật thẻ" giữ nguyên cỡ chữ 16px.
+              className="size-12 shrink-0 rounded-full sm:size-14"
+              disabled={index === 0}
+              onClick={() => goTo(index - 1)}
+              aria-label="Thẻ trước"
+            >
+              <ChevronLeft className="size-6" aria-hidden />
+            </Button>
+
+            {/* CTA chính DUY NHẤT của màn hình — hai nút mũi tên và audio là phụ. */}
+            <Button
+              type="button"
+              className="h-12 min-w-0 flex-1 gap-2 text-base sm:h-14"
+              onClick={flip}
+            >
+              <RotateCw className="size-5" aria-hidden />
+              Lật thẻ
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-12 shrink-0 rounded-full sm:size-14"
+              disabled={index === pages.length - 1}
+              onClick={() => {
+                goTo(index + 1);
+                setAudioToken(null);
+              }}
+              aria-label="Thẻ tiếp theo"
+            >
+              <ChevronRight className="size-6" aria-hidden />
+            </Button>
+          </div>
         </div>
       </nav>
     </div>

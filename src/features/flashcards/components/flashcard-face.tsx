@@ -122,7 +122,26 @@ function FlashcardImageFace({
   priority: boolean;
 }) {
   return (
-    <div className="relative h-full min-h-[var(--fc-face-min-h)] w-full">
+    /*
+     * `data-fc-image-face` là MỎ NEO cho trang công khai `/t/<mã>`, không phải
+     * thuộc tính trang trí.
+     *
+     * Khối này chỉ có chiều cao nhờ `--fc-face-min-h` (360/560px ở màn học viên
+     * và Quản trị) vì ảnh bên trong dùng `fill` — tức `position:absolute`, KHÔNG
+     * đẩy được chiều cao nào. Trang công khai cố ý đặt biến đó về `0px` (thẻ cao
+     * theo nội dung, xem `public-flashcard.css`), nên trang mở đầu — thứ duy nhất
+     * còn là ẢNH — sụp xuống còn 2px viền: học sinh quét mã QR thấy **thẻ 1/18
+     * trắng tinh**. Đó là lỗi thật user báo 2026-07-25.
+     *
+     * Chiều cao được cấp lại bằng `aspect-ratio` trong `public-flashcard.css`;
+     * neo bằng data-attribute chứ không bằng class Tailwind vì đây là thứ CHỈ
+     * trang công khai ghi đè, và ghi đè theo cấu trúc DOM (`div > img`) thì hỏng
+     * ngay lần ai đó bọc thêm một lớp.
+     */
+    <div
+      data-fc-image-face
+      className="relative h-full min-h-[var(--fc-face-min-h)] w-full"
+    >
       {url ? (
         <Image
           src={url}
@@ -228,7 +247,18 @@ function BackBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`rounded-xl border-2 p-3 ${BACK_BLOCK_TONE[tone]}`}>
+    /*
+     * `grow` chứ KHÔNG phải `flex-1` (user chốt 2026-07-25: bốn ô màu phải lấn
+     * xuống khoảng trắng dư ở đáy thẻ).
+     *
+     * `flex-1` là `flex: 1 1 0%` — cơ sở 0 nên cả bốn ô cao BẰNG NHAU bất kể
+     * nội dung, khối "Nghĩa" một dòng sẽ cao ngang khối "Câu ví dụ" bốn dòng.
+     * `grow` giữ cơ sở `auto` (cao theo nội dung) rồi chia ĐỀU phần dư — đúng
+     * thứ cần: không còn khoảng trắng, mà tỉ lệ giữa các khối vẫn hợp lý.
+     */
+    <section
+      className={`grow rounded-xl border-2 p-3 ${BACK_BLOCK_TONE[tone]}`}
+    >
       <h3 className="mb-2 text-sm font-semibold tracking-wide uppercase">
         {title}
       </h3>

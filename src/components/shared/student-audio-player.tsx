@@ -28,6 +28,24 @@ type StudentAudioPlayerProps = {
    * đang đọc dở phải im ngay, không đọc nốt.
    */
   autoPlayToken?: string | null;
+  /**
+   * Mật độ của biến thể `appearance="button"`.
+   *
+   * `compact` sinh ra cho **thanh điều khiển cố định của trang công khai
+   * `/t/<mã>`**, nơi cả hàng nút chỉ có 288px (máy 320px trừ padding). Bản
+   * `comfortable` cần ~390px cho một dòng: nút "Phát audio" `min-w-32` + chữ
+   * "Tốc độ" + ba nút `min-w-16`. Ở đó nó tự xuống hai dòng và đẩy nút mũi tên
+   * phải RA KHỎI màn hình — đúng lỗi user báo 2026-07-25.
+   *
+   * `compact` bỏ `min-w` của nút phát, thu ba nút tốc độ về 44px (vẫn đủ chuẩn
+   * touch target) và **ẩn chữ "Tốc độ"** — dải nút vẫn còn `aria-label`
+   * "Tốc độ phát …" nên trình đọc màn hình không mất thông tin nào.
+   *
+   * Là tham số chứ không phải class truyền vào: `className` không chạm được vào
+   * ba nút con, mà ghi đè chúng bằng CSS theo cấu trúc DOM thì hỏng ngay lần ai
+   * đó bọc thêm một lớp `div`.
+   */
+  density?: "comfortable" | "compact";
 };
 
 function formatRate(rate: StudentAudioRate) {
@@ -58,7 +76,9 @@ function StudentAudioPlayerSource({
   appearance = "controls",
   className,
   autoPlayToken = null,
+  density = "comfortable",
 }: StudentAudioPlayerProps) {
+  const compact = density === "compact";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const labelId = useId();
   const [rate, setRate] = useState<StudentAudioRate>(1);
@@ -152,9 +172,11 @@ function StudentAudioPlayerSource({
    */
   const rateSelector = (
     <div className="flex items-center gap-2">
-      <span className="text-text-secondary shrink-0 text-sm font-medium">
-        Tốc độ
-      </span>
+      {compact ? null : (
+        <span className="text-text-secondary shrink-0 text-sm font-medium">
+          Tốc độ
+        </span>
+      )}
       <div
         role="group"
         aria-label={"Tốc độ phát " + label}
@@ -172,7 +194,8 @@ function StudentAudioPlayerSource({
               aria-label={"Tốc độ " + formatRate(candidate)}
               aria-pressed={selected}
               className={cn(
-                "relative min-w-16 px-3 tabular-nums focus-visible:z-10",
+                "relative tabular-nums focus-visible:z-10",
+                compact ? "min-w-11 px-2" : "min-w-16 px-3",
                 !first && "-ml-px",
                 !first && "rounded-l-none",
                 !last && "rounded-r-none",
@@ -203,14 +226,20 @@ function StudentAudioPlayerSource({
 
   if (appearance === "button") {
     return (
-      <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-2",
+          compact && "justify-center",
+          className,
+        )}
+      >
         <span id={labelId} className="sr-only">
           {label}
         </span>
         <Button
           type="button"
           aria-label={playing ? "Dừng audio " + label : "Phát audio " + label}
-          className="min-w-32"
+          className={compact ? undefined : "min-w-32"}
           onClick={() => {
             const element = audioRef.current;
             if (!element) return;

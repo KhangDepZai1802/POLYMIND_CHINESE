@@ -99,6 +99,13 @@ export function FlashcardPublicLinkPanel({
   }
 
   return (
+    /*
+     * Chữ phụ ở đây dùng `text-secondary`, KHÔNG phải `muted-foreground`.
+     * Đo thật: `--muted-foreground` (#5B6B80) trên `--surface-sunken` (#E4EAF2)
+     * chỉ đạt **4.4986:1** — hụt ngưỡng AA 4.5 và axe bắt đúng. `--text-secondary`
+     * (#43536B) trên cùng nền đạt 6.45:1. Cùng bẫy với `DS-030`: token phụ được
+     * chọn cho nền TRẮNG, đặt lên nền chìm là tụt xuống dưới ngưỡng.
+     */
     <section
       aria-label="Chia sẻ công khai"
       className="bg-surface-sunken mt-3 rounded-xl border p-3"
@@ -115,7 +122,7 @@ export function FlashcardPublicLinkPanel({
       </div>
 
       {!isPublished ? (
-        <p className="text-muted-foreground mt-2 text-sm">
+        <p className="text-text-secondary mt-2 text-sm">
           Phải công bố buổi này trước đã. Mã QR trỏ vào buổi nháp sẽ chết ngay từ
           lúc in.
         </p>
@@ -142,7 +149,7 @@ export function FlashcardPublicLinkPanel({
               {copied ? "Đã chép" : "Sao chép"}
             </Button>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Ai có địa chỉ này đều xem được, không cần đăng nhập.
           </p>
           {/* Hành động phá huỷ tách khỏi cụm nút thường (`D-35` điểm 4). */}
