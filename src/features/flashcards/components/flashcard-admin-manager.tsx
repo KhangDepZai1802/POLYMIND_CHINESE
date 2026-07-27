@@ -59,6 +59,7 @@ import {
   type Face,
 } from "@/features/flashcards/components/flashcard-face";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
+import { FlashcardDeckPublicLinks } from "@/features/flashcards/components/flashcard-deck-public-links";
 import { FlashcardPublicLinkPanel } from "@/features/flashcards/components/flashcard-public-link-panel";
 import { flashcardImportKey } from "@/features/flashcards/domain/bulk-import";
 import {
@@ -214,6 +215,18 @@ export function FlashcardAdminManager({
               <StatusBadge label="Đã đủ số buổi" tone="success" />
             )}
           </div>
+
+          {/*
+            Đặt TRÊN mục lục buổi: đây là việc của cả bộ thẻ (đưa danh sách cho
+            bên in), không phải việc của buổi đang chọn. Panel chia sẻ từng buổi
+            vẫn ở nguyên chỗ cũ trong `SectionWorkspace`.
+          */}
+          {deck.sections.length > 0 && (
+            <FlashcardDeckPublicLinks
+              deck={deck}
+              courseCode={selectedCourse.code}
+            />
+          )}
 
           {deck.sections.length === 0 ? (
             <Card>

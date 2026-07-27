@@ -396,15 +396,28 @@ where id = 'a1000000-0000-4000-8000-000000000001';
 -- Liên kết công khai mẫu cho buổi 1 (`D-36`): mở `/t/qr7dem3k5np2` là thấy ngay
 -- trang học sinh quét mã QR nhìn thấy, không cần đăng nhập.
 --
--- Mã cố định thay vì sinh ngẫu nhiên để bài E2E và người dev cùng dùng được một
--- địa chỉ. Chỉ nằm ở seed DEV — mã thật luôn do `app.new_flashcard_link_token()`
--- sinh, client không bao giờ tự đặt được.
+-- ⚠️ Mã này CỐ Ý giữ dạng NGẪU NHIÊN 12 ký tự đời `…080` dù `D-39` đã chuyển
+-- sang mã cố định: nó là bằng chứng sống trong DB dev rằng các mã đã in trước
+-- đây vẫn hoạt động. Mã theo công thức mới nằm ở hàng ngay bên dưới.
 insert into public.flashcard_public_links (id, section_id, token, label, created_by)
 values (
   'a1500000-0000-4000-8000-000000000001',
   'a1100000-0000-4000-8000-000000000001',
   'qr7dem3k5np2',
   'Seed dev — sách mẫu',
+  (select id from auth.users where email = 'admin@polymind.test')
+)
+on conflict (token) do nothing;
+
+-- Buổi 2 CÒN NHÁP nhưng đã có mã (`D-39`): mở `/t/vcb-bank-02` phải ra trang
+-- "Buổi 2 sắp mở" — không phải 404, và cũng không được lộ một chữ nội dung nào.
+-- Đây là trạng thái mà cả 35 buổi sẽ nằm trong lúc sách đang in.
+insert into public.flashcard_public_links (id, section_id, token, label, created_by)
+values (
+  'a1500000-0000-4000-8000-000000000002',
+  'a1100000-0000-4000-8000-000000000002',
+  'vcb-bank-02',
+  'Seed dev — buổi chưa công bố',
   (select id from auth.users where email = 'admin@polymind.test')
 )
 on conflict (token) do nothing;

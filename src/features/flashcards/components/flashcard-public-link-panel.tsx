@@ -17,11 +17,15 @@ import {
 import type { FlashcardSectionView } from "@/features/flashcards/server/queries";
 
 /**
- * Khối "Chia sẻ công khai" của một buổi flashcard (`D-36`).
+ * Khối "Chia sẻ công khai" của MỘT buổi flashcard (`D-36`, sửa bởi `D-39`).
  *
  * Admin lấy địa chỉ ở đây để đưa cho bên dàn trang in mã QR vào sách. Chủ ý
  * KHÔNG sinh ảnh QR trong sản phẩm: user tự lo phần in, và thêm một thư viện
  * chỉ để vẽ ô vuông đen trắng là gánh nặng không cần thiết.
+ *
+ * Từ `D-39`: buổi CÒN NHÁP cũng tạo được mã (mã cố định, biết trước được), và
+ * người quét sớm thấy trang "sắp mở" thay vì 404. Cần cả danh sách của bộ thẻ
+ * một lúc thì dùng `FlashcardDeckPublicLinks` ở đầu trang.
  */
 export function FlashcardPublicLinkPanel({
   section,
@@ -65,14 +69,18 @@ export function FlashcardPublicLinkPanel({
 
   async function revoke() {
     if (!link) return;
-    // Hậu quả ở đây là VẬT LÝ: mã đã in trong sách giấy sẽ chết và không sửa
-    // lại được. Phải nói thẳng trước khi bấm.
+    // Hậu quả ở đây là VẬT LÝ: sách đã in rồi thì mọi cuốn đang nằm trên kệ
+    // đều quét ra trang báo hết hiệu lực. Phải nói thẳng trước khi bấm.
+    //
+    // ⚠️ Câu cuối đã đổi theo `D-39`: mã nay là CỐ ĐỊNH nên bấm tạo lại sẽ ra
+    // đúng mã cũ (bật lại chính hàng đó). Bản cũ hứa ngược lại — giữ nguyên là
+    // nói dối người dùng ở đúng lúc họ cần tin.
     const ok = await confirm({
       title: "Thu hồi liên kết công khai?",
       description:
         "Mã QR đã in trong sách sẽ NGỪNG hoạt động ngay lập tức, kể cả ảnh và " +
         "audio. Học sinh quét mã cũ sẽ thấy trang báo liên kết hết hiệu lực. " +
-        "Không khôi phục lại được mã cũ — tạo mới sẽ ra mã khác.",
+        "Bấm tạo lại sau này sẽ bật lại đúng mã này.",
       confirmLabel: "Thu hồi",
       variant: "destructive",
     });
@@ -116,17 +124,18 @@ export function FlashcardPublicLinkPanel({
           Chia sẻ công khai (mã QR trong sách)
         </h4>
         <StatusBadge
-          label={link ? "Đang công khai" : "Chưa công khai"}
-          tone={link ? "success" : "neutral"}
+          label={
+            link
+              ? isPublished
+                ? "Đang công khai"
+                : "Có mã — chờ công bố"
+              : "Chưa công khai"
+          }
+          tone={link ? (isPublished ? "success" : "info") : "neutral"}
         />
       </div>
 
-      {!isPublished ? (
-        <p className="text-text-secondary mt-2 text-sm">
-          Phải công bố buổi này trước đã. Mã QR trỏ vào buổi nháp sẽ chết ngay từ
-          lúc in.
-        </p>
-      ) : link ? (
+      {link ? (
         <div className="mt-2 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <code
@@ -150,7 +159,9 @@ export function FlashcardPublicLinkPanel({
             </Button>
           </div>
           <p className="text-text-secondary text-sm">
-            Ai có địa chỉ này đều xem được, không cần đăng nhập.
+            {isPublished
+              ? "Ai có địa chỉ này đều xem được, không cần đăng nhập."
+              : "Địa chỉ này đã dùng được để in mã QR. Người quét bây giờ thấy trang “sắp mở”; công bố buổi là nội dung hiện ra, không phải đổi mã."}
           </p>
           {/* Hành động phá huỷ tách khỏi cụm nút thường (`D-35` điểm 4). */}
           <Button
@@ -170,7 +181,13 @@ export function FlashcardPublicLinkPanel({
           </Button>
         </div>
       ) : (
-        <div className="mt-2">
+        <div className="mt-2 space-y-2">
+          {!isPublished && (
+            <p className="text-text-secondary text-sm">
+              Buổi còn nháp vẫn tạo được mã để đưa bên in — người quét sẽ thấy
+              trang “sắp mở” cho tới khi bạn công bố.
+            </p>
+          )}
           <Button type="button" size="sm" disabled={pending} onClick={create}>
             {pending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />

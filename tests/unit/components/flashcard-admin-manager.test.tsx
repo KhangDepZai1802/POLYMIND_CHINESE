@@ -14,8 +14,18 @@ vi.mock("next/navigation", () => ({
 // `import "server-only"`) vào môi trường jsdom và cả file test đỏ.
 vi.mock("@/features/flashcards/server/public-link-actions", () => ({
   createFlashcardPublicLinkAction: vi.fn(),
+  createFlashcardPublicLinksForDeckAction: vi.fn(),
   revokeFlashcardPublicLinkAction: vi.fn(),
 }));
+/**
+ * `D-39` — bảng địa chỉ QR của cả bộ thẻ dựng địa chỉ từ `NEXT_PUBLIC_APP_URL`
+ * ngay khi render (kể cả khi chưa buổi nào có liên kết), nên môi trường test
+ * phải có đủ biến. Trước đó cả file chạy được là nhờ MAY: panel từng buổi chỉ
+ * đọc env khi buổi đã có liên kết, mà fixture thì không có cái nào.
+ */
+vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://www.polymind.vn");
+vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
 vi.mock("@/features/flashcards/server/actions", () => ({
   archiveFlashcardDeckSectionsAction: vi.fn(),
   archiveFlashcardPageAction: vi.fn(),
@@ -150,6 +160,32 @@ describe("FlashcardAdminManager", () => {
     expect(
       screen.getByRole("button", { name: "Công bố buổi" }),
     ).toBeInTheDocument();
+  });
+
+  /**
+   * `D-39` — bài này ghim đúng cái yêu cầu đã đẻ ra tính năng: bên in cần đọc
+   * được địa chỉ QR **trước khi** ai bấm tạo và **trước khi** buổi được công bố.
+   * Nếu bảng này chỉ hiện địa chỉ sau khi đã tạo liên kết thì tính năng vô dụng
+   * đúng ở tình huống nó sinh ra để giải quyết.
+   */
+  it("hiện trước địa chỉ QR cố định của từng buổi, kể cả buổi còn nháp", () => {
+    renderWithConfirmation(
+      <FlashcardAdminManager
+        courses={[course] as never}
+        selectedCourseId={course.id}
+        deck={deck as never}
+      />,
+    );
+
+    // Mã khoá `HSK1` + buổi 1 → `hsk1-01`, khớp `app.flashcard_fixed_link_token`.
+    expect(
+      screen.getByText("https://www.polymind.vn/t/hsk1-01"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Còn 1 buổi chưa có mã")).toBeInTheDocument();
+    expect(screen.getByText("Chưa tạo")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tạo liên kết cố định cho 1 buổi" }),
+    ).toBeEnabled();
   });
 
   it("cho phép lưu trữ cả trang mở đầu lẫn trang từ vựng ở buổi nháp", () => {

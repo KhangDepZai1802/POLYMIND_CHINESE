@@ -82,8 +82,12 @@ select is(
    from pg_proc function_record
    join pg_namespace namespace on namespace.oid = function_record.pronamespace
    where namespace.nspname = 'public'),
-  75,
-  'catalog có đúng 75 RPC public đã review'
+  -- 75 → 76: `QRLINK-1`/`D-38` thêm `create_flashcard_public_links_for_deck`
+  -- (phát hành liên kết QR cố định cho cả bộ thẻ, chỉ `authenticated` +
+  -- super_admin). Con số này là CHỐT CHẶN, không phải chú thích: mỗi lần nó đỏ
+  -- là có một RPC public mới cần người đọc lại grant của nó.
+  76,
+  'catalog có đúng 76 RPC public đã review'
 );
 /*
  * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở

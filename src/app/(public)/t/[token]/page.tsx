@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PublicFlashcardComingSoon } from "@/features/flashcards/components/public-flashcard-coming-soon";
 import { PublicFlashcardReader } from "@/features/flashcards/components/public-flashcard-reader";
 import { getPublicFlashcardSection } from "@/features/flashcards/server/public-queries";
 
@@ -39,7 +40,13 @@ export default async function PublicFlashcardPage({
   const data = await getPublicFlashcardSection(token);
 
   // Một `notFound()` cho mọi ca hỏng — xem ghi chú ở `(public)/not-found.tsx`.
+  // "Chưa công bố" KHÔNG nằm trong nhóm đó (`D-39`): mã vẫn đúng, chỉ là chưa
+  // tới lượt.
   if (!data) notFound();
+
+  if (data.state === "coming_soon") {
+    return <PublicFlashcardComingSoon sessionNumber={data.sessionNumber} />;
+  }
 
   return <PublicFlashcardReader data={data} />;
 }

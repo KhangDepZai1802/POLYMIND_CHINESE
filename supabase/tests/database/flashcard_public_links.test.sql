@@ -1,12 +1,15 @@
--- `P17-T1` — Trang flashcard CÔNG KHAI qua mã QR (`D-36`).
+-- `P17-T1` — Trang flashcard CÔNG KHAI qua mã QR (`D-36`), sửa bởi `QRLINK-1`
+-- (`D-39`: mã CỐ ĐỊNH + trạng thái `coming_soon`).
 --
 -- Đây là lần đầu repo cấp cho `anon` một thứ gì đó. Bài kiểm này tồn tại để
 -- chứng minh khe mở ra ĐÚNG bằng thiết kế, không rộng hơn một milimet:
 --
 --   (1) `anon` gọi được ĐÚNG một hàm chỉ-đọc, và KHÔNG chạm được bảng nào;
---   (2) sáu vế fail-closed đều có tác dụng THẬT — mỗi vế một bài chiều phủ định;
+--   (2) mọi vế fail-closed đều có tác dụng THẬT — mỗi vế một bài chiều phủ định;
 --   (3) thu hồi cắt CẢ nội dung LẪN media, ngay lập tức;
---   (4) media của buổi chưa công khai vẫn kín.
+--   (4) media của buổi chưa công khai vẫn kín;
+--   (5) `D-39` — buổi CHƯA CÔNG BỐ có mã và trả `coming_soon`, nhưng KHÔNG rò
+--       một chữ nội dung nào, và media của nó vẫn kín như cũ.
 --
 -- Phần lớn bài dưới đây là chiều PHỦ ĐỊNH. Một trang công khai mà chỉ kiểm
 -- "mở được" thì không chứng minh được gì cả.
@@ -15,7 +18,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(28);
+select plan(44);
 
 -- =====================================================================
 -- A. Catalog — bề mặt công khai đúng bằng thiết kế
@@ -167,6 +170,14 @@ values
     null, null,
     '80000000-0000-4000-8000-000000000001/d1/s1/p4/audio-4.mp3', null, null, now()
   ),
+  -- Buổi 2 (NHÁP, sẽ có liên kết từ `D-39`): media của nó phải vẫn kín, kể cả
+  -- khi liên kết đã phát hành. Đây là bài quan trọng nhất của `D-39`.
+  (
+    '80700000-0000-4000-8000-000000000007', '80600000-0000-4000-8000-000000000002',
+    'vocabulary', 1, '茶', 'chá', 'trà',
+    null, null,
+    '80000000-0000-4000-8000-000000000001/d1/s2/p7/audio-7.mp3', null, null, null
+  ),
   -- Buổi 3 (publish, không chia sẻ) — cần đủ bìa + từ vựng mới publish được
   (
     '80700000-0000-4000-8000-000000000005', '80600000-0000-4000-8000-000000000003',
@@ -222,7 +233,7 @@ select set_config(
 );
 
 -- =====================================================================
--- C. Tạo liên kết
+-- C. Tạo liên kết — mã CỐ ĐỊNH (`D-39`)
 -- =====================================================================
 select set_config(
   'test.token', link_token, true
@@ -233,30 +244,62 @@ from public.create_flashcard_public_link(
   '80600000-0000-4000-8000-000000000001', 'Sách HSK1 bản in 2026'
 );
 
-select matches(
+-- Ghim CHUỖI CỤ THỂ, không ghim hình dạng: toàn bộ giá trị của `D-39` nằm ở chỗ
+-- bên in suy ra được địa chỉ trước khi ai bấm nút. Một bài kiểu `matches(...)`
+-- vẫn xanh kể cả khi mã quay về ngẫu nhiên.
+select is(
   current_setting('test.token'),
-  '^[0-9a-hjkmnp-tv-z]{12}$',
-  'mã sinh ra đúng 12 ký tự trong bảng chữ đã bỏ i/l/o/u'
+  'kh-qr-01',
+  'mã sinh ra đúng công thức <slug mã khoá>-<số buổi>, đoán trước được'
 );
 
-select throws_ok(
-  $$select public.create_flashcard_public_link('80600000-0000-4000-8000-000000000001')$$,
-  'P0001',
-  'Buổi này đã có liên kết công khai đang hoạt động',
-  'một buổi chỉ có ĐÚNG MỘT liên kết còn hiệu lực'
+-- Cùng cặp vào/ra với `tests/unit/domain/flashcard-public-link.test.ts`. Hai bản
+-- cài đặt lệch nhau nghĩa là màn Admin hứa một địa chỉ mà DB phát hành địa chỉ
+-- khác — sai lệch chỉ lộ ra sau khi sách đã in.
+reset role;
+select is(
+  app.flashcard_fixed_link_token('80600000-0000-4000-8000-000000000003'),
+  'kh-qr-03',
+  'công thức trong DB khớp bản TypeScript của màn Admin'
+);
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"80000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  true
 );
 
-select throws_ok(
-  $$select public.create_flashcard_public_link('80600000-0000-4000-8000-000000000002')$$,
-  'P0001',
-  'Chỉ công khai được buổi flashcard đã công bố',
-  'không phát hành được mã QR trỏ vào buổi nháp — mã in ra sẽ chết ngay'
+-- Idempotent (`BUG_M09_01`). Trước `D-39` đây là một exception; với mã cố định
+-- thì "tạo lại" luôn ra đúng chuỗi cũ, nên ném lỗi chỉ làm nút "tạo cho cả bộ"
+-- gãy giữa chừng ở buổi đầu tiên đã có mã.
+select is(
+  (
+    select link_token
+    from public.create_flashcard_public_link('80600000-0000-4000-8000-000000000001')
+  ),
+  'kh-qr-01',
+  'gọi lại trả đúng mã cũ, không ném lỗi và không sinh mã thứ hai'
+);
+
+select is(
+  (
+    select link_token
+    from public.create_flashcard_public_link('80600000-0000-4000-8000-000000000002')
+  ),
+  'kh-qr-02',
+  'buổi NHÁP nay cũng phát hành được mã — in sách trước, công bố sau (`D-39`)'
 );
 
 -- =====================================================================
 -- D. Đọc công khai — vai `anon` thật
 -- =====================================================================
 set local role anon;
+
+select is(
+  public.get_public_flashcard_session(current_setting('test.token')) ->> 'state',
+  'ready',
+  'buổi đã công bố trả trạng thái `ready`'
+);
 
 select is(
   jsonb_array_length(
@@ -283,16 +326,42 @@ select ok(
   'payload KHÔNG chứa UUID của trang'
 );
 
+-- =====================================================================
+-- D-bis. Buổi CHƯA CÔNG BỐ — `coming_soon` (`D-39`)
+--
+-- Hai bài này đi cùng nhau và không tách được: bài đầu chứng minh người quét
+-- sớm không bị đuổi ra bằng 404; bài sau chứng minh cái giá phải trả bằng đúng
+-- MỘT bit ("mã này có tồn tại") chứ không phải bằng nội dung chưa duyệt.
+-- =====================================================================
 select is(
-  public.get_public_flashcard_session('zzzzzzzzzzzz'),
+  public.get_public_flashcard_session('kh-qr-02') ->> 'state',
+  'coming_soon',
+  'buổi nháp có mã: trả `coming_soon`, không phải rỗng'
+);
+
+select ok(
+  public.get_public_flashcard_session('kh-qr-02') -> 'pages' is null
+    and public.get_public_flashcard_session('kh-qr-02')::text not like '%Buổi 2 nháp%'
+    and public.get_public_flashcard_session('kh-qr-02')::text not like '%茶%',
+  'payload `coming_soon` KHÔNG mang trang, tiêu đề hay Hán tự nào'
+);
+
+select is(
+  public.get_public_flashcard_session('zzz-zzzz-99'),
   null,
   'mã bịa (đúng hình dạng) trả rỗng'
 );
 
 select is(
-  public.get_public_flashcard_session('abcdefghjkm'),
+  public.get_public_flashcard_session('kh_qr_01'),
   null,
-  'mã 11 ký tự trả rỗng — chặn trước khi chạm dữ liệu'
+  'mã sai hình dạng (gạch dưới) trả rỗng — chặn trước khi chạm dữ liệu'
+);
+
+select is(
+  public.get_public_flashcard_session('kh-qr-01-'),
+  null,
+  'gạch nối ở cuối là sai hình dạng — không "gần đúng thì cho qua"'
 );
 
 select isnt(
@@ -330,6 +399,20 @@ select ok(
   'đường dẫn lạ trả false'
 );
 
+-- 🔴 BÀI QUAN TRỌNG NHẤT CỦA `D-39`.
+--
+-- Buổi 2 vừa được phát hành liên kết ở phần C, và trang công khai của nó trả
+-- `coming_soon`. Nếu ai đó "nới cho đồng bộ" vế `status = 'published'` trong
+-- `share.can_read_public_flashcard_media`, thì ảnh và audio của buổi CHƯA DUYỆT
+-- tải về được bằng đường dẫn trực tiếp trong khi trang web vẫn nói "sắp mở" —
+-- rò nội dung im lặng, không ai nhìn thấy trên giao diện.
+select ok(
+  not share.can_read_public_flashcard_media(
+    '80000000-0000-4000-8000-000000000001/d1/s2/p7/audio-7.mp3'
+  ),
+  'buổi NHÁP tuy đã có liên kết nhưng media vẫn KÍN'
+);
+
 -- =====================================================================
 -- F. Thu hồi — phải cắt CẢ nội dung LẪN media
 -- =====================================================================
@@ -361,7 +444,12 @@ select ok(
 );
 
 -- =====================================================================
--- G. Quản trị
+-- G. Hồi sinh — hệ quả trực tiếp của mã cố định (`D-39`)
+--
+-- Với mã ngẫu nhiên, "tạo lại" đẻ ra mã khác nên mã đã in coi như chết hẳn. Với
+-- mã cố định thì công thức chỉ cho ra đúng một chuỗi, nên tạo lại BẮT BUỘC phải
+-- bật lại chính hàng cũ — nếu không thì unique index trên `token` sẽ chặn và
+-- admin không bao giờ sửa được cú bấm nhầm.
 -- =====================================================================
 reset role;
 set local role authenticated;
@@ -370,6 +458,117 @@ select set_config(
   '{"sub":"80000000-0000-4000-8000-000000000001","role":"authenticated"}',
   true
 );
+
+select is(
+  (
+    select link_token
+    from public.create_flashcard_public_link('80600000-0000-4000-8000-000000000001')
+  ),
+  'kh-qr-01',
+  'tạo lại sau khi thu hồi trả ĐÚNG mã cũ — sách đã in không thành giấy lộn'
+);
+
+set local role anon;
+
+select isnt(
+  public.get_public_flashcard_session('kh-qr-01'),
+  null,
+  'mã cũ sống lại: nội dung đọc được ngay sau khi bật lại'
+);
+
+select ok(
+  share.can_read_public_flashcard_media(
+    '80000000-0000-4000-8000-000000000001/d1/s1/p2/audio-2.mp3'
+  ),
+  'bật lại thì media cũng mở lại — cùng một công tắc, không phải hai'
+);
+
+-- =====================================================================
+-- H. Mã NGẪU NHIÊN đời `…080` — không được chết, cũng không được thay lén
+-- =====================================================================
+reset role;
+
+select lives_ok(
+  $$insert into public.flashcard_public_links (section_id, token, created_by)
+    values ('80600000-0000-4000-8000-000000000003', 'qrlegacy0080',
+            '80000000-0000-4000-8000-000000000001')$$,
+  'mã ngẫu nhiên 12 ký tự vẫn qua được CHECK mới — migration không giết mã đã in'
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"80000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  true
+);
+
+select throws_ok(
+  $$select * from public.create_flashcard_public_links_for_deck('80500000-0000-4000-8000-000000000001')$$,
+  'P0001',
+  null,
+  'buổi đang mang mã cũ: KHÔNG bị thay lặng lẽ, phải xin phép trước'
+);
+
+select is(
+  (
+    select l.link_token
+    from public.create_flashcard_public_links_for_deck(
+      '80500000-0000-4000-8000-000000000001', true
+    ) l
+    where l.session_no = 3
+  ),
+  'kh-qr-03',
+  'được phép thì mới thay mã cũ bằng mã cố định'
+);
+
+set local role anon;
+
+select is(
+  public.get_public_flashcard_session('qrlegacy0080'),
+  null,
+  'mã cũ bị thay chết ngay lập tức — không có hai mã cùng sống cho một buổi'
+);
+
+-- =====================================================================
+-- I. Phát hành hàng loạt cho cả bộ thẻ
+-- =====================================================================
+reset role;
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"80000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  true
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.create_flashcard_public_links_for_deck(
+      '80500000-0000-4000-8000-000000000001'
+    )
+  ),
+  3,
+  'trả đủ mọi buổi chưa xoá của bộ thẻ — bên in nhận trọn danh sách'
+);
+
+-- Chạy lại phải là thao tác RỖNG. Đây chính là vế `BUG_M09_01`: nút bấm hai lần
+-- không được đẻ ra mã thứ hai cho cùng một buổi.
+select is(
+  (
+    select count(*)::integer
+    from public.create_flashcard_public_links_for_deck(
+      '80500000-0000-4000-8000-000000000001'
+    ) l
+    where l.row_status <> 'existing'
+  ),
+  0,
+  'chạy lại lượt nữa KHÔNG sinh thêm mã nào'
+);
+
+-- =====================================================================
+-- J. Quản trị
+-- =====================================================================
+select public.revoke_flashcard_public_link(current_setting('test.link_id')::uuid);
 
 select lives_ok(
   $$select public.revoke_flashcard_public_link(current_setting('test.link_id')::uuid)$$,
@@ -389,15 +588,27 @@ select throws_ok(
   'học viên KHÔNG tự phát hành được liên kết công khai'
 );
 
+select throws_ok(
+  $$select * from public.create_flashcard_public_links_for_deck('80500000-0000-4000-8000-000000000001')$$,
+  'P0001',
+  'Chỉ Super Admin được tạo liên kết công khai',
+  'học viên KHÔNG phát hành hàng loạt được — cửa thứ hai cũng khoá'
+);
+
 reset role;
 
+-- Đếm tay cho khớp, theo đúng thứ tự các thao tác GHI ở trên:
+--   1 tạo buổi 1 · 2 tạo buổi 2 (nháp) · 3 thu hồi buổi 1 · 4 bật lại buổi 1 ·
+--   5 thu hồi mã cũ buổi 3 · 6 tạo mã cố định buổi 3 · 7 thu hồi buổi 1 lần cuối.
+-- Các lượt gọi idempotent (tạo lại khi đang sống, chạy batch lần hai, thu hồi
+-- lần hai) KHÔNG được ghi thêm dòng nào — đó mới là điều bài này canh.
 select is(
   (
     select count(*)::integer from public.audit_logs
     where action in ('flashcard.public_link.create', 'flashcard.public_link.revoke')
   ),
-  2,
-  'tạo và thu hồi đều để lại vết audit (thu hồi lần hai không ghi thêm)'
+  7,
+  'mọi thao tác GHI đều có vết audit, và chỉ thao tác GHI mới có'
 );
 
 select * from finish();

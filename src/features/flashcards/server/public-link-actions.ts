@@ -23,6 +23,12 @@ const FLASHCARD_PATH = "/admin/flashcards";
 
 const sectionIdSchema = z.object({ sectionId: z.uuid() });
 const linkSchema = z.object({ linkId: z.uuid(), token: z.string() });
+const deckIdSchema = z.object({
+  deckId: z.uuid(),
+  // Chuỗi vì đi qua `FormData`. Mặc định `false` là fail-closed: quên gửi cờ
+  // thì thao tác KHÔNG giết mã cũ nào, nó chỉ báo lỗi.
+  replaceLegacy: z.literal("true").optional(),
+});
 
 export async function createFlashcardPublicLinkAction(
   formData: FormData,
@@ -41,6 +47,52 @@ export async function createFlashcardPublicLinkAction(
 
   revalidatePath(FLASHCARD_PATH);
   return { success: "Đã tạo liên kết công khai." };
+}
+
+/**
+ * Phát hành liên kết cố định cho MỌI buổi của một bộ thẻ trong một lượt
+ * (`D-39`).
+ *
+ * Đây là đường phục vụ ca dùng thật: bên in cần đủ 35 địa chỉ cùng lúc, trong
+ * khi phần lớn buổi còn nháp. Bấm lại không sinh mã thứ hai — idempotency được
+ * cưỡng chế trong RPC chứ không phải bằng cách khoá nút ở đây.
+ */
+export async function createFlashcardPublicLinksForDeckAction(
+  formData: FormData,
+): Promise<ActionState> {
+  await requireRole("super_admin");
+  const parsed = deckIdSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Bộ thẻ không hợp lệ." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "create_flashcard_public_links_for_deck",
+    {
+      p_deck_id: parsed.data.deckId,
+      p_replace_legacy: parsed.data.replaceLegacy === "true",
+    },
+  );
+  if (error) {
+    return { error: dbErrorToMessage(error, "Không tạo được liên kết.") };
+  }
+
+  revalidatePath(FLASHCARD_PATH);
+
+  // Báo đúng cái đã xảy ra, không báo "đã tạo N liên kết" cho cả những buổi vốn
+  // đã có sẵn — người dùng cần biết mình vừa thay đổi gì để còn quyết định có
+  // phải báo bên in hay không.
+  const rows = data ?? [];
+  const created = rows.filter((row) => row.row_status === "created").length;
+  const reactivated = rows.filter(
+    (row) => row.row_status === "reactivated",
+  ).length;
+  const parts = [
+    `${rows.length} buổi đã có liên kết cố định`,
+    created > 0 ? `${created} mã mới` : null,
+    reactivated > 0 ? `${reactivated} mã bật lại` : null,
+  ].filter(Boolean);
+
+  return { success: `${parts.join(" · ")}.` };
 }
 
 export async function revokeFlashcardPublicLinkAction(

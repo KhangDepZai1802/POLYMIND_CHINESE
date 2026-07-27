@@ -39,7 +39,15 @@ const publicPageSchema = z.object({
   media_paths: z.array(z.string()),
 });
 
-const publicSessionSchema = z.object({
+/**
+ * Hai hình dạng payload, phân biệt bằng `state` (`D-39`).
+ *
+ * `coming_soon` cố ý KHÔNG mang một chữ nội dung nào — chỉ số buổi, mà số buổi
+ * thì đã nằm sẵn trong mã trên URL. Nếu một ngày nào đó nhánh này bắt đầu mang
+ * tiêu đề hay Hán tự, đó là nội dung chưa duyệt rò ra ngoài.
+ */
+const publicReadySchema = z.object({
+  state: z.literal("ready"),
   section: z.object({
     session_number: z.number().int(),
     title: z.string(),
@@ -49,9 +57,19 @@ const publicSessionSchema = z.object({
   pages: z.array(publicPageSchema),
 });
 
-type PublicSessionPayload = z.infer<typeof publicSessionSchema>;
+const publicComingSoonSchema = z.object({
+  state: z.literal("coming_soon"),
+  section: z.object({ session_number: z.number().int() }),
+});
 
-export type PublicFlashcardPageView = PublicSessionPayload["pages"][number] & {
+const publicSessionSchema = z.discriminatedUnion("state", [
+  publicReadySchema,
+  publicComingSoonSchema,
+]);
+
+type PublicReadyPayload = z.infer<typeof publicReadySchema>;
+
+export type PublicFlashcardPageView = PublicReadyPayload["pages"][number] & {
   frontUrl: string | null;
   backUrl: string | null;
   audioUrl: string | null;
@@ -59,9 +77,19 @@ export type PublicFlashcardPageView = PublicSessionPayload["pages"][number] & {
 };
 
 export type PublicFlashcardSectionView = {
-  section: PublicSessionPayload["section"];
+  section: PublicReadyPayload["section"];
   pages: PublicFlashcardPageView[];
 };
+
+/**
+ * Kết quả một lượt quét mã.
+ *
+ * `null` (mã hỏng / đã thu hồi / buổi đã xoá) vẫn là `notFound()` như cũ —
+ * `coming_soon` là trạng thái THỨ BA, không phải một kiểu lỗi.
+ */
+export type PublicFlashcardResult =
+  | ({ state: "ready" } & PublicFlashcardSectionView)
+  | { state: "coming_soon"; sessionNumber: number };
 
 /** Đủ dài cho một lượt học, bằng đúng đường học viên (`queries.ts`). */
 const SIGNED_URL_TTL_SECONDS = 900;
@@ -84,7 +112,7 @@ const SIGNED_URL_TTL_SECONDS = 900;
 
 async function fetchPublicSession(
   token: string,
-): Promise<PublicSessionPayload | null> {
+): Promise<z.infer<typeof publicSessionSchema> | null> {
   const supabase = createPublicClient();
   const { data, error } = await supabase.rpc("get_public_flashcard_session", {
     p_token: token,
@@ -100,7 +128,7 @@ async function fetchPublicSession(
 
 export async function getPublicFlashcardSection(
   rawToken: unknown,
-): Promise<PublicFlashcardSectionView | null> {
+): Promise<PublicFlashcardResult | null> {
   // Mã sai hình dạng dừng NGAY, không chạm DB. Đây cũng là lớp chắn rẻ nhất
   // trước việc dò mã hàng loạt.
   const token = normalizeFlashcardPublicToken(rawToken);
@@ -108,6 +136,15 @@ export async function getPublicFlashcardSection(
 
   const payload = await fetchPublicSession(token);
   if (!payload) return null;
+
+  // Buổi chưa công bố: dừng ở đây. KHÔNG ký URL media — không có đường dẫn nào
+  // để mà ký, và đó chính là điều đang được bảo đảm.
+  if (payload.state === "coming_soon") {
+    return {
+      state: "coming_soon",
+      sessionNumber: payload.section.session_number,
+    };
+  }
 
   const supabase = createPublicClient();
   const signed = await signPaths(
@@ -118,6 +155,7 @@ export async function getPublicFlashcardSection(
   );
 
   return {
+    state: "ready",
     section: payload.section,
     pages: payload.pages.map((page) => attachSignedMedia(page, signed)),
   };

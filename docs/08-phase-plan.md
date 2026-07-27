@@ -553,6 +553,29 @@ User chỉ ra ba điểm còn sai trên ảnh chụp máy thật, kèm hướng 
 
 ---
 
+### Mã QR CỐ ĐỊNH cho 35 buổi — `QRLINK-1` (user chốt 2026-07-27, `D-39`)
+
+User: *"trang flashcard qr công khai hiện tại cần phải công bố mới có được, nhưng bây giờ sếp tôi muốn có ngay link của 35 buổi… không cần link random nữa, hãy cho tôi link cố định luôn của 35."*
+
+Yêu cầu này va vào **hai** vế của `D-36` cùng lúc, và cả hai đều cố ý chứ không phải sơ suất — nên đây là đổi **quyết định**, không phải sửa lỗi:
+
+| Vế của `D-36` | Vì sao nó chặn | Xử lý ở `D-39` |
+| --- | --- | --- |
+| Mã **ngẫu nhiên 60 bit** (`app.new_flashcard_link_token`) | Chỉ biết mã sau khi bấm tạo → không đưa trước cho bên dàn trang được | Mã sinh theo công thức `slug(mã khoá)-<số buổi 2 chữ số>`. Hàm cũ **giữ nguyên**, không xoá |
+| `create_flashcard_public_link` **từ chối buổi chưa công bố** | `VCB-BANK` mới công bố 1/35 buổi (đo cloud 2026-07-25) → 34 buổi không có mã để in | Bỏ vế `published` ở đường **TẠO**; đường **ĐỌC** giữ nguyên, thêm trạng thái `coming_soon` |
+
+| Task | Nội dung | Definition of Done | Trạng thái |
+| --- | --- | --- | --- |
+| QRLINK-1a | **Mã cố định, đoán trước được** | `app.flashcard_fixed_link_token(section_id)` (`stable`) + nới `flashcard_public_links_token_shape_check` sang slug `^[a-z0-9]+(-[a-z0-9]+)*$` dài 3–48. 🔴 **Mã ngẫu nhiên đã in PHẢI lọt hình dạng mới** — có bài kiểm riêng, vì nới sai chiều là giết hàng loạt QR đã nằm trên giấy. Bản sao công thức ở TS (`flashcardFixedPublicToken`) chỉ để **hiện trước** địa chỉ, có bài ghim cùng cặp vào/ra với bản SQL | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-27. pgTAP ghim **chuỗi cụ thể** `kh-qr-01`, không ghim hình dạng: bài `matches(...)` vẫn xanh kể cả khi mã quay về ngẫu nhiên |
+| QRLINK-1b | **"Có link" tách khỏi "đã công bố"** | Đường TẠO chỉ còn chặn buổi đã xoá mềm. Đường ĐỌC trả `state = coming_soon` **không kèm một chữ nội dung nào** (không tiêu đề, không Hán tự, không đường dẫn media) → trang "Buổi N sắp mở" thay cho 404. ⛔ `share.can_read_public_flashcard_media` **giữ nguyên** vế `published`: nới theo là rò media chưa duyệt trong khi giao diện vẫn nói "sắp mở" | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-27. **Kiểm ngược:** bỏ vế `published` khỏi helper media → đỏ đúng bài 29 *"buổi NHÁP tuy đã có liên kết nhưng media vẫn KÍN"* |
+| QRLINK-1c | **Một lượt cho cả bộ thẻ + danh sách chép được** | `create_flashcard_public_links_for_deck(deck_id, replace_legacy)` chạy trọn trong MỘT transaction (đứt mạng giữa chừng không để lại trạng thái nửa vời), idempotent theo `BUG_M09_01`. Cả RPC lẻ lẫn RPC hàng loạt đi qua **một** đường ghi `app.upsert_flashcard_public_link` (`BUG_M10_01`). Màn Admin hiện trước đủ 35 địa chỉ kể cả buổi chưa có mã + nút chép cả danh sách dạng `Buổi N⇥URL` | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-27. Buổi đang mang mã ngẫu nhiên cũ **không bị thay lặng lẽ**: RPC ném lỗi trừ khi `replace_legacy`, UI bắt xác nhận trước |
+
+**Hệ quả bắt buộc của mã cố định:** thu hồi rồi tạo lại là **bật lại chính hàng cũ** (`row_status = 'reactivated'`), vì công thức chỉ cho ra đúng một chuỗi mà unique index trên `token` phủ cả hàng đã thu hồi. Câu cảnh báo cũ trong hộp thoại thu hồi (*"tạo mới sẽ ra mã khác"*) đã sai từ `D-39` và đã được sửa.
+
+⚠️ **Giới hạn của mô hình:** mã đoán được, nên chỉ dùng cho nội dung mà **cả bộ mã được in trong cùng một ấn phẩm**. Khoá bán lẻ theo từng buổi phải quay về mã ngẫu nhiên.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |

@@ -3641,6 +3641,14 @@ export type Database = {
           link_token: string
         }[]
       }
+      create_flashcard_public_links_for_deck: {
+        Args: { p_deck_id: string; p_replace_legacy?: boolean }
+        Returns: {
+          link_token: string
+          row_status: string
+          session_no: number
+        }[]
+      }
       create_flashcard_sections: {
         Args: { p_deck_id: string; p_from: number; p_to: number }
         Returns: {

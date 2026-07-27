@@ -25,6 +25,14 @@ const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
 const NONEXISTENT_TOKEN = "zzzzzzzzzzzz";
 
 /**
+ * Mã CỐ ĐỊNH của buổi 2 — buổi này `seed.dev.sql` để NHÁP (`D-39`).
+ *
+ * Cặp `qr7dem3k5np2` (ngẫu nhiên, đã công bố) và `vcb-bank-02` (cố định, còn
+ * nháp) cho phép cùng một file kiểm cả hai đời mã lẫn cả hai trạng thái.
+ */
+const DRAFT_TOKEN = "vcb-bank-02";
+
+/**
  * Buổi + liên kết RIÊNG của file này, cho bài thu hồi.
  *
  * Không mượn buổi 1 của seed: `ux_flashcard_public_links_active_section` chỉ
@@ -289,6 +297,36 @@ test.describe("trang flashcard công khai", () => {
     await expect(
       page.getByRole("heading", { name: "Liên kết không còn hiệu lực" }),
     ).toBeVisible();
+    await close();
+  });
+
+  /**
+   * `D-39` — mã của buổi CHƯA CÔNG BỐ.
+   *
+   * Đây là trạng thái mà cả 35 buổi nằm trong suốt lúc sách đang in, nên nó là
+   * đường đi thật chứ không phải ca hiếm. Bài kiểm canh HAI chiều ngược nhau:
+   * người quét phải hiểu là "chưa tới lượt" (không phải sách in sai), NHƯNG
+   * không được thấy một mẩu nội dung nào của buổi đó.
+   */
+  test("buổi chưa công bố: hiện 'sắp mở', không 404 và không lộ nội dung", async ({
+    browser,
+  }) => {
+    const { page, close } = await anonymousPage(browser);
+    const response = await page.goto(`/t/${DRAFT_TOKEN}`);
+
+    expect(response?.status()).toBe(200);
+    await expect(
+      page.getByRole("heading", { name: "Buổi 2 sắp mở" }),
+    ).toBeVisible();
+
+    // Chiều PHỦ ĐỊNH: không tiêu đề buổi, không thẻ, không thanh điều khiển.
+    const body = (await page.locator("body").textContent()) ?? "";
+    expect(body).not.toContain("Giao dịch");
+    await expect(page.getByRole("button", { name: "Lật thẻ" })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Thẻ tiếp theo" }),
+    ).toHaveCount(0);
+
     await close();
   });
 
