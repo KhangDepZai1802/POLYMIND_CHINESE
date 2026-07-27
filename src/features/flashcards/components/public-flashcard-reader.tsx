@@ -107,11 +107,17 @@ export function PublicFlashcardReader({
           onNext={() => goTo(index + 1)}
           onPrevious={() => goTo(index - 1)}
         >
+          {/*
+            `fill`: thẻ cao đúng bằng vùng thẻ nên KHÔNG phải cuộn để đọc hết
+            một mặt (user chốt 2026-07-25 cho cả hai màn). Việc "vừa nội dung"
+            nằm trong từng mặt: mặt trước cho ảnh co, mặt sau thu cỡ chữ.
+          */}
           <FlashcardSurface
             page={page}
             face={face}
             className=""
             durationClassName="duration-300"
+            fill
           />
         </FlashcardTapArea>
       </FlashcardFrameStage>

@@ -160,37 +160,6 @@ async function goToFirstVocabulary(page: Page) {
   await expect(page.locator("[data-page-transition]")).toHaveCount(0);
 }
 
-/**
- * Đọc nhãn (aria-label) của từng thẻ theo thứ tự hiện tại, đi từ trang 1 đến hết.
- *
- * Chờ hoạt ảnh chuyển trang LẮNG trước mỗi lần đọc/kiểm nút: nút "tiếp theo" bị
- * `disabled` trong lúc transition (theo thiết kế), nên kiểm `isDisabled` giữa
- * transition sẽ tưởng đã hết trang và dừng sớm.
- */
-async function readCardOrder(page: Page): Promise<string[]> {
-  const names: string[] = [];
-  for (let pageNum = 1; ; pageNum += 1) {
-    await expect(page.getByText(new RegExp(`Trang ${pageNum}/`))).toBeVisible();
-    await expect(page.locator("[data-page-transition]")).toHaveCount(0);
-    const label = await page
-      .getByRole("button", { name: /^Mặt (trước|sau) của / })
-      .first()
-      .getAttribute("aria-label");
-    names.push(label ?? "");
-    const next = page.getByRole("button", {
-      name: "Trang flashcard tiếp theo",
-    });
-    if (await next.isDisabled()) break;
-    await expect(async () => {
-      await next.click();
-      await expect(
-        page.getByText(new RegExp(`Trang ${pageNum + 1}/`)),
-      ).toBeVisible({ timeout: 3000 });
-    }).toPass({ timeout: 15_000 });
-  }
-  return names;
-}
-
 async function openStudentFlashcards(page: Page, budgetMs = 60_000) {
   // ⚠️ `waitUntil: "domcontentloaded"`, KHÔNG để mặc định "load". Ảnh của bộ thẻ
   // mẫu (seed) chỉ có hàng trong `storage.objects` mà không có byte, nên chờ
@@ -203,6 +172,12 @@ async function openStudentFlashcards(page: Page, budgetMs = 60_000) {
   // `budgetMs` rộng hơn cho lần mở trong CONTEXT MỚI (dev server biên dịch lại route).
   await expect(async () => {
     await page.goto("/student/review", { waitUntil: "domcontentloaded" });
+    /*
+     * Vào tab Flashcard là TRANG MỞ ĐẦU của module, không phải khung đọc thẻ
+     * (user chốt 2026-07-25: vào thẳng toàn màn hình thì người mới không biết
+     * module còn phần "Ôn Tập Câu Sai"). Bấm CTA mới vào khung.
+     */
+    await page.getByRole("button", { name: "Bắt đầu ôn thẻ" }).click();
     await expect(
       page.getByRole("button", { name: /^Mặt (trước|sau) của / }).first(),
     ).toBeVisible({ timeout: 15_000 });
@@ -335,11 +310,11 @@ test.describe("Flashcard — học viên", () => {
       ? 44
       : 40;
 
-    // Đúng danh sách user liệt kê, cộng nút thoát toàn màn hình.
+    // Đúng danh sách user liệt kê, cộng nút thoát. Ba nút xáo trộn / thứ tự gốc
+    // / phát tự động đã BỎ HẲN (user chốt 2026-07-25) — có bài ghim chiều phủ
+    // định ở `tests/unit/components/student-flashcard-reader.test.tsx`.
     for (const name of [
-      "Xáo trộn",
-      "Thứ tự gốc",
-      "Phát tự động",
+      "Thoát ôn thẻ",
       "Trang flashcard trước",
       "Trang flashcard tiếp theo",
       "Lật thẻ",
@@ -348,7 +323,6 @@ test.describe("Flashcard — học viên", () => {
       "Tốc độ 0.75×",
       "Tốc độ 1×",
       "Đánh dấu khó",
-      "Thoát toàn màn hình",
     ]) {
       const box = await page.getByRole("button", { name }).boundingBox();
       expect(box, `mất nút "${name}" trong khung 360×800`).not.toBeNull();
@@ -370,59 +344,60 @@ test.describe("Flashcard — học viên", () => {
       ).toBeGreaterThanOrEqual(minTarget);
     }
 
-    // Thoát toàn màn hình phải trả lại vỏ dashboard — không có trạng thái chết.
-    await page.getByRole("button", { name: "Thoát toàn màn hình" }).click();
+    /*
+     * 🔴 KHÔNG mặt nào phải cuộn để đọc hết — lời than 2026-07-25: *"phải lướt
+     * lên mới thấy được pinyin và hán tự"*.
+     *
+     * Đo cả hai mặt: mặt trước cho ảnh co lại, mặt sau thu cỡ chữ (`FitText`).
+     * Ghim luôn `data-fit-scale` để biết cơ chế thu ĐÃ CHẠY và không tụt dưới
+     * sàn — nếu ai đó gỡ `FitText`, bài này đỏ chứ không im lặng cắt chữ.
+     */
+    for (const side of ["front", "back"] as const) {
+      if (side === "back") {
+        await page.getByRole("button", { name: "Lật thẻ" }).click();
+        await expect(page.locator('[data-face="back"]')).toHaveCount(1);
+      }
+      /*
+       * Đo ĐÚNG hộp có thể cuộn của từng mặt, không đo vỏ mặt thẻ.
+       *
+       * Mặt sau bọc trong `FitText` (`overflow-y-auto` làm lưới an toàn), nên nếu
+       * chỉ đo vỏ thì vỏ luôn "vừa" trong khi bên trong đã sinh thanh cuộn — bài
+       * kiểm sẽ xanh trong đúng ca nó phải bắt. Đây là cùng một lớp lỗi với
+       * `BUG-P17-002` (đo `scrollWidth` của tài liệu thay vì toạ độ của nút).
+       */
+      const target =
+        side === "back"
+          ? page.locator("[data-fit-scale]").first()
+          : page.locator(
+              '[data-transition-layer="incoming"] [data-face-side="front"]',
+            );
+      const measured = await target.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+      }));
+      expect(
+        measured.scrollHeight,
+        `mặt ${side} còn phải cuộn mới đọc hết`,
+      ).toBeLessThanOrEqual(measured.clientHeight + 2);
+    }
+
+    const fitScale = await page
+      .locator("[data-fit-scale]")
+      .first()
+      .getAttribute("data-fit-scale");
+    expect(fitScale, "mặt sau không có cơ chế thu cỡ chữ").not.toBeNull();
+    expect(Number(fitScale)).toBeGreaterThanOrEqual(0.78);
+    expect(Number(fitScale)).toBeLessThanOrEqual(1);
+
+    // Thoát phải trả lại vỏ dashboard + hai tab — không có trạng thái chết.
+    await page.getByRole("button", { name: "Thoát ôn thẻ" }).click();
     await expect(page.getByRole("heading", { name: "Ôn tập" })).toBeVisible();
     await expect(
       page.getByRole("tab", { name: /Ôn Tập Câu Sai/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Ôn thẻ toàn màn hình" }),
+      page.getByRole("button", { name: "Bắt đầu ôn thẻ" }),
     ).toBeVisible();
-  });
-
-  test("xáo trộn giữ trong phiên; đăng xuất rồi vào lại thì về thứ tự gốc", async ({
-    page,
-    browser,
-  }) => {
-    // Bài này làm HAI chu kỳ đăng nhập + đọc hết thẻ (phiên gốc và phiên mới),
-    // gấp đôi việc một bài thường — 90s mặc định quá chặt trên `next dev`.
-    test.setTimeout(180_000);
-    await loginStudent(page);
-    await openStudentFlashcards(page);
-
-    await expect(page.getByText(/Trang \d+\/\d+/)).toBeVisible();
-
-    const original = await readCardOrder(page);
-    expect(original.length).toBeGreaterThan(2);
-
-    await page.getByRole("button", { name: "Xáo trộn" }).click();
-    await expect(
-      page.getByText(/Thứ tự xáo trộn chỉ áp cho buổi này/),
-    ).toBeVisible();
-
-    // ⛔ Không được lưu ở bất cứ đâu ngoài bộ nhớ của trang đang mở.
-    const storage = await page.evaluate(() => ({
-      local: JSON.stringify(window.localStorage),
-      session: JSON.stringify(window.sessionStorage),
-    }));
-    expect(storage.local).not.toContain("shuffle");
-    expect(storage.session).not.toContain("shuffle");
-
-    // Đăng xuất rồi đăng nhập lại — kịch bản `Q6` đòi dựng lại đúng. Dùng
-    // CONTEXT MỚI (phiên trình duyệt sạch) thay vì `clearCookies` trên cùng page:
-    // client Supabase còn giữ token trong bộ nhớ sau khi xoá cookie nên đăng nhập
-    // lại tại chỗ dễ rối điều hướng. Thứ tự xáo trộn nằm trong state React nên
-    // phiên mới chắc chắn không thấy nó (đã kiểm không có ở localStorage/session).
-    const freshContext = await browser.newContext();
-    const freshPage = await freshContext.newPage();
-    await loginStudent(freshPage);
-    // Context mới => dev server biên dịch lại route: cho ngân sách mở rộng hơn.
-    await openStudentFlashcards(freshPage, 100_000);
-    const afterRelogin = await readCardOrder(freshPage);
-    await freshContext.close();
-
-    expect(afterRelogin).toEqual(original);
   });
 
   test("★ đánh dấu thẻ khó ghi xuống DB và đọc lại được sau khi tải lại", async ({

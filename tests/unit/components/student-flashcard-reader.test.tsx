@@ -103,11 +103,63 @@ const deck = {
   ],
 } as const;
 
+/**
+ * Vào tab Flashcard là TRANG MỞ ĐẦU của module (hai tab còn thấy được), bấm
+ * "Bắt đầu ôn thẻ" mới vào khung toàn màn hình — user chốt 2026-07-25.
+ */
+function startReading() {
+  fireEvent.click(screen.getByRole("button", { name: "Bắt đầu ôn thẻ" }));
+}
+
 describe("StudentFlashcardReader", () => {
+  it("vào tab là TRANG MỞ ĐẦU của module, không nhảy thẳng vào toàn màn hình", () => {
+    const { container } = render(
+      <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
+    );
+
+    // Chưa có khung, chưa khoá chrome: hai tab của trang Ôn tập phải còn thấy.
+    expect(container.querySelector("[data-flashcard-frame]")).toBeNull();
+    expect(document.documentElement.dataset.flashcardFocus).toBeUndefined();
+    // Mũi tên hướng dẫn + CTA duy nhất.
+    expect(screen.getByRole("status")).toHaveTextContent(/Bắt đầu ôn thẻ/);
+    expect(
+      screen.getByRole("button", { name: "Bắt đầu ôn thẻ" }),
+    ).toBeInTheDocument();
+
+    startReading();
+    expect(container.querySelector("[data-flashcard-frame]")).toHaveAttribute(
+      "data-flashcard-frame",
+      "fullscreen",
+    );
+    expect(document.documentElement.dataset.flashcardFocus).toBe("true");
+
+    // ✕ đưa về trang mở đầu và trả chrome lại — không có trạng thái chết.
+    fireEvent.click(screen.getByRole("button", { name: "Thoát ôn thẻ" }));
+    expect(container.querySelector("[data-flashcard-frame]")).toBeNull();
+    expect(document.documentElement.dataset.flashcardFocus).toBeUndefined();
+    expect(
+      screen.getByRole("button", { name: "Bắt đầu ôn thẻ" }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * Assert NGƯỢC — user chốt 2026-07-25 **bỏ hẳn** ba chức năng này để chừa chỗ
+   * cho thẻ. Ghim chiều phủ định để không ai dựng lại chúng.
+   */
+  it("KHÔNG còn xáo trộn / thứ tự gốc / phát tự động", () => {
+    render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
+    startReading();
+
+    expect(screen.queryByRole("button", { name: /Xáo trộn/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Thứ tự gốc" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Phát tự động/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Dừng phát/ })).toBeNull();
+  });
   it("reset trang vừa rời về mặt trước và hỗ trợ phím mũi tên", () => {
     const { container } = render(
       <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
     );
+    startReading();
 
     const coverFront = screen.getByRole("button", {
       name: /Mặt trước của trang mở đầu/i,
@@ -178,6 +230,7 @@ describe("StudentFlashcardReader", () => {
 
   it("phát âm bằng một nút mang tiêu đề trang, trang mở đầu không có audio", () => {
     render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
+    startReading();
 
     expect(
       screen.queryByRole("button", { name: /Phát audio/i }),
@@ -208,6 +261,7 @@ describe("StudentFlashcardReader", () => {
     const { container } = render(
       <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
     );
+    startReading();
     fireEvent.keyDown(
       screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
       { key: "ArrowRight" },
@@ -244,102 +298,19 @@ describe("StudentFlashcardReader", () => {
     expect(front.queryByText("你好吗？")).not.toBeInTheDocument();
   });
 
-  it("nút Thứ tự gốc luôn có mặt, mờ đi khi chưa xáo trộn", () => {
-    render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
-
-    // Bản cũ chỉ dựng nút này SAU khi đã xáo trộn, nên người dùng không thấy
-    // trước rằng việc xáo trộn có đường lùi.
-    const restore = screen.getByRole("button", { name: "Thứ tự gốc" });
-    expect(restore).toBeDisabled();
-
-    fireEvent.click(screen.getByRole("button", { name: "Xáo trộn" }));
-    expect(
-      screen.getByRole("button", { name: "Thứ tự gốc" }),
-    ).not.toBeDisabled();
-
-    fireEvent.click(screen.getByRole("button", { name: "Thứ tự gốc" }));
-    // Về thứ tự gốc thì nút Xáo trộn trở lại chữ ban đầu và nút lùi lại mờ đi.
-    expect(screen.getByRole("button", { name: "Xáo trộn" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Thứ tự gốc" })).toBeDisabled();
-  });
-
-  it("phát tự động đọc audio của trang khi đang ở mặt trước, và im khi tắt", () => {
-    const play = vi
-      .spyOn(window.HTMLMediaElement.prototype, "play")
-      .mockImplementation(() => Promise.resolve());
-    const pause = vi
-      .spyOn(window.HTMLMediaElement.prototype, "pause")
-      .mockImplementation(() => {});
-
-    render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
-    // Sang thẻ từ vựng — trang mở đầu không có audio.
-    fireEvent.keyDown(
-      screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
-      { key: "ArrowRight" },
-    );
-    expect(play).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole("button", { name: "Phát tự động" }));
-    expect(play).toHaveBeenCalledTimes(1);
-
-    // Tắt phát tự động phải làm tiếng đang đọc dở im NGAY (WCAG 2.2.2), chứ
-    // không phải đọc nốt rồi mới dừng.
-    fireEvent.click(screen.getByRole("button", { name: "Dừng phát" }));
-    expect(pause).toHaveBeenCalled();
-
-    play.mockRestore();
-    pause.mockRestore();
-  });
-
   /**
-   * User chốt 2026-07-25: màn Ôn tập dùng đúng giao diện trang QR, tức khung
-   * toàn màn hình. Bài này ghim ba vế của cơ chế đó — vế nào rơi cũng thành lỗi
-   * người dùng thấy được:
-   *   1. mặc định là toàn màn hình, và cờ `data-flashcard-focus` có đặt lên
-   *      `<html>` (thiếu cờ ⇒ header dashboard vẫn nằm trong thứ tự Tab, tức
-   *      "toàn màn hình" chỉ đúng với người sáng mắt);
-   *   2. ✕ đưa về dạng `inline` — KHÔNG dẫn tới trạng thái chết;
-   *   3. rời khung (đổi tab, rời trang) thì cờ được DỌN. Không dọn là học viên
-   *      bấm sang tab "Ôn Tập Câu Sai" và gặp một trang không header, không
-   *      cuộn được.
-   */
-  it("mặc định toàn màn hình, ✕ về dạng inline, và rời khung thì dọn cờ", () => {
-    const { container, unmount } = render(
-      <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
-    );
-    const frame = () => container.querySelector("[data-flashcard-frame]");
-
-    expect(frame()).toHaveAttribute("data-flashcard-frame", "fullscreen");
-    expect(document.documentElement.dataset.flashcardFocus).toBe("true");
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Thoát toàn màn hình" }),
-    );
-    expect(frame()).toHaveAttribute("data-flashcard-frame", "inline");
-    expect(document.documentElement.dataset.flashcardFocus).toBeUndefined();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ôn thẻ toàn màn hình" }),
-    );
-    expect(document.documentElement.dataset.flashcardFocus).toBe("true");
-
-    unmount();
-    expect(document.documentElement.dataset.flashcardFocus).toBeUndefined();
-  });
-
-  /**
-   * Danh sách user liệt kê nguyên văn: *"tôi muốn trong 1 khung hình phải có 3
-   * nút xáo trộn, thứ tự gốc, phát tự động, flashcard, mũi tên trái và phải,
-   * nút lật thẻ, nút phát video, 0.5x, 0.75x, 1x"*.
+   * Danh sách user liệt kê, sau khi đã bỏ ba chức năng: *"trong 1 khung hình
+   * phải có flashcard, mũi tên trái và phải, nút lật thẻ, nút phát video, 0.5x,
+   * 0.75x, 1x"*.
    *
-   * Ở đây chỉ đo được phần DỰNG RA: mọi nút đó là con của cùng một khung. Phần
-   * HÌNH HỌC — tất cả nằm trong màn 360×800 và trang không cuộn — đo ở
-   * `tests/e2e/flashcard-responsive.spec.ts`, chỗ duy nhất đo được thật.
+   * Ở đây chỉ đo được phần DỰNG RA. Phần HÌNH HỌC — tất cả nằm trong màn 360×800
+   * và không mặt nào phải cuộn — đo ở `tests/e2e/flashcard-responsive.spec.ts`.
    */
   it("mọi nút user chốt đều nằm TRONG một khung", () => {
     const { container } = render(
       <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
     );
+    startReading();
     // Sang thẻ từ vựng: audio và ★ chỉ có ở thẻ từ vựng.
     fireEvent.keyDown(
       screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
@@ -350,9 +321,7 @@ describe("StudentFlashcardReader", () => {
       container.querySelector("[data-flashcard-frame]") as HTMLElement,
     );
     for (const name of [
-      "Xáo trộn",
-      "Thứ tự gốc",
-      "Phát tự động",
+      "Thoát ôn thẻ",
       "Trang flashcard trước",
       "Trang flashcard tiếp theo",
       "Lật thẻ",
@@ -377,6 +346,7 @@ describe("StudentFlashcardReader", () => {
     // Đây là lỗ hổng `DS-049` điểm 1: ảnh câu ví dụ không nằm ở 3 cột cũ nên
     // trước Phase 16 học viên nhận 403. Nay nó đi qua `mediaUrls`.
     render(<StudentFlashcardReader deck={deck as never} courseName="HSK 1" />);
+    startReading();
     fireEvent.keyDown(
       screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
       { key: "ArrowRight" },

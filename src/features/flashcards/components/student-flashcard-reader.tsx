@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  ListOrdered,
-  Maximize2,
-  Pause,
   Play,
   RotateCw,
-  Shuffle,
   Star,
   Volume2,
   X,
@@ -30,16 +26,10 @@ import {
   FlashcardReaderFrame,
   FlashcardTapArea,
 } from "@/features/flashcards/components/flashcard-reader-frame";
-import {
-  FlashcardFaces,
-  FlashcardSizer,
-  FlashcardSurface,
-} from "@/features/flashcards/components/flashcard-surface";
+import { FlashcardStartHint } from "@/features/flashcards/components/flashcard-start-hint";
+import { FlashcardSurface } from "@/features/flashcards/components/flashcard-surface";
 import { setFlashcardStarAction } from "@/features/flashcards/server/actions";
 import type { FlashcardDeckView } from "@/features/flashcards/server/queries";
-
-/** Mỗi nhịp phát tự động: đủ để đọc một mặt thẻ rồi mới sang mặt/trang kế. */
-const AUTOPLAY_STEP_MS = 4000;
 
 /**
  * Bề rộng tối đa của vùng thẻ.
@@ -50,7 +40,6 @@ const AUTOPLAY_STEP_MS = 4000;
 const FRAME_WIDTH = "max-w-xl sm:max-w-2xl";
 
 type PageDirection = "next" | "previous";
-type FlashcardPage = FlashcardDeckView["sections"][number]["pages"][number];
 type PageTransition = {
   sectionId: string;
   fromIndex: number;
@@ -84,19 +73,17 @@ export function StudentFlashcardReader({
   const [pageTransition, setPageTransition] = useState<PageTransition | null>(
     null,
   );
-  const [autoPlaying, setAutoPlaying] = useState(false);
   /**
-   * Toàn màn hình là MẶC ĐỊNH (user chốt 2026-07-25 sau khi so hai phương án).
+   * `false` ⇒ hiện TRANG MỞ ĐẦU của module (thẻ giới thiệu + nút "Bắt đầu ôn
+   * thẻ"); `true` ⇒ khung đọc thẻ toàn màn hình.
    *
-   * Lý do không đợi `matchMedia` rồi mới quyết: khung dựng bằng `fixed inset-0`
-   * nên nó che vỏ dashboard ngay từ lần vẽ ĐẦU TIÊN, kể cả HTML từ máy chủ. Nếu
-   * để trạng thái ban đầu phụ thuộc bề rộng đo được ở client thì lần vẽ đầu là
-   * `inline`, lần thứ hai mới thành `fullscreen` — người dùng thấy trang nhảy.
-   *
-   * Thoát toàn màn hình KHÔNG dẫn tới trạng thái chết: khung chuyển sang
-   * `inline`, vẫn đủ mọi nút để học tiếp, và nút ⛶ đưa trở lại.
+   * Mặc định `false` là quyết định của user 2026-07-25, và nó giải một cặp lo
+   * ngại ngược nhau: vào thẳng toàn màn hình thì *"người kém công nghệ sẽ không
+   * biết sự tồn tại của Ôn Tập Câu Sai"*; còn hiện trang có hai tab thì *"sợ
+   * người ta không biết cách làm rồi complain web dỏm"*. Chốt: hiện hai tab, kèm
+   * `FlashcardStartHint` — mũi tên động chỉ vào nút, có ✕ và "Không nhắc lại".
    */
-  const [fullscreen, setFullscreen] = useState(true);
+  const [reading, setReading] = useState(false);
 
   const section =
     sections.find((candidate) => candidate.id === sectionId) ??
@@ -104,29 +91,15 @@ export function StudentFlashcardReader({
     null;
 
   /**
-   * Thứ tự sau khi xáo trộn, GIỮ TRONG STATE REACT.
+   * ⛔ XÁO TRỘN / THỨ TỰ GỐC / PHÁT TỰ ĐỘNG đã BỎ HẲN (user chốt 2026-07-25:
+   * *"bỏ luôn 3 nút xáo trộn, thứ tự gốc và phát tự động (bỏ hẳn 3 chức năng
+   * này)"*). Đừng dựng lại: chúng chiếm hai hàng nút trong khung một-màn-hình,
+   * tức lấy đúng chỗ của cái thẻ. Quyết định cũ `Q6`/`P16-T6` vì thế **hết hiệu
+   * lực** — xem `docs/08-phase-plan.md`.
    *
-   * Cố ý không dùng `sessionStorage`: `sessionStorage` sống qua đăng xuất rồi
-   * đăng nhập lại trong cùng một tab, tức vi phạm đúng điều `Q6` yêu cầu
-   * ("đăng nhập lại thì trở về thứ tự gốc"). `localStorage` và DB thì đã bị cấm
-   * thẳng. State React mất khi rời trang nên là chỗ duy nhất thoả cả ba.
+   * Thứ tự thẻ nay luôn là thứ tự gốc của buổi.
    */
-  const [shuffleBySection, setShuffleBySection] = useState<
-    Record<string, string[]>
-  >({});
-
-  const orderedPages = useMemo(() => {
-    if (!section) return [];
-    const order = shuffleBySection[section.id];
-    if (!order) return section.pages;
-    const remaining = new Map(section.pages.map((item) => [item.id, item]));
-    const shuffled = order
-      .map((id) => remaining.get(id))
-      .filter((item): item is FlashcardPage => Boolean(item));
-    for (const item of shuffled) remaining.delete(item.id);
-    // Trang xuất hiện sau lúc xáo trộn thì nối vào cuối, không biến mất.
-    return [...shuffled, ...remaining.values()];
-  }, [section, shuffleBySection]);
+  const orderedPages = section?.pages ?? [];
 
   const rawPageIndex = section ? (pageBySection[section.id] ?? 0) : 0;
   const pageIndex = section
@@ -139,30 +112,23 @@ export function StudentFlashcardReader({
       ? (orderedPages[pageTransition.fromIndex] ?? null)
       : null;
   const outgoingFace = pageTransition?.fromFace ?? "front";
-  const isShuffled = Boolean(section && shuffleBySection[section.id]);
-
-  /**
-   * Khung dựng ra được hay không — tính TRƯỚC các nhánh `return` rỗng bên dưới
-   * để hiệu ứng toàn màn hình không bị gọi có điều kiện (luật của hooks).
-   */
-  const hasFrame = Boolean(courseName && deck && section && page);
 
   /**
    * Cờ trên `<html>` cho `globals.css` ẩn chrome + khoá cuộn nền.
    *
-   * Dọn ở hàm cleanup nên MỌI đường ra đều trả chrome về: thoát toàn màn hình,
-   * đổi sang tab "Ôn Tập Câu Sai" (Radix unmount nội dung tab cũ), hay rời trang.
-   * Không dọn ⇒ học viên bấm sang tab khác và thấy một trang không có header,
-   * không cuộn được — lỗi im lặng không có đường thoát.
+   * Dọn ở hàm cleanup nên MỌI đường ra đều trả chrome về: bấm ✕, đổi sang tab
+   * "Ôn Tập Câu Sai" (Radix unmount nội dung tab cũ), hay rời trang. Không dọn ⇒
+   * học viên bấm sang tab khác và thấy một trang không header, không cuộn được —
+   * lỗi im lặng không có đường thoát.
    */
   useEffect(() => {
-    if (!fullscreen || !hasFrame) return;
+    if (!reading) return;
     const root = document.documentElement;
     root.dataset.flashcardFocus = "true";
     return () => {
       delete root.dataset.flashcardFocus;
     };
-  }, [fullscreen, hasFrame]);
+  }, [reading]);
 
   useEffect(() => {
     if (!pageTransition) return;
@@ -173,36 +139,6 @@ export function StudentFlashcardReader({
 
     return () => window.clearTimeout(fallbackTimer);
   }, [pageTransition]);
-
-  // `navigate` được khai báo bên dưới (function declaration nên đã hoisted).
-  // Giữ qua ref để hiệu ứng phát tự động không phải nhận nó làm dependency.
-  const navigateRef = useRef<(index: number) => void>(() => {});
-  useEffect(() => {
-    navigateRef.current = navigate;
-  });
-
-  // Phát tự động: mặt trước → mặt sau → trang kế. LUÔN do người dùng bấm mới
-  // chạy và luôn dừng được (WCAG 2.2.2). Hoạt ảnh lật/trượt đã bị chặn sẵn bởi
-  // các lớp `motion-reduce:` nên chế độ giảm chuyển động vẫn dùng được nút này.
-  useEffect(() => {
-    if (!autoPlaying || !page) return;
-
-    const timer = window.setTimeout(() => {
-      const currentFace = faceByPage[page.id] ?? "front";
-      if (currentFace === "front") {
-        setFaceByPage((current) => ({ ...current, [page.id]: "back" }));
-        return;
-      }
-      const next = pageIndex + 1;
-      if (next >= orderedPages.length) {
-        setAutoPlaying(false);
-        return;
-      }
-      navigateRef.current(next);
-    }, AUTOPLAY_STEP_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [autoPlaying, page, pageIndex, faceByPage, orderedPages.length]);
 
   if (!courseName) {
     return (
@@ -235,17 +171,6 @@ export function StudentFlashcardReader({
   // Tên gọi của trang: Hán tự với thẻ từ vựng, tên buổi với trang mở đầu.
   const pageTitle =
     page.kind === "vocabulary" ? (page.hanzi ?? section.title) : section.title;
-
-  /**
-   * Mốc phát audio cho `StudentAudioPlayer`.
-   *
-   * Đang phát tự động + đang ở MẶT TRƯỚC ⇒ mốc mang mã trang, trình phát đọc
-   * lại từ đầu. Lật sang mặt sau, sang trang khác, hoặc tắt phát tự động ⇒ mốc
-   * về `null`, trình phát im ngay (WCAG 2.2.2: tiếng tự chạy phải dừng được).
-   * Mốc kèm mã trang nên hai trang liền nhau không bị coi là "không đổi".
-   */
-  const audioAutoPlayToken =
-    autoPlaying && face === "front" ? `${page.id}:front` : null;
 
   function navigate(nextIndex: number) {
     if (
@@ -307,47 +232,56 @@ export function StudentFlashcardReader({
   }
 
   /**
-   * Xáo trộn CHỈ buổi đang chọn (`Q6`). Trang mở đầu giữ nguyên vị trí đầu —
-   * nó là lời mở buổi, không phải một thẻ để học ngẫu nhiên.
+   * TRANG MỞ ĐẦU của module (user chốt 2026-07-25).
+   *
+   * Không dựng khung đọc ngay khi vào tab: hai tab "Flashcard Từ Vựng" và "Ôn
+   * Tập Câu Sai" phải thấy được trước, nếu không người mới không biết module có
+   * phần thứ hai. Nhưng chỉ để hai tab thì lại có người không biết bấm đâu để
+   * học — nên có `FlashcardStartHint` chỉ đường bằng mũi tên động.
+   *
+   * Một CTA duy nhất, cao 56px, và là thứ đập vào mắt đầu tiên (`primary-action`).
    */
-  function shuffleCurrentSection() {
-    if (!section) return;
-    const cover = section.pages.filter(
-      (item) => item.kind === "session_cover",
+  if (!reading) {
+    const cardCount = sections.reduce(
+      (total, candidate) => total + candidate.pages.length,
+      0,
     );
-    const rest = section.pages.filter((item) => item.kind !== "session_cover");
-    for (let index = rest.length - 1; index > 0; index -= 1) {
-      const swap = Math.floor(Math.random() * (index + 1));
-      [rest[index], rest[swap]] = [rest[swap]!, rest[index]!];
-    }
-    setPageTransition(null);
-    setShuffleBySection((current) => ({
-      ...current,
-      [section.id]: [...cover, ...rest].map((item) => item.id),
-    }));
-    setPageBySection((current) => ({ ...current, [section.id]: 0 }));
-  }
-
-  function restoreOriginalOrder() {
-    if (!section) return;
-    setPageTransition(null);
-    setShuffleBySection((current) => {
-      const next = { ...current };
-      delete next[section.id];
-      return next;
-    });
-    setPageBySection((current) => ({ ...current, [section.id]: 0 }));
+    return (
+      <div className="space-y-3">
+        <FlashcardStartHint />
+        <Card>
+          <CardContent className="space-y-4 p-4 sm:p-6">
+            <div>
+              <h2 className="font-semibold">{deck.title}</h2>
+              <p className="text-muted-foreground text-sm">
+                {courseName} · {cardCount} thẻ · {sections.length} buổi đã mở
+              </p>
+            </div>
+            <Button
+              type="button"
+              className="h-14 w-full gap-2 text-base"
+              onClick={() => setReading(true)}
+            >
+              <Play className="size-5" aria-hidden />
+              Bắt đầu ôn thẻ
+            </Button>
+            <p className="text-muted-foreground text-sm">
+              Thẻ mở toàn màn hình cho dễ đọc. Bấm ✕ ở góc trên bên trái để quay
+              lại đây.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
     <FlashcardReaderFrame
-      mode={fullscreen ? "fullscreen" : "inline"}
+      mode="fullscreen"
       /*
-       * Phím mũi tên nghe Ở KHUNG, không ở `window`.
-       *
-       * Khung này chỉ là một vùng trong trang Ôn tập (khác trang công khai, nơi
-       * khung là cả trang). Nghe ở `window` sẽ cướp phím mũi tên của việc cuộn
-       * trang khi khung đang ở dạng `inline`.
+       * Phím mũi tên nghe Ở KHUNG, không ở `window`: khung này là một vùng
+       * trong trang Ôn tập (khác trang công khai, nơi khung là cả trang), nên
+       * nghe ở `window` là cướp phím của phần còn lại của trang.
        */
       onKeyDown={(event) => {
         if (event.key === "ArrowRight") {
@@ -378,17 +312,11 @@ export function StudentFlashcardReader({
             variant="outline"
             size="icon"
             className="size-11 shrink-0 rounded-full"
-            aria-label={
-              fullscreen ? "Thoát toàn màn hình" : "Ôn thẻ toàn màn hình"
-            }
-            title={fullscreen ? "Thoát toàn màn hình" : "Ôn thẻ toàn màn hình"}
-            onClick={() => setFullscreen((current) => !current)}
+            aria-label="Thoát ôn thẻ"
+            title="Thoát ôn thẻ"
+            onClick={() => setReading(false)}
           >
-            {fullscreen ? (
-              <X className="size-5" aria-hidden />
-            ) : (
-              <Maximize2 className="size-5" aria-hidden />
-            )}
+            <X className="size-5" aria-hidden />
           </Button>
         }
         trailing={
@@ -426,25 +354,31 @@ export function StudentFlashcardReader({
         {/*
           Mục lục buổi: cuộn ngang vì một khoá có tới 35 buổi.
 
-          Chỉ dựng khi có TỪ HAI BUỔI trở lên. Một buổi thì hàng nút này không
-          chọn được gì khác — mà trong khung một-màn-hình nó lấy 48px chiều cao
-          của chính cái thẻ. Hôm nay khoá `VCB-BANK` mới công bố đúng một buổi,
-          nên đây là ca thật chứ không phải giả định.
+          Nút `h-9` (36px) — LÙN hơn ngưỡng 44px một cách CÓ CHỦ Ý, theo yêu cầu
+          user 2026-07-25 (*"chỗ mục lục buổi có thể cho nút nó lùn lại hơn xíu
+          để flashcard có thêm khoảng trống"*). Đánh đổi đã cân: đây là hàng
+          chuyển buổi, dùng thưa và các nút cách nhau 8px; ba control chính của
+          màn (◀ Lật thẻ ▶) vẫn 48px. Trên cảm ứng `globals.css` còn ép
+          `min-height: 44px` nên thực tế ngón tay vẫn có 44px — 36px chỉ áp cho
+          con trỏ chuột.
+
+          Chỉ dựng khi có TỪ HAI BUỔI trở lên: một buổi thì hàng nút này không
+          chọn được gì khác mà vẫn lấy chỗ của thẻ.
         */}
         {sections.length > 1 && (
           <nav
             aria-label="Mục lục buổi flashcard"
-            className="mt-2 flex gap-2 overflow-x-auto pb-1"
+            className="mt-1.5 flex gap-2 overflow-x-auto pb-1"
           >
             {sections.map((candidate) => (
               <Button
                 key={candidate.id}
                 type="button"
+                size="sm"
                 variant={candidate.id === section.id ? "default" : "outline"}
-                className="h-11 shrink-0"
+                className="h-9 shrink-0"
                 onClick={() => {
                   setPageTransition(null);
-                  setAutoPlaying(false);
                   setSectionId(candidate.id);
                 }}
               >
@@ -453,67 +387,15 @@ export function StudentFlashcardReader({
             ))}
           </nav>
         )}
-
-        {/*
-          Hàng điều khiển BUỔI: thứ tự và phát tự động.
-
-          `flex-wrap` là cố ý. Ba nút này cần ~374px nên trên điện thoại chúng
-          xuống hai hàng — và đó là lựa chọn ĐÚNG: thà thêm một hàng trong khung
-          còn hơn cắt mất nút như `BUG-P17-002`, hoặc bắt người dùng cuộn ngang
-          để tìm nút "Phát tự động".
-        */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 pb-1">
-          <Button
-            type="button"
-            variant={isShuffled ? "default" : "outline"}
-            className="h-11"
-            onClick={shuffleCurrentSection}
-          >
-            <Shuffle className="size-4" aria-hidden />
-            {isShuffled ? "Xáo trộn lại" : "Xáo trộn"}
-          </Button>
-          {/*
-            Luôn hiện, và mờ đi khi chưa xáo trộn — thay vì chỉ xuất hiện sau
-            khi bấm Xáo trộn. Người dùng thấy trước rằng việc xáo trộn có đường
-            lùi, nên dám thử; và hàng nút không đổi số lượng giữa chừng.
-          */}
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11"
-            disabled={!isShuffled}
-            onClick={restoreOriginalOrder}
-          >
-            <ListOrdered className="size-4" aria-hidden />
-            Thứ tự gốc
-          </Button>
-          <Button
-            type="button"
-            variant={autoPlaying ? "default" : "outline"}
-            className="h-11"
-            aria-pressed={autoPlaying}
-            onClick={() => setAutoPlaying((playing) => !playing)}
-          >
-            {autoPlaying ? (
-              <Pause className="size-4" aria-hidden />
-            ) : (
-              <Play className="size-4" aria-hidden />
-            )}
-            {autoPlaying ? "Dừng phát" : "Phát tự động"}
-          </Button>
-        </div>
-
-        {isShuffled && (
-          // Câu này đã rút ngắn: trong khung một-màn-hình thì mỗi dòng chữ đều
-          // lấy chỗ của thẻ. Vế "không lưu lại" là vế phải giữ (chốt `Q6`).
-          <p className="text-muted-foreground pb-1 text-xs">
-            Thứ tự xáo trộn chỉ áp cho buổi này, không lưu lại.
-          </p>
-        )}
       </FlashcardFrameHeader>
 
       <FlashcardFrameStage maxWidthClassName={FRAME_WIDTH}>
-        <div className="relative w-full [perspective:1400px]">
+        {/*
+          `h-full` xuyên suốt từ vùng thẻ xuống tới mặt thẻ: đó là điều kiện để
+          thẻ vừa khít MỘT khung hình. Thẻ cao theo nội dung (cơ chế cũ) là thứ
+          đã sinh ra lời than "phải lướt lên lướt xuống".
+        */}
+        <div className="relative h-full w-full [perspective:1400px]">
           {outgoingPage && pageTransition ? (
             <div
               aria-hidden="true"
@@ -525,7 +407,12 @@ export function StudentFlashcardReader({
                   : "flashcard-page-out-previous"
               }`}
             >
-              <FlashcardSurface page={outgoingPage} face={outgoingFace} />
+              <FlashcardSurface
+                page={outgoingPage}
+                face={outgoingFace}
+                className=""
+                fill
+              />
             </div>
           ) : null}
 
@@ -533,7 +420,7 @@ export function StudentFlashcardReader({
             key={page.id}
             data-page-transition={pageTransition?.direction}
             data-transition-layer="incoming"
-            className={`relative [transform-origin:center] [transform-style:preserve-3d] motion-reduce:animate-none ${
+            className={`relative h-full [transform-origin:center] [transform-style:preserve-3d] motion-reduce:animate-none ${
               pageTransition?.direction === "next"
                 ? "flashcard-page-in-next"
                 : pageTransition?.direction === "previous"
@@ -555,11 +442,12 @@ export function StudentFlashcardReader({
               onNext={() => navigate(pageIndex + 1)}
               onPrevious={() => navigate(pageIndex - 1)}
             >
-              <FlashcardSizer page={page} />
-              <FlashcardFaces
+              <FlashcardSurface
                 page={page}
                 face={face}
+                className=""
                 durationClassName="duration-300"
+                fill
               />
             </FlashcardTapArea>
           </div>
@@ -574,7 +462,6 @@ export function StudentFlashcardReader({
             label={pageTitle}
             appearance="button"
             density="compact"
-            autoPlayToken={audioAutoPlayToken}
           />
         ) : page.audio_path ? (
           <Alert className="py-2">

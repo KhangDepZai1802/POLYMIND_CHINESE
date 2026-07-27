@@ -39,16 +39,27 @@ import { useRef, type KeyboardEventHandler, type ReactNode } from "react";
  *   khi học viên thoát toàn màn hình mà vẫn đang ở tab Flashcard. Không có
  *   trạng thái chết: thoát toàn màn hình vẫn còn đủ nút để học tiếp.
  */
-export type FlashcardFrameMode = "page" | "fullscreen" | "inline";
+export type FlashcardFrameMode = "page" | "fullscreen";
 
 const FRAME_SHAPE: Record<FlashcardFrameMode, string> = {
-  page: "h-dvh",
-  fullscreen: "bg-surface-page fixed inset-0 z-40",
-  // `70dvh` (trần `42rem`) là mức đo được cho vừa: trên máy 360×800, header +
-  // tiêu đề "Ôn tập" + hai tab đã tiêu 264px, nên khung cao hơn thế là đẩy nút
-  // "Lật thẻ" xuống dưới mép màn. Dạng này CỐ Ý vẫn cho trang cuộn một chút —
-  // người dùng bấm ✕ chính là để thấy lại ngữ cảnh trang.
-  inline: "bg-card relative h-[min(70dvh,42rem)] rounded-2xl border shadow-sm",
+  /*
+   * Trang công khai: khung LÀ trang, và trang đó khai `viewportFit: "cover"` nên
+   * thật sự chạy edge-to-edge ⇒ phải chừa tai thỏ / thanh gesture.
+   */
+  page: "h-dvh pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
+  /*
+   * 🔴 KHÔNG chừa `safe-area-inset-top` ở dạng này — user báo 2026-07-25:
+   * *"phía trên chữ Buổi 1 Buổi 1 vẫn còn khoảng trống"*.
+   *
+   * Vỏ dashboard **không** khai `viewportFit: "cover"` (cố ý — bật toàn cục là
+   * đổi bố cục 13 màn), nên theo chuẩn thì `env(safe-area-inset-top)` phải bằng
+   * 0 và trên máy tôi đo đúng 0. Nhưng trình duyệt trong ứng dụng (Zalo /
+   * Android WebView) vẫn báo ~30px, thành ra một dải trống không ai đặt. Nội
+   * dung ở đây không bao giờ nằm dưới thanh trạng thái nên chừa chỗ là phí thật.
+   * Vế đáy thì GIỮ: thanh gesture của Android nằm chồng lên nội dung thật.
+   */
+  fullscreen:
+    "bg-surface-page fixed inset-0 z-40 pb-[env(safe-area-inset-bottom)]",
 };
 
 export function FlashcardReaderFrame({
@@ -72,7 +83,7 @@ export function FlashcardReaderFrame({
     <div
       data-flashcard-frame={mode}
       onKeyDown={onKeyDown}
-      className={`fc-frame flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${FRAME_SHAPE[mode]}`}
+      className={`fc-frame flex flex-col overflow-hidden ${FRAME_SHAPE[mode]}`}
     >
       {children}
     </div>
@@ -103,7 +114,8 @@ export function FlashcardFrameHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="shrink-0 px-[max(1rem,env(safe-area-inset-left))] pt-2 pb-1.5">
+    // Padding dọc bóp sát: mỗi pixel ở đây là một pixel lấy của thẻ.
+    <header className="shrink-0 px-[max(0.75rem,env(safe-area-inset-left))] pt-1.5 pb-1">
       <div className="flex items-center gap-2">
         {leading}
         <Heading className="min-w-0 flex-1 truncate text-sm font-semibold">
@@ -160,18 +172,19 @@ export function FlashcardFrameStage({
 }) {
   const Stage = landmark ? "main" : "div";
   return (
-    <Stage className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[max(1rem,env(safe-area-inset-left))] py-2">
-      {/*
-        `min-h-full` chứ KHÔNG `h-full`.
-
-        Với `h-full` + `items-center`, thẻ cao hơn vùng cuộn sẽ bị căn giữa RỒI
-        tràn cả hai đầu — mà phần tràn lên trên thì không cuộn tới được (lỗi
-        kinh điển của flex-centering trong vùng cuộn). `min-h-full` cho khung nở
-        theo thẻ: thẻ ngắn vẫn căn giữa, thẻ dài thì cuộn đủ từ đầu tới cuối.
-      */}
-      <div
-        className={`mx-auto flex min-h-full w-full items-center ${maxWidthClassName}`}
-      >
+    /*
+     * 🔴 `overflow-hidden`, KHÔNG `overflow-y-auto` — bản sửa lời than
+     * 2026-07-25: *"phần nội dung flashcard thì phải lướt lên lướt xuống thì
+     * mới thấy đầy đủ nội dung"*.
+     *
+     * Vùng thẻ nay KHÔNG cuộn, vì thẻ cao đúng bằng nó (`FlashcardSurface fill`).
+     * Việc "vừa nội dung" chuyển vào từng mặt: mặt trước cho ảnh co, mặt sau thu
+     * cỡ chữ (`FitText`). Để lại `overflow-y-auto` ở đây là mở lại đúng cái cửa
+     * đã sinh ra lời than: nội dung tràn thì lặng lẽ thành cuộn thay vì được thu
+     * cho vừa.
+     */
+    <Stage className="min-h-0 flex-1 overflow-hidden px-[max(0.75rem,env(safe-area-inset-left))] py-2">
+      <div className={`mx-auto h-full w-full ${maxWidthClassName}`}>
         {children}
       </div>
     </Stage>
@@ -197,7 +210,7 @@ export function FlashcardFrameControls({
     */
     <nav
       aria-label="Điều khiển thẻ"
-      className="bg-card/95 shrink-0 border-t px-[max(1rem,env(safe-area-inset-left))] py-2 backdrop-blur"
+      className="bg-card/95 shrink-0 border-t px-[max(0.75rem,env(safe-area-inset-left))] py-2 backdrop-blur"
     >
       <div
         className={`mx-auto flex w-full flex-col gap-2 ${maxWidthClassName}`}
@@ -253,7 +266,8 @@ export function FlashcardTapArea({
 
   return (
     <div
-      className={`fc-frame-card focus-visible:ring-ring relative w-full rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+      // `h-full`: thẻ cao đúng bằng vùng thẻ, xem `FlashcardSurface fill`.
+      className={`fc-frame-card focus-visible:ring-ring relative h-full w-full rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
         disabled ? "cursor-default" : "cursor-pointer"
       }`}
       role="button"

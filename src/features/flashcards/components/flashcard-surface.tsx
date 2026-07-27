@@ -107,12 +107,42 @@ export function FlashcardSurface({
   face,
   className = "min-h-[var(--fc-face-min-h)]",
   durationClassName,
+  fill = false,
 }: {
   page: FlashcardFaceData;
   face: Face;
   className?: string;
   durationClassName?: string;
+  /**
+   * `true` ⇒ thẻ cao ĐÚNG bằng ô chứa nó, không dùng `FlashcardSizer`.
+   *
+   * Dùng cho **khung đọc thẻ** (`flashcard-reader-frame.tsx`). Lý do là lời than
+   * thật của user 2026-07-25: *"phần nội dung flashcard thì phải lướt lên lướt
+   * xuống thì mới thấy đầy đủ nội dung"*. Gốc rễ là `FlashcardSizer` — nó đo
+   * chiều cao bằng mặt CAO HƠN của hai mặt, nên một thẻ có mặt sau bốn khối làm
+   * cả thẻ cao gấp đôi màn hình, và mặt trước (ngắn) bị đẩy lệch khỏi vùng nhìn.
+   *
+   * Ở chế độ này thẻ vừa khít vùng thẻ, còn việc "vừa nội dung" chuyển vào TỪNG
+   * MẶT: mặt trước cho ảnh co (`flex-1 min-h-0`), mặt sau thu cỡ chữ
+   * (`FitText`). Nhờ vậy không mặt nào phải cuộn.
+   *
+   * ⚠️ Ô xem trước của màn Quản trị vẫn dùng `FlashcardSizer` (mặc định
+   * `false`): ở đó thẻ nằm trong ô cao cố định và cần nở theo nội dung.
+   */
+  fill?: boolean;
 }) {
+  if (fill) {
+    return (
+      <div className={`relative h-full rounded-2xl ${className}`}>
+        <FlashcardFaces
+          page={page}
+          face={face}
+          durationClassName={durationClassName}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`relative rounded-2xl ${className}`}>
       <FlashcardSizer page={page} />

@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { FitText } from "@/features/flashcards/components/fit-text";
 import {
   alignPinyinToHanzi,
   joinPinyin,
@@ -173,7 +174,17 @@ function VocabularyFront({ page }: { page: FlashcardFaceData }) {
   const imageUrl = page.frontUrl;
 
   return (
-    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col items-center justify-center gap-5 p-6 text-center sm:p-8">
+    /*
+     * 🔴 `gap-4` + ảnh `flex-1 min-h-0` — đây là bản sửa lời than 2026-07-25:
+     * *"phải lướt lên mới thấy được pinyin và hán tự"*.
+     *
+     * Bản cũ để ảnh cao cố định `max-h-56`, nên khi vùng thẻ thấp hơn tổng chiều
+     * cao ba khối thì ẢNH ĐẨY pinyin + Hán tự lên khỏi vùng nhìn — mà pinyin và
+     * Hán tự mới là nội dung chính, ảnh chỉ là minh hoạ. Nay ảnh là khối DUY
+     * NHẤT co được (`flex-1 min-h-0`): nó nhường chỗ tới mức cần thiết, còn chữ
+     * luôn giữ đủ cỡ. Không còn cuộn dọc trong mặt trước.
+     */
+    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col items-center justify-center gap-4 p-4 text-center sm:p-8">
       {alignment ? (
         <p className="flex flex-wrap items-end justify-center gap-x-3 gap-y-4">
           {alignment.map((cell, index) => (
@@ -214,14 +225,18 @@ function VocabularyFront({ page }: { page: FlashcardFaceData }) {
       </p>
 
       {imageUrl && (
-        <Image
-          src={imageUrl}
-          alt={page.front_alt ?? ""}
-          width={320}
-          height={220}
-          unoptimized
-          className="h-auto max-h-56 w-auto max-w-full rounded-xl object-contain"
-        />
+        // `min-h-0` trên khối bọc là bắt buộc: thiếu nó thì flex item không co
+        // được dưới kích thước nội dung, và ảnh lại đẩy chữ ra ngoài như cũ.
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <Image
+            src={imageUrl}
+            alt={page.front_alt ?? ""}
+            width={320}
+            height={220}
+            unoptimized
+            className="h-full max-h-56 w-auto max-w-full rounded-xl object-contain"
+          />
+        </div>
       )}
     </div>
   );
@@ -256,10 +271,16 @@ function BackBlock({
      * `grow` giữ cơ sở `auto` (cao theo nội dung) rồi chia ĐỀU phần dư — đúng
      * thứ cần: không còn khoảng trắng, mà tỉ lệ giữa các khối vẫn hợp lý.
      */
+    /*
+     * Cỡ chữ/khoảng cách của cả mặt sau khai bằng `em`, KHÔNG `rem` — bắt buộc
+     * để `FitText` thu nhỏ được (xem `fit-text.tsx`). `rem` neo vào `<html>` nên
+     * sẽ phớt lờ việc thu nhỏ. Giá trị `em` chọn khớp đúng cỡ `rem` cũ nên ở tỉ
+     * lệ 1 (màn Quản trị, thẻ ngắn) không đổi một pixel.
+     */
     <section
-      className={`grow rounded-xl border-2 p-3 ${BACK_BLOCK_TONE[tone]}`}
+      className={`grow rounded-xl border-2 p-[0.75em] ${BACK_BLOCK_TONE[tone]}`}
     >
-      <h3 className="mb-2 text-sm font-semibold tracking-wide uppercase">
+      <h3 className="mb-[0.5em] text-[0.875em] font-semibold tracking-wide uppercase">
         {title}
       </h3>
       {children}
@@ -279,11 +300,16 @@ function SublistLine({
 }) {
   return (
     <>
-      <p {...HANZI_ATTRS} className="font-hanzi text-lg font-semibold break-words">
+      <p
+        {...HANZI_ATTRS}
+        className="font-hanzi text-[1.125em] font-semibold break-words"
+      >
         {hanzi}
       </p>
-      <p className="text-muted-foreground text-sm break-words">{pinyin}</p>
-      <p className="text-sm break-words">{meaningVi}</p>
+      <p className="text-muted-foreground text-[0.875em] break-words">
+        {pinyin}
+      </p>
+      <p className="text-[0.875em] break-words">{meaningVi}</p>
     </>
   );
 }
@@ -300,10 +326,18 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
   const joined = joinPinyin(page.pinyin_syllables ?? "");
 
   return (
-    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col gap-3 p-4 sm:p-6">
+    /*
+     * `FitText` thu cỡ chữ cho vừa chiều cao vùng thẻ (user chốt 2026-07-25).
+     * Mọi cỡ chữ bên trong vì thế khai bằng `em`.
+     */
+    <FitText
+      // `key` ⇒ sang thẻ khác là đo lại cỡ chữ từ đầu.
+      key={`${page.hanzi ?? ""}-${page.meaning_vi ?? ""}`}
+      className="flex flex-col gap-[0.75em] p-[1em] sm:p-[1.5em]"
+    >
       {/* Khối 1 — đầu thẻ */}
       <BackBlock title="Thẻ" tone="neutral">
-        <p className="text-2xl font-bold break-words sm:text-3xl">
+        <p className="text-[1.5em] font-bold break-words sm:text-[1.875em]">
           <span {...HANZI_ATTRS} className="font-hanzi">
             {hanzi}
           </span>
@@ -318,13 +352,15 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
 
       {/* Khối 2 — nghĩa. Không còn ảnh mặt sau: user đổi cơ chế (`…078`). */}
       <BackBlock title="Nghĩa" tone="cyan">
-        <p className="text-lg font-semibold break-words">{page.meaning_vi}</p>
+        <p className="text-[1.125em] font-semibold break-words">
+          {page.meaning_vi}
+        </p>
       </BackBlock>
 
       {/* Khối 3 — câu ví dụ */}
       {examples.length > 0 && (
         <BackBlock title="Câu ví dụ" tone="coral">
-          <ul className="space-y-3">
+          <ul className="space-y-[0.75em]">
             {examples.map((item, index) => {
               const url = item.image_path
                 ? page.mediaUrls[item.image_path]
@@ -332,7 +368,7 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
               return (
                 <li
                   key={`${item.hanzi}-${index}`}
-                  className="flex flex-wrap items-start gap-3"
+                  className="flex flex-wrap items-start gap-[0.75em]"
                 >
                   <div className="min-w-0 flex-1">
                     <SublistLine
@@ -348,7 +384,7 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
                       width={110}
                       height={80}
                       unoptimized
-                      className="h-auto max-h-20 w-auto rounded-lg object-contain"
+                      className="h-auto max-h-[5em] w-auto rounded-lg object-contain"
                     />
                   )}
                 </li>
@@ -361,7 +397,7 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
       {/* Khối 4 — cụm từ thường dùng */}
       {phrases.length > 0 && (
         <BackBlock title="Cụm từ thường dùng" tone="amber">
-          <ul className="space-y-2">
+          <ul className="space-y-[0.5em] text-[1em]">
             {phrases.map((item, index) => (
               <li key={`${item.hanzi}-${index}`} className="break-words">
                 <span className="font-semibold">{item.hanzi}</span>
@@ -372,6 +408,6 @@ function VocabularyBack({ page }: { page: FlashcardFaceData }) {
           </ul>
         </BackBlock>
       )}
-    </div>
+    </FitText>
   );
 }

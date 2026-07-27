@@ -76,7 +76,7 @@ URL trong ảnh: `quizlet.com/<id>/flashcards`. Toàn màn hình, không có sid
 
 - Trái: công tắc **"Theo dõi tiến độ"** — bật thì chuyển sang chế độ "đã biết / chưa biết".
 - Giữa: nút **←** và **→** dạng tròn (nút ← mờ khi đang ở thẻ đầu).
-- Phải: nút **phát tự động** ▶ và nút **xáo trộn** 🔀.
+- ~~Phải: nút **phát tự động** ▶ và nút **xáo trộn** 🔀.~~ ⛔ **ĐÃ BỎ HẲN 2026-07-25** (user chốt) — xem ghi chú cuối mục `Q6`.
 
 ---
 
@@ -111,8 +111,8 @@ URL trong ảnh: `quizlet.com/<id>/flashcards`. Toàn màn hình, không có sid
 | 7 | Kéo-thả sắp xếp | Có (`reorder_flashcard_pages` RPC) | Có | 🟢 Đã có |
 | 8 | Đếm thẻ khi học | "Trang 1/8" ở dưới | "1 / 11" giữa thanh trên | 🟢 Chỉ là bố cục |
 | 9 | Chế độ tập trung | Không — nằm trong shell dashboard | Toàn màn hình, có nút ✕ | 🟡 UI |
-| 10 | Xáo trộn | Không có | Có | 🟡 Tính năng mới |
-| 11 | Phát tự động | Không có | Có | 🟡 Tính năng mới |
+| 10 | ~~Xáo trộn~~ | Không có | ~~Có~~ | ⛔ **Đã bỏ 2026-07-25** |
+| 11 | ~~Phát tự động~~ | Không có | ~~Có~~ | ⛔ **Đã bỏ 2026-07-25** |
 | 12 | Đánh dấu thẻ khó ★ | Không có | Có, lưu theo người học | 🔴 **Bảng mới + RLS** |
 | 13 | Theo dõi tiến độ (biết/chưa biết) | Không có ở Flashcard (chỉ Ôn câu sai có mastery) | Có | 🔴 **Bảng mới + RLS** |
 | 14 | Gợi ý (hint) | Không có | Có | 🟡 Thêm trường |
@@ -180,8 +180,8 @@ Nếu thiết kế lại `student-flashcard-reader.tsx` theo Learning Journey Be
 | Tính năng | Chốt |
 |---|---|
 | **Nhập hàng loạt ("+ Nhập")** | ✅ Làm. |
-| **Xáo trộn 🔀** | ✅ Làm, **cho tài khoản học viên**. Phạm vi xáo trộn = **chỉ buổi đang được chọn**, không xáo cả bộ. **Đăng xuất → đăng nhập lại phải trở về thứ tự gốc.** → Nghĩa là **không lưu vào DB**, chỉ giữ trong bộ nhớ phiên; đăng xuất là mất. Không dùng `localStorage` bền qua phiên. |
-| **Phát tự động ▶** | ✅ Làm, cho tài khoản học viên. |
+| **Xáo trộn 🔀** | ⛔ **ĐÃ BỎ 2026-07-25.** ~~✅ Làm, **cho tài khoản học viên**.~~ Phạm vi xáo trộn = **chỉ buổi đang được chọn**, không xáo cả bộ. **Đăng xuất → đăng nhập lại phải trở về thứ tự gốc.** → Nghĩa là **không lưu vào DB**, chỉ giữ trong bộ nhớ phiên; đăng xuất là mất. Không dùng `localStorage` bền qua phiên. |
+| **Phát tự động ▶** | ⛔ **ĐÃ BỎ 2026-07-25.** ~~✅ Làm, cho tài khoản học viên.~~ |
 | **Đảo mặt trước/sau** | ⛔ **Không làm.** User đã được giải thích cả hai kiểu (admin ghi đè DB / học viên đổi hiển thị tạm) và chọn bỏ hẳn. Không tự thêm lại. |
 
 ---
@@ -297,3 +297,15 @@ Chọn hướng (b) — cột `jsonb` trên `flashcard_pages` (`example_sentence
 - ✅ ~~Không đổi RLS policy hay quyền tạo flashcard.~~ → chỉ đổi **policy đọc media** sang `media_paths`; ⛔ **quyền tạo vẫn là Super Admin, tuyệt đối không đổi** (`Q1`).
 - ✅ ~~Không thêm bảng tiến độ/đánh dấu thẻ.~~ → chỉ ★ **thẻ khó** ở `P16-T7`; ⛔ **không** làm theo dõi biết/chưa biết (`Q4` hoãn).
 - ⛔ **VẪN HIỆU LỰC:** không "tiện tay" làm một phần trong task UI/UX — `DS-003` cấm đổi database/API/validation trong đợt redesign. Từ `P16-T8` trở đi ràng buộc này áp lại đầy đủ: mọi thay đổi query/action/RPC/RLS/route/phân quyền/validation/nhãn phải đã xong ở `P16-T1`…`P16-T7`.
+
+---
+
+## ⛔ Ba tính năng đã BỎ HẲN — user chốt 2026-07-25
+
+User yêu cầu nguyên văn: *"bỏ luôn 3 nút xáo trộn, thứ tự gốc và phát tự động (bỏ hẳn 3 chức năng này)"*.
+
+**Lý do:** màn Ôn tập của học viên chuyển sang **khung một-màn-hình** (mọi thứ phải thấy được không cuộn). Ba nút đó chiếm hai hàng — khoảng 110px chiều cao — tức lấy đúng chỗ của cái thẻ. Đây là đánh đổi user tự cân và tự chốt.
+
+**Hệ quả với tài liệu:** quyết định `Q6` (và task `P16-T6`) **hết hiệu lực** ở phần xáo trộn/phát tự động; phần "nhập hàng loạt" của `Q6` vẫn còn nguyên. Thứ tự thẻ nay luôn là thứ tự gốc của buổi, nên vế "đăng nhập lại thì trở về thứ tự gốc" cũng không còn ý nghĩa.
+
+**Đã có bài kiểm ghim chiều phủ định** (`tests/unit/components/student-flashcard-reader.test.tsx` — "KHÔNG còn xáo trộn / thứ tự gốc / phát tự động") để không ai vô tình dựng lại.
