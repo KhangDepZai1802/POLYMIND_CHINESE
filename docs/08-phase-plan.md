@@ -514,6 +514,26 @@ User quét mã trên máy thật (1080px, Chrome Android) và gửi hai ảnh ch
 
 🔴 **Bài học về BÀI KIỂM, không phải về code:** bộ E2E cũ đã có bài "không tràn ngang" ở đủ 6 bề rộng và **vẫn xanh suốt** trong khi nút ▶ mất hẳn — vì khung ngoài có `overflow-hidden` nên phần tràn bị **cắt** chứ không sinh cuộn ngang, `scrollWidth == clientWidth`. Tương tự, bài "media được ký" soi `src` của `<img>` nên không thấy ảnh nằm trong một cái hộp `0px`. **Đo bố cục phải đo toạ độ/kích thước của chính phần tử** (`boundingBox()`), không đo `scrollWidth`.
 
+📌 **Đọc kèm:** hai bug này sửa trong `.fc-public`; đợt 25 khối CSS đó đổi tên thành **`.fc-frame`** và chuyển về `globals.css` để màn Ôn tập dùng chung (xem mục ngay dưới). Nội dung luật không đổi, chỉ đổi tên và chỗ ở.
+
+---
+
+### Khung đọc thẻ MỘT MÀN HÌNH cho màn Ôn tập của học viên (user chốt 2026-07-25)
+
+User: *"tôi rất thích giao diện flashcard công khai từ mã QR này, áp dụng giao diện này cho giao diện flashcard trong module ôn tập. Trang flashcard trong module ôn tập hiện tại nó không nằm trong 1 khung hình, phải lướt lên lướt xuống nhiều để tương tác — tôi muốn trong 1 khung hình phải có 3 nút xáo trộn, thứ tự gốc, phát tự động, flashcard, mũi tên trái và phải, nút lật thẻ, nút phát video, 0.5x, 0.75x, 1x."*
+
+Đo trên bản cũ ở 360×800: trang cao **1795px** trong khung nhìn 800px — hơn hai màn hình phải lướt.
+
+⚠️ **Không đặt ID `P17-Tx`:** repo này đang dùng `P17-T1` cho **hai** việc khác nhau (Teacher Workspace Redesign ở §Phase 17, và trang flashcard công khai ở `WORKLOG`). Thêm một cái thứ ba là làm cho ID vô nghĩa, nên ba việc dưới đây mang tiền tố riêng.
+
+| Task | Nội dung | Definition of Done | Trạng thái |
+| --- | --- | --- | --- |
+| REVIEW-FRAME-1 | **Khung ba vùng dùng chung** | Trích hình học của trang QR ra `flashcard-reader-frame.tsx` (`FlashcardReaderFrame` · `FlashcardFrameHeader` · `FlashcardFrameStage` · `FlashcardFrameControls` · `FlashcardTapArea`), **cả hai** trình đọc cùng gọi. Chép JSX sang màn Ôn tập là đúng hình dạng `BUG_M10_01` — mà khối đó vừa tốn một đợt sửa (`min-h-0`, `min-h-full`, safe-area, thanh điều khiển hai hàng). CSS `.fc-public` → **`.fc-frame`** chuyển về `globals.css` (file trong `(public)/` không nạp cho `(dashboard)/`), xoá `public-flashcard.css` | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 25). Trang QR giữ nguyên hành vi: `public-flashcard` E2E vẫn `16/16` mỗi project |
+| REVIEW-FRAME-2 | **Màn Ôn tập vào khung, mặc định TOÀN MÀN HÌNH** | `fixed inset-0` (che chrome ngay từ lần vẽ đầu, không nháy) + `html[data-flashcard-focus]` ẩn `[data-dashboard-chrome]`/`[data-review-chrome]` và khoá cuộn nền — cùng lối `data-exam-active` đã có. ✕ chuyển sang dạng `inline` (**không có trạng thái chết**), ⛶ vào lại. Cờ dọn ở cleanup nên đổi tab/rời trang là chrome trở lại. Giữ NGUYÊN mọi tính năng học viên: ★, mục lục buổi, xáo trộn/thứ tự gốc, phát tự động, hoạt ảnh chuyển trang, `autoPlayToken` | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 25) |
+| REVIEW-FRAME-3 | **Vừa MỘT khung hình ở 360×800** | ★ thu về nút 44px ở đầu khung (giữ `aria-label` cả câu); mục lục buổi chỉ dựng khi có ≥2 buổi; `density="compact"` cho trình phát; hàng nút điều hướng `[◀][Lật thẻ][▶]` sát đáy. E2E đo **trang không cuộn dọc** + **toạ độ 12 nút** nằm trong khung nhìn + ngưỡng touch target theo đúng loại con trỏ | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 25). **Kiểm ngược:** bản cũ đỏ với `scrollHeight = 1795` trong khung nhìn 800px |
+
+⚠️ **Còn nợ (chưa ai yêu cầu, ghi để khỏi quên):** `FlashcardSizer` đo chiều cao bằng mặt CAO HƠN của hai mặt, nên thẻ từ vựng có mặt sau dài làm mặt trước thừa nhiều khoảng trắng và ảnh minh hoạ phải cuộn mới thấy hết. Đây là hành vi có từ Phase 16 (điều kiện của bài "chữ KHÔNG bị cắt"), không phải hồi quy của đợt 25 — trang QR cũng vậy. Sửa đúng phải đo theo từng mặt và cho thẻ đổi chiều cao khi lật; đó là một quyết định thiết kế riêng, cần user chốt.
+
 **Thứ tự bắt buộc:** `T0` → `T1` → `T2` → (`T3` ∥ `T5`) → (`T4` ∥ `T6` ∥ `T7`) → `T8` → `T9` → `T10` → `T11` → `T12`.
 `T3` và `T5` chạy song song được vì một bên soạn, một bên đọc — nhưng **cả hai đều phải đợi `T2`**, nếu không sẽ có hai cách hiểu khác nhau về cùng một bản ghi, đúng mẫu hỏng `UX-UIUX-M25-010`.
 

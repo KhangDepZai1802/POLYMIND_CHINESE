@@ -29,15 +29,27 @@ export default async function StudentReviewPage() {
     : [null, []];
 
   return (
+    /*
+     * `data-review-chrome` là mỏ neo cho chế độ ÔN THẺ TOÀN MÀN HÌNH.
+     *
+     * Khi học viên đang ôn flashcard, `student-flashcard-reader.tsx` đặt
+     * `data-flashcard-focus` lên `<html>` và `globals.css` ẩn hai khối này. Chỉ
+     * phủ đè bằng `fixed` là không đủ: tiêu đề và hai tab vẫn nằm trong thứ tự
+     * Tab và trình đọc màn hình vẫn đọc, tức "toàn màn hình" chỉ đúng với người
+     * sáng mắt. Bấm ✕ trong khung là chúng trở lại ngay.
+     */
     <>
-      <PageHeader
-        title="Ôn tập"
-        description="Ôn từ vựng theo từng buổi và luyện lại các câu bạn từng làm sai."
-      />
+      <div data-review-chrome>
+        <PageHeader
+          title="Ôn tập"
+          description="Ôn từ vựng theo từng buổi và luyện lại các câu bạn từng làm sai."
+        />
+      </div>
       <Tabs defaultValue="flashcards" className="space-y-4">
         <nav
           aria-label="Hình thức ôn tập"
           tabIndex={0}
+          data-review-chrome
           className="border-student-sky-border bg-student-sky-surface focus-visible:ring-ring overflow-x-auto rounded-xl border p-1 focus-visible:ring-2 focus-visible:outline-none"
         >
           <TabsList className="min-w-max bg-transparent p-0">

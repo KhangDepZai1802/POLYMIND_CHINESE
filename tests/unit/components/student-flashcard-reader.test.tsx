@@ -291,6 +291,88 @@ describe("StudentFlashcardReader", () => {
     pause.mockRestore();
   });
 
+  /**
+   * User chốt 2026-07-25: màn Ôn tập dùng đúng giao diện trang QR, tức khung
+   * toàn màn hình. Bài này ghim ba vế của cơ chế đó — vế nào rơi cũng thành lỗi
+   * người dùng thấy được:
+   *   1. mặc định là toàn màn hình, và cờ `data-flashcard-focus` có đặt lên
+   *      `<html>` (thiếu cờ ⇒ header dashboard vẫn nằm trong thứ tự Tab, tức
+   *      "toàn màn hình" chỉ đúng với người sáng mắt);
+   *   2. ✕ đưa về dạng `inline` — KHÔNG dẫn tới trạng thái chết;
+   *   3. rời khung (đổi tab, rời trang) thì cờ được DỌN. Không dọn là học viên
+   *      bấm sang tab "Ôn Tập Câu Sai" và gặp một trang không header, không
+   *      cuộn được.
+   */
+  it("mặc định toàn màn hình, ✕ về dạng inline, và rời khung thì dọn cờ", () => {
+    const { container, unmount } = render(
+      <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
+    );
+    const frame = () => container.querySelector("[data-flashcard-frame]");
+
+    expect(frame()).toHaveAttribute("data-flashcard-frame", "fullscreen");
+    expect(document.documentElement.dataset.flashcardFocus).toBe("true");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Thoát toàn màn hình" }),
+    );
+    expect(frame()).toHaveAttribute("data-flashcard-frame", "inline");
+    expect(document.documentElement.dataset.flashcardFocus).toBeUndefined();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ôn thẻ toàn màn hình" }),
+    );
+    expect(document.documentElement.dataset.flashcardFocus).toBe("true");
+
+    unmount();
+    expect(document.documentElement.dataset.flashcardFocus).toBeUndefined();
+  });
+
+  /**
+   * Danh sách user liệt kê nguyên văn: *"tôi muốn trong 1 khung hình phải có 3
+   * nút xáo trộn, thứ tự gốc, phát tự động, flashcard, mũi tên trái và phải,
+   * nút lật thẻ, nút phát video, 0.5x, 0.75x, 1x"*.
+   *
+   * Ở đây chỉ đo được phần DỰNG RA: mọi nút đó là con của cùng một khung. Phần
+   * HÌNH HỌC — tất cả nằm trong màn 360×800 và trang không cuộn — đo ở
+   * `tests/e2e/flashcard-responsive.spec.ts`, chỗ duy nhất đo được thật.
+   */
+  it("mọi nút user chốt đều nằm TRONG một khung", () => {
+    const { container } = render(
+      <StudentFlashcardReader deck={deck as never} courseName="HSK 1" />,
+    );
+    // Sang thẻ từ vựng: audio và ★ chỉ có ở thẻ từ vựng.
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: /Mặt trước của trang mở đầu/i }),
+      { key: "ArrowRight" },
+    );
+
+    const frame = within(
+      container.querySelector("[data-flashcard-frame]") as HTMLElement,
+    );
+    for (const name of [
+      "Xáo trộn",
+      "Thứ tự gốc",
+      "Phát tự động",
+      "Trang flashcard trước",
+      "Trang flashcard tiếp theo",
+      "Lật thẻ",
+      "Phát audio 你好",
+      "Tốc độ 0.5×",
+      "Tốc độ 0.75×",
+      "Tốc độ 1×",
+      "Đánh dấu khó",
+    ]) {
+      expect(
+        frame.getByRole("button", { name }),
+        `thiếu nút "${name}" trong khung`,
+      ).toBeInTheDocument();
+    }
+    // Và chính mặt thẻ — "flashcard" trong danh sách của user.
+    expect(
+      frame.getByRole("button", { name: /^Mặt trước của 你好/ }),
+    ).toBeInTheDocument();
+  });
+
   it("ký được ảnh của câu ví dụ nằm trong jsonb", () => {
     // Đây là lỗ hổng `DS-049` điểm 1: ảnh câu ví dụ không nằm ở 3 cột cũ nên
     // trước Phase 16 học viên nhận 403. Nay nó đi qua `mediaUrls`.

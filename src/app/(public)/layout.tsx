@@ -1,7 +1,5 @@
 import type { Viewport } from "next";
 
-import "./public-flashcard.css";
-
 /**
  * Vỏ của khu vực CÔNG KHAI — không đăng nhập, không phân quyền.
  *

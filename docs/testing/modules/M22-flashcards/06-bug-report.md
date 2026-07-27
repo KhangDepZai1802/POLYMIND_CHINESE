@@ -114,7 +114,7 @@ ngắn và chế độ nằm ngang. Hai quyết định đúng riêng lẻ, gặ
   chiều cao. Chọn `aspect-ratio` chứ không phải `min-height` cứng vì nó **giữ chỗ
   sẵn theo bề rộng** ⇒ CLS = 0; trần `dvh` là vế chống vỡ máy màn ngắn và nằm
   ngang (667×375: thẻ rộng 576px mà trần chỉ 206px nên vẫn nằm trọn trong màn).
-  Kèm `object-contain` **chỉ trong `.fc-public`** để không cắt chữ trên trang dạy
+  Kèm `object-contain` **chỉ trong `.fc-frame`** để không cắt chữ trên trang dạy
   học — phần dư là nền trắng của thẻ nên nhìn ra thành khoảng đệm.
 - ⚠️ Tỉ lệ `4/5` là **phỏng đoán**: kích thước thật của ảnh trang mở đầu không
   biết được lúc build. Ảnh lệch tỉ lệ sẽ có dải nền trắng ở hai đầu — không cắt
@@ -131,3 +131,5 @@ nên không thể thấy ảnh đang nằm trong một cái hộp 0px.
 **Đo bố cục phải đo toạ độ/kích thước của chính phần tử** (`boundingBox()`), chứ
 không đo `scrollWidth` của tài liệu. Hai bài mới đã bổ sung đúng hai phép đo đó,
 và kiểm ngược cho ra đúng hai con số user nhìn thấy: `488.1875` và `2`.
+
+> 📌 **Ghi chú tên lớp CSS (đợt 25):** hai bug trên sửa trong khối `.fc-public` của `src/app/(public)/public-flashcard.css`. Đợt 25 khối đó đổi tên thành **`.fc-frame`** và chuyển về `src/app/globals.css` để màn Ôn tập của học viên dùng chung khung đọc thẻ. Luật không đổi, chỉ đổi tên và chỗ ở — văn bản trên đã cập nhật theo tên mới.

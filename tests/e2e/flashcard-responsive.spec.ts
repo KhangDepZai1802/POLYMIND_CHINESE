@@ -290,6 +290,97 @@ test.describe("Flashcard — học viên", () => {
     );
   });
 
+  /**
+   * 🔴 MỘT KHUNG HÌNH — yêu cầu user chốt 2026-07-25.
+   *
+   * Lời than gốc: *"trang flashcard trong module ôn tập hiện tại nó không nằm
+   * trong 1 khung hình, phải lướt lên lướt xuống nhiều để tương tác"*, kèm danh
+   * sách nguyên văn những thứ phải cùng nằm trong khung.
+   *
+   * Bài này đo hai vế mà bài "không tràn ngang" ở trên KHÔNG đo được:
+   *   1. trang **không cuộn dọc** — đúng thứ user phải làm suốt;
+   *   2. **toạ độ từng nút** nằm trong khung nhìn. Đo `scrollHeight` một mình là
+   *      không đủ (bài học `BUG-P17-002`: `overflow-hidden` cắt phần tràn nên
+   *      mọi số đo cấp tài liệu vẫn đẹp trong khi nút đã mất).
+   */
+  test("một khung hình 360×800: mọi nút user chốt đều thấy được, không phải lướt", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await loginStudent(page);
+    await openStudentFlashcards(page);
+    // Thẻ từ vựng: đây mới là thẻ có audio và có ★.
+    await goToFirstVocabulary(page);
+
+    const scroll = await page.evaluate(() => ({
+      scrollHeight: document.documentElement.scrollHeight,
+      clientHeight: document.documentElement.clientHeight,
+    }));
+    expect(
+      scroll.scrollHeight,
+      "trang vẫn cuộn dọc — học viên vẫn phải lướt để bấm nút",
+    ).toBeLessThanOrEqual(scroll.clientHeight + 1);
+
+    /*
+     * Ngưỡng touch target theo ĐÚNG loại con trỏ.
+     *
+     * `globals.css` ép `min-height: 44px` trong `@media (pointer: coarse)`; các
+     * `size` của `Button` là chiều cao cho CHUỘT (40px cho `default`). Nên project
+     * `mobile` (Pixel 7) phải đo 44px, còn `chromium` desktop đo 40px — ghim 44
+     * cho cả hai là ghim một điều thiết kế cố ý không hứa, và sẽ đỏ vì lý do sai.
+     */
+    const minTarget = (await page.evaluate(
+      () => window.matchMedia("(pointer: coarse)").matches,
+    ))
+      ? 44
+      : 40;
+
+    // Đúng danh sách user liệt kê, cộng nút thoát toàn màn hình.
+    for (const name of [
+      "Xáo trộn",
+      "Thứ tự gốc",
+      "Phát tự động",
+      "Trang flashcard trước",
+      "Trang flashcard tiếp theo",
+      "Lật thẻ",
+      "Phát audio 银行",
+      "Tốc độ 0.5×",
+      "Tốc độ 0.75×",
+      "Tốc độ 1×",
+      "Đánh dấu khó",
+      "Thoát toàn màn hình",
+    ]) {
+      const box = await page.getByRole("button", { name }).boundingBox();
+      expect(box, `mất nút "${name}" trong khung 360×800`).not.toBeNull();
+      expect(box!.y, `nút "${name}" tràn lên trên mép khung`).toBeGreaterThanOrEqual(
+        -1,
+      );
+      expect(
+        box!.y + box!.height,
+        `nút "${name}" nằm dưới mép khung — phải lướt mới thấy`,
+      ).toBeLessThanOrEqual(801);
+      expect(box!.x, `nút "${name}" tràn mép trái`).toBeGreaterThanOrEqual(-1);
+      expect(
+        box!.x + box!.width,
+        `nút "${name}" bị cắt ở mép phải`,
+      ).toBeLessThanOrEqual(361);
+      expect(
+        Math.min(box!.width, box!.height),
+        `nút "${name}" nhỏ hơn ${minTarget}px`,
+      ).toBeGreaterThanOrEqual(minTarget);
+    }
+
+    // Thoát toàn màn hình phải trả lại vỏ dashboard — không có trạng thái chết.
+    await page.getByRole("button", { name: "Thoát toàn màn hình" }).click();
+    await expect(page.getByRole("heading", { name: "Ôn tập" })).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: /Ôn Tập Câu Sai/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Ôn thẻ toàn màn hình" }),
+    ).toBeVisible();
+  });
+
   test("xáo trộn giữ trong phiên; đăng xuất rồi vào lại thì về thứ tự gốc", async ({
     page,
     browser,
