@@ -1,6 +1,10 @@
 import Image from "next/image";
 
 import { FitText } from "@/features/flashcards/components/fit-text";
+import {
+  flashcardFrontInitialScale,
+  isSentenceLikeFlashcardFront,
+} from "@/features/flashcards/domain/front-typography";
 import { joinPinyin } from "@/features/flashcards/domain/pinyin";
 import { readFlashcardSublists } from "@/features/flashcards/domain/sublists";
 
@@ -188,35 +192,69 @@ function FlashcardImageFace({
  *
  * ⚠️ `§7ter` (pinyin căn trên từng chữ Hán) vì thế **hết hiệu lực** — xem
  * `docs/10-yeu-cau-flashcard-quizlet.md`. Mặt SAU không đổi: vẫn pinyin viết liền.
+ *
+ * 5. **Cỡ chữ thích nghi theo loại nội dung** (`REVIEW-FRAME-8`, 2026-07-27):
+ *    từ/cụm từ nhận đúng +5px so với thang ở mục 2; câu bắt đầu ở tỉ lệ nhỏ hơn
+ *    theo tải của cả ba dòng rồi được `FitText` đo layout thật để co thêm nếu
+ *    cần. Ba dòng luôn co CÙNG tỷ lệ nên thứ bậc không bị đảo.
  */
 function VocabularyFront({ page }: { page: FlashcardFaceData }) {
   const imageUrl = page.frontUrl;
+  const hanzi = page.hanzi ?? "";
+  const pinyin = page.pinyin_syllables ?? "";
+  const meaningVi = page.meaning_vi ?? "";
+  const isSentence = isSentenceLikeFlashcardFront(hanzi);
+  const initialScale = flashcardFrontInitialScale({
+    hanzi,
+    pinyin,
+    meaningVi,
+  });
 
   return (
     <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col items-center gap-2 p-4 text-center sm:gap-3 sm:p-6">
-      {/* 1 — Hán tự. `mt-auto` gom toàn bộ khoảng dư lên trên để khối chữ tiến
-          gần tâm thẻ nhưng vẫn nằm sát ảnh. Inline `fontSize` là có chủ ý:
-          `.font-hanzi` là CSS không thuộc cascade layer nên thắng utility
-          Tailwind cùng specificity; nếu dùng class `text-[…]`, biến `--fc-hanzi`
-          không có hiệu lực và cỡ thật luôn mắc ở 1.08em. */}
-      <p
-        {...HANZI_ATTRS}
-        className="font-hanzi mt-auto leading-none font-bold break-words"
-        style={{ fontSize: "var(--fc-hanzi)" }}
+      <div
+        data-fc-front-copy
+        data-fc-front-copy-kind={isSentence ? "sentence" : "term"}
+        className={
+          isSentence
+            ? `${
+                imageUrl ? "mt-auto" : "my-auto"
+              } h-[42%] min-h-36 w-full max-w-full shrink-0`
+            : `${
+                imageUrl ? "mt-auto" : "my-auto"
+              } flex w-full flex-col gap-2 sm:gap-3`
+        }
       >
-        {page.hanzi}
-      </p>
-
-      {/* 2 — Pinyin, dòng TO NHẤT. Giữ dạng tách âm tiết vì đó là cách viết
-          pinyin đúng; chỉ khác là nó không còn bị chẻ theo từng chữ Hán. */}
-      <p className="text-text-secondary text-[length:var(--fc-pinyin)] leading-tight font-semibold break-words">
-        {page.pinyin_syllables}
-      </p>
-
-      {/* 3 — Nghĩa tiếng Việt, cam thương hiệu (giữ nguyên từ `§7ter`). */}
-      <p className="text-student-amber-ink text-[length:var(--fc-meaning)] leading-tight font-semibold break-words">
-        {page.meaning_vi}
-      </p>
+        {isSentence ? (
+          /*
+           * Vùng cao hữu hạn là điều kiện để `FitText` đo được overflow thật.
+           * `justify-end` dồn phần chữ xuống đáy vùng nên nghĩa vẫn sát ảnh; chỗ
+           * trống (nếu còn) nằm trên chữ, không chen giữa chữ và ảnh.
+           */
+          <FitText
+            key={`${hanzi}-${pinyin}-${meaningVi}`}
+            initialScale={initialScale}
+            minScale={0.5}
+            overflow="hidden"
+            className={`flex w-full flex-col ${
+              imageUrl ? "justify-end" : "justify-center"
+            } gap-[0.5em]`}
+          >
+            <VocabularyFrontCopy
+              hanzi={hanzi}
+              pinyin={pinyin}
+              meaningVi={meaningVi}
+              fitted
+            />
+          </FitText>
+        ) : (
+          <VocabularyFrontCopy
+            hanzi={hanzi}
+            pinyin={pinyin}
+            meaningVi={meaningVi}
+          />
+        )}
+      </div>
 
       {imageUrl && (
         /*
@@ -236,6 +274,51 @@ function VocabularyFront({ page }: { page: FlashcardFaceData }) {
         </div>
       )}
     </div>
+  );
+}
+
+function VocabularyFrontCopy({
+  hanzi,
+  pinyin,
+  meaningVi,
+  fitted = false,
+}: {
+  hanzi: string;
+  pinyin: string;
+  meaningVi: string;
+  fitted?: boolean;
+}) {
+  const suffix = fitted ? "-fit" : "";
+
+  return (
+    <>
+      {/* Inline `fontSize` là có chủ ý: `.font-hanzi` không thuộc cascade layer
+          nên thắng utility Tailwind cùng specificity. */}
+      <p
+        {...HANZI_ATTRS}
+        data-fc-front-line="hanzi"
+        className="font-hanzi leading-none font-bold break-words"
+        style={{ fontSize: `var(--fc-hanzi${suffix})` }}
+      >
+        {hanzi}
+      </p>
+
+      <p
+        data-fc-front-line="pinyin"
+        className="text-text-secondary leading-tight font-semibold break-words"
+        style={{ fontSize: `var(--fc-pinyin${suffix})` }}
+      >
+        {pinyin}
+      </p>
+
+      <p
+        data-fc-front-line="meaning"
+        className="text-student-amber-ink leading-tight font-semibold break-words"
+        style={{ fontSize: `var(--fc-meaning${suffix})` }}
+      >
+        {meaningVi}
+      </p>
+    </>
   );
 }
 

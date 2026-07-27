@@ -25,14 +25,15 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  */
 
 /**
- * Sàn cỡ chữ. `0.78 × 14px ≈ 11px` cho dòng nhỏ nhất của mặt sau.
+ * Sàn mặc định. `0.78 × 14px ≈ 11px` cho dòng nhỏ nhất của mặt sau.
  *
  * Có sàn vì "thu cho vừa" không có sàn sẽ tự trôi tới cỡ chữ không đọc nổi trên
  * đúng những thẻ nhiều nội dung nhất — mà thẻ nhiều nội dung mới là thẻ cần đọc.
  * Chạm sàn mà vẫn dài thì phần dư CUỘN trong lòng thẻ: chữ nhỏ còn đọc được,
- * chữ mất thì không.
+ * chữ mất thì không. Mặt trước truyền sàn thấp hơn + `overflow="hidden"` vì nó
+ * có E2E ghim `scrollHeight <= clientHeight` và yêu cầu cứng không được cuộn.
  */
-const MIN_SCALE = 0.78;
+const DEFAULT_MIN_SCALE = 0.78;
 
 /** Dưới ngưỡng này coi như đã vừa — tránh co thêm vì lẻ sub-pixel. */
 const FIT_TOLERANCE_PX = 2;
@@ -49,12 +50,23 @@ const MAX_STEPS = 8;
 export function FitText({
   className = "",
   children,
+  initialScale = 1,
+  minScale = DEFAULT_MIN_SCALE,
+  overflow = "auto",
 }: {
   className?: string;
   children: ReactNode;
+  initialScale?: number;
+  minScale?: number;
+  overflow?: "auto" | "hidden";
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const boundedMinScale = Math.max(0.1, Math.min(1, minScale));
+  const boundedInitialScale = Math.max(
+    boundedMinScale,
+    Math.min(1, initialScale),
+  );
+  const [scale, setScale] = useState(boundedInitialScale);
   const stepsRef = useRef(0);
 
   useEffect(() => {
@@ -71,12 +83,12 @@ export function FitText({
       if (stepsRef.current >= MAX_STEPS) return;
 
       setScale((current) => {
-        if (current <= MIN_SCALE) return current;
+        if (current <= boundedMinScale) return current;
         stepsRef.current += 1;
         // Nhân theo tỉ lệ thiếu, nhưng mỗi bước không co quá 12% để một bước
         // không nhảy quá xa rồi thu nhỏ hơn mức cần.
         const wanted = current * Math.max(0.88, available / natural);
-        return Math.max(MIN_SCALE, wanted);
+        return Math.max(boundedMinScale, wanted);
       });
     }
 
@@ -87,18 +99,22 @@ export function FitText({
     const observer = new ResizeObserver(fit);
     observer.observe(box);
     return () => observer.disconnect();
-  }, [scale]);
+  }, [boundedMinScale, scale]);
 
   return (
     <div
       ref={boxRef}
       data-fit-scale={scale.toFixed(3)}
+      data-fit-initial-scale={boundedInitialScale.toFixed(3)}
+      data-fit-min-scale={boundedMinScale.toFixed(3)}
       style={{ fontSize: `${scale}rem` }}
       /*
        * `overflow-y-auto` là LƯỚI AN TOÀN cho ca chạm sàn, không phải cách xem
        * mặc định: khi vừa (gần như luôn) thì không có gì để cuộn.
        */
-      className={`h-full overflow-y-auto overscroll-contain ${className}`}
+      className={`h-full ${
+        overflow === "auto" ? "overflow-y-auto" : "overflow-y-hidden"
+      } overscroll-contain ${className}`}
     >
       {children}
     </div>

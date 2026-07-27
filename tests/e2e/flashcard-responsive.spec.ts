@@ -17,7 +17,10 @@ import { expect, test, type Page } from "@playwright/test";
 const DB = "supabase_db_Polymind_Chinese";
 
 /** Bộ thẻ mẫu do `seed.dev.sql` dựng — không phải fixture của riêng file này. */
+const SECTION_1 = "a1100000-0000-4000-8000-000000000001";
 const SECTION_2 = "a1100000-0000-4000-8000-000000000002";
+const ADAPTIVE_SENTENCE_PAGE = "a1900000-0000-4000-8000-000000000001";
+const ADAPTIVE_SENTENCE_HANZI = "您好！欢迎光临越南外贸银行！";
 
 const viewports = [
   { name: "mobile-360", width: 360, height: 800 },
@@ -76,6 +79,45 @@ function purgeTestPages(hanziList: string[]) {
     set session_replication_role = replica;
     delete from public.flashcard_pages
     where section_id = '${SECTION_2}' and hanzi in (${values});
+    set session_replication_role = origin;
+  `);
+}
+
+function purgeAdaptiveSentencePage() {
+  sql(`
+    set session_replication_role = replica;
+    delete from public.flashcard_pages where id = '${ADAPTIVE_SENTENCE_PAGE}';
+    set session_replication_role = origin;
+  `);
+}
+
+/**
+ * Cắm đúng câu dài user gửi vào cuối Buổi 1 để đo qua đường học viên thật.
+ * Fixture không mượn đường dẫn media vì DB cưỡng chế mỗi path thuộc đúng một
+ * thẻ; bài khoảng cách chữ–ảnh đã có fixture ảnh riêng ngay phía trên.
+ */
+function createAdaptiveSentencePage() {
+  purgeAdaptiveSentencePage();
+  sql(`
+    set session_replication_role = replica;
+    insert into public.flashcard_pages (
+      id, section_id, kind, order_index,
+      hanzi, pinyin_syllables, meaning_vi,
+      example_sentences, common_phrases,
+      front_image_path, back_image_path, audio_path, front_alt, back_alt,
+      created_by
+    )
+    select
+      '${ADAPTIVE_SENTENCE_PAGE}', '${SECTION_1}', 'vocabulary', 99,
+      '${ADAPTIVE_SENTENCE_HANZI}',
+      'nín hǎo huān yíng guāng lín Yuè nán Wài mào Yín háng',
+      'Xin chào! Chào mừng quý khách đến với Vietcombank!',
+      '[]'::jsonb, '[]'::jsonb,
+      null, null, null,
+      null, null,
+      created_by
+    from public.flashcard_pages
+    where id = 'a1200000-0000-4000-8000-000000000002';
     set session_replication_role = origin;
   `);
 }
@@ -214,6 +256,10 @@ async function horizontalOverflow(page: Page) {
     return Math.max(0, doc.scrollWidth - doc.clientWidth);
   });
 }
+
+test.beforeAll(() => {
+  purgeAdaptiveSentencePage();
+});
 
 test.describe("Flashcard — học viên", () => {
   for (const viewport of viewports) {
@@ -479,9 +525,14 @@ test.describe("Flashcard — học viên", () => {
       meaningSize,
     );
     expect(meaningSize, "nghĩa phải to hơn Hán tự").toBeGreaterThan(hanziSize);
-    // User muốn giữ cỡ Hán tự đang thấy trước thay đổi này (~17.28px).
-    expect(hanziSize, "Hán tự bị thu nhỏ quá mức").toBeGreaterThanOrEqual(17);
-    expect(hanziSize, "Hán tự bị phóng lớn khỏi cỡ cũ").toBeLessThanOrEqual(20);
+    // REVIEW-FRAME-8: từ/cụm tăng đúng 5px từ mốc 18px lên 23px.
+    await expect(front.locator('[data-fc-front-copy-kind="term"]')).toHaveCount(
+      1,
+    );
+    expect(hanziSize, "Hán tự từ/cụm chưa được cộng đủ 5px").toBeGreaterThanOrEqual(
+      22,
+    );
+    expect(hanziSize, "Hán tự từ/cụm bị cộng quá 5px").toBeLessThanOrEqual(25);
 
     // (4) Ba dòng chữ NGAY TRÊN ảnh — không còn khoảng hở lớn.
     const imageBox = (await front.locator("img").first().boundingBox())!;
@@ -508,6 +559,106 @@ test.describe("Flashcard — học viên", () => {
       Math.abs(textCenter - cardCenter),
       "tâm của ba dòng chữ còn quá xa tâm thẻ",
     ).toBeLessThanOrEqual(cardBox.height * 0.18);
+  });
+
+  test("mặt trước tự phóng từ/cụm +5px và co câu dài trên mobile", async ({
+    page,
+  }) => {
+    createAdaptiveSentencePage();
+    try {
+      await page.setViewportSize({ width: 360, height: 800 });
+      await loginStudent(page);
+      await serveFakeImages(page);
+      await openStudentFlashcards(page);
+      await goToFirstVocabulary(page);
+
+      const visibleFront = () =>
+        page.locator(
+          '[data-transition-layer="incoming"] [data-face-side="front"]',
+        );
+      const fontSize = (line: "hanzi" | "pinyin" | "meaning") =>
+        visibleFront()
+          .locator(`[data-fc-front-line="${line}"]`)
+          .evaluate((element) =>
+            Number.parseFloat(window.getComputedStyle(element).fontSize),
+          );
+
+      const shortSizes = await Promise.all([
+        fontSize("hanzi"),
+        fontSize("pinyin"),
+        fontSize("meaning"),
+      ]);
+      expect(shortSizes[0]).toBeGreaterThanOrEqual(22);
+      await expect(
+        visibleFront().locator('[data-fc-front-copy-kind="term"]'),
+      ).toHaveCount(1);
+
+      // Trang 2 là 银行; câu fixture nằm cuối Buổi 1 ở trang 5.
+      for (let pageNumber = 3; pageNumber <= 5; pageNumber += 1) {
+        await page
+          .getByRole("button", { name: "Trang flashcard tiếp theo" })
+          .click();
+        await expect(page.getByText(new RegExp(`Trang ${pageNumber}/5`))).toBeVisible();
+        await expect(page.locator("[data-page-transition]")).toHaveCount(0);
+      }
+
+      const sentenceFront = visibleFront();
+      await expect(
+        sentenceFront.getByText(ADAPTIVE_SENTENCE_HANZI, { exact: true }),
+      ).toBeVisible();
+      const sentenceCopy = sentenceFront.locator(
+        '[data-fc-front-copy-kind="sentence"]',
+      );
+      await expect(sentenceCopy).toHaveCount(1);
+
+      const fitBox = sentenceCopy.locator("[data-fit-scale]");
+      await expect
+        .poll(async () => Number(await fitBox.getAttribute("data-fit-scale")))
+        .toBeLessThan(1);
+
+      const sentenceSizes = await Promise.all([
+        fontSize("hanzi"),
+        fontSize("pinyin"),
+        fontSize("meaning"),
+      ]);
+      expect(sentenceSizes[0]).toBeLessThan(shortSizes[0]);
+      expect(sentenceSizes[1]).toBeLessThan(shortSizes[1]);
+      expect(sentenceSizes[2]).toBeLessThan(shortSizes[2]);
+      expect(sentenceSizes[1]).toBeGreaterThan(sentenceSizes[2]);
+      expect(sentenceSizes[2]).toBeGreaterThan(sentenceSizes[0]);
+
+      const overflow = await fitBox.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+      }));
+      expect(
+        overflow.scrollHeight,
+        "câu dài bị cắt hoặc cần cuộn trong mặt trước",
+      ).toBeLessThanOrEqual(overflow.clientHeight + 2);
+
+      const sentenceHanziBox = (await sentenceFront
+        .locator('[data-fc-front-line="hanzi"]')
+        .boundingBox())!;
+      const sentenceMeaningBox = (await sentenceFront
+        .locator('[data-fc-front-line="meaning"]')
+        .boundingBox())!;
+      const sentenceCardBox = (await sentenceFront.boundingBox())!;
+      const sentenceTextCenter =
+        (sentenceHanziBox.y +
+          sentenceMeaningBox.y +
+          sentenceMeaningBox.height) /
+        2;
+      expect(
+        Math.abs(
+          sentenceTextCenter -
+            (sentenceCardBox.y + sentenceCardBox.height / 2),
+        ),
+        "câu không ảnh phải nằm gần tâm thẻ",
+      ).toBeLessThanOrEqual(sentenceCardBox.height * 0.12);
+      expect(await horizontalOverflow(page)).toBe(0);
+    } finally {
+      purgeAdaptiveSentencePage();
+    }
   });
 
   test("★ đánh dấu thẻ khó ghi xuống DB và đọc lại được sau khi tải lại", async ({
@@ -775,7 +926,7 @@ test.describe("Flashcard — quản trị", () => {
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
       "base64",
     );
-    const mp3 = Buffer.from("ID3      ghi-am-gia");
+    const mp3 = Buffer.concat([Buffer.from("ID3"), Buffer.from([3, 0, 0, 0, 0, 0, 0]), Buffer.from("ghi-am-gia")]);
 
     await loginAdminAllowingUploads(page);
     await openAdminDeck(page);
@@ -876,6 +1027,7 @@ test.describe("Flashcard — quản trị", () => {
 
 test.afterAll(() => {
   // Bộ thẻ mẫu của seed phải nguyên vẹn cho lượt chạy sau — chỉ dọn thẻ test.
+  purgeAdaptiveSentencePage();
   purgeTestPages(["测试", "新词", "汇率"]);
   sql(`delete from public.flashcard_starred_pages;`);
 });

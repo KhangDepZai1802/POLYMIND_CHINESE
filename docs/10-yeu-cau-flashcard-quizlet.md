@@ -247,6 +247,23 @@ Thẻ mẫu: từ `胡萝卜` (củ cà rốt).
 > chữ bị đẩy lên trên và cách ảnh một khoảng rất lớn. Áp dụng bằng đúng một
 > `FlashcardFaceContent` cho cả trang QR và module Ôn tập.
 
+> ⚠️ **Sửa tiếp 2026-07-27 (`REVIEW-FRAME-8`) — cỡ chữ thích nghi theo nội
+> dung.** Đã đối chiếu toàn bộ file 35 buổi user cung cấp: **564 thẻ = 559
+> từ/cụm + 5 câu**; từ/cụm dài nhất có 9 ký tự Hán, câu dài nhất có 16 ký tự
+> Hán / 54 ký tự pinyin / 63 ký tự tiếng Việt. Quy tắc:
+>
+> - **Từ/cụm từ:** cả ba dòng tăng đúng **5px so với thang trước đó**, vẫn giữ
+>   pinyin > nghĩa > Hán tự.
+> - **Câu:** nhận diện bằng dấu kết câu (`。！？!?；;`, dấu lửng) hoặc từ 10 ký
+>   tự Hán trở lên; co cả ba dòng **cùng một tỷ lệ** theo tải lớn nhất của ba
+>   ngôn ngữ, sau đó đo layout thật bằng `FitText` và co thêm nếu viewport hẹp.
+> - Không cắt chữ, không tràn ngang, không tạo cuộn ở mặt trước. Có ảnh thì chữ
+>   vẫn sát ngay phía trên ảnh; không có ảnh thì cụm chữ nằm giữa thẻ.
+>
+> Không dùng bảng ngưỡng cỡ chữ rời rạc theo số ký tự: cùng số ký tự nhưng pinyin
+> và tiếng Việt có độ rộng glyph/ngắt dòng khác nhau. Component dùng chung nên
+> trang QR, module Ôn tập và preview Admin luôn nhận cùng một hành vi.
+
 ### Mặt sau — 5 khối, mỗi khối một màu viền
 
 | # | Khối | Trong ảnh | Cấu trúc dữ liệu |

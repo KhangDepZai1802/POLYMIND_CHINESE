@@ -345,38 +345,43 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
  * tràn, máy lớn phí chỗ. Khung đọc thẻ thay bằng `clamp()` chạy liên tục theo
  * bề rộng.
  *
- * ⚠️ Ba biến ở `:root` giờ chỉ còn phục vụ **ô xem trước của màn Quản trị**
+ * ⚠️ Các biến ở `:root` giờ chỉ còn phục vụ **ô xem trước của màn Quản trị**
  * (`FlashcardFaceCard`) — nơi thẻ nằm trong một ô cố định chứ không trong khung
  * đọc. Đừng gỡ: gỡ là ô xem trước sụp về 0px, đúng hình dạng `BUG-P17-003`.
  * ------------------------------------------------------------------------- */
 :root {
   /* -------------------------------------------------------------------------
-   * THANG CHỮ MẶT TRƯỚC — thứ tự do user chốt 2026-07-25:
-   *   1. Hán tự  (giữ nguyên cỡ cũ)
+   * THANG CHỮ MẶT TRƯỚC — thứ tự do user chốt:
+   *   1. Hán tự
    *   2. Pinyin  ← TO NHẤT: *"pinyin là thứ học sinh đọc theo để phát âm"*
    *   3. Nghĩa tiếng Việt (to hơn Hán tự, nhỏ hơn pinyin)
    *
-   * Ba cỡ đi theo một thang gần mô-đun (18 → 22 → 26px), thay vì ba số lẻ chọn
-   * tay — `font-scale` của skill `ui-ux-pro-max`. Neo là Hán tự ở đúng cỡ nhìn
-   * thấy trước thay đổi này (~17.28px, làm tròn lên 18px); hai cỡ kia dẫn xuất
-   * lên từ đó.
+   * `REVIEW-FRAME-8` (2026-07-27): sếp user chốt từ/cụm phải tăng ĐÚNG 5px so
+   * với thang 18 → 22 → 26px trước đó, thành 23 → 27 → 31px. Bộ `*-fit` dùng
+   * cùng cỡ gốc nhưng khai bằng `em` để `FitText` co đồng tỷ lệ cho câu dài.
    *
    * ⚠️ Chữ Latin cùng `font-size` LUÔN trông nhỏ hơn chữ Hán, vì glyph CJK lấp
    * gần kín ô em còn Latin chừa chỗ cho phần trên/dưới dòng (và `.font-hanzi`
    * còn cộng `1.08em`). Nên "to hơn Hán tự" phải hiểu theo con số: pinyin và
    * nghĩa lớn hơn Hán tự một bậc thì mới THẤY là lớn hơn.
    * --------------------------------------------------------------------- */
-  --fc-hanzi: 1.125rem;
-  --fc-pinyin: 1.625rem;
-  --fc-meaning: 1.375rem;
+  --fc-hanzi: 1.4375rem;
+  --fc-pinyin: 1.9375rem;
+  --fc-meaning: 1.6875rem;
+  --fc-hanzi-fit: 1.4375em;
+  --fc-pinyin-fit: 1.9375em;
+  --fc-meaning-fit: 1.6875em;
   --fc-face-min-h: 360px;
 }
 
 @media (min-width: 40rem) {
   :root {
-    --fc-hanzi: 1.5rem;
-    --fc-pinyin: 2.25rem;
-    --fc-meaning: 1.75rem;
+    --fc-hanzi: 1.8125rem;
+    --fc-pinyin: 2.5625rem;
+    --fc-meaning: 2.0625rem;
+    --fc-hanzi-fit: 1.8125em;
+    --fc-pinyin-fit: 2.5625em;
+    --fc-meaning-fit: 2.0625em;
     --fc-face-min-h: 560px;
   }
 }
@@ -401,19 +406,22 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
    *
    * Bản dùng chung nhảy bậc tại mốc `sm` = 640px. Mà MỌI điện thoại đều dưới
    * 640px, nên máy 320px và máy 430px từng nhận **đúng một cỡ chữ**.
-   * `clamp()` nay chạy liên tục theo bề rộng, nhưng vẫn giữ Hán tự gần cỡ cũ:
+   * `clamp()` chạy liên tục theo bề rộng; `REVIEW-FRAME-8` cộng đúng 5px:
    *
    *              320px   360px   390px   430px   trần
-   *   Hán tự       18      18     18      19      24px
-   *   Nghĩa        22      22     22      24      28px
-   *   Pinyin       26      26     27      30      36px
+   *   Hán tự       23      23     23      24      29px
+   *   Nghĩa        27      27     27      29      33px
+   *   Pinyin       31      31     32      35      41px
    *
-   * Trần thấp để tablet/desktop không biến ba dòng chữ thành khổng lồ; thẻ này
-   * ưu tiên ảnh minh hoạ và phải luôn vừa một màn hình.
+   * Các biến `*-fit` là cùng điểm xuất phát ở mobile nhưng bằng `em`, để câu dài
+   * được `FitText` co cả ba dòng cùng một tỷ lệ.
    * --------------------------------------------------------------------- */
-  --fc-hanzi: clamp(1.125rem, 4.5vw, 1.5rem);
-  --fc-pinyin: clamp(1.625rem, 7vw, 2.25rem);
-  --fc-meaning: clamp(1.375rem, 5.5vw, 1.75rem);
+  --fc-hanzi: calc(clamp(1.125rem, 4.5vw, 1.5rem) + 0.3125rem);
+  --fc-pinyin: calc(clamp(1.625rem, 7vw, 2.25rem) + 0.3125rem);
+  --fc-meaning: calc(clamp(1.375rem, 5.5vw, 1.75rem) + 0.3125rem);
+  --fc-hanzi-fit: 1.4375em;
+  --fc-pinyin-fit: 1.9375em;
+  --fc-meaning-fit: 1.6875em;
 
   /* Thẻ cao tự nhiên theo nội dung, KHÔNG có sàn cứng 360px: sàn cứng chính là
    * thứ làm vỡ máy màn ngắn và chế độ nằm ngang. Vùng thẻ đã cuộn nội bộ nên
@@ -422,6 +430,14 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
 
   /* Không cho kéo-để-làm-mới kích hoạt khi vuốt hết thẻ. */
   overscroll-behavior: contain;
+}
+
+@media (min-width: 40rem) {
+  .fc-frame {
+    --fc-hanzi-fit: 1.8125em;
+    --fc-pinyin-fit: 2.5625em;
+    --fc-meaning-fit: 2.0625em;
+  }
 }
 
 /* Bỏ độ trễ 300ms của trình duyệt di động trên mọi thứ bấm được. */
@@ -441,9 +457,12 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
  * ------------------------------------------------------------------------- */
 @media (orientation: landscape) and (max-height: 480px) {
   .fc-frame {
-    --fc-hanzi: 1.125rem;
-    --fc-pinyin: clamp(1.5rem, 7vh, 2rem);
-    --fc-meaning: clamp(1.25rem, 6vh, 1.625rem);
+    --fc-hanzi: 1.4375rem;
+    --fc-pinyin: calc(clamp(1.5rem, 7vh, 2rem) + 0.3125rem);
+    --fc-meaning: calc(clamp(1.25rem, 6vh, 1.625rem) + 0.3125rem);
+    --fc-hanzi-fit: 1.4375em;
+    --fc-pinyin-fit: 1.9375em;
+    --fc-meaning-fit: 1.6875em;
   }
 }
 

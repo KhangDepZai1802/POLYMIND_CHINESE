@@ -108,6 +108,13 @@ function createRevokeFixture() {
        'vocabulary', 1, '存款', 'cún kuǎn', 'Tiền gửi',
        null, null,
        '${OWNER}/e5200000-0000-4000-8000-000000000002/audio-e5300000-0000-4000-8000-000000000003.mp3',
+       null, null),
+      ('e5200000-0000-4000-8000-000000000003', '${REVOKE_SECTION}',
+       'vocabulary', 2, '您好！欢迎光临越南外贸银行！',
+       'nín hǎo huān yíng guāng lín Yuè nán Wài mào Yín háng',
+       'Xin chào! Chào mừng quý khách đến với Vietcombank!',
+       null, null,
+       '${OWNER}/e5200000-0000-4000-8000-000000000003/audio-e5300000-0000-4000-8000-000000000004.mp3',
        null, null);
 
     update public.flashcard_sections
@@ -282,6 +289,81 @@ test.describe("trang flashcard công khai", () => {
     await expect(
       page.getByRole("heading", { name: "Liên kết không còn hiệu lực" }),
     ).toBeVisible();
+    await close();
+  });
+
+  test("link QR phóng từ/cụm +5px và co câu dài trên desktop", async ({
+    browser,
+  }) => {
+    const { page, close } = await anonymousPage(browser, {
+      width: 1024,
+      height: 900,
+    });
+    await page.goto(`/t/${REVOKE_TOKEN}`);
+
+    // Trang 1 là bìa, trang 2 là từ ngắn 存款.
+    await page.getByRole("button", { name: "Thẻ tiếp theo" }).click();
+    const front = faceSide(page, "front");
+    await expect(front.getByText("存款", { exact: true })).toBeVisible();
+
+    const fontSize = (line: "hanzi" | "pinyin" | "meaning") =>
+      front
+        .locator(`[data-fc-front-line="${line}"]`)
+        .evaluate((element) =>
+          Number.parseFloat(window.getComputedStyle(element).fontSize),
+        );
+    const shortSizes = await Promise.all([
+      fontSize("hanzi"),
+      fontSize("pinyin"),
+      fontSize("meaning"),
+    ]);
+    await expect(front.locator('[data-fc-front-copy-kind="term"]')).toHaveCount(
+      1,
+    );
+    // Desktop cũ là 24px; yêu cầu mới cộng đúng 5px.
+    expect(shortSizes[0]).toBeGreaterThanOrEqual(28);
+    expect(shortSizes[0]).toBeLessThanOrEqual(30);
+
+    // Trang 3 là đúng câu dài user gửi.
+    await page.getByRole("button", { name: "Thẻ tiếp theo" }).click();
+    await expect(
+      front.getByText("您好！欢迎光临越南外贸银行！", { exact: true }),
+    ).toBeVisible();
+
+    const sentenceCopy = front.locator(
+      '[data-fc-front-copy-kind="sentence"]',
+    );
+    const fitBox = sentenceCopy.locator("[data-fit-scale]");
+    await expect
+      .poll(async () => Number(await fitBox.getAttribute("data-fit-scale")))
+      .toBeLessThan(1);
+
+    const sentenceSizes = await Promise.all([
+      fontSize("hanzi"),
+      fontSize("pinyin"),
+      fontSize("meaning"),
+    ]);
+    expect(sentenceSizes[0]).toBeLessThan(shortSizes[0]);
+    expect(sentenceSizes[1]).toBeLessThan(shortSizes[1]);
+    expect(sentenceSizes[2]).toBeLessThan(shortSizes[2]);
+    expect(sentenceSizes[1]).toBeGreaterThan(sentenceSizes[2]);
+    expect(sentenceSizes[2]).toBeGreaterThan(sentenceSizes[0]);
+
+    const fitOverflow = await fitBox.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(fitOverflow.scrollHeight).toBeLessThanOrEqual(
+      fitOverflow.clientHeight + 2,
+    );
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+
     await close();
   });
 
@@ -476,8 +558,11 @@ test.describe("vừa mọi kích thước điện thoại", () => {
     ]);
     expect(pinyinSize).toBeGreaterThan(meaningSize);
     expect(meaningSize).toBeGreaterThan(hanziSize);
-    expect(hanziSize).toBeGreaterThanOrEqual(17);
-    expect(hanziSize).toBeLessThanOrEqual(20);
+    await expect(front.locator('[data-fc-front-copy-kind="term"]')).toHaveCount(
+      1,
+    );
+    expect(hanziSize).toBeGreaterThanOrEqual(22);
+    expect(hanziSize).toBeLessThanOrEqual(25);
 
     const imageBox = (await front.locator("img").first().boundingBox())!;
     expect(imageBox).not.toBeNull();
