@@ -279,11 +279,17 @@ describe("StudentFlashcardReader", () => {
       layer.querySelector('[data-face-side="back"]') as HTMLElement,
     );
 
-    // Mặt trước: mỗi âm tiết pinyin nằm trên đúng chữ Hán của nó.
-    expect(front.getByText("nǐ")).toBeInTheDocument();
-    expect(front.getByText("hǎo")).toBeInTheDocument();
-    expect(front.getByText("你")).toBeInTheDocument();
-    expect(front.getByText("好")).toBeInTheDocument();
+    /*
+     * Mặt trước — bố cục user chốt 2026-07-25: BA DÒNG xếp dọc, thứ tự Hán tự →
+     * pinyin → nghĩa.
+     *
+     * `exact: true` cho Hán tự là phần ghim quan trọng nhất: nó đòi `你好` phải là
+     * MỘT chuỗi liền. Bố cục cũ chẻ theo từng chữ (`你` và `好` là hai node riêng,
+     * mỗi node một cột với âm tiết của nó) — chính cái làm hai chữ Hán bị đẩy xa
+     * nhau khi pinyin dài. Bài này đỏ nếu ai dựng lại cách chẻ đó.
+     */
+    expect(front.getByText("你好", { exact: true })).toBeInTheDocument();
+    expect(front.getByText("nǐ hǎo", { exact: true })).toBeInTheDocument();
     expect(front.getByText("Xin chào")).toBeInTheDocument();
 
     // Mặt sau khối 1: pinyin VIẾT LIỀN, dẫn xuất chứ không phải cột riêng.

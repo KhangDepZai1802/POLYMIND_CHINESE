@@ -350,20 +350,33 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
  * đọc. Đừng gỡ: gỡ là ô xem trước sụp về 0px, đúng hình dạng `BUG-P17-003`.
  * ------------------------------------------------------------------------- */
 :root {
-  --fc-hanzi: 3rem;
-  /* Pinyin là thứ học sinh đọc theo để phát âm, nên nó phải ĐỌC ĐƯỢC chứ không
-   * phải chú thích nhỏ dưới chân chữ Hán (user chốt 2026-07-25). Nghĩa tiếng
-   * Việt thì ngược lại: hạ xuống để không tranh chỗ với cặp Hán tự + pinyin. */
-  --fc-pinyin: 1.75rem;
-  --fc-meaning: 1.125rem;
+  /* -------------------------------------------------------------------------
+   * THANG CHỮ MẶT TRƯỚC — thứ tự do user chốt 2026-07-25:
+   *   1. Hán tự  (giữ nguyên cỡ cũ)
+   *   2. Pinyin  ← TO NHẤT: *"pinyin là thứ học sinh đọc theo để phát âm"*
+   *   3. Nghĩa tiếng Việt (to hơn Hán tự, nhỏ hơn pinyin)
+   *
+   * Ba cỡ đi theo một thang gần mô-đun (18 → 22 → 26px), thay vì ba số lẻ chọn
+   * tay — `font-scale` của skill `ui-ux-pro-max`. Neo là Hán tự ở đúng cỡ nhìn
+   * thấy trước thay đổi này (~17.28px, làm tròn lên 18px); hai cỡ kia dẫn xuất
+   * lên từ đó.
+   *
+   * ⚠️ Chữ Latin cùng `font-size` LUÔN trông nhỏ hơn chữ Hán, vì glyph CJK lấp
+   * gần kín ô em còn Latin chừa chỗ cho phần trên/dưới dòng (và `.font-hanzi`
+   * còn cộng `1.08em`). Nên "to hơn Hán tự" phải hiểu theo con số: pinyin và
+   * nghĩa lớn hơn Hán tự một bậc thì mới THẤY là lớn hơn.
+   * --------------------------------------------------------------------- */
+  --fc-hanzi: 1.125rem;
+  --fc-pinyin: 1.625rem;
+  --fc-meaning: 1.375rem;
   --fc-face-min-h: 360px;
 }
 
 @media (min-width: 40rem) {
   :root {
-    --fc-hanzi: 4.5rem;
+    --fc-hanzi: 1.5rem;
     --fc-pinyin: 2.25rem;
-    --fc-meaning: 1.375rem;
+    --fc-meaning: 1.75rem;
     --fc-face-min-h: 560px;
   }
 }
@@ -387,20 +400,20 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
    * THANG CHỮ LỎNG — thay đổi quan trọng nhất của khung này.
    *
    * Bản dùng chung nhảy bậc tại mốc `sm` = 640px. Mà MỌI điện thoại đều dưới
-   * 640px, nên máy 320px và máy 430px đang nhận **đúng một cỡ chữ**: máy nhỏ
-   * tràn, máy lớn phí chỗ. `clamp()` chạy liên tục theo bề rộng:
+   * 640px, nên máy 320px và máy 430px từng nhận **đúng một cỡ chữ**.
+   * `clamp()` nay chạy liên tục theo bề rộng, nhưng vẫn giữ Hán tự gần cỡ cũ:
    *
-   *   320px → 40px  ·  360px → 45px  ·  375px → 47px
-   *   390px → 49px  ·  414px → 52px  ·  430px → 54px (chạm trần)
+   *              320px   360px   390px   430px   trần
+   *   Hán tự       18      18     18      19      24px
+   *   Nghĩa        22      22     22      24      28px
+   *   Pinyin       26      26     27      30      36px
    *
-   * Trần 4rem để máy lớn và máy tính bảng không thành chữ khổng lồ.
-   * Với padding 16px mỗi bên và `gap-x-3`, mọi bề rộng trên đều xếp vừa 5 chữ
-   * Hán một dòng; từ 6 chữ trở lên thì `flex-wrap` xuống dòng thứ hai — có chủ
-   * ý, vì cặp pinyin↔Hán tự vẫn dính nhau theo cột nên không lệch.
+   * Trần thấp để tablet/desktop không biến ba dòng chữ thành khổng lồ; thẻ này
+   * ưu tiên ảnh minh hoạ và phải luôn vừa một màn hình.
    * --------------------------------------------------------------------- */
-  --fc-hanzi: clamp(2.25rem, 12.5vw, 4rem);
-  --fc-pinyin: clamp(1.25rem, 6.2vw, 2.25rem);
-  --fc-meaning: clamp(0.95rem, 4vw, 1.375rem);
+  --fc-hanzi: clamp(1.125rem, 4.5vw, 1.5rem);
+  --fc-pinyin: clamp(1.625rem, 7vw, 2.25rem);
+  --fc-meaning: clamp(1.375rem, 5.5vw, 1.75rem);
 
   /* Thẻ cao tự nhiên theo nội dung, KHÔNG có sàn cứng 360px: sàn cứng chính là
    * thứ làm vỡ máy màn ngắn và chế độ nằm ngang. Vùng thẻ đã cuộn nội bộ nên
@@ -428,9 +441,9 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
  * ------------------------------------------------------------------------- */
 @media (orientation: landscape) and (max-height: 480px) {
   .fc-frame {
-    --fc-hanzi: clamp(1.75rem, 9vh, 2.75rem);
-    --fc-pinyin: clamp(1rem, 4.5vh, 1.5rem);
-    --fc-meaning: clamp(0.85rem, 3vh, 1.05rem);
+    --fc-hanzi: 1.125rem;
+    --fc-pinyin: clamp(1.5rem, 7vh, 2rem);
+    --fc-meaning: clamp(1.25rem, 6vh, 1.625rem);
   }
 }
 

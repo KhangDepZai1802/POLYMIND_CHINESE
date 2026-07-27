@@ -130,6 +130,22 @@ async function blockMediaBytes(page: Page) {
   await page.route("**/storage/v1/**", (route) => route.abort());
 }
 
+/** Ảnh giả có kích thước thật để đo khoảng cách chữ–ảnh mà không gọi Storage. */
+async function serveFakeImages(page: Page) {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220">' +
+    '<rect width="320" height="220" fill="#eaf6ff"/></svg>';
+  await page.route("**/storage/v1/**", (route) =>
+    route.request().url().includes(".mp3")
+      ? route.abort()
+      : route.fulfill({
+          status: 200,
+          contentType: "image/svg+xml",
+          body: svg,
+        }),
+  );
+}
+
 /**
  * Mặt thẻ ĐANG hiện, không phải bản ẩn.
  *
@@ -203,8 +219,11 @@ test.describe("trang flashcard công khai", () => {
     // Trang mở đầu là thẻ 1 → sang thẻ 2 mới là từ vựng.
     await page.getByRole("button", { name: "Thẻ tiếp theo" }).click();
     // Mặt TRƯỚC thẻ từ vựng có nghĩa tiếng Việt; trang mở đầu thì không, nên
-    // chuỗi này phân biệt được đúng thẻ. Không neo vào "银行": pinyin căn trên
-    // TỪNG chữ Hán nên DOM là "yín银háng行", hai chữ Hán không liền mạch.
+    // chuỗi này phân biệt được đúng thẻ.
+    //
+    // 📌 Từ 2026-07-25 mặt trước là ba dòng xếp dọc nên `银行` ĐÃ liền mạch trong
+    // DOM (trước đó pinyin căn trên từng chữ Hán nên DOM là "yín银háng行").
+    // Bố cục mới có bài ghim riêng ở `flashcard-responsive.spec.ts`.
     await expect(faceSide(page, "front")).toContainText("Ngân hàng");
 
     await page.getByRole("button", { name: "Lật thẻ" }).click();
@@ -419,6 +438,63 @@ test.describe("vừa mọi kích thước điện thoại", () => {
       await close();
     });
   }
+
+  test("mặt trước trang QR dùng đúng thứ tự, thang chữ và khoảng cách của module Ôn tập", async ({
+    browser,
+  }) => {
+    const { page, close } = await anonymousPage(browser, {
+      width: 360,
+      height: 800,
+    });
+    // Đăng ký sau `blockMediaBytes` nên route ảnh giả thắng.
+    await serveFakeImages(page);
+    await page.goto(`/t/${SEEDED_TOKEN}`);
+    await page.getByRole("button", { name: "Thẻ tiếp theo" }).click();
+
+    const front = faceSide(page, "front");
+    const hanzi = front.getByText("银行", { exact: true });
+    const pinyin = front.getByText("yín háng", { exact: true });
+    const meaning = front.getByText("Ngân hàng", { exact: true });
+    await expect(hanzi).toBeVisible();
+    await expect(pinyin).toBeVisible();
+    await expect(meaning).toBeVisible();
+
+    const hanziBox = (await hanzi.boundingBox())!;
+    const pinyinBox = (await pinyin.boundingBox())!;
+    const meaningBox = (await meaning.boundingBox())!;
+    expect(hanziBox.y).toBeLessThan(pinyinBox.y);
+    expect(pinyinBox.y).toBeLessThan(meaningBox.y);
+
+    const fontSize = (locator: typeof hanzi) =>
+      locator.evaluate((element) =>
+        Number.parseFloat(window.getComputedStyle(element).fontSize),
+      );
+    const [hanziSize, pinyinSize, meaningSize] = await Promise.all([
+      fontSize(hanzi),
+      fontSize(pinyin),
+      fontSize(meaning),
+    ]);
+    expect(pinyinSize).toBeGreaterThan(meaningSize);
+    expect(meaningSize).toBeGreaterThan(hanziSize);
+    expect(hanziSize).toBeGreaterThanOrEqual(17);
+    expect(hanziSize).toBeLessThanOrEqual(20);
+
+    const imageBox = (await front.locator("img").first().boundingBox())!;
+    expect(imageBox).not.toBeNull();
+    expect(imageBox.y - (meaningBox.y + meaningBox.height)).toBeLessThanOrEqual(
+      24,
+    );
+
+    const cardBox = (await front.boundingBox())!;
+    const textCenter =
+      (hanziBox.y + meaningBox.y + meaningBox.height) / 2;
+    const cardCenter = cardBox.y + cardBox.height / 2;
+    expect(Math.abs(textCenter - cardCenter)).toBeLessThanOrEqual(
+      cardBox.height * 0.18,
+    );
+
+    await close();
+  });
 
   /**
    * 🔴 "Thẻ 1/18 trắng tinh" — lỗi thật user báo 2026-07-25 (ảnh chụp máy).

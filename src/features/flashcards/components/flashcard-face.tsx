@@ -1,10 +1,7 @@
 import Image from "next/image";
 
 import { FitText } from "@/features/flashcards/components/fit-text";
-import {
-  alignPinyinToHanzi,
-  joinPinyin,
-} from "@/features/flashcards/domain/pinyin";
+import { joinPinyin } from "@/features/flashcards/domain/pinyin";
 import { readFlashcardSublists } from "@/features/flashcards/domain/sublists";
 
 /**
@@ -164,77 +161,77 @@ function FlashcardImageFace({
 }
 
 /**
- * Mặt trước §7ter: pinyin căn thẳng TRÊN TỪNG chữ Hán, Hán tự cỡ lớn nhất,
- * nghĩa tiếng Việt màu cam, ảnh minh hoạ tuỳ chọn.
+ * MẶT TRƯỚC — dựng lại 2026-07-25 theo phân tích của user trên ảnh máy thật.
+ *
+ * Bốn điều user chốt, và lý do từng điều:
+ *
+ * 1. **Thứ tự: Hán tự → pinyin → nghĩa.** Bản cũ đặt pinyin LÊN TRÊN từng chữ
+ *    Hán (`§7ter`, đặc tả gốc từ ảnh thẻ mẫu). Nay ba dòng nằm riêng, xếp dọc.
+ *
+ * 2. **Pinyin là dòng TO NHẤT**, nghĩa tiếng Việt ở giữa, Hán tự giữ cỡ cũ —
+ *    thang chữ ở `globals.css`. User: pinyin là thứ học sinh đọc theo để phát âm.
+ *
+ * 3. 🔴 **Khoảng cách giữa các chữ Hán KHÔNG còn phụ thuộc độ dài pinyin.** Đây
+ *    là hệ quả trực tiếp của (1), không phải một mẹo CSS: bản cũ dựng mỗi cặp
+ *    (âm tiết, chữ Hán) thành MỘT CỘT, nên một âm tiết dài như `sheng` nới cột đó
+ *    ra và **đẩy hai chữ Hán xa nhau** (thấy rõ trên ảnh: 先 và 生 cách nhau cả
+ *    một khoảng trống). Nay Hán tự là một chuỗi liền `先生` — chữ CJK vốn không có
+ *    khoảng cách giữa các glyph, nên chúng sát nhau bất kể pinyin dài ngắn.
+ *
+ * 4. **Ba dòng chữ NGAY TRÊN ảnh, phần chữ ở gần tâm thẻ.** Bản cũ cho khối ảnh
+ *    `flex-1` — nó chiếm hết chỗ dư rồi căn ảnh vào giữa phần đó, nên chữ bị đẩy
+ *    lên đỉnh và giữa chữ với ảnh hở ra một khoảng rất lớn. Nay `mt-auto` đặt
+ *    khoảng dư ở TRÊN nhóm nội dung, còn ảnh **chỉ co, không giãn** (`shrink` +
+ *    `min-h-0`). Vì vậy chữ nằm sát ngay trên ảnh và tiến gần tâm thẻ hơn
+ *    (`whitespace-balance`: khoảng trắng dùng để GOM nhóm liên quan, không phải
+ *    để tách chúng ra).
+ *
+ * ⚠️ `§7ter` (pinyin căn trên từng chữ Hán) vì thế **hết hiệu lực** — xem
+ * `docs/10-yeu-cau-flashcard-quizlet.md`. Mặt SAU không đổi: vẫn pinyin viết liền.
  */
 function VocabularyFront({ page }: { page: FlashcardFaceData }) {
-  const hanzi = page.hanzi ?? "";
-  const pinyin = page.pinyin_syllables ?? "";
-  const alignment = alignPinyinToHanzi(hanzi, pinyin);
   const imageUrl = page.frontUrl;
 
   return (
-    /*
-     * 🔴 `gap-4` + ảnh `flex-1 min-h-0` — đây là bản sửa lời than 2026-07-25:
-     * *"phải lướt lên mới thấy được pinyin và hán tự"*.
-     *
-     * Bản cũ để ảnh cao cố định `max-h-56`, nên khi vùng thẻ thấp hơn tổng chiều
-     * cao ba khối thì ẢNH ĐẨY pinyin + Hán tự lên khỏi vùng nhìn — mà pinyin và
-     * Hán tự mới là nội dung chính, ảnh chỉ là minh hoạ. Nay ảnh là khối DUY
-     * NHẤT co được (`flex-1 min-h-0`): nó nhường chỗ tới mức cần thiết, còn chữ
-     * luôn giữ đủ cỡ. Không còn cuộn dọc trong mặt trước.
-     */
-    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col items-center justify-center gap-4 p-4 text-center sm:p-8">
-      {alignment ? (
-        <p className="flex flex-wrap items-end justify-center gap-x-3 gap-y-4">
-          {alignment.map((cell, index) => (
-            <span
-              key={`${cell.hanzi}-${index}`}
-              className="flex flex-col items-center gap-1"
-            >
-              <span className="text-muted-foreground text-[length:var(--fc-pinyin)] leading-none">
-                {cell.pinyin}
-              </span>
-              <span
-                {...HANZI_ATTRS}
-                className="font-hanzi text-[length:var(--fc-hanzi)] leading-none font-bold"
-              >
-                {cell.hanzi}
-              </span>
-            </span>
-          ))}
-        </p>
-      ) : (
-        // Số âm tiết không khớp số chữ Hán: hiện pinyin nguyên dòng thay vì căn
-        // lệch. Sai lệch nhìn thấy được tốt hơn sai lệch im lặng.
-        <>
-          <p className="text-muted-foreground text-[length:var(--fc-pinyin)] break-words">
-            {pinyin}
-          </p>
-          <p
-            {...HANZI_ATTRS}
-            className="font-hanzi text-[length:var(--fc-hanzi)] leading-tight font-bold break-words"
-          >
-            {hanzi}
-          </p>
-        </>
-      )}
+    <div className="flex h-full min-h-[var(--fc-face-min-h)] flex-col items-center gap-2 p-4 text-center sm:gap-3 sm:p-6">
+      {/* 1 — Hán tự. `mt-auto` gom toàn bộ khoảng dư lên trên để khối chữ tiến
+          gần tâm thẻ nhưng vẫn nằm sát ảnh. Inline `fontSize` là có chủ ý:
+          `.font-hanzi` là CSS không thuộc cascade layer nên thắng utility
+          Tailwind cùng specificity; nếu dùng class `text-[…]`, biến `--fc-hanzi`
+          không có hiệu lực và cỡ thật luôn mắc ở 1.08em. */}
+      <p
+        {...HANZI_ATTRS}
+        className="font-hanzi mt-auto leading-none font-bold break-words"
+        style={{ fontSize: "var(--fc-hanzi)" }}
+      >
+        {page.hanzi}
+      </p>
 
-      <p className="text-student-amber-ink text-[length:var(--fc-meaning)] font-semibold break-words">
+      {/* 2 — Pinyin, dòng TO NHẤT. Giữ dạng tách âm tiết vì đó là cách viết
+          pinyin đúng; chỉ khác là nó không còn bị chẻ theo từng chữ Hán. */}
+      <p className="text-text-secondary text-[length:var(--fc-pinyin)] leading-tight font-semibold break-words">
+        {page.pinyin_syllables}
+      </p>
+
+      {/* 3 — Nghĩa tiếng Việt, cam thương hiệu (giữ nguyên từ `§7ter`). */}
+      <p className="text-student-amber-ink text-[length:var(--fc-meaning)] leading-tight font-semibold break-words">
         {page.meaning_vi}
       </p>
 
       {imageUrl && (
-        // `min-h-0` trên khối bọc là bắt buộc: thiếu nó thì flex item không co
-        // được dưới kích thước nội dung, và ảnh lại đẩy chữ ra ngoài như cũ.
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        /*
+         * `shrink` + `min-h-0` và KHÔNG `flex-1`: ảnh nhường chỗ khi thẻ thấp,
+         * nhưng không bao giờ tự nở ra để đẩy chữ đi. `min-h-0` là bắt buộc —
+         * thiếu nó thì flex item không co được dưới kích thước nội dung.
+         */
+        <div className="flex min-h-0 w-full shrink items-center justify-center">
           <Image
             src={imageUrl}
             alt={page.front_alt ?? ""}
             width={320}
             height={220}
             unoptimized
-            className="h-full max-h-56 w-auto max-w-full rounded-xl object-contain"
+            className="h-auto max-h-full w-auto max-w-full rounded-xl object-contain"
           />
         </div>
       )}

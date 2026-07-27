@@ -139,6 +139,11 @@ describe("PublicFlashcardReader", () => {
   it("chữ Hán khai lang=zh-Hans để Android không dựng glyph tiếng Nhật", () => {
     render(<PublicFlashcardReader data={section} />);
 
+    expect(
+      within(faceSide("front") as HTMLElement).getByText("银行", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
     const hanzi = document.querySelectorAll('[lang="zh-Hans"]');
     expect(hanzi.length).toBeGreaterThan(0);
     for (const node of hanzi) {

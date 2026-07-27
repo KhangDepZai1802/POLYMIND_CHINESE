@@ -234,10 +234,18 @@ Thẻ mẫu: từ `胡萝卜` (củ cà rốt).
 | Thành phần | Trong ảnh | Kết luận |
 | --- | --- | --- |
 | Logo PolyMind | Trên cùng, căn giữa | **Chrome cố định của template, KHÔNG phải dữ liệu nhập.** Không tạo trường cho nó. |
-| Pinyin | `hú   luó   bǔ` — **tách theo âm tiết, mỗi âm căn thẳng trên đúng chữ Hán bên dưới** | Bắt buộc. Xem "Hai dạng pinyin" bên dưới. |
-| Hán tự | `胡萝卜` — cỡ rất lớn, đậm nhất trang | Bắt buộc. |
-| Nghĩa tiếng Việt | `Củ cà rốt` — **màu cam thương hiệu**, dưới Hán tự | Bắt buộc. |
-| Ảnh minh họa | Hình cà rốt, chiếm nửa dưới thẻ | **Tuỳ chọn** nhưng mẫu có → mặc định nên có. |
+| Hán tự | `胡萝卜` — **dòng đầu tiên**, giữ gần cỡ đang dùng trước thay đổi 2026-07-27 | Bắt buộc; dựng thành **một chuỗi liền**, không chia mỗi chữ thành một cột cùng pinyin. |
+| Pinyin | `hú luó bo` — dòng thứ hai, **cỡ lớn nhất** | Bắt buộc. Vẫn lưu/hiện dạng tách âm tiết bằng dấu cách, nhưng cả chuỗi nằm trên một dòng độc lập. |
+| Nghĩa tiếng Việt | `Củ cà rốt` — dòng thứ ba, **màu cam thương hiệu**, cỡ lớn hơn Hán tự nhưng nhỏ hơn pinyin | Bắt buộc. |
+| Ảnh minh họa | Nằm **ngay dưới ba dòng chữ**, ảnh co theo chỗ còn lại | **Tuỳ chọn** nhưng mẫu có → mặc định nên có. Ba dòng chữ + ảnh được gom thành một nhóm; phần chữ phải ở gần tâm thẻ, không bị đẩy lên đỉnh. |
+
+> ⚠️ **Sửa 2026-07-27 (user chốt trên ảnh máy thật) — thay thế bố cục mặt trước
+> gốc của §7ter.** Thứ tự mới là **Hán tự → pinyin → nghĩa tiếng Việt → ảnh**.
+> Pinyin không còn căn từng âm tiết trên từng chữ Hán. Lý do: bố cục cột cũ làm
+> khoảng cách giữa các chữ Hán phụ thuộc độ dài âm tiết (`先生`: `sheng` nới cột
+> và đẩy `先`/`生` xa nhau), đồng thời khối ảnh giãn chiếm phần dư khiến ba dòng
+> chữ bị đẩy lên trên và cách ảnh một khoảng rất lớn. Áp dụng bằng đúng một
+> `FlashcardFaceContent` cho cả trang QR và module Ôn tập.
 
 ### Mặt sau — 5 khối, mỗi khối một màu viền
 
@@ -261,7 +269,12 @@ Thẻ mẫu: từ `胡萝卜` (củ cà rốt).
 ### Ba phát hiện phải xử lý, không được bỏ qua
 
 **1. Hai dạng pinyin, không phải một.**
-Mặt trước cần pinyin **tách rời từng âm tiết** để căn thẳng trên từng chữ Hán (`hú` `luó` `bo`). Mặt sau cần pinyin **viết liền đúng chính tả** (`húluóbo`). Cách an toàn: **lưu dạng tách** (`"hú luó bo"`), mặt sau **bỏ dấu cách khi hiển thị**. Chiều ngược lại không làm được — máy không tự cắt `húluóbo` thành 3 âm tiết một cách chắc chắn.
+Mặt trước hiện pinyin dạng **tách âm tiết bằng dấu cách trên một dòng độc lập**
+(`hú luó bo`); từ 2026-07-27 **không còn** căn từng âm tiết trên từng chữ Hán.
+Mặt sau vẫn cần dạng **viết liền đúng chính tả** (`húluóbo`). Cách an toàn vẫn
+không đổi: **lưu dạng tách** (`"hú luó bo"`), mặt sau **bỏ dấu cách khi hiển
+thị**. Chiều ngược lại không làm được — máy không tự cắt `húluóbo` thành ba âm
+tiết một cách chắc chắn.
 
 **2. Ảnh mẫu có lỗi dấu thanh — ✅ ĐÃ ĐÓNG, user chốt KHÔNG xét (2026-07-23, `DS-050`).**
 Mặt trước ghi `bǔ` (thanh 3), mặt sau ghi `bo` (thanh nhẹ); trong `萝卜` chữ `卜` đọc **thanh nhẹ `bo`** nên mặt trước sai. **User chốt không xử lý**: hai ảnh `胡萝卜` chỉ là **mẫu bố cục**, dùng thật sẽ thay ảnh khác.

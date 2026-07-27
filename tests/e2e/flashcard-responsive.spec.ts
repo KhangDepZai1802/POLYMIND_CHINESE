@@ -94,6 +94,29 @@ async function blockMedia(page: Page) {
   await page.route("**/storage/v1/**", (route) => route.abort());
 }
 
+/**
+ * Phục vụ ẢNH GIẢ thay vì chặn — chỉ cho bài đo hình học của mặt thẻ.
+ *
+ * `blockMedia` chặn sạch nên `<img>` thành ảnh hỏng, mà ảnh hỏng thì kích thước
+ * do trình duyệt tự quyết (có lúc 0×0) — không đo được "ba dòng chữ có sát ảnh
+ * hay không". Đăng ký SAU `blockMedia` nên handler này thắng (Playwright xét
+ * handler theo thứ tự ngược). Vẫn không tải byte thật từ Storage.
+ */
+async function serveFakeImages(page: Page) {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220">' +
+    '<rect width="320" height="220" fill="#eaf6ff"/></svg>';
+  await page.route("**/storage/v1/**", (route) =>
+    route.request().url().includes(".mp3")
+      ? route.abort()
+      : route.fulfill({
+          status: 200,
+          contentType: "image/svg+xml",
+          body: svg,
+        }),
+  );
+}
+
 async function loginStudent(page: Page) {
   await blockMedia(page);
   await page.goto("/login");
@@ -206,7 +229,7 @@ test.describe("Flashcard — học viên", () => {
     });
   }
 
-  test("thẻ dựng bằng CHỮ: pinyin căn trên từng chữ Hán, mặt sau đủ 4 khối", async ({
+  test("thẻ dựng bằng CHỮ: mặt trước ba dòng liền mạch, mặt sau đủ 4 khối", async ({
     page,
   }) => {
     await loginStudent(page);
@@ -217,10 +240,11 @@ test.describe("Flashcard — học viên", () => {
     const front = page.locator(
       '[data-transition-layer="incoming"] [data-face-side="front"]',
     );
-    await expect(front.getByText("银", { exact: true })).toBeVisible();
-    await expect(front.getByText("行", { exact: true })).toBeVisible();
-    await expect(front.getByText("yín", { exact: true })).toBeVisible();
-    await expect(front.getByText("háng", { exact: true })).toBeVisible();
+    // User chốt 2026-07-27: Hán tự và pinyin là hai chuỗi liền trên hai dòng
+    // riêng. Bài cũ ép bốn node `银`/`行`/`yín`/`háng` chính là coupling với bố
+    // cục cột đã bị bỏ vì nó làm khoảng cách chữ Hán phụ thuộc độ dài âm tiết.
+    await expect(front.getByText("银行", { exact: true })).toBeVisible();
+    await expect(front.getByText("yín háng", { exact: true })).toBeVisible();
     await expect(front.getByText("Ngân hàng")).toBeVisible();
 
     const back = page.locator(
@@ -398,6 +422,92 @@ test.describe("Flashcard — học viên", () => {
     await expect(
       page.getByRole("button", { name: "Bắt đầu ôn thẻ" }),
     ).toBeVisible();
+  });
+
+  /**
+   * 🔴 BỐ CỤC MẶT TRƯỚC — user chốt 2026-07-25 sau khi phân tích ảnh máy thật.
+   *
+   * Bốn điều, mỗi điều một phép đo. Chúng đo **hình học và cỡ chữ thật**, không
+   * đo class Tailwind: đổi class mà kết quả nhìn vẫn sai thì bài vẫn phải đỏ.
+   */
+  test("mặt trước: Hán tự → pinyin → nghĩa, chữ Hán liền mạch, ba dòng sát ảnh", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await loginStudent(page);
+    await serveFakeImages(page);
+    await openStudentFlashcards(page);
+    await goToFirstVocabulary(page);
+
+    const front = page.locator(
+      '[data-transition-layer="incoming"] [data-face-side="front"]',
+    );
+    /*
+     * (1) Hán tự là MỘT chuỗi liền `银行`.
+     *
+     * Đây là phép ghim cho yêu cầu *"khoảng cách giữa các chữ hán tự đang bị phụ
+     * thuộc vào độ dài chữ pinyin… làm cho chữ hán tự viết sát lại gần nhau"*:
+     * bố cục cũ chẻ mỗi chữ Hán thành một cột riêng cùng âm tiết của nó, nên
+     * `exact: true` sẽ KHÔNG khớp nếu ai dựng lại cách chẻ đó.
+     */
+    const hanzi = front.getByText("银行", { exact: true });
+    const pinyin = front.getByText("yín háng", { exact: true });
+    const meaning = front.getByText("Ngân hàng", { exact: true });
+    await expect(hanzi).toBeVisible();
+    await expect(pinyin).toBeVisible();
+    await expect(meaning).toBeVisible();
+
+    const hanziBox = (await hanzi.boundingBox())!;
+    const pinyinBox = (await pinyin.boundingBox())!;
+    const meaningBox = (await meaning.boundingBox())!;
+
+    // (2) Thứ tự dọc: Hán tự trên, rồi pinyin, rồi nghĩa.
+    expect(hanziBox.y, "Hán tự phải nằm trên pinyin").toBeLessThan(pinyinBox.y);
+    expect(pinyinBox.y, "pinyin phải nằm trên nghĩa").toBeLessThan(meaningBox.y);
+
+    // (3) Cỡ chữ: pinyin TO NHẤT, nghĩa ở giữa, Hán tự nhỏ nhất trong ba dòng.
+    const fontSize = (locator: typeof hanzi) =>
+      locator.evaluate((element) =>
+        Number.parseFloat(window.getComputedStyle(element).fontSize),
+      );
+    const [hanziSize, pinyinSize, meaningSize] = await Promise.all([
+      fontSize(hanzi),
+      fontSize(pinyin),
+      fontSize(meaning),
+    ]);
+    expect(pinyinSize, "pinyin phải là dòng to nhất").toBeGreaterThan(
+      meaningSize,
+    );
+    expect(meaningSize, "nghĩa phải to hơn Hán tự").toBeGreaterThan(hanziSize);
+    // User muốn giữ cỡ Hán tự đang thấy trước thay đổi này (~17.28px).
+    expect(hanziSize, "Hán tự bị thu nhỏ quá mức").toBeGreaterThanOrEqual(17);
+    expect(hanziSize, "Hán tự bị phóng lớn khỏi cỡ cũ").toBeLessThanOrEqual(20);
+
+    // (4) Ba dòng chữ NGAY TRÊN ảnh — không còn khoảng hở lớn.
+    const imageBox = (await front.locator("img").first().boundingBox())!;
+    expect(imageBox, "không thấy ảnh minh hoạ").not.toBeNull();
+    expect(
+      imageBox.y - (meaningBox.y + meaningBox.height),
+      "còn khoảng hở lớn giữa ba dòng chữ và ảnh",
+    ).toBeLessThanOrEqual(24);
+
+    /*
+     * …và cả nhóm nằm quanh giữa thẻ, không bị đẩy lên đỉnh: mép trên của Hán tự
+     * phải qua khỏi 12% chiều cao thẻ. Bản cũ dán chữ lên sát đỉnh vì khối ảnh
+     * `flex-1` chiếm hết chỗ dư.
+     */
+    const cardBox = (await front.boundingBox())!;
+    expect(
+      hanziBox.y - cardBox.y,
+      "ba dòng chữ vẫn bị đẩy lên sát đỉnh thẻ",
+    ).toBeGreaterThan(cardBox.height * 0.12);
+    const textCenter =
+      (hanziBox.y + meaningBox.y + meaningBox.height) / 2;
+    const cardCenter = cardBox.y + cardBox.height / 2;
+    expect(
+      Math.abs(textCenter - cardCenter),
+      "tâm của ba dòng chữ còn quá xa tâm thẻ",
+    ).toBeLessThanOrEqual(cardBox.height * 0.18);
   });
 
   test("★ đánh dấu thẻ khó ghi xuống DB và đọc lại được sau khi tải lại", async ({
