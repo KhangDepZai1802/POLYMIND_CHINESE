@@ -248,7 +248,7 @@ export function FlashcardBulkMediaTab({
         batch.map(async (ticket) => {
           const fileName = uploadByKey.get(`${ticket.pageId}:${ticket.slot}`);
           const file = fileName ? fileByName.get(fileName) : undefined;
-          if (!file) return;
+          if (!fileName || !file) return;
           // 🔴 `contentType` trong tuỳ chọn KHÔNG có tác dụng khi thân request là
           // Blob/File: `uploadToSignedUrl` gói vào FormData và để trình duyệt tự
           // khai kiểu theo `File.type`. Mà `File.type` lấy từ registry Windows —

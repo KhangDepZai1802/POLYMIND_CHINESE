@@ -576,6 +576,32 @@ Yêu cầu này va vào **hai** vế của `D-36` cùng lúc, và cả hai đề
 
 ---
 
+### Tốc độ tải ảnh flashcard — `PERF-IMG-1` (user báo 2026-07-27)
+
+User: *"tốc độ load hình của flashcard quá chậm (cả flashcard QR và flashcard trong module ôn tập của tài khoản học viên). bấm qua trang mới rồi mà hình vẫn chưa load và phải đợi rất lâu"*.
+
+**Bốn nguyên nhân cộng dồn, đọc từ source:**
+
+1. **Ảnh phục vụ nguyên bản gốc.** Không có một bước nén/resize nào trong cả repo — admin upload thẳng file gốc (trần 8MB), rồi mọi `<Image>` đều gắn `unoptimized` nên Next cũng bị tắt khâu tối ưu. Máy học viên tải ảnh 3000px về để vẽ vào ô rộng 320px.
+2. **Không tải trước thẻ nào.** Chỉ thẻ đang xem nằm trong DOM, nên request ảnh N+1 chỉ bắt đầu **sau khi** bấm sang. URL của cả buổi thì đã nằm sẵn ở client từ lượt tải trang — tức chữa được mà không tốn thêm request server nào.
+3. **Chữ ký đổi mỗi lượt render** ⇒ URL khác ⇒ cache trình duyệt vô hiệu; mở lại trang là tải lại 100%.
+4. **`cacheControl` mặc định 1 giờ.**
+
+**Phạm vi đã chốt (user chọn `A1+A3+B1+C2`; Supabase gói Free nên KHÔNG dùng Image Transformation):**
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| PERF-IMG-1a | **Nén ở trình duyệt trước khi tải lên** | Luật thuần ở `domain/image-compression.ts` (cạnh dài ≤1280, WebP q82) có unit test; phần chạm DOM ở `client/compress-image.ts` **fail-open** về file gốc khi giải mã/mã hoá hỏng — nén là việc tăng tốc, không được chặn đường đăng bài của admin. Giữ cờ xoay EXIF (`imageOrientation: "from-image"`), nếu không ảnh chụp dọc sẽ **nằm ngang** trên thẻ. Đọc `blob.type` THẬT thay vì tin định dạng mình xin (`toBlob` lặng lẽ trả PNG khi trình duyệt không hỗ trợ WebP). Nén **trước khi xin vé tải lên**, vì server dựng đường dẫn từ `fileName`/`mimeType` và bước soi sau đó đối chiếu đuôi file với `contentType` thật | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-28. Đo trong Chromium: ảnh camera 5,00MB → **302KB WebP (−94%)** |
+| PERF-IMG-1b | **Tải trước thẻ lân cận** | Cửa sổ tiến 3 / lùi 1, dùng CHUNG cho cả hai trình đọc (chép hai bản là đúng hình dạng `BUG_M10_01`). **Không** tải trước file audio. 🔴 **Phải nhường đường truyền cho thẻ đang xem**: chờ ảnh thẻ hiện tại xong rồi mới bắt đầu, và tải **tuần tự** | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-28. Đo ở 4G giả lập: chờ sau mỗi lần bấm **19.712ms → 163ms** |
+| PERF-IMG-1c | **Backfill ảnh cũ** | `scripts/compress-flashcard-media.mjs`, **mặc định chạy khô** (chỉ đo, không ghi). Ghi đè tại chỗ và **giữ nguyên định dạng** nên `flashcard_pages` không phải sửa dòng nào. Nén ra to hơn thì giữ bản gốc | ☑ Script xong + chạy thật trên bucket local (**11,49MB → 3,01MB, −74%**) — 🔴 **chưa chạy trên cloud** (Claude không có credential production) |
+| PERF-IMG-1d | **`cache-control` 1 năm** | `FLASHCARD_MEDIA_CACHE_CONTROL` áp cho mọi đường tải lên. An toàn vì đổi ảnh là đổi đường dẫn (`slot-<uuid>.<ext>`) | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-28 |
+
+🔴 **Bài học từ chính đợt này — tải trước mà làm ẩu thì phản tác dụng.** Bản đầu bắn 3–4 ảnh cùng lúc ngay khi đổi thẻ. Đo ở 4G (1,6 Mbps) với ảnh chưa nén: thẻ **đang xem** quá 30 giây vẫn chưa hiện, vì mấy ảnh tải trước chia nhau đúng cái băng thông nó đang cần. `fetchPriority: "low"` **không cứu được** — nó chỉ xếp hạng trong một kết nối, không ngăn việc chia băng thông. Trần chờ 5s cũng sai nốt: nó biến "nhường đường" thành "chen ngang sau 5 giây". Đây là lý do thứ tự `A trước, B sau` là bắt buộc chứ không phải sở thích.
+
+⚠️ **Còn nợ, chưa làm (chờ số đo cloud):** ảnh cũ dạng **PNG** chỉ giảm ~74% (còn ~1MB/ảnh) vì PNG vốn dở với ảnh chụp — muốn sâu hơn phải đổi PNG→WebP kèm sửa đường dẫn ở DB, **task riêng**. Tầng **C1** (ổn định hoá chữ ký để cache trình duyệt dùng lại được giữa các lượt mở trang) và **B2** (màn hình chờ tải cả buổi kèm thanh tiến độ) chưa làm.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |
