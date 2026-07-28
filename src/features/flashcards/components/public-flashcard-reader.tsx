@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 
 import { StudentAudioPlayer } from "@/components/shared/student-audio-player";
 import { Button } from "@/components/ui/button";
+import { useFlashcardImagePrefetch } from "@/features/flashcards/client/use-flashcard-image-prefetch";
 import type { Face } from "@/features/flashcards/components/flashcard-face";
 import {
   FlashcardFrameControls,
@@ -57,6 +58,13 @@ export function PublicFlashcardReader({
   const flip = useCallback(() => {
     setFace((current) => (current === "front" ? "back" : "front"));
   }, []);
+
+  /*
+   * Ảnh của các thẻ lân cận được kéo về NGẦM (`PERF-IMG-1`). Trang này là màn
+   * học sinh quét mã QR trong sách — phần lớn vào bằng 4G, nên đây đúng là chỗ
+   * mà việc chờ ảnh từng thẻ một đau nhất.
+   */
+  useFlashcardImagePrefetch(pages, index);
 
   // Khung là cả trang nên `window` là phạm vi ĐÚNG cho phím mũi tên: không có
   // vùng nào khác trong trang tranh phím này.

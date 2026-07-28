@@ -58,6 +58,7 @@ import {
   FlashcardFaceCard,
   type Face,
 } from "@/features/flashcards/components/flashcard-face";
+import { compressFlashcardImage } from "@/features/flashcards/client/compress-image";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
 import { FlashcardDeckPublicLinks } from "@/features/flashcards/components/flashcard-deck-public-links";
 import { FlashcardPublicLinkPanel } from "@/features/flashcards/components/flashcard-public-link-panel";
@@ -69,6 +70,7 @@ import {
 import {
   exampleMediaSlot,
   FLASHCARD_MEDIA_BUCKET,
+  FLASHCARD_MEDIA_CACHE_CONTROL,
   MAX_FLASHCARD_EXAMPLE_SENTENCES,
   MAX_FLASHCARD_PHRASE_ITEMS,
   type FlashcardMediaSlot,
@@ -1168,10 +1170,26 @@ function PageDialog({
 
     try {
       if (uploads.length > 0) {
+        /*
+         * NÉN TRƯỚC KHI XIN VÉ (`PERF-IMG-1`), không phải sau.
+         *
+         * Đường dẫn trong bucket do server dựng từ `fileName` + `mimeType` gửi
+         * lên (`actions.ts`), và bước soi sau khi tải xong đối chiếu đuôi file
+         * với `contentType` thật của object. Nén sau khi xin vé là vé mang đuôi
+         * `.jpg` còn byte là WebP — lệch đúng chỗ đó và cả lượt tải bị vứt.
+         *
+         * Audio đi qua nguyên vẹn: `compressFlashcardImage` chỉ đụng vào ảnh.
+         */
+        const compressed: Array<{ slot: FlashcardMediaSlot; file: File }> = [];
+        for (const item of uploads) {
+          const { file } = await compressFlashcardImage(item.file);
+          compressed.push({ slot: item.slot, file });
+        }
+
         const result = await createFlashcardUploadTicketsAction({
           sectionId: section.id,
           pageId,
-          files: uploads.map(({ slot, file }) => ({
+          files: compressed.map(({ slot, file }) => ({
             slot,
             fileName: file.name,
             mimeType: file.type,
@@ -1186,7 +1204,7 @@ function PageDialog({
 
         const supabase = createClient();
         const fileBySlot = new Map(
-          uploads.map(({ slot, file }) => [slot as string, file]),
+          compressed.map(({ slot, file }) => [slot as string, file]),
         );
         for (const ticket of result.tickets) {
           const file = fileBySlot.get(ticket.slot);
@@ -1195,6 +1213,7 @@ function PageDialog({
             .from(FLASHCARD_MEDIA_BUCKET)
             .uploadToSignedUrl(ticket.path, ticket.token, file, {
               contentType: ticket.contentType,
+              cacheControl: FLASHCARD_MEDIA_CACHE_CONTROL,
             });
           if (error) {
             await discard();

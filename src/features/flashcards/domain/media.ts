@@ -2,6 +2,19 @@ export const FLASHCARD_MEDIA_BUCKET = "flashcard-media";
 export const MAX_FLASHCARD_IMAGE_BYTES = 8 * 1024 * 1024;
 export const MAX_FLASHCARD_AUDIO_BYTES = 20 * 1024 * 1024;
 
+/**
+ * `cache-control` khi tải media flashcard lên — 1 năm (`PERF-IMG-1`).
+ *
+ * An toàn tuyệt đối ở đây vì **đổi ảnh là đổi đường dẫn**: tên object luôn mang
+ * một UUID mới (`slot-<uuid>.<ext>`), nên không tồn tại ca "cùng path, nội dung
+ * khác" để mà lo cache ôm bản cũ. Mặc định của Supabase là 3600 — học viên ôn
+ * lại vào hôm sau phải tải lại toàn bộ ảnh từ đầu.
+ *
+ * ⚠️ Giá trị là **số giây**, không phải cả header: `storage-js` tự ghép thành
+ * `max-age=<giá trị>`. Đừng nhét thêm `immutable` vào đây.
+ */
+export const FLASHCARD_MEDIA_CACHE_CONTROL = "31536000";
+
 /** Số mục tối đa của hai danh sách con §7ter — Zod cưỡng chế, DB không biết. */
 export const MAX_FLASHCARD_EXAMPLE_SENTENCES = 8;
 export const MAX_FLASHCARD_PHRASE_ITEMS = 8;

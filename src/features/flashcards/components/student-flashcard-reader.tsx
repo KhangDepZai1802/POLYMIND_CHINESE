@@ -18,6 +18,7 @@ import { StudentAudioPlayer } from "@/components/shared/student-audio-player";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFlashcardImagePrefetch } from "@/features/flashcards/client/use-flashcard-image-prefetch";
 import { type Face } from "@/features/flashcards/components/flashcard-face";
 import {
   FlashcardFrameControls,
@@ -139,6 +140,19 @@ export function StudentFlashcardReader({
 
     return () => window.clearTimeout(fallbackTimer);
   }, [pageTransition]);
+
+  /*
+   * Kéo ngầm ảnh của các thẻ lân cận (`PERF-IMG-1`).
+   *
+   * ⚠️ Phải nằm TRÊN mọi `return` sớm bên dưới — hook không được gọi có điều
+   * kiện. Việc "có chạy hay không" vì thế là cờ `enabled`, không phải vị trí gọi.
+   *
+   * `enabled: reading` là có chủ ý: khi học viên còn ở trang mở đầu module thì
+   * chưa chắc họ sẽ ôn thẻ, mà đây là màn hình mở bằng 4G. Tự ý kéo vài MB về
+   * máy người chỉ ghé qua tab là lấy tiền data của họ để mua tốc độ cho người
+   * khác.
+   */
+  useFlashcardImagePrefetch(orderedPages, pageIndex, { enabled: reading });
 
   if (!courseName) {
     return (

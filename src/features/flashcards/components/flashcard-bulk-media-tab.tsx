@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Progress } from "@/components/ui/progress";
+import { compressFlashcardImages } from "@/features/flashcards/client/compress-image";
 import {
   matchFlashcardMediaFiles,
   MAX_FLASHCARD_BULK_UPLOAD_FILES,
@@ -20,7 +21,10 @@ import {
   type BulkMediaTarget,
   type SlotPlan,
 } from "@/features/flashcards/domain/bulk-media";
-import { FLASHCARD_MEDIA_BUCKET } from "@/features/flashcards/domain/media";
+import {
+  FLASHCARD_MEDIA_BUCKET,
+  FLASHCARD_MEDIA_CACHE_CONTROL,
+} from "@/features/flashcards/domain/media";
 import {
   attachFlashcardSectionMediaAction,
   createFlashcardBulkUploadTicketsAction,
@@ -34,7 +38,7 @@ const ACCEPT = "image/jpeg,image/png,image/webp,audio/mpeg,audio/mp4,.mp3,.m4a";
 /** Bao nhiêu file tải song song. Đủ nhanh mà không mở 40 kết nối một lúc. */
 const UPLOAD_CONCURRENCY = 6;
 
-type Phase = "select" | "uploading" | "done";
+type Phase = "select" | "compressing" | "uploading" | "done";
 
 type RunResult = {
   message: string;
@@ -176,10 +180,35 @@ export function FlashcardBulkMediaTab({
   async function run() {
     if (uploads.length === 0) return;
     setError(null);
+
+    /*
+     * BƯỚC NÉN (`PERF-IMG-1`) — trước khi xin vé, và chỉ nén đúng những file
+     * thật sự sẽ tải lên (file `skip`/không khớp thì nén làm gì).
+     *
+     * Khoá của `compressedByName` là **tên GỐC**, khớp với `uploads[].fileName`
+     * mà bảng đối chiếu đã chốt ở bước trước. Tên file có thể đổi đuôi sau khi
+     * nén (`.jpg` → `.webp`), nên nếu khoá theo tên mới thì mọi ánh xạ
+     * file ↔ thẻ dựng ở `matchFlashcardMediaFiles` sẽ trượt.
+     */
+    const plannedFiles = files.filter((file) =>
+      uploads.some((item) => item.fileName === file.name),
+    );
+    setPhase("compressing");
+    setProgress({ done: 0, total: plannedFiles.length });
+    const compressedByName = await compressFlashcardImages(
+      plannedFiles,
+      (done, total) => setProgress({ done, total }),
+    );
+
     setPhase("uploading");
     setProgress({ done: 0, total: uploads.length });
 
-    const fileByName = new Map(files.map((file) => [file.name, file]));
+    const fileByName = new Map(
+      plannedFiles.map((file) => [
+        file.name,
+        compressedByName.get(file.name)?.file ?? file,
+      ]),
+    );
 
     const ticketResult = await createFlashcardBulkUploadTicketsAction({
       sectionId: section.id,
@@ -235,8 +264,11 @@ export function FlashcardBulkMediaTab({
             .from(FLASHCARD_MEDIA_BUCKET)
             .uploadToSignedUrl(ticket.path, ticket.token, body, {
               contentType: ticket.contentType,
+              cacheControl: FLASHCARD_MEDIA_CACHE_CONTROL,
             });
-          if (uploadError) failedFiles.push(file.name);
+          // Tên GỐC, không phải tên sau khi nén: người soạn đi tìm file trong
+          // thư mục của họ theo cái tên họ đặt.
+          if (uploadError) failedFiles.push(fileName);
           else {
             uploaded.push({
               pageId: ticket.pageId,
@@ -325,16 +357,22 @@ export function FlashcardBulkMediaTab({
   // ===================================================================
   // Màn tiến độ
   // ===================================================================
-  if (phase === "uploading") {
+  if (phase === "compressing" || phase === "uploading") {
+    const compressing = phase === "compressing";
     return (
       <div className="space-y-3 py-6">
         <p aria-live="polite" className="text-sm font-medium">
-          Đang tải file {progress.done}/{progress.total}…
+          {compressing ? "Đang nén ảnh" : "Đang tải file"} {progress.done}/
+          {progress.total}…
         </p>
         <Progress
           value={progress.done}
           max={progress.total}
-          label={`Đã tải ${progress.done} trên ${progress.total} file`}
+          label={
+            compressing
+              ? `Đã nén ${progress.done} trên ${progress.total} file`
+              : `Đã tải ${progress.done} trên ${progress.total} file`
+          }
         />
         <p className="text-muted-foreground text-sm">
           Đừng đóng cửa sổ này cho tới khi chạy xong.
