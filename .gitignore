@@ -48,3 +48,8 @@ yarn-error.log*
 
 .vercel
 .env*
+# Ngoại lệ: các file *.example chỉ chứa TÊN biến, không chứa giá trị thật.
+# Chúng phải lên git thì người sau mới biết cần khai những gì.
+# (Quy tắc phủ định của git phải nằm SAU pattern chặn nó.)
+!.env.example
+!.env.perf.example

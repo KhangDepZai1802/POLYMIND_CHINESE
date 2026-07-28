@@ -92,11 +92,20 @@ async function readSidebar(page: Page): Promise<Surface[]> {
 /**
  * Bấm link ở sidebar rồi chờ tới lúc **nhìn thấy nội dung thật**.
  *
- * Mốc dừng gồm hai vế, thiếu vế nào cũng ra số sai:
- *  1. lớp phủ "Đang tải trang" đã tắt — tức đoạn RSC của trang đã về;
- *  2. có `<h1>` và `<h1>` đó KHÔNG phải error boundary — tức trang lên thật.
- *     Trang lỗi cũng có `<h1>`, cũng làm overlay tắt, và nó về NHANH hơn trang
- *     thật, nên bỏ vế này là tự thưởng cho mình một con số đẹp mà vô nghĩa.
+ * Mốc dừng là **`<h1>` đổi sang tiêu đề của màn mới**, và tiêu đề đó không phải
+ * error boundary (trang lỗi cũng có `<h1>` và về NHANH hơn trang thật, nên bỏ vế
+ * này là tự thưởng cho mình một con số đẹp mà vô nghĩa).
+ *
+ * 🔴 **Bản đầu neo vào lớp phủ "Đang tải trang" và ĐO SAI — cộng thêm 460ms cố
+ * định vào mọi số đo.** Nguyên nhân: có **HAI** phần tử `role="status"` mang
+ * CÙNG `aria-label="Đang tải trang"` — [`page-loading-overlay.tsx`] (lớp phủ
+ * thật) và [`nav-progress.tsx`] (thanh tiến trình mảnh ở đỉnh). Thanh tiến
+ * trình chỉ trả `null` khi `!visible && progress === 0`, mà `done()` hẹn
+ * `setVisible(false)` ở +220ms và `setProgress(0)` ở +460ms **SAU KHI** trang
+ * đã render xong. Triệu chứng nhận ra: cả 12 màn ra gần y hệt nhau (1360–1400ms)
+ * bất kể màn nặng hay nhẹ — dấu hiệu của một độ trễ CỐ ĐỊNH, không phải tải dữ
+ * liệu. ⚠️ [`admin-responsive.spec.ts:143-146`] đang dùng đúng locator đó, nên
+ * mỗi lượt điều hướng ở suite E2E cũng chờ thừa 460ms.
  */
 async function measureNavigation(
   page: Page,
@@ -116,21 +125,44 @@ async function measureNavigation(
   };
   page.on("requestfinished", onFinished);
 
+  // Bấm link của chính trang đang mở thì App Router KHÔNG điều hướng, `<h1>`
+  // không bao giờ đổi, và phép đo treo tới hết giờ. Fail sớm với lý do thật
+  // thay vì để lộ ra dưới dạng `TimeoutError` ở tận `waitForFunction`.
+  const here = new URL(page.url()).pathname;
+  if (here === surface.path) {
+    page.off("requestfinished", onFinished);
+    throw new Error(
+      `measureNavigation: đang đứng sẵn ở "${surface.path}" — không có gì để đo.`,
+    );
+  }
+
+  const h1 = page.getByRole("heading", { level: 1 }).first();
+  // Tiêu đề của màn ĐANG đứng, để biết khi nào nó đã bị thay bằng màn mới.
+  const previousTitle = (await h1.innerText().catch(() => "")).trim();
+
   try {
     const started = Date.now();
 
     await sidebar(page).locator(`a[href="${surface.path}"]`).click();
 
-    await expect(
-      page.getByRole("status", { name: "Đang tải trang" }),
-      `${surface.path}: lớp phủ "Đang tải trang" chưa tắt sau ${NAV_TIMEOUT}ms`,
-    ).toHaveCount(0, { timeout: NAV_TIMEOUT });
-
-    const h1 = page.getByRole("heading", { level: 1 }).first();
-    await expect(
-      h1,
-      `${surface.path}: chưa có <h1> nào — đoạn RSC của trang chưa về`,
-    ).toBeVisible({ timeout: NAV_TIMEOUT });
+    // Trong lúc tải, thân trang bị thay bằng `loading.tsx` (không có `<h1>`),
+    // nên phải chờ CẢ HAI: có `<h1>` trở lại VÀ nội dung của nó đã khác trước.
+    //
+    // Dùng `waitForFunction` (nhịp `raf`, ~16ms) chứ KHÔNG `expect.poll`: poll
+    // mặc định giãn dần 100 → 250 → 500 → 1000ms, tức có thể cộng oan tới nửa
+    // giây vào một phép đo chỉ tầm 1 giây. Đo sai theo hướng "chậm hơn thực tế"
+    // đúng là cách phép đo trước đã lừa chính nó.
+    await page.waitForFunction(
+      (prev) => {
+        const node =
+          document.querySelector("h1") ??
+          document.querySelector('[role="heading"][aria-level="1"]');
+        const text = node?.textContent?.trim() ?? "";
+        return text !== "" && text !== prev;
+      },
+      previousTitle,
+      { timeout: NAV_TIMEOUT, polling: "raf" },
+    );
 
     const total = Date.now() - started;
 
@@ -157,10 +189,22 @@ test("đo thời gian chuyển module", async ({ page }) => {
 
   for (let round = 1; round <= rounds; round++) {
     for (const entry of results) {
-      // Luôn xuất phát từ một màn KHÁC màn sắp đo: bấm link của trang đang đứng
-      // thì App Router không điều hướng và ta đo ra ~0ms.
-      const from =
-        entry.surface.path === surfaces[0]!.path ? surfaces[1]! : surfaces[0]!;
+      // Mỗi lượt đo cần một bước "lấy đà" từ màn khác, vì bấm link của trang
+      // đang mở thì App Router không điều hướng.
+      //
+      // 🔴 Chọn màn lấy đà theo CHỈ SỐ (`surfaces[0]`) là sai, và đã làm treo
+      // lượt chạy trước: đo xong `/admin` thì trang đang đứng ở `/admin`, mà
+      // màn tiếp theo lại lấy đà từ đúng `/admin` đó. Phải chọn theo URL THẬT
+      // đang mở — màn nào khác cả nơi đang đứng lẫn nơi sắp đo.
+      const here = new URL(page.url()).pathname;
+      const from = surfaces.find(
+        (s) => s.path !== here && s.path !== entry.surface.path,
+      );
+      if (!from) {
+        throw new Error(
+          `Không tìm được màn lấy đà cho "${entry.surface.path}" (đang ở "${here}").`,
+        );
+      }
       await measureNavigation(page, from);
 
       const { total, server } = await measureNavigation(page, entry.surface);
