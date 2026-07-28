@@ -4,6 +4,10 @@ import { type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 
+// Cạnh database (Supabase `ap-northeast-1`). Route Handler KHÔNG thừa kế
+// `preferredRegion` từ layout — xem `src/app/layout.tsx`.
+export const preferredRegion = "hnd1";
+
 /**
  * Đích đến của link trong email Supabase Auth (invite / reset password /
  * confirm email). Đổi token trong link lấy phiên đăng nhập, rồi chuyển tiếp.

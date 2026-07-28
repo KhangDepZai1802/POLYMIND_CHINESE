@@ -12,6 +12,10 @@ import { getAdminTuitionReport } from "@/features/reports/server/admin-queries";
 
 export const dynamic = "force-dynamic";
 
+// Cạnh database (Supabase `ap-northeast-1`). Route Handler KHÔNG thừa kế
+// `preferredRegion` từ layout - xem `src/app/layout.tsx`.
+export const preferredRegion = "hnd1";
+
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
