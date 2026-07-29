@@ -21,6 +21,8 @@ import {
 } from "@/features/flashcards/domain/bulk-media";
 import {
   flashcardBulkUploadRequestSchema,
+  flashcardDeckCoverAssignmentSchema,
+  flashcardDeckCoverUploadRequestSchema,
   flashcardDeckSchema,
   flashcardImportRowSchema,
   flashcardMediaAssignmentSchema,
@@ -860,6 +862,355 @@ export async function attachFlashcardSectionMediaAction(
   };
 }
 
+// =====================================================================
+// Gắn ảnh TRANG MỞ ĐẦU hàng loạt cho cả BỘ THẺ (`COVER-1`)
+// =====================================================================
+
+export type FlashcardCoverTicket = {
+  sectionId: string;
+  pageId: string;
+  path: string;
+  token: string;
+  contentType: string;
+};
+
+/**
+ * Xin vé tải ảnh mở đầu cho **cả bộ trong MỘT lượt gọi**.
+ *
+ * 🔴 Một lượt gọi là ràng buộc cứng, không phải tối ưu — cùng lý do đã ghi ở
+ * `createFlashcardBulkUploadTicketsAction`: `consumeRateLimit` tiêu một đơn vị
+ * `material_upload` mỗi lượt gọi, trần 20 lượt/giờ, mà một bộ có tới 35 buổi.
+ *
+ * 🔴 `pageId` phải chốt Ở ĐÂY chứ không phải lúc ghi: đường dẫn object mang
+ * `pageId` (`actor/deck/section/page/front-<uuid>.<ext>`) và
+ * `isOwnedFlashcardMediaPath` soi lại đúng năm đoạn đó. Buổi đã có trang mở đầu
+ * thì dùng LẠI mã trang cũ — sinh mã mới sẽ làm ảnh vừa tải thành file mà chính
+ * trang ấy không sở hữu, và lượt sửa trang tiếp theo sẽ từ chối nó.
+ *
+ * Quy ước đường dẫn giữ nguyên nên policy Storage không phải sửa dòng nào.
+ */
+export async function createFlashcardDeckCoverTicketsAction(
+  input: unknown,
+): Promise<{ error: string } | { tickets: FlashcardCoverTicket[] }> {
+  const actor = await requireRole("super_admin");
+  const parsed = flashcardDeckCoverUploadRequestSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Yêu cầu không hợp lệ." };
+  }
+
+  // Một buổi chỉ nhận một ảnh mở đầu. Trùng ở đây nghĩa là client tính sai —
+  // `matchFlashcardCoverFiles` đã loại ca đó — nên nói thẳng thay vì chọn bừa.
+  const seen = new Set<string>();
+  for (const item of parsed.data.items) {
+    if (seen.has(item.sectionId)) {
+      return { error: "Mỗi buổi chỉ nhận một ảnh mở đầu trong một lượt." };
+    }
+    seen.add(item.sectionId);
+  }
+
+  const supabase = await createClient();
+  const { data: deck } = await supabase
+    .from("flashcard_decks")
+    .select("id")
+    .eq("id", parsed.data.deckId)
+    .maybeSingle();
+  if (!deck) return { error: "Không tìm thấy bộ flashcard." };
+
+  const sectionIds = [...seen];
+  const { data: sections } = await supabase
+    .from("flashcard_sections")
+    .select("id,status")
+    .eq("deck_id", deck.id)
+    .is("archived_at", null)
+    .in("id", sectionIds);
+  const draftSections = new Set(
+    (sections ?? [])
+      .filter((section) => section.status === "draft")
+      .map((section) => section.id),
+  );
+  if (draftSections.size !== sectionIds.length) {
+    return {
+      error: "Có buổi không thuộc bộ đã chọn hoặc không còn ở bản nháp.",
+    };
+  }
+
+  // Trang mở đầu ĐANG CÓ của từng buổi — nguồn của `pageId` dùng lại.
+  const { data: covers } = await supabase
+    .from("flashcard_pages")
+    .select("id,section_id")
+    .in("section_id", sectionIds)
+    .eq("kind", "session_cover")
+    .is("archived_at", null);
+  const pageIdBySection = new Map(
+    (covers ?? []).map((page) => [page.section_id, page.id]),
+  );
+
+  const prepared: Array<{
+    sectionId: string;
+    pageId: string;
+    contentType: string;
+    path: string;
+  }> = [];
+  for (const item of parsed.data.items) {
+    const format = flashcardMediaFormat("front", item.fileName, item.mimeType);
+    if (!format) {
+      return {
+        error: `Ảnh "${item.fileName}" sai định dạng — chỉ nhận JPG, PNG hoặc WEBP.`,
+      };
+    }
+    if (item.sizeBytes > flashcardMediaSizeLimit("front")) {
+      return { error: `Ảnh "${item.fileName}" vượt 8 MB.` };
+    }
+    const pageId = pageIdBySection.get(item.sectionId) ?? crypto.randomUUID();
+    prepared.push({
+      sectionId: item.sectionId,
+      pageId,
+      contentType: format.mimeType,
+      path: `${actor.id}/${deck.id}/${item.sectionId}/${pageId}/front-${crypto.randomUUID()}.${format.extension}`,
+    });
+  }
+
+  if (!(await consumeRateLimit(supabase, "material_upload"))) {
+    return { error: "Bạn đã tạo quá nhiều lượt tải file. Vui lòng thử lại." };
+  }
+
+  // Ký theo LÔ, không nối đuôi — cùng lý do đã đo ở `…077`: 35 round-trip nối
+  // đuôi trên Supabase cloud (RTT ~200ms) là ngót 7 giây chết trước khi tải được
+  // byte đầu tiên.
+  const signed: Array<FlashcardCoverTicket | null> = [];
+  for (let start = 0; start < prepared.length; start += SIGN_CONCURRENCY) {
+    const batch = await Promise.all(
+      prepared.slice(start, start + SIGN_CONCURRENCY).map(async (item) => {
+        const { data, error } = await supabase.storage
+          .from(FLASHCARD_MEDIA_BUCKET)
+          .createSignedUploadUrl(item.path);
+        if (error || !data) return null;
+        return {
+          sectionId: item.sectionId,
+          pageId: item.pageId,
+          path: data.path,
+          token: data.token,
+          contentType: item.contentType,
+        };
+      }),
+    );
+    signed.push(...batch);
+  }
+
+  if (signed.some((ticket) => ticket === null)) {
+    return { error: "Không tạo được liên kết tải ảnh. Vui lòng thử lại." };
+  }
+
+  return { tickets: signed as FlashcardCoverTicket[] };
+}
+
+export type FlashcardCoverOutcome = {
+  createdCount: number;
+  replacedCount: number;
+  skippedExistingCount: number;
+  skippedPublishedCount: number;
+  /** Đường dẫn bị loại vì soi ra hỏng — client đổi ngược về tên file. */
+  rejectedPaths: string[];
+};
+
+/**
+ * Ghi ảnh mở đầu đã tải vào từng buổi, qua RPC `attach_flashcard_deck_covers`.
+ *
+ * `front_alt` tính ở ĐÂY bằng `flashcardAltText` — đúng một chỗ sinh alt cho cả
+ * sản phẩm (xem `…077`); RPC chỉ ghi thứ được đưa xuống và DB giữ vế cứng "có
+ * ảnh phải có alt".
+ */
+export async function attachFlashcardDeckCoversAction(
+  input: unknown,
+): Promise<
+  ActionState & {
+    outcome?: FlashcardCoverOutcome;
+    /** Xem `attachFlashcardSectionMediaAction`: lỗi này KHÔNG đụng file đã tải. */
+    keepUploads?: boolean;
+  }
+> {
+  const actor = await requireRole("super_admin");
+  const parsed = flashcardDeckCoverAssignmentSchema.safeParse(input);
+  if (!parsed.success) return zodToActionState(parsed.error);
+
+  const supabase = await createClient();
+  const { data: deck } = await supabase
+    .from("flashcard_decks")
+    .select("id")
+    .eq("id", parsed.data.deckId)
+    .maybeSingle();
+  if (!deck) return { error: "Không tìm thấy bộ flashcard." };
+
+  const sectionIds = parsed.data.assignments.map((item) => item.sectionId);
+  const { data: sections } = await supabase
+    .from("flashcard_sections")
+    .select("id,title,status")
+    .eq("deck_id", deck.id)
+    .is("archived_at", null)
+    .in("id", sectionIds);
+  const sectionById = new Map(
+    (sections ?? []).map((section) => [section.id, section]),
+  );
+
+  const covers: Array<{
+    section_id: string;
+    page_id: string;
+    front_image_path: string;
+    front_alt: string;
+  }> = [];
+
+  for (const item of parsed.data.assignments) {
+    const section = sectionById.get(item.sectionId);
+    if (!section) return { error: "Có buổi không thuộc bộ đã chọn." };
+
+    if (
+      !isOwnedFlashcardMediaPath(item.frontImagePath, {
+        actorId: actor.id,
+        deckId: deck.id,
+        sectionId: item.sectionId,
+        pageId: item.pageId,
+        slot: "front",
+      })
+    ) {
+      return { error: "Đường dẫn ảnh mở đầu không hợp lệ." };
+    }
+
+    covers.push({
+      section_id: item.sectionId,
+      page_id: item.pageId,
+      front_image_path: item.frontImagePath,
+      front_alt: flashcardAltText({
+        kind: "session_cover",
+        face: "front",
+        hanzi: null,
+        meaningVi: null,
+        sectionTitle: section.title,
+      }),
+    });
+  }
+
+  // Đường dẫn phải trỏ tới file CÓ THẬT, đúng định dạng và trong hạn dung lượng
+  // — y hệt hai đường gắn media đã có. Bỏ bước này thì một yêu cầu tự chế (đường
+  // dẫn đúng hình dạng nhưng chưa từng tải gì lên) sẽ ghi được vào DB, và buổi
+  // đó công bố ra một trang mở đầu ảnh vỡ trên chính mã QR in trong sách.
+  const checks: UploadedMediaCheck[] = covers.map((item) => ({
+    pageId: item.page_id,
+    slot: "front" as const,
+    path: item.front_image_path,
+  }));
+
+  const { data: infoRows, error: infoError } = await supabase.rpc(
+    "flashcard_media_objects_info",
+    { p_paths: checks.map((check) => check.path) },
+  );
+
+  // ⛔ Không soi được thì KHÔNG ghi gì (fail-closed) và cũng KHÔNG xoá gì.
+  if (infoError) {
+    return {
+      error:
+        "Chưa kiểm tra được ảnh vừa tải lên. Bấm chạy lại — ảnh vẫn còn trên máy chủ, không phải chọn lại.",
+      keepUploads: true,
+    };
+  }
+
+  const verdict = classifyUploadedFlashcardMedia(
+    checks,
+    new Map(
+      (infoRows ?? []).map((row) => [
+        row.object_path,
+        { sizeBytes: row.size_bytes, mimeType: row.mime_type },
+      ]),
+    ),
+  );
+
+  await removeFlashcardObjects(verdict.invalid.map((check) => check.path));
+
+  // Bỏ RIÊNG buổi có ảnh hỏng, giữ nguyên phần đã soi sạch — nguyên tử theo
+  // TỪNG BUỔI. Trả lỗi cho cả lượt thì một ảnh hỏng vứt luôn 34 ảnh lành.
+  const usablePaths = new Set(verdict.usable.map((check) => check.path));
+  const keptCovers = covers.filter((item) =>
+    usablePaths.has(item.front_image_path),
+  );
+
+  if (keptCovers.length === 0) {
+    return {
+      error: `${verdict.invalid.length} ảnh tải lên không hợp lệ hoặc đã mất. Thử lại các buổi đó.`,
+    };
+  }
+
+  const { data, error } = await supabase.rpc("attach_flashcard_deck_covers", {
+    p_deck_id: parsed.data.deckId,
+    p_covers: keptCovers,
+    p_allow_overwrite: parsed.data.allowOverwrite,
+  });
+  if (error) {
+    return {
+      error: dbErrorToMessage(error, "Không gắn được ảnh mở đầu cho bộ thẻ."),
+    };
+  }
+
+  const results = data ?? [];
+  const countOf = (status: string) =>
+    results.filter((row) => row.row_status === status).length;
+  const outcome: FlashcardCoverOutcome = {
+    createdCount: countOf("created"),
+    replacedCount: countOf("replaced"),
+    skippedExistingCount: countOf("skipped_existing"),
+    skippedPublishedCount: countOf("skipped_published"),
+    rejectedPaths: verdict.invalid.map((check) => check.path),
+  };
+
+  // Ảnh của buổi bị RPC bỏ qua vẫn nằm trong bucket mà không trang nào trỏ tới —
+  // dọn luôn, cùng lượt với file cũ vừa bị thay. Không dọn thì mỗi lần bấm nhầm
+  // với ô Ghi đè đang TẮT lại để lại một nắm ảnh mồ côi.
+  const attachedSectionIds = new Set(
+    results
+      .filter(
+        (row) => row.row_status === "created" || row.row_status === "replaced",
+      )
+      .map((row) => row.section_id),
+  );
+  const orphanPaths = keptCovers
+    .filter((item) => !attachedSectionIds.has(item.section_id))
+    .map((item) => item.front_image_path);
+
+  await removeFlashcardObjects([
+    ...new Set([
+      ...results.flatMap((row) => row.removed_paths ?? []),
+      ...orphanPaths,
+    ]),
+  ]);
+
+  await logAudit(supabase, {
+    action: "flashcard.deck.covers.bulk_attach",
+    resourceType: "flashcard_deck",
+    resourceId: parsed.data.deckId,
+    after: outcome,
+  });
+  revalidateFlashcards();
+
+  const notes = [
+    outcome.skippedExistingCount > 0
+      ? `bỏ qua ${outcome.skippedExistingCount} buổi đã có ảnh`
+      : null,
+    outcome.skippedPublishedCount > 0
+      ? `bỏ qua ${outcome.skippedPublishedCount} buổi đã công bố`
+      : null,
+    outcome.rejectedPaths.length > 0
+      ? `loại ${outcome.rejectedPaths.length} ảnh hỏng`
+      : null,
+  ].filter((note): note is string => note !== null);
+
+  const touched = outcome.createdCount + outcome.replacedCount;
+  return {
+    success:
+      notes.length === 0
+        ? `Đã gắn ảnh mở đầu cho ${touched} buổi.`
+        : `Đã gắn ảnh mở đầu cho ${touched} buổi, ${notes.join(", ")}.`,
+    outcome,
+  };
+}
+
 /**
  * Mọi media của trang, kèm KHE mà nó được khai báo.
  *
@@ -870,11 +1221,9 @@ export async function attachFlashcardSectionMediaAction(
 function declaredMedia(
   input: FlashcardPageInput,
 ): Array<{ slot: FlashcardMediaSlot; path: string }> {
+  // Trang mở đầu chỉ còn MỘT khe ảnh (`…084`): một file vẽ cho cả hai mặt.
   if (input.kind === "session_cover") {
-    return [
-      { slot: "front", path: input.front_image_path },
-      { slot: "back", path: input.back_image_path },
-    ];
+    return [{ slot: "front", path: input.front_image_path }];
   }
 
   const media: Array<{ slot: FlashcardMediaSlot; path: string }> = [];
@@ -897,9 +1246,6 @@ function pageValues(input: FlashcardPageInput, sectionTitle: string) {
   const hanzi = input.kind === "vocabulary" ? input.hanzi : null;
   const meaningVi = input.kind === "vocabulary" ? input.meaning_vi : null;
   const frontPath = input.front_image_path ?? null;
-  // Ảnh mặt sau CHỈ có ở trang mở đầu (`…078`): thẻ từ vựng luôn null.
-  const backPath =
-    input.kind === "session_cover" ? input.back_image_path : null;
 
   const altFor = (face: "front" | "back") =>
     flashcardAltText({ kind: input.kind, face, hanzi, meaningVi, sectionTitle });
@@ -912,11 +1258,16 @@ function pageValues(input: FlashcardPageInput, sectionTitle: string) {
     meaning_vi: meaningVi,
     audio_path: input.kind === "vocabulary" ? (input.audio_path ?? null) : null,
     front_image_path: frontPath,
-    back_image_path: backPath,
+    // Ảnh mặt sau đã nghỉ hưu với MỌI `kind` (`…084`): thẻ từ vựng có mặt sau
+    // bằng chữ (`…078`), trang mở đầu vẽ lại chính ảnh mặt trước. Ghi thẳng
+    // `null` chứ không bỏ cột ra khỏi payload: trang mở đầu CŨ đang mang đường
+    // dẫn mặt sau, và chỉ có phép gán tường minh mới dọn được nó khi admin lưu
+    // lại trang — bỏ cột ra thì `update` giữ nguyên giá trị cũ và constraint nổ.
+    back_image_path: null,
     // `flashcard_pages_alt_pairing_check`: có ảnh thì phải có alt, không ảnh thì
     // alt phải rỗng. Sinh alt cho ảnh không tồn tại là tự tạo dữ liệu ma.
     front_alt: frontPath ? altFor("front") : null,
-    back_alt: backPath ? altFor("back") : null,
+    back_alt: null,
     // Khối "Tách nghĩa" (`sense_breakdown`) đã xoá khỏi cả code lẫn DB
     // (migration `…074`, sau khi user đếm cloud ra 0 hàng mang dữ liệu).
     example_sentences:

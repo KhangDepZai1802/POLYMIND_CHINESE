@@ -13,7 +13,31 @@ function issuePaths(result: { success: boolean; error?: unknown }) {
 }
 
 describe("flashcardPageSchema — hai nhánh theo kind", () => {
-  it("trang mở đầu cần đúng hai ảnh và không nhận trường chữ", () => {
+  it("trang mở đầu cần ĐÚNG MỘT ảnh và không nhận trường chữ", () => {
+    const parsed = flashcardPageSchema.safeParse({
+      id: ID,
+      section_id: SECTION_ID,
+      kind: "session_cover",
+      front_image_path: `${PREFIX}/front-a.png`,
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.kind).toBe("session_cover");
+    // `D-41`: trang mở đầu không có chữ, không mp3, và từ 2026-07-29 cũng không
+    // còn khe ảnh mặt sau — nhánh này không hề khai các trường đó nên chúng
+    // không thể lọt vào đường ghi.
+    expect("hanzi" in parsed.data).toBe(false);
+    expect("audio_path" in parsed.data).toBe(false);
+    expect("back_image_path" in parsed.data).toBe(false);
+  });
+
+  it("trang mở đầu KHÔNG có khe ảnh mặt sau — client gửi back_image_path thì bị bỏ", () => {
+    // `D-41`: một ảnh vẽ cho cả hai mặt. Payload cũ (bản code trước 2026-07-29,
+    // hoặc một client tự chế) mang `back_image_path` phải bị **strip**, không
+    // được lọt vào đường ghi — nếu lọt thì `pageValues` sẽ ghi nó xuống DB và
+    // `flashcard_pages_image_kind_check` (`…084`) nổ với một câu constraint mà
+    // người soạn không đọc được.
     const parsed = flashcardPageSchema.safeParse({
       id: ID,
       section_id: SECTION_ID,
@@ -24,24 +48,20 @@ describe("flashcardPageSchema — hai nhánh theo kind", () => {
 
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
-    expect(parsed.data.kind).toBe("session_cover");
-    // Chốt `Q5`: trang mở đầu không có chữ, không có mp3 — nhánh này không hề
-    // khai các trường đó nên chúng không thể lọt vào đường ghi.
-    expect("hanzi" in parsed.data).toBe(false);
-    expect("audio_path" in parsed.data).toBe(false);
+    expect("back_image_path" in parsed.data).toBe(false);
   });
 
   it("trang mở đầu thiếu ảnh thì báo đúng ô nào thiếu", () => {
+    // Bỏ mặt sau KHÔNG có nghĩa là bỏ luôn ảnh: trang mở đầu vẫn phải có một ảnh.
     const parsed = flashcardPageSchema.safeParse({
       id: ID,
       section_id: SECTION_ID,
       kind: "session_cover",
-      front_image_path: `${PREFIX}/front-a.png`,
-      back_image_path: "",
+      front_image_path: "",
     });
 
     expect(parsed.success).toBe(false);
-    expect(issuePaths(parsed)).toContain("back_image_path");
+    expect(issuePaths(parsed)).toContain("front_image_path");
   });
 
   it("thẻ từ vựng bắt buộc hanzi, pinyin và nghĩa", () => {

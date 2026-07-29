@@ -70,6 +70,7 @@ import {
 import { compressFlashcardImage } from "@/features/flashcards/client/compress-image";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
 import { FlashcardDeckDialog } from "@/features/flashcards/components/flashcard-deck-dialog";
+import { FlashcardDeckCoverDialog } from "@/features/flashcards/components/flashcard-deck-cover-dialog";
 import { FlashcardDeckPublicLinks } from "@/features/flashcards/components/flashcard-deck-public-links";
 import { FlashcardNavRail } from "@/features/flashcards/components/flashcard-nav-rail";
 import { FlashcardPublicLinkPanel } from "@/features/flashcards/components/flashcard-public-link-panel";
@@ -391,26 +392,41 @@ export function FlashcardAdminManager({
                 </p>
               </div>
               {/*
-                MỘT hành động chính mỗi vùng: "Thêm buổi" là nút mặc định, "Tạo
-                nhiều buổi" đứng cạnh ở dạng viền. Hành động PHÁ HUỶ không nằm ở
-                đây — chúng ở "Vùng nguy hiểm" cuối trang.
+                HÀNG NÚT CẤP BỘ — mọi thứ ở đây tác động tới cả bộ thẻ, không
+                phải tới buổi đang mở.
+
+                MỘT hành động chính mỗi vùng (`primary-action`): "Thêm buổi" là
+                nút mặc định, hai nút còn lại ở dạng viền. "Ảnh mở đầu hàng loạt"
+                đứng ở ĐÂY chứ không ở thanh chọn khoá học (trộn hai tầng) và
+                không ở cột trái (vùng điều hướng thuần) — `D-41` điểm 5. Hành
+                động PHÁ HUỶ không nằm ở đây: chúng ở "Vùng nguy hiểm" cuối trang
+                (`destructive-nav-separation`).
+
+                Nút ảnh mở đầu hiện cả khi bộ đã đủ số buổi — nó không tạo buổi,
+                nó chỉ gắn ảnh cho buổi đã có; gói nó vào nhánh `nextSession` thì
+                đúng bộ đã soạn xong 35 buổi lại là bộ mất nút.
               */}
-              {nextSession ? (
-                <div className="flex flex-wrap gap-2">
-                  <SectionDialog
-                    deckId={deck.id}
-                    maxSessions={selectedCourse.defaultSessionCount}
-                    nextSession={nextSession}
-                  />
-                  <SectionRangeDialog
-                    deckId={deck.id}
-                    maxSessions={selectedCourse.defaultSessionCount}
-                    nextSession={nextSession}
-                  />
-                </div>
-              ) : (
-                <StatusBadge label="Đã đủ số buổi" tone="success" />
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {nextSession ? (
+                  <>
+                    <SectionDialog
+                      deckId={deck.id}
+                      maxSessions={selectedCourse.defaultSessionCount}
+                      nextSession={nextSession}
+                    />
+                    <SectionRangeDialog
+                      deckId={deck.id}
+                      maxSessions={selectedCourse.defaultSessionCount}
+                      nextSession={nextSession}
+                    />
+                  </>
+                ) : (
+                  <StatusBadge label="Đã đủ số buổi" tone="success" />
+                )}
+                {deck.sections.length > 0 && (
+                  <FlashcardDeckCoverDialog deck={deck} />
+                )}
+              </div>
             </div>
 
             {deck.sections.length === 0 ? (
@@ -1166,15 +1182,24 @@ function FlashcardFaceThumbnail({
 
 function FlashcardFacePreviewPair({ page }: { page: FlashcardPageView }) {
   const [open, setOpen] = useState(false);
-  const name =
-    page.kind === "session_cover"
-      ? "trang mở đầu"
-      : `thẻ ${page.hanzi ?? "từ vựng"}`;
+  const isCover = page.kind === "session_cover";
+  const name = isCover ? "trang mở đầu" : `thẻ ${page.hanzi ?? "từ vựng"}`;
+
+  /*
+   * Trang mở đầu nay chỉ vẽ MỘT ô (`D-41`), thẻ từ vựng vẫn hai.
+   *
+   * Vẽ hai ô giống hệt nhau cho trang mở đầu là thứ đọc lên như một lỗi hiển
+   * thị: admin sẽ dừng lại soi xem mình có up nhầm cùng một ảnh hai lần không.
+   * Một ô kèm chú "dùng cho cả hai mặt" nói đúng sự thật và nói ngay.
+   */
+  const faces = isCover ? (["front"] as const) : (["front", "back"] as const);
+  const faceLabel = (face: Face) =>
+    isCover ? "Cả hai mặt" : face === "front" ? "Mặt trước" : "Mặt sau";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <div className="flex shrink-0 flex-wrap gap-2">
-        {(["front", "back"] as const).map((face) => (
+        {faces.map((face) => (
           <DialogTrigger asChild key={face}>
             <button
               type="button"
@@ -1182,7 +1207,7 @@ function FlashcardFacePreviewPair({ page }: { page: FlashcardPageView }) {
             >
               <FlashcardFaceThumbnail page={page} face={face} />
               <span className="sr-only">
-                Phóng to mặt {face === "front" ? "trước" : "sau"} của {name}
+                Phóng to {faceLabel(face).toLowerCase()} của {name}
               </span>
             </button>
           </DialogTrigger>
@@ -1192,7 +1217,9 @@ function FlashcardFacePreviewPair({ page }: { page: FlashcardPageView }) {
         <DialogHeader>
           <DialogTitle>Xem trước {name}</DialogTitle>
           <DialogDescription>
-            Đúng bằng thứ học viên nhìn thấy khi buổi đã công bố.
+            {isCover
+              ? "Đúng bằng thứ học viên nhìn thấy khi buổi đã công bố. Trang mở đầu dùng một ảnh cho cả hai mặt."
+              : "Đúng bằng thứ học viên nhìn thấy khi buổi đã công bố."}
           </DialogDescription>
         </DialogHeader>
         {/*
@@ -1200,11 +1227,9 @@ function FlashcardFacePreviewPair({ page }: { page: FlashcardPageView }) {
           so hai mặt với nhau, không cần diễn lại thao tác học.
         */}
         <div className="space-y-4">
-          {(["front", "back"] as const).map((face) => (
+          {faces.map((face) => (
             <section key={face} className="space-y-2">
-              <h3 className="text-sm font-semibold">
-                {face === "front" ? "Mặt trước" : "Mặt sau"}
-              </h3>
+              <h3 className="text-sm font-semibold">{faceLabel(face)}</h3>
               <FlashcardFaceCard page={page} face={face} />
             </section>
           ))}
@@ -1217,7 +1242,8 @@ function FlashcardFacePreviewPair({ page }: { page: FlashcardPageView }) {
 const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
 const AUDIO_ACCEPT = "audio/mpeg,audio/mp4,.mp3,.m4a";
 
-type FixedMediaFiles = Partial<Record<"front" | "back" | "audio", File>>;
+// Khe `back` đã nghỉ hưu (`…084`): trang mở đầu một ảnh, thẻ từ vựng mặt sau chữ.
+type FixedMediaFiles = Partial<Record<"front" | "audio", File>>;
 
 function toDrafts(
   items: Array<{
@@ -1250,10 +1276,9 @@ function PageDialog({
   const [saving, setSaving] = useState(false);
   const [state, setState] = useState<ActionState>({});
   const [files, setFiles] = useState<FixedMediaFiles>({});
-  const [clearedFaces, setClearedFaces] = useState({
-    front: false,
-    back: false,
-  });
+  // Chỉ còn MỘT ô "bỏ ảnh" (thẻ từ vựng): trang mở đầu không bỏ ảnh được vì ảnh
+  // là thứ duy nhất nó có.
+  const [clearedFront, setClearedFront] = useState(false);
 
   const isEdit = Boolean(page);
   const hasCover = section.pages.some((item) => item.kind === "session_cover");
@@ -1277,7 +1302,7 @@ function PageDialog({
     setFiles({});
     setState({});
     setKind(defaultKind);
-    setClearedFaces({ front: false, back: false });
+    setClearedFront(false);
     setExamples(toDrafts(stored.examples));
     setPhrases(toDrafts(stored.phrases));
   }
@@ -1286,20 +1311,18 @@ function PageDialog({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    // Trang mở đầu bắt buộc đủ hai ảnh; thẻ từ vựng bắt buộc audio, còn ảnh là
-    // tuỳ chọn (§7ter). Chặn ở đây để không tải file lên rồi mới báo lỗi.
+    // Trang mở đầu bắt buộc ĐÚNG MỘT ảnh (`D-41`); thẻ từ vựng bắt buộc audio,
+    // còn ảnh là tuỳ chọn (§7ter). Chặn ở đây để không tải file lên rồi mới báo
+    // lỗi.
     if (!isEdit) {
-      if (kind === "session_cover" && !(files.front && files.back)) {
-        setState({
-          error: "Trang mở đầu cần đủ ảnh mặt trước và ảnh mặt sau.",
-        });
+      if (kind === "session_cover" && !files.front) {
+        setState({ error: "Trang mở đầu cần một ảnh." });
         return;
       }
     }
 
     const uploads: Array<{ slot: FlashcardMediaSlot; file: File }> = [];
     if (files.front) uploads.push({ slot: "front", file: files.front });
-    if (files.back) uploads.push({ slot: "back", file: files.back });
     if (kind === "vocabulary" && files.audio) {
       uploads.push({ slot: "audio", file: files.audio });
     }
@@ -1395,21 +1418,16 @@ function PageDialog({
       formData.set("section_id", section.id);
       formData.set("kind", kind);
 
-      const keptFace = (face: "front" | "back") => {
-        const uploaded = uploadedBySlot.get(face);
-        if (uploaded) return uploaded;
-        if (kind === "vocabulary" && clearedFaces[face]) return "";
-        return (
-          (face === "front" ? page?.front_image_path : page?.back_image_path) ??
-          ""
-        );
-      };
-      formData.set("front_image_path", keptFace("front"));
-      // Ảnh mặt sau chỉ gửi cho trang mở đầu — thẻ từ vựng không còn khe này
-      // (`…078`). Schema thẻ từ vựng cũng đã bỏ `back_image_path`.
-      if (kind === "session_cover") {
-        formData.set("back_image_path", keptFace("back"));
-      }
+      // Chỉ còn MỘT khe ảnh cho cả hai loại trang (`…084`): trang mở đầu vẽ một
+      // ảnh ra hai mặt, thẻ từ vựng có mặt sau bằng chữ.
+      const uploadedFront = uploadedBySlot.get("front");
+      formData.set(
+        "front_image_path",
+        uploadedFront ??
+          (kind === "vocabulary" && clearedFront
+            ? ""
+            : (page?.front_image_path ?? "")),
+      );
 
       if (kind === "vocabulary") {
         formData.set(
@@ -1498,7 +1516,7 @@ function PageDialog({
           <DialogDescription>
             {kind === "vocabulary"
               ? "Thẻ từ vựng cần Hán tự, pinyin và nghĩa. Ảnh là tuỳ chọn; audio phát âm là bắt buộc."
-              : "Trang mở đầu chỉ gồm hai ảnh, không nhập chữ và không có audio."}
+              : "Trang mở đầu chỉ gồm một ảnh dùng cho cả hai mặt, không nhập chữ và không có audio."}
           </DialogDescription>
         </DialogHeader>
 
@@ -1581,9 +1599,20 @@ function PageDialog({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
+            {/*
+              MỘT ô ảnh duy nhất cho cả hai loại trang (`D-41`).
+
+              Nhãn đổi theo loại trang chứ không dùng chung một câu: với trang mở
+              đầu thì "mặt trước" là chữ SAI — nó là ảnh của cả hai mặt, và gọi
+              nó là mặt trước sẽ khiến người soạn đi tìm ô mặt sau không tồn tại.
+              Câu `input-helper-text` bên dưới nói thẳng hệ quả, thay vì để người
+              dùng phát hiện sau khi lưu.
+            */}
             <MediaFileField
               id={fieldId("front")}
-              label="Ảnh mặt trước"
+              label={
+                kind === "session_cover" ? "Ảnh trang mở đầu" : "Ảnh mặt trước"
+              }
               accept={IMAGE_ACCEPT}
               required={!isEdit && kind === "session_cover"}
               optionalHint={
@@ -1593,29 +1622,21 @@ function PageDialog({
                     ? "để trống nếu giữ ảnh cũ"
                     : undefined
               }
+              helperText={
+                kind === "session_cover"
+                  ? "Dùng cho cả mặt trước và mặt sau — thẻ vẫn lật, hai mặt hiện cùng ảnh này."
+                  : undefined
+              }
               onFile={(file) =>
                 setFiles((current) => ({ ...current, front: file }))
               }
             />
-            {/*
-              Ảnh mặt sau CHỈ có ở trang mở đầu (hai ảnh không chữ, chốt `Q5`).
-              Thẻ từ vựng bỏ ô này từ 2026-07-25: mặt sau là chữ (`…078`).
-            */}
-            {kind === "session_cover" && (
-              <MediaFileField
-                id={fieldId("back")}
-                label="Ảnh mặt sau"
-                accept={IMAGE_ACCEPT}
-                required={!isEdit}
-                optionalHint={isEdit ? "để trống nếu giữ ảnh cũ" : undefined}
-                onFile={(file) =>
-                  setFiles((current) => ({ ...current, back: file }))
-                }
-              />
-            )}
           </div>
 
-          {/* Thẻ từ vựng chỉ còn MỘT ảnh (mặt trước) nên chỉ hiện một ô "bỏ ảnh". */}
+          {/*
+            Chỉ thẻ từ vựng mới bỏ được ảnh: ảnh là thứ DUY NHẤT trang mở đầu có,
+            bỏ nó đi thì trang rỗng và DB từ chối (`flashcard_pages_image_kind_check`).
+          */}
           {kind === "vocabulary" && isEdit && page?.front_image_path && (
             <div className="flex flex-wrap gap-4">
               <label
@@ -1626,13 +1647,8 @@ function PageDialog({
                   id={fieldId("clear-front")}
                   type="checkbox"
                   className="size-4"
-                  checked={clearedFaces.front}
-                  onChange={(event) =>
-                    setClearedFaces((current) => ({
-                      ...current,
-                      front: event.target.checked,
-                    }))
-                  }
+                  checked={clearedFront}
+                  onChange={(event) => setClearedFront(event.target.checked)}
                 />
                 Bỏ ảnh mặt trước khỏi thẻ
               </label>
@@ -1704,6 +1720,7 @@ function MediaFileField({
   accept,
   required,
   optionalHint,
+  helperText,
   onFile,
 }: {
   id: string;
@@ -1711,8 +1728,11 @@ function MediaFileField({
   accept: string;
   required: boolean;
   optionalHint?: string;
+  /** Câu giải thích BỀN, nằm dưới ô — không phải placeholder biến mất khi gõ. */
+  helperText?: string;
   onFile: (file: File | undefined) => void;
 }) {
+  const helperId = `${id}-help`;
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>
@@ -1723,8 +1743,14 @@ function MediaFileField({
         type="file"
         accept={accept}
         required={required}
+        aria-describedby={helperText ? helperId : undefined}
         onChange={(event) => onFile(event.target.files?.[0])}
       />
+      {helperText && (
+        <p id={helperId} className="text-muted-foreground text-sm">
+          {helperText}
+        </p>
+      )}
     </div>
   );
 }

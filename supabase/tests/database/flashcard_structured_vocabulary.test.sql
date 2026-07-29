@@ -142,7 +142,7 @@ values
   ('70600000-0000-4000-8000-000000000001', '70500000-0000-4000-8000-000000000001', 1, 'Buổi 1 (sẽ publish)'),
   ('70600000-0000-4000-8000-000000000002', '70500000-0000-4000-8000-000000000001', 2, 'Buổi 2 (giữ nháp)');
 
--- Buổi 1: trang mở đầu (2 ảnh, không chữ) + 1 thẻ từ vựng đủ 3 danh sách con.
+-- Buổi 1: trang mở đầu (MỘT ảnh, không chữ — `…084`) + 1 thẻ từ vựng đủ danh sách con.
 insert into public.flashcard_pages (
   id, section_id, kind, order_index,
   hanzi, pinyin_syllables, meaning_vi,
@@ -158,9 +158,9 @@ values
     null, null, null,
     '[]'::jsonb, '[]'::jsonb,
     '70000000-0000-4000-8000-000000000001/s1/cover/front-1.png',
-    '70000000-0000-4000-8000-000000000001/s1/cover/back-1.png',
     null,
-    'Mặt trước trang mở đầu buổi 1', 'Mặt sau trang mở đầu buổi 1'
+    null,
+    'Mặt trước trang mở đầu buổi 1', null
   ),
   (
     '70700000-0000-4000-8000-000000000002',
@@ -192,9 +192,9 @@ values
     null, null, null,
     '[]'::jsonb,
     '70000000-0000-4000-8000-000000000001/s2/cover/front-3.png',
-    '70000000-0000-4000-8000-000000000001/s2/cover/back-3.png',
     null,
-    'Mặt trước trang mở đầu buổi 2', 'Mặt sau trang mở đầu buổi 2'
+    null,
+    'Mặt trước trang mở đầu buổi 2', null
   ),
   (
     '70700000-0000-4000-8000-000000000004',
@@ -355,8 +355,12 @@ select is(
     from public.flashcard_pages
     where id = '70700000-0000-4000-8000-000000000001'
   ),
-  2,
-  'trang mở đầu chỉ có 2 ảnh trong media_paths (không audio)'
+  -- 2 → 1 (`COVER-1`/`…084`): trang mở đầu dùng ĐÚNG MỘT ảnh cho cả hai mặt.
+  -- Bài này canh `media_paths` chứ không canh cột ảnh, nên nó là chỗ bắt được
+  -- việc trigger tổng hợp còn ôm đường dẫn mặt sau đã bỏ — thứ sẽ biến thành
+  -- một URL ký cho file không ai dùng.
+  1,
+  'trang mở đầu chỉ có 1 ảnh trong media_paths (một ảnh cho cả hai mặt, không audio)'
 );
 
 -- Một đường ghi duy nhất: client gửi media_paths gì cũng bị trigger đè.

@@ -945,13 +945,10 @@ test.describe("Flashcard — quản trị", () => {
     // --- Trang mở đầu: buổi không có nó thì không công bố được, nên phải dựng
     // để vế "công bố được" ở cuối bài đo đúng chốt AUDIO chứ không phải chốt bìa.
     await page.getByRole("button", { name: "Thêm trang" }).click();
-    await page.getByLabel("Ảnh mặt trước").setInputFiles({
-      name: "bia-truoc.png",
-      mimeType: "image/png",
-      buffer: png,
-    });
-    await page.getByLabel("Ảnh mặt sau").setInputFiles({
-      name: "bia-sau.png",
+    // MỘT ô ảnh duy nhất từ `COVER-1`/`D-41`: trang mở đầu dùng chung một file
+    // cho cả hai mặt, nên nhãn cũng đổi khỏi "Ảnh mặt trước".
+    await page.getByLabel("Ảnh trang mở đầu").setInputFiles({
+      name: "bia.png",
       mimeType: "image/png",
       buffer: png,
     });
@@ -1031,6 +1028,100 @@ test.describe("Flashcard — quản trị", () => {
       set session_replication_role = origin;
     `);
     purgeTestPages(["汇率", "存单"]);
+  });
+
+  /**
+   * `COVER-1` — ẢNH TRANG MỞ ĐẦU HÀNG LOẠT CHO CẢ BỘ (`D-41`).
+   *
+   * Bài này đo đúng ba thứ mà không tầng nào khác đo được cùng lúc:
+   *   (1) một lượt thả ảnh chạm tới NHIỀU buổi (đây là toàn bộ lý do tính năng
+   *       tồn tại — bản cũ phải mở từng buổi, tạo trang, up 2 ảnh, lưu, thoát);
+   *   (2) buổi ĐÃ CÔNG BỐ hiện ra trong bảng đối chiếu với chữ "Đã công bố" và
+   *       KHÔNG bị đụng tới — vế fail-closed của `D-41` điểm 4;
+   *   (3) ảnh gắn xong thì DB chỉ có `front_image_path`, `back_image_path` vẫn
+   *       null — tức cơ chế một-ảnh không bị đường hàng loạt đi vòng.
+   *
+   * Buổi 1 của seed đang PUBLISHED và buổi 2 đang nháp, nên hai trạng thái cần
+   * đo đã có sẵn — không dựng thêm dữ liệu là không phải dọn thêm dữ liệu.
+   */
+  test("ảnh mở đầu hàng loạt: một lượt cho cả bộ, buổi đã công bố bị bỏ qua", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    // Dọn TRƯỚC (bài học `globalSetup` ở `P16-T8`): lượt trước có thể đã để lại
+    // trang mở đầu ở buổi 2, và khi đó hàng của nó là "Bỏ qua" chứ không phải
+    // "Sẽ thêm" — bài đỏ vì lý do không liên quan.
+    sql(`
+      set session_replication_role = replica;
+      update public.flashcard_sections
+        set status = 'draft', published_at = null
+        where id = '${SECTION_2}';
+      delete from public.flashcard_pages
+        where section_id = '${SECTION_2}' and kind = 'session_cover';
+      set session_replication_role = origin;
+    `);
+
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    );
+
+    await loginAdminAllowingUploads(page);
+    await openAdminDeck(page);
+
+    await page.getByRole("button", { name: "Ảnh mở đầu hàng loạt" }).click();
+    const dialog = page.getByRole("dialog");
+
+    // Hai ảnh: `02.png` cho buổi 2 (nháp) và `01.png` cho buổi 1 (ĐÃ CÔNG BỐ).
+    await dialog.locator('input[type="file"]').setInputFiles([
+      { name: "01.png", mimeType: "image/png", buffer: png },
+      { name: "02.png", mimeType: "image/png", buffer: png },
+    ]);
+
+    // Bảng đối chiếu phải nói trước cả hai kết cục, trước khi ghi một byte nào.
+    const publishedRow = dialog.getByRole("row").filter({ hasText: "01.png" });
+    await expect(publishedRow.getByText("Đã công bố")).toBeVisible();
+    const draftRow = dialog.getByRole("row").filter({ hasText: "02.png" });
+    await expect(draftRow.getByText("Sẽ thêm")).toBeVisible();
+
+    await dialog.getByRole("button", { name: /^Gắn cho 1 buổi/ }).click();
+    await expect(dialog.getByText(/Đã gắn ảnh mở đầu cho 1 buổi/)).toBeVisible({
+      timeout: 60_000,
+    });
+    await dialog.getByRole("button", { name: "Xong" }).click();
+
+    // --- Đọc DB: buổi nháp có bìa MỘT ảnh, buổi đã công bố không hề bị đụng.
+    await expect
+      .poll(() =>
+        sql(`
+          select count(*) from public.flashcard_pages
+          where section_id = '${SECTION_2}'
+            and kind = 'session_cover'
+            and front_image_path is not null
+            and back_image_path is null
+            and archived_at is null;
+        `),
+      )
+      .toBe("1");
+
+    expect(
+      sql(`
+        select count(*) from public.flashcard_pages
+        where section_id = '${SECTION_1}'
+          and kind = 'session_cover'
+          and front_image_path like '%front-a1300000%';
+      `),
+      "ảnh bìa của buổi ĐÃ CÔNG BỐ bị thay — vế fail-closed của D-41 đã vỡ",
+    ).toBe("1");
+
+    // Trả buổi 2 về đúng trạng thái seed cho lượt sau.
+    sql(`
+      set session_replication_role = replica;
+      delete from public.flashcard_pages
+        where section_id = '${SECTION_2}' and kind = 'session_cover';
+      set session_replication_role = origin;
+    `);
   });
 
   test("sạch axe ở 1280", async ({ page }) => {

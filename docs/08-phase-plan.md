@@ -668,6 +668,20 @@ User: *"mỗi khóa chỉ tạo được 1 bộ flash card, tôi muốn mỗi kh
 
 ---
 
+### Trang mở đầu MỘT ảnh + nhập hàng loạt ảnh mở đầu cấp bộ — `COVER-1` (user chốt 2026-07-29 → `D-41`)
+
+Hai yêu cầu đi cùng một lượt: *"ở mỗi bộ flashcard thêm chức năng nhập hàng loạt hình … của trang mở đầu cho tất cả các buổi"* và *"đổi lại cơ chế upload ảnh của trang mở đầu, vẫn có mặt trước mặt sau nhưng chỉ dùng đúng 1 ảnh được up lên để làm cả mặt trước và sau"*.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| COVER-1a | **Trang mở đầu chỉ còn MỘT ảnh** (`…084`) | `back_image_path` của `session_cover` về null, `flashcard_pages_image_kind_check` siết thành *"session_cover ⇒ có front, back null"*. Zod bỏ hẳn khe `back` khỏi nhánh cover (payload cũ bị strip, không lặng lẽ ghi). Renderer vẽ `frontUrl` cho **cả hai** mặt và **không** đọc `backUrl` — kể cả để dự phòng. Cột giữ lại, KHÔNG drop: RPC công khai và helper media của `anon` còn đọc nó (drop = đụng bề mặt `D-36`) | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. **Kiểm ngược:** đổi renderer sang `backUrl ?? frontUrl` → đỏ đúng bài *"mặt sau vẽ ĐÚNG ảnh đó"* (fixture cố ý mang `backUrl` khác, vì trên DB đã migrate thì hai nhánh cho kết quả y hệt) |
+| COVER-1b | **Dữ liệu cũ bị ÉP về một ảnh** | User chốt sau khi Claude nêu rủi ro. Migration null hoá tham chiếu cho **mọi** trang mở đầu và `raise notice` số hàng. ⛔ **KHÔNG xoá file** — object nằm lại bucket, đó là cửa khôi phục duy nhất; dọn bằng `npm run media:prune-cover-back` (mặc định chạy khô, in danh sách + dung lượng) | ☑ **DONE (local), chờ chạy trên cloud** — Claude 2026-07-29. Script nhận diện mồ côi bằng **ba vế** (tên `back-…` · `pageId` là cover đang sống · không nằm trong `media_paths`) chứ không phải "mọi object không được tham chiếu" — bộ dọn rộng như vậy sẽ xoá đúng file người soạn đang chờ tải xong |
+| COVER-1c | **RPC `attach_flashcard_deck_covers`** | Gắn ảnh mở đầu cho nhiều buổi trong MỘT transaction; tạo trang mới ở `order_index = 0` nếu buổi chưa có bìa. Buổi **đã công bố** trả `row_status = skipped_published`, **không ném lỗi**; buổi thuộc **bộ khác** thì huỷ CẢ LƯỢT (vế an ninh). `front_alt` do tầng app tính, RPC không dựng bản SQL thứ hai | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. pgTAP `flashcard_deck_covers.test.sql` **23 bài**. **Kiểm ngược:** đổi nhánh `skipped_published` thành `raise exception` → file chết ở **bài 9**, 14 bài sau không chạy — đúng hệ quả "một buổi đã công bố kéo sập cả lượt 35 buổi" |
+| COVER-1d | **Bộ ghép file ↔ buổi** | Thuần, unit test phủ. Tên file phải chứa **đúng MỘT dãy số** = số buổi; 0 dãy hoặc ≥2 dãy thì **từ chối, không đoán**. Gán tay thắng ghép tự động và được xử trước. Hai file tranh một buổi → bỏ file sau ra bằng chữ | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. 20 bài Vitest. Luật "đúng một dãy số" là để chặn **lệch im lặng**: `05-2026-bia.png` mà lấy dãy đầu sẽ ra buổi 5 rất thuyết phục và SAI |
+| COVER-1e | **Giao diện cấp bộ** | Nút *Ảnh mở đầu hàng loạt* ở **hàng nút cấp bộ** (cạnh `Thêm buổi`), không nhét vào thanh chọn khoá (trộn hai tầng) và không nhét vào cột trái (vùng điều hướng thuần). Bảng đối chiếu **một hàng mỗi buổi**, nói trước cả kết cục "Đã công bố"; ô Ghi đè mặc định TẮT; xác nhận trước khi xoá ảnh cũ | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. E2E `20/20` **cả hai project** (19 → +1), axe sạch ở 1280. Ô soạn một trang cũng còn **một** ô ảnh, kèm câu giải thích bền dưới ô |
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |

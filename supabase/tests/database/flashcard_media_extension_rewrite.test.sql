@@ -67,10 +67,11 @@ insert into public.flashcard_pages (
 values
   (
     '90700000-0000-4000-8000-000000000001', '90600000-0000-4000-8000-000000000001',
+    -- Trang mở đầu chỉ còn MỘT ảnh (`…084`/`D-41`): back luôn null.
     'session_cover', 0, null, null, null,
     '90000000-0000-4000-8000-000000000001/d1/s1/p1/front-1.png',
-    '90000000-0000-4000-8000-000000000001/d1/s1/p1/back-1.png',
-    null, 'bìa trước', 'bìa sau', '[]'::jsonb
+    null,
+    null, 'bìa trước', null, '[]'::jsonb
   ),
   (
     '90700000-0000-4000-8000-000000000002', '90600000-0000-4000-8000-000000000001',
@@ -145,6 +146,11 @@ select set_config(
     jsonb_build_object(
       '90000000-0000-4000-8000-000000000001/d1/s1/p1/front-1.png',
       '90000000-0000-4000-8000-000000000001/d1/s1/p1/front-1.webp',
+      -- Bảng tra CỐ Ý vẫn mang một khoá `back-…`: script vận hành liệt kê file
+      -- có thật trong bucket, mà bucket còn ảnh mặt sau cũ cho tới khi
+      -- `media:prune-cover-back` chạy. Đường dẫn không còn trang nào tham chiếu
+      -- thì hàm phải bỏ qua nó, không được đếm vào danh sách "đã thay" (nếu
+      -- không, script sẽ xoá một file mà DB chưa hề đổi).
       '90000000-0000-4000-8000-000000000001/d1/s1/p1/back-1.png',
       '90000000-0000-4000-8000-000000000001/d1/s1/p1/back-1.webp',
       '90000000-0000-4000-8000-000000000001/d1/s1/p2/front-2.png',
@@ -159,8 +165,11 @@ select set_config(
 select is(
   (select count(*)::integer
    from jsonb_array_elements_text(current_setting('test.applied')::jsonb)),
-  4,
-  'trả về đúng 4 đường dẫn cũ đã được thay — script chỉ xoá đúng bấy nhiêu file'
+  -- 4 → 3 (`COVER-1`): bìa chỉ còn MỘT ảnh nên khoá `back-1.png` trong bảng tra
+  -- không khớp trang nào. Con số này là thứ script dùng để quyết định xoá file
+  -- cũ, nên nó phải đếm đúng số đường dẫn DB THẬT SỰ đã đổi.
+  3,
+  'trả về đúng 3 đường dẫn cũ đã được thay — script chỉ xoá đúng bấy nhiêu file'
 );
 
 -- `service_role` KHÔNG có quyền đọc bảng flashcard (migration `…015` chỉ cấp cho
@@ -175,11 +184,15 @@ select is(
   'ảnh mặt trước của bìa đã sang .webp'
 );
 
+-- 🔴 Bài này ĐỔI CHIỀU ở `COVER-1`: trước đây nó ghim "ảnh mặt sau của bìa đã
+-- sang .webp". Nay bìa chỉ còn một ảnh, nên thứ đáng canh là chiều ngược lại —
+-- hàm đổi đuôi KHÔNG được làm sống lại một đường dẫn mặt sau chỉ vì bảng tra do
+-- script dựng còn nhắc tới nó.
 select is(
   (select back_image_path from public.flashcard_pages
    where id = '90700000-0000-4000-8000-000000000001'),
-  '90000000-0000-4000-8000-000000000001/d1/s1/p1/back-1.webp',
-  'ảnh mặt sau của bìa đã sang .webp'
+  null,
+  'bìa vẫn KHÔNG có ảnh mặt sau sau khi đổi đuôi'
 );
 
 select is(

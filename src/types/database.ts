@@ -3571,6 +3571,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      attach_flashcard_deck_covers: {
+        Args: { p_allow_overwrite?: boolean; p_covers: Json; p_deck_id: string }
+        Returns: {
+          removed_paths: string[]
+          row_status: string
+          section_id: string
+        }[]
+      }
       attach_flashcard_section_media: {
         Args: {
           p_allow_overwrite?: boolean

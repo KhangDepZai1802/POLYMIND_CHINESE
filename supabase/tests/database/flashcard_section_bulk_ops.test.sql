@@ -172,10 +172,11 @@ insert into public.flashcard_pages (
 )
 select
   '76700000-0000-4000-8000-000000000001',
+  -- Trang mở đầu chỉ còn MỘT ảnh (`…084`/`D-41`): back luôn null.
   s.id, 'session_cover', 0,
   '76000000-0000-4000-8000-000000000001/d/s1/c/front-1.png',
-  '76000000-0000-4000-8000-000000000001/d/s1/c/back-1.png',
-  'trước', 'sau'
+  null,
+  'trước', null
 from public.flashcard_sections s
 where s.deck_id = '76500000-0000-4000-8000-000000000001' and s.session_number = 1;
 
@@ -244,8 +245,8 @@ select
   '76700000-0000-4000-8000-000000000011',
   s.id, 'session_cover', 0,
   '76000000-0000-4000-8000-000000000001/d/s1/c2/front-1.png',
-  '76000000-0000-4000-8000-000000000001/d/s1/c2/back-1.png',
-  'trước', 'sau'
+  null,
+  'trước', null
 from public.flashcard_sections s
 where s.deck_id = '76500000-0000-4000-8000-000000000001' and s.session_number = 1;
 

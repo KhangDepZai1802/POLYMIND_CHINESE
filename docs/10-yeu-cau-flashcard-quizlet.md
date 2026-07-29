@@ -82,6 +82,12 @@ URL trong ảnh: `quizlet.com/<id>/flashcards`. Toàn màn hình, không có sid
 
 ## 4. Hệ hiện tại đang làm gì — đọc từ source
 
+> 🕐 **Bảng dưới là ẢNH CHỤP ngày 2026-07-22**, giữ nguyên để đối chiếu với yêu
+> cầu gốc — **không** phải mô tả hiện trạng. Phase 16 và các đợt sau đã đổi ba
+> dòng của nó: `term` bị `hanzi` thay hẳn (`…070`), thẻ từ vựng bỏ ảnh mặt sau
+> (`…078`), và trang mở đầu chỉ còn **một** ảnh dùng cho cả hai mặt
+> (`…084`/`D-41`). Hiện trạng đọc ở §7ter và ở [`docs/02`](02-database-design.md).
+
 | Điểm                | Thực tế trong repo                                                                                       | Bằng chứng                                                                     |
 | ------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Ai tạo              | **Chỉ Super Admin**, ở `/admin/flashcards`. **Giáo viên KHÔNG tạo được flashcard.**                        | `src/app/(dashboard)/admin/flashcards/page.tsx`; `lib/permissions/navigation.ts` |
@@ -275,10 +281,20 @@ Thẻ mẫu: từ `胡萝卜` (củ cà rốt).
 > User đổi cơ chế mặt sau: nó dựng bằng CHỮ (4 khối §7ter), nên ô ảnh mặt sau là
 > thứ thừa — *"không cần ảnh nữa, để thì thừa"*. Migration `…078` thêm vế
 > `kind='vocabulary' ⇒ back_image_path is null` vào `flashcard_pages_image_kind_check`
-> (đo cloud trước khi siết: `co_anh_mat_sau = 0`). Cột `back_image_path` **giữ nguyên**
-> cho `session_cover` (trang mở đầu vẫn hai ảnh, và `distinct_media_check` vẫn ép
-> hai ảnh đó khác file). Đây thay thế hẳn quyết định 2026-07-23 (khi đó mặt sau
-> còn có thể mang ảnh riêng). Ảnh mặt TRƯỚC của thẻ từ vựng vẫn tuỳ chọn.
+> (đo cloud trước khi siết: `co_anh_mat_sau = 0`). Ảnh mặt TRƯỚC của thẻ từ vựng
+> vẫn tuỳ chọn. Đây thay thế hẳn quyết định 2026-07-23 (khi đó mặt sau còn có thể
+> mang ảnh riêng).
+>
+> ⚠️ **Sửa tiếp 2026-07-29 (user chốt) — TRANG MỞ ĐẦU cũng chỉ còn MỘT ảnh** (`D-41`).
+> Nguyên văn: *"vẫn có mặt trước mặt sau nhưng chỉ dùng đúng 1 ảnh được up lên để
+> làm cả mặt trước và sau"*. Migration `…084` đưa `back_image_path` của
+> `session_cover` về null và siết `flashcard_pages_image_kind_check` thành
+> *"session_cover ⇒ có front, back null"*. Từ đây **`back_image_path` luôn null với
+> MỌI `kind`** — cột chỉ còn tồn tại vì RPC công khai và helper media của `anon`
+> đang đọc nó (drop cột = đụng bề mặt `D-36`). Việc "hai mặt" chuyển hẳn xuống
+> tầng hiển thị: `FlashcardFaceContent` vẽ `frontUrl` cho **cả hai** mặt.
+> ⛔ Dữ liệu cũ bị **ép** về một ảnh; file mặt sau cũ **không bị migration xoá**,
+> dọn bằng `npm run media:prune-cover-back` (mặc định chạy khô).
 | 3 | **Tách nghĩa** (viền xanh dương) | `胡 (hú): từ chỉ nguồn gốc bên ngoài` · `萝卜 (luóbo): củ cải, rau củ` | **Danh sách 0..n**, mỗi mục = `{ thành tố Hán tự, pinyin, nghĩa }`. ⚠️ Thành tố **không phải luôn 1 chữ** — `萝卜` là 2 chữ. Nên đây là **chuỗi con do người soạn tự cắt**, máy không tự tách được. |
 | 4 | **Câu ví dụ** (viền tím) | `我喜欢吃胡萝卜。` / `Wǒ xǐhuan chī húluóbo` / `Tôi thích ăn cà rốt.` + ảnh | **Danh sách 0..n**, mỗi mục = `{ câu Hán, pinyin câu, nghĩa tiếng Việt, ảnh (tuỳ chọn) }`. |
 | 5 | **Cụm từ thường dùng** (viền cam) | 4 dòng: `吃胡萝卜 — chī húluóbo — ăn cà rốt` … | **Danh sách 0..n**, mỗi mục = `{ cụm Hán tự, pinyin, nghĩa tiếng Việt }`. |
@@ -309,12 +325,14 @@ Chọn hướng (b) — cột `jsonb` trên `flashcard_pages` (`example_sentence
 
 | Loại trang | Mô hình sau Phase 16 |
 | --- | --- |
-| `session_cover` | **Giữ nguyên 2 file ảnh, không chữ, không audio** (chốt `Q5`) |
+| `session_cover` | **ĐÚNG MỘT file ảnh** dùng cho cả hai mặt, không chữ, không audio (`D-41` 2026-07-29, **đảo** vế "2 ảnh" của `Q5`) |
 | `vocabulary` | **Bản ghi có cấu trúc** theo §7ter, ảnh tuỳ chọn, audio người thật giữ nguyên |
 
-→ Migration **không được** drop `front_image_path`/`back_image_path` một cách vô điều kiện; hai cột đó vẫn là nội dung chính của `session_cover`. Ràng buộc NOT NULL phải chuyển thành **ràng buộc theo `kind`** (CHECK constraint).
+→ Migration **không được** drop `front_image_path` một cách vô điều kiện; cột đó vẫn là nội dung chính của `session_cover`. Ràng buộc NOT NULL phải chuyển thành **ràng buộc theo `kind`** (CHECK constraint).
 
 ✅ **Đã thực hiện ở migration `20260723000070_flashcard_structured_vocabulary.sql` (`P16-T1`):** hai cột được giữ nguyên và chuyển sang nullable, kèm `flashcard_pages_image_kind_check` ép `session_cover` vẫn phải đủ hai ảnh. Cột `term` bị `hanzi` thay hẳn (không giữ hai nguồn sự thật cho cùng một dữ liệu — `BUG_M10_01`).
+
+✅ **Cập nhật 2026-07-29 (`COVER-1`, migration `…084`):** vế "đủ hai ảnh" ở trên **hết hiệu lực**. `session_cover` nay chỉ giữ `front_image_path`; `back_image_path` luôn null với mọi `kind`, và mặt sau được vẽ lại từ chính ảnh mặt trước. Kèm theo là đường **nhập hàng loạt ảnh mở đầu cho cả bộ** (RPC `attach_flashcard_deck_covers`, nút *Ảnh mở đầu hàng loạt* ở hàng nút cấp bộ): thả một ảnh cho mỗi buổi, khớp theo **số buổi** trong tên file, buổi **đã công bố bị bỏ qua** bằng `row_status` chứ không ném lỗi.
 
 ---
 

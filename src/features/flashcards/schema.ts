@@ -4,6 +4,7 @@ import {
   BULK_MEDIA_SLOTS,
   MAX_FLASHCARD_BULK_UPLOAD_FILES,
 } from "@/features/flashcards/domain/bulk-media";
+import { MAX_FLASHCARD_COVER_UPLOAD_FILES } from "@/features/flashcards/domain/deck-covers";
 import {
   isFlashcardMediaSlot,
   MAX_FLASHCARD_EXAMPLE_SENTENCES,
@@ -134,12 +135,19 @@ const optionalMediaPath = z
   .nullish()
   .transform((value) => value || null);
 
-/** Trang mở đầu: đúng hai ảnh, không chữ, không audio (chốt `Q5`). */
+/**
+ * Trang mở đầu: ĐÚNG MỘT ảnh, không chữ, không audio (`D-41`, đảo `Q5`).
+ *
+ * ⛔ KHÔNG có `back_image_path`: từ 2026-07-29 trang mở đầu vẫn lật hai mặt
+ * nhưng cả hai mặt vẽ lại **cùng một file** (`flashcard-face.tsx`). DB chặn bằng
+ * `flashcard_pages_image_kind_check` (migration `…084`); bỏ hẳn khỏi Zod để một
+ * payload cũ mang `back_image_path` không lặng lẽ được ghi — đúng lối `…078` đã
+ * làm với thẻ từ vựng.
+ */
 export const flashcardSessionCoverPageSchema = z.object({
   ...pageIdentity,
   kind: z.literal("session_cover"),
-  front_image_path: z.string().trim().min(1, "Trang mở đầu cần ảnh mặt trước."),
-  back_image_path: z.string().trim().min(1, "Trang mở đầu cần ảnh mặt sau."),
+  front_image_path: z.string().trim().min(1, "Trang mở đầu cần một ảnh."),
 });
 
 /**
@@ -266,6 +274,52 @@ export const flashcardBulkUploadRequestSchema = z.object({
       MAX_FLASHCARD_BULK_UPLOAD_FILES,
       `Mỗi lượt tối đa ${MAX_FLASHCARD_BULK_UPLOAD_FILES} file.`,
     ),
+});
+
+/**
+ * Xin vé tải ảnh trang mở đầu cho **cả bộ trong MỘT lượt gọi** (`COVER-1`).
+ *
+ * 🔴 Cùng ràng buộc cứng đã ép `flashcardBulkUploadRequestSchema` phải tồn tại:
+ * `consumeRateLimit(supabase, "material_upload")` tiêu một đơn vị mỗi LƯỢT GỌI
+ * action, trần 20 lượt/giờ. Gọi lặp cho từng buổi thì bộ 35 buổi không bao giờ
+ * chạy xong và admin bị khoá upload cả tiếng — kể cả đường soạn thẻ lẻ.
+ *
+ * Không có trường `slot`: trang mở đầu chỉ còn đúng một khe ảnh (`front`).
+ */
+export const flashcardDeckCoverUploadRequestSchema = z.object({
+  deckId: z.uuid(),
+  items: z
+    .array(
+      z.object({
+        sectionId: z.uuid(),
+        fileName: z.string().min(1),
+        mimeType: z.string(),
+        sizeBytes: z.number().int().positive(),
+      }),
+    )
+    .min(1, "Chưa có ảnh nào để tải.")
+    .max(
+      MAX_FLASHCARD_COVER_UPLOAD_FILES,
+      `Mỗi lượt tối đa ${MAX_FLASHCARD_COVER_UPLOAD_FILES} ảnh.`,
+    ),
+});
+
+/** Bảng kê "buổi nào nhận ảnh nào" gửi xuống RPC `attach_flashcard_deck_covers`. */
+export const flashcardDeckCoverAssignmentSchema = z.object({
+  deckId: z.uuid(),
+  allowOverwrite: z.boolean().default(false),
+  assignments: z
+    .array(
+      z.object({
+        sectionId: z.uuid(),
+        // Mã trang do client giữ: nó đã được dùng để dựng đường dẫn object lúc
+        // xin vé, nên sinh mã mới ở bước này là tự làm đường dẫn mồ côi.
+        pageId: z.uuid(),
+        frontImagePath: z.string().trim().min(1).max(400),
+      }),
+    )
+    .min(1)
+    .max(MAX_FLASHCARD_COVER_UPLOAD_FILES),
 });
 
 /** Bảng kê "thẻ nào nhận đường dẫn nào" gửi xuống RPC `…077`. */

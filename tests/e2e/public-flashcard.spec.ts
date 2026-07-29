@@ -108,10 +108,11 @@ function createRevokeFixture() {
     )
     values
       ('e5200000-0000-4000-8000-000000000001', '${REVOKE_SECTION}',
+       -- Trang mở đầu chỉ còn MỘT ảnh (migration 084 / D-41): back luôn null.
        'session_cover', 0, null, null, null,
        '${OWNER}/e5200000-0000-4000-8000-000000000001/front-e5300000-0000-4000-8000-000000000001.png',
-       '${OWNER}/e5200000-0000-4000-8000-000000000001/back-e5300000-0000-4000-8000-000000000002.png',
-       null, 'bìa trước E2E', 'bìa sau E2E'),
+       null,
+       null, 'bìa trước E2E', null),
       ('e5200000-0000-4000-8000-000000000002', '${REVOKE_SECTION}',
        'vocabulary', 1, '存款', 'cún kuǎn', 'Tiền gửi',
        null, null,

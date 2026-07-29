@@ -141,11 +141,12 @@ values
   (
     '66700000-0000-4000-8000-000000000001',
     '66600000-0000-4000-8000-000000000001',
+    -- Trang mở đầu chỉ còn MỘT ảnh (`…084`/`D-41`): back luôn null.
     'session_cover', 0, null, null, null,
     '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/front-a.png',
-    '66000000-0000-4000-8000-000000000001/66500000-0000-4000-8000-000000000001/66600000-0000-4000-8000-000000000001/66700000-0000-4000-8000-000000000001/back-a.png',
     null,
-    'Trang mở đầu buổi 1', 'Mặt sau trang mở đầu buổi 1'
+    null,
+    'Trang mở đầu buổi 1', null
   ),
   (
     '66700000-0000-4000-8000-000000000002',
@@ -234,8 +235,11 @@ select is((select count(*)::integer from public.flashcard_sections), 1, 'Student
 select is((select count(*)::integer from public.flashcard_pages), 3, 'Student A đọc đủ page active đã publish');
 select is(
   (select count(*)::integer from storage.objects where bucket_id = 'flashcard-media'),
-  6,
-  'Student A đọc đủ object Flashcard đã publish (cover 2 ảnh + 2 thẻ × [ảnh trước + audio], thẻ từ vựng không còn mặt sau)'
+  -- 6 → 5 (`COVER-1`): trang mở đầu nay chỉ còn MỘT ảnh (`…084`), dùng cho cả
+  -- hai mặt. Con số này đếm object mà học viên KÝ được URL, nên nó là chỗ duy
+  -- nhất bắt được việc ai đó lỡ để `media_paths` còn ôm một đường dẫn đã bỏ.
+  5,
+  'Student A đọc đủ object Flashcard đã publish (cover 1 ảnh + 2 thẻ × [ảnh trước + audio])'
 );
 select ok(
   app.can_student_read_flashcard_media(

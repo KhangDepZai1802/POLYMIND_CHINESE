@@ -71,12 +71,28 @@ export function FlashcardFaceContent({
   face: Face;
   priority?: boolean;
 }) {
-  // Trang mở đầu giữ nguyên mô hình hai ảnh (chốt `Q5`) — không đổi một chút nào.
+  /*
+   * TRANG MỞ ĐẦU: MỘT ẢNH, HAI MẶT (`D-41`, user chốt 2026-07-29 — đảo `Q5`).
+   *
+   * Thẻ vẫn lật như cũ, nhưng cả hai mặt vẽ lại **cùng một** `frontUrl`. Đây là
+   * chỗ DUY NHẤT biết điều đó: DB chỉ còn một cột ảnh cho trang mở đầu
+   * (`…084` ép `back_image_path is null`), nên "hai mặt" thuần tuý là chuyện
+   * hiển thị.
+   *
+   * ⚠️ Cố ý KHÔNG đọc `page.backUrl` nữa, kể cả để dự phòng. Trang mở đầu CŨ
+   * trên production vẫn còn đường dẫn mặt sau trong `media_paths` cho tới khi
+   * migration chạy, và nếu ở đây còn nhánh `backUrl ?? frontUrl` thì hai môi
+   * trường sẽ hiện hai thứ khác nhau bằng cùng một bản code — đúng loại lệch chỉ
+   * lộ ra trên máy người dùng.
+   *
+   * `alt` dùng chung `front_alt` nên trình đọc màn hình đọc hai mặt giống nhau —
+   * đúng sự thật, vì chúng LÀ một ảnh. `label` chỉ còn dùng cho câu báo lỗi.
+   */
   if (page.kind === "session_cover") {
     return (
       <FlashcardImageFace
-        url={face === "front" ? page.frontUrl : page.backUrl}
-        alt={face === "front" ? page.front_alt : page.back_alt}
+        url={page.frontUrl}
+        alt={page.front_alt}
         label={face === "front" ? "Mặt trước" : "Mặt sau"}
         priority={priority && face === "front"}
       />

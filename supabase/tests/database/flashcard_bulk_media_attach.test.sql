@@ -98,7 +98,8 @@ values (
   '77700000-0000-4000-8000-000000000000',
   '77600000-0000-4000-8000-000000000001', 0, 'session_cover',
   '77000000-0000-4000-8000-000000000001',
-  'cover/front.jpg', 'cover/back.jpg', 'Mặt trước trang mở đầu', 'Mặt sau trang mở đầu'
+  -- Trang mở đầu chỉ còn MỘT ảnh (`…084`/`D-41`): back luôn null.
+  'cover/front.jpg', null, 'Mặt trước trang mở đầu', null
 );
 
 insert into public.flashcard_pages (

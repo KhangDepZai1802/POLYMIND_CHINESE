@@ -90,8 +90,12 @@ select is(
   -- script vận hành đổi `.png` → `.webp`. 🔴 Đây là RPC DUY NHẤT đi vòng được
   -- `trg_flashcard_pages_guard_history`, nên nó chỉ cấp cho `service_role`; bài
   -- ngay dưới ghim việc `authenticated` KHÔNG gọi được.
-  77,
-  'catalog có đúng 77 RPC public đã review'
+  -- 77 → 78: `COVER-1`/`D-41` thêm `attach_flashcard_deck_covers` — gắn ảnh trang
+  -- mở đầu hàng loạt cho cả bộ. Cấp cho `authenticated` + chặn bằng
+  -- `app.is_super_admin()` bên trong; bề mặt `anon` KHÔNG đổi (bài ngay dưới vẫn
+  -- ghim đúng một tên).
+  78,
+  'catalog có đúng 78 RPC public đã review'
 );
 /*
  * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở
