@@ -34,10 +34,30 @@
 -- sau" trên chính những trang QR đã in trong sách.
 
 -- =====================================================================
--- 1. Ép mọi trang mở đầu về MỘT ảnh
+-- 1. GỠ ràng buộc cũ TRƯỚC KHI đụng vào dữ liệu
+-- =====================================================================
+-- 🔴 THỨ TỰ Ở ĐÂY KHÔNG ĐƯỢC ĐẢO, và lý do đã trả giá một lần:
+-- ràng buộc cũ (`…078`) đòi `session_cover ⇒ front NOT NULL **và** back NOT NULL`.
+-- Null hoá `back_image_path` trong khi nó còn hiệu lực là **tự vi phạm nó ngay ở
+-- hàng đầu tiên** — cloud trả `23514 flashcard_pages_image_kind_check` và cả
+-- migration rollback.
+--
+-- ⚠️ Bản đầu của file này xếp `update` lên trước và **xanh trên local**: DB local
+-- dựng lại từ `db:reset` chạy migration TRƯỚC khi seed, nên lúc đó bảng có đúng
+-- 0 hàng và câu `update` không đụng gì cả. Lỗi chỉ lộ ra trên cloud, nơi có 15
+-- trang mở đầu thật. **Bài học: bước sửa dữ liệu trong migration không bao giờ
+-- được kiểm chứng bởi một lần `db:reset` — hãy xếp DDL sao cho nó đúng bất kể
+-- bảng có bao nhiêu hàng.**
+alter table public.flashcard_pages
+  drop constraint flashcard_pages_image_kind_check;
+
+-- =====================================================================
+-- 2. Ép mọi trang mở đầu về MỘT ảnh
 -- =====================================================================
 -- User chốt "ép tất cả về 1 ảnh ngay" sau khi Claude nêu rủi ro mất nội dung ảnh
--- mặt sau đang chạy trên production.
+-- mặt sau đang chạy trên production. Đo cloud trước khi áp (2026-07-29):
+--     tong_trang_mo_dau = 14 · co_anh_mat_sau = 15 · the_tu_vung_con_back = 0
+-- (15 > 14 vì có một trang mở đầu đã lưu trữ vẫn giữ đường dẫn mặt sau.)
 --
 -- ⚠️ MIGRATION KHÔNG XOÁ FILE. Nó chỉ bỏ THAM CHIẾU; object vẫn nằm nguyên trong
 -- bucket `flashcard-media`. Đó là cửa khôi phục duy nhất nếu user đổi ý — dọn
@@ -82,13 +102,14 @@ alter table public.flashcard_pages enable trigger user;
 -- thứ làm object thành "mồ côi" và là cách script dọn nhận ra nó.
 
 -- =====================================================================
--- 2. Siết ràng buộc: trang mở đầu MỘT ảnh
+-- 3. Siết ràng buộc mới: trang mở đầu MỘT ảnh
 -- =====================================================================
--- Dựng lại tường minh (drop + add) đúng lối `…078`: gộp đủ luật ảnh theo `kind`
--- vào MỘT constraint để lần sau đọc là thấy hết, không phải ghép từ hai mảnh.
-alter table public.flashcard_pages
-  drop constraint flashcard_pages_image_kind_check;
-
+-- Dựng lại tường minh đúng lối `…078`: gộp đủ luật ảnh theo `kind` vào MỘT
+-- constraint để lần sau đọc là thấy hết, không phải ghép từ hai mảnh. Câu `drop`
+-- đã chạy ở bước 1 — nó phải đứng trước bước sửa dữ liệu, xem lý do ở đó.
+--
+-- Postgres kiểm constraint mới trên TOÀN BỘ bảng lúc `add`, nên đây cũng là chỗ
+-- xác nhận bước 2 đã dọn sạch: còn sót một hàng là câu này đỏ.
 alter table public.flashcard_pages
   add constraint flashcard_pages_image_kind_check check (
     (
@@ -112,7 +133,7 @@ comment on column public.flashcard_pages.back_image_path is
   'của anon còn đọc nó — xem đầu file `…084`.';
 
 -- =====================================================================
--- 3. RPC: gắn ảnh mở đầu HÀNG LOẠT cho cả bộ thẻ
+-- 4. RPC: gắn ảnh mở đầu HÀNG LOẠT cho cả bộ thẻ
 -- =====================================================================
 -- `p_covers` là mảng jsonb, mỗi phần tử:
 --   { "section_id": uuid, "page_id": uuid,
