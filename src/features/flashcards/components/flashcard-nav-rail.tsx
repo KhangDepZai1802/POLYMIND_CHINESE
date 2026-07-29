@@ -59,8 +59,28 @@ export function FlashcardNavRail({
   }, [sections, query]);
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <section aria-label="Bộ thẻ của khoá học" className="space-y-2">
+    /*
+     * 🔴 `min-h-0` ở gốc là thứ giữ cho mục lục KHÔNG tràn xuống đáy trang.
+     *
+     * Cột trái (`<aside>`) chỉ đặt `max-h`, không đặt chiều cao xác định — nên
+     * `h-full` ở đây rơi về `auto`, và một flex item không có `min-height` thì
+     * chiều cao tối thiểu tự động của nó BẰNG chiều cao nội dung. Tức khối này
+     * từ chối co lại, `overflow-y-auto` bên dưới không bao giờ có gì để cuộn,
+     * và 35 buổi đổ tràn ra ngoài khung thẻ. `min-h-0` cho phép co về đúng
+     * chiều cao cột, đẩy phần dư vào vùng cuộn của danh sách buổi.
+     *
+     * `h-full` vẫn giữ vì đường ngăn kéo (dưới 1024px) CÓ chiều cao xác định
+     * (`inset-y-0` của `SheetContent`) — ở đó nó là thứ neo vùng cuộn.
+     */
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      {/*
+        Danh sách bộ thẻ không co (`shrink-0`): khi chỗ hẹp thì phần nhường lại
+        phải là mục lục buổi — nó có vùng cuộn riêng, còn danh sách bộ thì không.
+      */}
+      <section
+        aria-label="Bộ thẻ của khoá học"
+        className="shrink-0 space-y-2"
+      >
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
             Bộ thẻ ({decks.length})
@@ -133,7 +153,13 @@ export function FlashcardNavRail({
       {selectedDeckId && sections.length > 0 && (
         <section
           aria-label="Mục lục buổi flashcard"
-          className="flex min-h-0 flex-1 flex-col gap-2"
+          /*
+           * `min-h-64` chứ không `min-h-0`: đây là khối DUY NHẤT được co, nên
+           * một khoá có nhiều bộ thẻ sẽ ép nó về gần 0 và mục lục biến mất.
+           * Sàn 16rem chừa lại ~3 dòng buổi sau khi trừ tiêu đề, ô lọc và chú
+           * giải; vượt sàn thì `<aside>` tự cuộn (van an toàn ở cấp trên).
+           */
+          className="flex min-h-64 flex-1 flex-col gap-2"
         >
           <h2 className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
             Buổi ({sections.length})
@@ -162,8 +188,12 @@ export function FlashcardNavRail({
               Cuộn nằm TRONG cột này (`overflow-y-auto`), không đẩy cả trang —
               cùng lý do với bảng địa chỉ QR: khu soạn thẻ bên phải phải đứng yên
               trong lúc tìm buổi.
+
+              `overscroll-contain`: cuộn hết danh sách thì DỪNG, không nối tiếp
+              sang cuộn trang. Đây là vùng cuộn lồng, mà nối tiếp đúng lúc người
+              dùng đang dò buổi thì cả trang nhảy đi mất chỗ đang nhìn.
             */
-            <ul className="-mr-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+            <ul className="-mr-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain pr-1">
               {visibleSections.map((section) => {
                 const active = section.id === selectedSectionId;
                 const published = section.status === "published";

@@ -5,6 +5,7 @@ import {
   FLASHCARD_PUBLIC_TOKEN_ALPHABET,
   FLASHCARD_PUBLIC_TOKEN_LENGTH,
   FLASHCARD_PUBLIC_TOKEN_MAX_LENGTH,
+  flashcardDeckCodeDraft,
   flashcardDeckCodeSlug,
   flashcardFixedPublicToken,
   flashcardPublicUrl,
@@ -178,6 +179,63 @@ describe("flashcardDeckCodeSlug", () => {
     const token = flashcardFixedPublicToken(slug, 100);
     expect(token).not.toBeNull();
     expect(normalizeFlashcardPublicToken(token)).toBe(token);
+  });
+});
+
+/**
+ * `MULTIDECK-1g` — bản chuẩn hoá dùng TRONG LÚC ĐANG GÕ.
+ *
+ * 🔴 Lỗi đã đẻ ra hàm này: hộp thoại chạy `flashcardDeckCodeSlug` sau TỪNG PHÍM,
+ * mà hàm ấy cắt dấu gạch ở cuối — nên gõ `vcb-` ra `vcb`, phím kế dính liền
+ * thành `vcbe`, và **mã bộ tự đặt không bao giờ có dấu gạch nối** dù mọi mã gợi
+ * ý sẵn (`vcb-bank`, `vcb-exec-2`) đều có.
+ */
+describe("flashcardDeckCodeDraft", () => {
+  it("🔴 giữ dấu gạch ở cuối để còn gõ tiếp được — đúng chỗ `…Slug` cắt mất", () => {
+    expect(flashcardDeckCodeDraft("vcb-")).toBe("vcb-");
+    expect(flashcardDeckCodeSlug("vcb-")).toBe("vcb");
+  });
+
+  it("gõ từng phím ra được mã có dấu gạch nối", () => {
+    // Mô phỏng đúng vòng lặp của ô nhập: mỗi phím nối vào giá trị ĐÃ chuẩn hoá
+    // của lần trước. Đây là chỗ bản cũ gãy, không phải ở một lần gọi đơn lẻ.
+    let value = "";
+    for (const key of "VCB-Ngu-Phap") {
+      value = flashcardDeckCodeDraft(value + key);
+    }
+    expect(value).toBe("vcb-ngu-phap");
+  });
+
+  it("vẫn chặn ký tự lạ và không cho hai gạch liền", () => {
+    expect(flashcardDeckCodeDraft("VCB Ngữ")).toBe("vcb-ng-");
+    expect(flashcardDeckCodeDraft("vcb--bank")).toBe("vcb-bank");
+    expect(flashcardDeckCodeDraft("Sách_2026")).toBe("s-ch-2026");
+  });
+
+  /**
+   * ⚠️ BẤT BIẾN QUAN TRỌNG NHẤT của cặp hàm này — nó là thứ giữ cho việc có hai
+   * hàm KHÔNG trở thành hai nguồn sự thật (`BUG_M10_01`).
+   *
+   * Bản "đang gõ" chỉ được phép lọc bớt, tuyệt đối không cho qua thứ mà `…Slug`
+   * sẽ đổi. Nói cách khác: chuẩn hoá trước hay sau đều phải ra cùng một mã, nên
+   * cái người dùng nhìn thấy chính là cái Zod và DB sẽ lưu.
+   */
+  it.each([
+    "VCB-BANK",
+    "VCB Ngữ Pháp",
+    "  HSK 1 (A)  ",
+    "--vcb--bank--",
+    "Sách_2026",
+    "vcb-",
+    "-",
+    "###",
+    "",
+    `${"a".repeat(39)} bank`,
+    "a".repeat(60),
+  ])("chuẩn hoá trước hay sau đều ra cùng một mã: %j", (raw) => {
+    expect(flashcardDeckCodeSlug(flashcardDeckCodeDraft(raw))).toBe(
+      flashcardDeckCodeSlug(raw),
+    );
   });
 });
 

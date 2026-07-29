@@ -37,6 +37,12 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> **`MULTIDECK-1f` — HAI LỖI HẬU `MULTIDECK-1e` ĐÃ SỬA + ĐO BẰNG TRÌNH DUYỆT THẬT, chờ xác minh độc lập — Claude — 2026-07-29.** Cả hai do chính đợt `MULTIDECK-1` vừa đưa vào, cùng đi kèm bản `git push` đang chờ.
+> **(1) Mục lục 35 buổi tràn xuống đáy trang.** `overflow-y-auto` vốn ĐÃ CÓ mà không bao giờ cuộn: `<aside>` chỉ có `max-h`, không có chiều cao xác định ⇒ `h-full` ở gốc `FlashcardNavRail` rơi về `auto`, mà flex item không khai `min-height` thì **chiều cao tối thiểu tự động bằng chiều cao nội dung** ⇒ khối gốc từ chối co. Sửa bằng `min-h-0`. **Đo Chromium 1280×900, deck 35 buổi:** trước `1848px` ruột trong cột `786px` (**tràn 1062px**, `scrollHeight == clientHeight` ⇒ không cuộn nổi) → sau `762px` (**vừa, dư 24px**, `1608 vs 522` ⇒ cuộn được, Buổi 35 vào trong khung). Ngăn kéo 390px không đổi hành vi (`SheetContent` có `inset-y-0 h-full` nên vốn không dính lỗi).
+> **(2) Bộ còn liên kết sống thì không đổi nổi cả TÊN.** Ô *Mã bộ* `disabled` ⇒ **không được gửi kèm `FormData`** ⇒ Zod nhận `code = undefined` ⇒ *"Invalid input: expected string, received undefined"*. Đổi sang `readOnly` (vẫn gửi mã cũ, vẫn không gõ được). **Fail-closed không bị nới:** `trg_flashcard_decks_guard_code` vẫn là chốt chặn và nó bỏ qua khi mã không đổi. Kiểm ngược: trả về `disabled` → bài mới đỏ với `code = null`.
+> **(3) `MULTIDECK-1g` — không gõ nổi mã bộ có dấu gạch nối** (lỗi riêng, phát hiện trong lúc làm; user chốt sửa luôn trong cùng phiên). `flashcardDeckCodeSlug` cắt dấu gạch ở **cuối** — đúng, vì nó là bộ chuẩn hoá CUỐI CÙNG — nhưng `onChange` chạy nó lại sau **từng phím** ⇒ gõ `vcb-` ra `vcb`, phím kế dính liền thành `vcbe`. Sửa bằng **hai nhịp**: đang gõ dùng `flashcardDeckCodeDraft` (mới, giữ gạch cuối), rời ô mới chốt bằng `…Slug`; địa chỉ xem trước luôn dựng từ bản `…Slug` nên không bao giờ hiện `/t/vcb--01`. **Không đụng `flashcardDeckCodeSlug`** — DB dùng chung công thức đó. Bất biến giữ cho hai hàm không thành hai nguồn sự thật có bài kiểm ghim thẳng: `slug(draft(x)) === slug(x)` trên 11 chuỗi, gồm cả ca chạm trần 40 ký tự.
+> Cổng đã chạy thật: lint/typecheck/**build** exit 0 · **Vitest `434/434`** (415 → +19). Không có migration, không đụng `D-40`/`D-36`.
+>
 > **`MULTIDECK-1` — CODE + TEST XONG, ✅ ĐÃ PUSH CLOUD, chờ xác minh độc lập — Claude — 2026-07-29.** ✅ **`…083` đã áp lên cloud 2026-07-29** (user cấp mật khẩu DB). Xác minh bằng `psql`, không tin output CLI: `schema_migrations` đỉnh = **`20260729000083`** · `db push --dry-run` = **"Remote database is up to date"** · `unique(course_id)` còn lại **0** · `trg_flashcard_decks_guard_code` có mặt · mã bộ backfill ra `vcb-bank` và `vcb-exec`. 🔴 **Bằng chứng 70 mã QR đã in còn sống — đo TRƯỚC và SAU khi push, cả hai đều 0:** `count(*) where token <> app.flashcard_fixed_link_token(section_id)` = **0/70**. Smoke production: `/t/vcb-bank-01` **200** · `/t/vcb-bank-35` **200** · `/t/vcb-exec-01` **200** · `/t/vcb-exec-35` **200** · mã đã thu hồi `39gsasejrt8c` **404** · mã bịa **404**. ⛔ **CÒN LẠI: `git push` để Vercel deploy CODE** — DB đã sẵn sàng, production đang chạy code cũ (an toàn: thêm cột là tương thích ngược). Cổng đã chạy thật: lint/typecheck/**build** exit 0 · **Vitest `415/415`** (400 → +15) · **pgTAP `604/604`** (580 → +24) · **E2E `flashcard-responsive` 19/19 CẢ HAI project** + `public-flashcard`/`student-review`/`admin-responsive` **76/76** (mobile) và **20/20** (chromium) · axe sạch ở 1280 · `horizontalOverflow = 0` ở 360/768/1280. Đo trên DB dựng lại từ `db:reset` + `db:seed:dev`, đã soi mắt UTF-8 (`Flashcard — Tiếng Trung ngân hàng`, không có `?`).
 >
 > 🔴 **Điểm quyết định của cả đợt, và nó KHÔNG phải phần giao diện:** bỏ `unique(course_id)` xong thì lộ ngay một va chạm thật ở tầng khác — `app.flashcard_fixed_link_token()` (`…081`) sinh mã từ **mã KHOÁ**, nên một khoá hai bộ là buổi 1 của cả hai cùng đòi `vcb-bank-01` và RPC ném *"Mã cố định … đã thuộc một buổi khác"*. Đây là thứ không né được, phải đổi công thức. Cách giữ mạng cho 35 mã đã in: backfill `flashcard_decks.code` = **slug của mã khoá**, tức đúng chuỗi công thức cũ đang dùng ⇒ mã ra y hệt. pgTAP ghim **cả hai kiểu**: chuỗi cụ thể (`md-bank-35`) và một bài phát biểu thẳng tính chất *"bộ có `code = slug(mã khoá)` cho ra Y HỆT công thức cũ"* — ghim mỗi chuỗi thì chỉ chứng minh cho một bộ, ghim mỗi hình dạng thì đổi công thức sai vẫn xanh.
@@ -267,7 +273,15 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-**➡️ ƯU TIÊN 0 (MỚI NHẤT) — `MULTIDECK-1`: ✅ DB xong, còn `git push` để deploy CODE.**
+**➡️ Codex xác minh độc lập `MULTIDECK-1f`/`1g`** (Claude viết code nên không tự ghi Verified). Ba đường:
+
+1. **Mục lục cuộn:** dựng một deck ≥ 20 buổi → `/admin/flashcards` ở 1280×900, cuộn xuống cho cột trái dính → mục lục phải **cuộn trong cột**, không buổi nào nằm ngoài khung thẻ. Ngăn kéo 390px phải **vẫn chỉ một** vùng mục lục đang hiện.
+2. **Đổi tên bộ:** mở *Sửa bộ* của bộ còn liên kết sống, **đổi mỗi TÊN** → phải lưu được, và ô Mã bộ vẫn không gõ được.
+3. **Gõ mã có gạch nối:** bộ chưa có liên kết → gõ `VCB Ngu Phap` phải ra `vcb-ngu-phap`.
+
+**Ba bài kiểm ngược:** (a) `readOnly` → `disabled` trong `flashcard-deck-dialog.tsx` ⇒ `flashcard-deck-dialog.test.tsx` đỏ bài 1 với `code = null`; (b) `flashcardDeckCodeDraft` → `…Slug` trong `onChange` ⇒ đỏ **3** bài (gõ gạch nối · xem trước lúc gõ dở · chốt khi rời ô); (c) bỏ `min-h-0` ở gốc `flashcard-nav-rail.tsx` ⇒ mục lục tràn lại (đo bằng trình duyệt: ruột cột `1848px` trong cột `786px`).
+
+**➡️ ƯU TIÊN 0 — `MULTIDECK-1`: ✅ DB xong, còn `git push` để deploy CODE.**
 
 `…083` **đã ở cloud** (2026-07-29). Thứ tự `D-37` đã làm đúng: thêm cột ⇒ `db push` trước, `git push` sau. Production đang chạy code cũ và **vẫn an toàn** — thêm cột là tương thích ngược, mỗi khoá vẫn đang có đúng 1 bộ.
 
@@ -275,7 +289,7 @@ Sau khi deploy, smoke 4 điểm (mất 2 phút):
 
 1. `/admin/flashcards` → thấy cột trái có **Bộ thẻ** và mục lục buổi **dọc**; bảng 35 địa chỉ QR **không** còn chắn khu soạn thẻ, mở bằng nút *Địa chỉ QR*.
 2. Bấm **Thêm bộ** ở cột trái, đặt mã bộ khác → tạo được **bộ thứ hai trong cùng khoá**, và hộp thoại hiện trước địa chỉ buổi 1 sẽ sinh ra.
-3. Mở *Sửa bộ* của `VCB-BANK` → ô **Mã bộ phải bị khoá**, kèm câu giải thích "đang có 35 liên kết công khai còn hiệu lực". Đây là vế fail-closed quan trọng nhất của đợt.
+3. Mở *Sửa bộ* của `VCB-BANK` → ô **Mã bộ phải không gõ được** (nay là `readOnly`, không phải `disabled` — xem `MULTIDECK-1f`), kèm câu giải thích "đang có 35 liên kết công khai còn hiệu lực"; **đổi TÊN bộ rồi lưu phải thành công**. Đây là vế fail-closed quan trọng nhất của đợt.
 4. Quét lại `https://www.polymind.vn/t/vcb-bank-01` và `/t/vcb-exec-01` — **200** (đã đo trước khi deploy, đo lại sau để chắc code mới không đụng gì).
 
 📌 **Số đo cloud 2026-07-29 (khác WORKLOG cũ):** có **HAI** khoá đang chạy flashcard — `VCB-BANK` (`vcb-bank-01…35`) và `VCB-EXEC` (`vcb-exec-01…35`), **70** mã đang sống. Cả 70 đều khớp chính xác công thức mới (đo `0/70` lệch, cả trước lẫn sau khi push).
@@ -513,6 +527,22 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-07-29] Phiên 85 — Claude — `MULTIDECK-1f`/`1g`: ba lỗi hậu `MULTIDECK-1e` — mục lục tràn đáy trang · không đổi được tên bộ · không gõ được gạch nối trong mã bộ
+
+- **User yêu cầu (nguyên văn):** *"các buổi trong bộ thẻ đang bị tràn xuống đáy trang web… thêm thanh cuộn cho các buổi ở phần bộ thẻ này"* (kèm 3 ảnh) · giữa phiên: *"lỗi không thể đổi tên bộ flashcard đã tạo"* (kèm ảnh hộp thoại) · lỗi thứ ba do Claude phát hiện trong lúc làm, **hỏi trước và user chốt "sửa luôn"**.
+- **Làm được:** sửa **ba lỗi độc lập**, cả ba đều do `MULTIDECK-1e`/`1` vừa đưa vào.
+- **🔴 Lỗi 1 — mục lục 35 buổi tràn ra ngoài khung thẻ, `overflow-y-auto` có sẵn mà không bao giờ cuộn.** Nguyên nhân KHÔNG phải thiếu `overflow`: `<aside>` chỉ đặt `max-h`, **không** đặt chiều cao xác định ⇒ `h-full` ở gốc `FlashcardNavRail` rơi về `auto`, mà một flex item không khai `min-height` thì **chiều cao tối thiểu tự động bằng chiều cao nội dung** ⇒ khối gốc từ chối co, vùng cuộn không có gì để cuộn. Sửa bằng `min-h-0` ở gốc. Đường ngăn kéo (dưới 1024px) vốn KHÔNG dính lỗi vì `SheetContent` có `inset-y-0 h-full` — chiều cao xác định — nên `h-full` được giữ lại.
+- **🔴 Lỗi 2 — bộ còn liên kết sống thì không đổi nổi cả TÊN.** Ô *Mã bộ* dùng `disabled` khi mã bị khoá, mà **ô `disabled` không được gửi kèm `FormData`** ⇒ Zod nhận `code = undefined` ⇒ *"Invalid input: expected string, received undefined"*. Đổi sang `readOnly`: vẫn gửi mã cũ, vẫn không gõ được, còn đọc/chép được bằng bàn phím (`read-only-distinction`). Vế fail-closed **không bị nới**: `trg_flashcard_decks_guard_code` vẫn là chốt chặn, và nó bỏ qua khi mã không đổi (`is not distinct from`) nên gửi lại đúng mã cũ là hợp lệ.
+- **🔴 Lỗi 3 (`MULTIDECK-1g`) — không gõ nổi mã bộ có dấu gạch nối.** `flashcardDeckCodeSlug` cắt gạch ở **cuối** (đúng — nó là bộ chuẩn hoá CUỐI CÙNG), nhưng `onChange` chạy lại nó sau **từng phím** ⇒ `vcb-` ra `vcb`, phím kế dính liền thành `vcbe`. Sửa bằng **hai nhịp**: đang gõ dùng `flashcardDeckCodeDraft` (hàm mới, chỉ khác đúng một điểm — không cắt gạch hai đầu), rời ô mới chốt bằng `…Slug`; `onSubmit` cũng `data.set("code", canonicalCode)` vì bấm Enter thì ô chưa kịp `blur`. **KHÔNG đụng `flashcardDeckCodeSlug`** — DB dùng chung công thức đó. Địa chỉ xem trước nay dựng từ bản `…Slug` nên không bao giờ hiện `/t/vcb--01`.
+- **File thay đổi:** `components/flashcard-nav-rail.tsx` · `components/flashcard-admin-manager.tsx` · `components/flashcard-deck-dialog.tsx` · `domain/public-link.ts` (thêm `flashcardDeckCodeDraft`) · `tests/unit/domain/flashcard-public-link.test.ts` (+14 bài) · **mới** `tests/unit/components/flashcard-deck-dialog.test.tsx` (5 bài).
+- **Migration/data impact:** không có. (Đã tạm chèn 33 buổi `RAILTMP` vào DB dev để đo rồi **xoá sạch** — `railtmp_con_sot = 0`, deck về đúng 2 buổi seed.)
+- **Đã test (kết quả THẬT):** lint exit 0 · typecheck exit 0 · **build exit 0** · **Vitest `434/434`** (415 → +19). **Đo bằng trình duyệt thật** (Chromium 1280×900, dev server, deck 35 buổi, cột ở vị thế dính): **TRƯỚC** ruột cột cao `1848px` trong cột `786px` ⇒ **tràn 1062px**, `list.scrollHeight == clientHeight == 1608` ⇒ **không cuộn được**; **SAU** ruột cột `762px` ⇒ **vừa, dư 24px**, `1608 vs 522` ⇒ **cuộn được**, cuộn tới đáy thì Buổi 35 nằm **trong** khung cột. `horizontalOverflow = 0` cả hai. Ngăn kéo 390px: đúng **1** vùng mục lục đang hiện (không nhân đôi giao diện), cuộn được, bấm Buổi 35 ăn (`?session=` đổi).
+- **Kiểm ngược 2/2:** (a) trả `readOnly` về `disabled` → đỏ đúng bài 1, `sent.get("code")` = **`null`** thay vì `vcb-exec`; (b) trả `…Draft` về `…Slug` trong `onChange` → đỏ đúng **3** bài. Tức cả hai bộ bài kiểm bắt đúng lỗi user báo, không phải xanh nhờ may.
+- **🔴 Bài học:** **cùng một phép chuẩn hoá, hai THỜI ĐIỂM khác nhau, không dùng chung một hàm được.** `…Slug` đúng ở nhịp "chốt" và sai ở nhịp "đang gõ" — vì giữa chừng, dấu gạch cuối chính là ký tự người dùng vừa bấm. Nhưng tách làm hai hàm là mở cửa cho hai nguồn sự thật (`BUG_M10_01`), nên bất biến `slug(draft(x)) === slug(x)` phải có bài kiểm ghim thẳng (11 chuỗi, gồm ca chạm trần 40 ký tự) — bản "đang gõ" chỉ được phép **lọc bớt**, không được cho qua thứ mà bản chốt sẽ đổi.
+- **Quyết định mới:** không có (không đụng `D-40`, không đụng bề mặt `anon` của `D-36`).
+- **Blocker/rủi ro:** không có. Cả ba bản sửa đều thuần giao diện, không đụng DB/migration.
+- **Next action:** user review diff rồi push cùng `MULTIDECK-1`. Codex xác minh độc lập — 3 đường + 3 bài kiểm ngược, xem `VIỆC TIẾP THEO`.
+
 ### [2026-07-29] Phiên 84 — Claude — `MULTIDECK-1`: một khoá NHIỀU bộ flashcard + dựng lại màn Admin
 
 - **User yêu cầu (nguyên văn):** *"mỗi khóa chỉ tạo được 1 bộ flash card, tôi muốn mỗi khóa có thể tạo nhìu bộ flashcard"* · *"Địa chỉ QR của cả bộ thẻ đang chiếm hết màn hình… phải kéo qua khỏi qr thứ 35 của bộ flashcard này mới thấy được bộ flashcard này"* · *"những bộ flashcard này cũng có link riêng để tôi tạo QR"*.
@@ -574,16 +604,7 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Blocker/rủi ro:** không có blocker source; nhận diện câu hiện dựa trên đúng biên của tập 35 buổi vì schema chưa có `content_kind`. Nếu sau này nhập một thuật ngữ chuyên ngành dài từ 10 chữ Hán nhưng không phải câu, cần thêm metadata thay vì tiếp tục nới heuristic.
 - **Next action:** user review diff, tự commit/push `main`, rồi smoke từ ngắn + câu dài trên `/student/review` và `/t/...`; ưu tiên code kế tiếp vẫn là BLK-6 nếu user muốn tiếp tục.
 
-### [2026-07-27] Phiên 79 — Codex — `REVIEW-FRAME-7`: dựng lại bố cục mặt trước dùng chung
-
-- **Làm được:** tiếp quản phần Claude Code còn dang dở; chốt bố cục mặt trước dùng chung cho flashcard trang Ôn tập và link QR public. Hán tự giờ là một chuỗi liền mạch, không còn giãn theo số âm tiết pinyin; thứ tự hiển thị là Hán tự → pinyin → nghĩa; thang chữ là pinyin > nghĩa > Hán tự; khoảng trống dư được đẩy lên trên để cụm chữ nằm gần tâm thẻ và ngay sát ảnh. Đã bổ sung test hình học responsive cho cả hai bề mặt và cập nhật yêu cầu §7ter.
-- **File thay đổi:** `src/features/flashcards/components/flashcard-face.tsx`, `src/app/globals.css`, `src/features/flashcards/domain/pinyin.ts`, 5 file test unit/E2E, `docs/10-yeu-cau-flashcard-quizlet.md`, `docs/08-phase-plan.md`, `docs/testing/MODULE_QA_BOARD.md`, `WORKLOG.md`.
-- **Migration/data impact:** không có.
-- **Đã test:** `npm run lint` exit 0; `npm run typecheck` exit 0; `npm test` 73 file / 346 test pass; `npm run build` exit 0, 60 routes; Playwright sạch Chromium 35/35 và Mobile 35/35; `git diff --check` exit 0; không thấy dấu hiệu mojibake trong các file thuộc scope; đã xem ảnh chụp 360×800. Lượt E2E tổng đầu tiên đạt 68/70 vì 2 assertion cũ còn buộc Hán tự/pinyin tách thành từng node; đã cập nhật đúng yêu cầu mới rồi chạy sạch lại 35/35 cho từng project.
-- **Ảnh hưởng từ skill `ui-ux-pro-max`:** dùng thang typography có phân cấp rõ, grouping whitespace và image scaling mobile-first; giữ nguyên màu/font nhận diện POLYMIND hiện có.
-- **Quyết định mới:** bố cục mặt trước từng cột Hán tự/pinyin cũ trong §7ter được thay thế bởi bố cục chuỗi liền mạch nêu trên; mặt sau không đổi.
-- **Blocker/rủi ro:** không có blocker source; chưa commit/deploy theo luật repo, cần user smoke trên thiết bị thật sau deploy.
-- **Next action:** user review diff, tự commit/push `main` để auto-deploy theo D37, rồi smoke cả `/student/review` và `/t/...`; ưu tiên code kế tiếp vẫn là BLK-6 nếu user muốn tiếp tục.
+_(Phiên 79 — `REVIEW-FRAME-7`: dựng lại bố cục mặt trước dùng chung — đã xoá theo luật "giữ 6 entry". **Hai thứ còn hiệu lực:** (1) bố cục mặt trước là **chuỗi Hán tự liền mạch**, thứ tự Hán tự → pinyin → nghĩa, thang chữ pinyin > nghĩa > Hán tự — nó **thay thế** bố cục từng cột Hán tự/pinyin cũ ở `docs/10` §7ter, đừng dựng lại kiểu cột; (2) khoảng trống dư đẩy lên trên để cụm chữ nằm gần tâm thẻ và sát ảnh. `flashcard-face.tsx` dùng chung cho **cả hai** bề mặt (Ôn tập + `/t/<mã>`), chép JSX sang là đúng hình dạng `BUG_M10_01`.)_
 
 _(Phiên 78 — `REVIEW-FRAME-4…6`: thẻ không còn phải cuộn · bỏ 3 chức năng · hướng dẫn mũi tên — đã xoá theo luật "giữ 6 entry". **Ba thứ còn hiệu lực:** (1) 🔴 **Thu chữ cho vừa phải đổi `font-size`, KHÔNG `transform: scale()`** — `transform` không đổi kích thước layout nên nhìn thì vừa mà hộp vẫn cao như cũ, mặt thẻ vẫn sinh cuộn; hệ quả bắt buộc là cỡ chữ/khoảng cách mặt sau khai bằng `em`. (2) `FlashcardSizer` từng đo chiều cao thẻ bằng **mặt CAO HƠN** của hai mặt — đó là gốc rễ của lời than "phải lướt lên lướt xuống"; nay mỗi mặt tự lo vừa. (3) `useSyncExternalStore` cho `localStorage`, không `useEffect` + `setState` — lint `react-hooks/set-state-in-effect` chặn đúng chỗ đó. **Sàn cỡ chữ mặt sau = 0.78**, user đã nghe vế đánh đổi và vẫn chọn.)_
 

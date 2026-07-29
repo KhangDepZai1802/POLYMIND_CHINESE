@@ -76,6 +76,33 @@ export function flashcardDeckCodeSlug(raw: string): string {
 }
 
 /**
+ * Bản chuẩn hoá dùng **trong lúc đang gõ** — khác `flashcardDeckCodeSlug` đúng
+ * một điểm: **không cắt dấu gạch ở đầu/cuối**.
+ *
+ * 🔴 Vì sao phải có hàm thứ hai cho việc tưởng như giống hệt: `…Slug` là bộ
+ * chuẩn hoá CUỐI CÙNG nên cắt gạch thừa ở hai đầu là đúng. Nhưng hộp thoại chạy
+ * nó lại sau TỪNG PHÍM, mà giữa chừng một câu chưa gõ xong thì dấu gạch cuối
+ * chính là ký tự người dùng vừa bấm — cắt nó đi là gõ `vcb-` ra `vcb`, phím kế
+ * dính liền thành `vcbe`, và **mã tự đặt không bao giờ có dấu gạch nối** dù mọi
+ * mã gợi ý sẵn đều có.
+ *
+ * ⚠️ Đây KHÔNG phải nguồn sự thật thứ hai (`BUG_M10_01`): hàm này chỉ được phép
+ * lọc bớt, không được cho qua thứ mà `…Slug` sẽ đổi. Bất biến đó có bài kiểm
+ * ghim thẳng — `flashcardDeckCodeSlug(draft(x)) === flashcardDeckCodeSlug(x)`.
+ * Chốt chặn thật vẫn là `deckCodeSchema` (Zod chạy lại `…Slug`) và
+ * `flashcard_decks_code_shape_check` ở DB.
+ *
+ * Không cắt độ dài ở đây: `maxLength` của ô nhập đã chặn, và `…Slug` mới là nơi
+ * áp trần chính thức.
+ */
+export function flashcardDeckCodeDraft(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-{2,}/g, "-");
+}
+
+/**
  * Mã CỐ ĐỊNH của một buổi — bản sao y hệt `app.flashcard_fixed_link_token()`
  * (migration `…081`, sửa bởi `…083`).
  *

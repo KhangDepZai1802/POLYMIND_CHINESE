@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  flashcardDeckCodeDraft,
   flashcardDeckCodeSlug,
   flashcardPublicUrl,
   FLASHCARD_DECK_CODE_MAX_LENGTH,
@@ -39,8 +40,11 @@ import { getPublicEnv } from "@/lib/env";
  *
  *   1. **Hiện trước địa chỉ sẽ sinh ra** ngay khi gõ — người dùng đối chiếu
  *      được với bản in TRƯỚC khi bấm lưu, không phải sau.
- *   2. **Chuẩn hoá ngay trên ô nhập** (`VCB Ngữ Pháp` → `vcb-ngu-phap`) thay vì
- *      để họ bấm lưu rồi mới báo lỗi hình dạng.
+ *   2. **Chuẩn hoá ngay trên ô nhập** (`VCB Ngu Phap` → `vcb-ngu-phap`) thay vì
+ *      để họ bấm lưu rồi mới báo lỗi hình dạng — nhưng theo **hai nhịp**: đang
+ *      gõ dùng `…Draft` (giữ dấu gạch cuối), rời ô mới chốt bằng `…Slug`. Chạy
+ *      thẳng `…Slug` sau từng phím là lỗi `MULTIDECK-1g`: nó cắt dấu gạch cuối
+ *      nên mã tự đặt không bao giờ có gạch nối.
  *   3. **Khoá ô mã** khi bộ còn liên kết sống. DB cũng chặn
  *      (`trg_flashcard_decks_guard_code`) — ở đây khoá thêm để người dùng biết
  *      LÝ DO trước khi gõ, chứ không phải để thay chỗ cho chốt chặn ở DB.
@@ -75,7 +79,16 @@ export function FlashcardDeckDialog({
 
   const codeLocked = (deck?.liveLinkCount ?? 0) > 0;
   const origin = getPublicEnv().NEXT_PUBLIC_APP_URL;
-  const previewToken = code ? `${code}-01` : null;
+  /**
+   * Địa chỉ xem trước dựng từ mã ĐÃ CHUẨN HOÁ, không từ chữ đang gõ.
+   *
+   * Trong lúc gõ, `code` được phép mang dấu gạch ở cuối (`vcb-`) — nối thẳng
+   * vào sẽ hiện `/t/vcb--01`, một địa chỉ sẽ không bao giờ tồn tại. Mà mục đích
+   * của dòng này là để người dùng **đối chiếu với bản in**, nên nó phải nói
+   * đúng thứ sẽ được lưu.
+   */
+  const canonicalCode = flashcardDeckCodeSlug(code);
+  const previewToken = canonicalCode ? `${canonicalCode}-01` : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,6 +108,11 @@ export function FlashcardDeckDialog({
           onSubmit={(event) => {
             event.preventDefault();
             const data = new FormData(event.currentTarget);
+            // Bấm Enter thì ô mã chưa kịp `blur`, nên chốt bản chuẩn hoá ngay
+            // tại đây. Zod cũng chạy lại `…Slug` — làm ở đây để thứ được gửi
+            // đi ĐÚNG BẰNG thứ dòng xem trước vừa hứa, không phải để thay chỗ
+            // cho chốt chặn ở máy chủ.
+            data.set("code", canonicalCode);
             startTransition(async () => {
               const result = await saveFlashcardDeckAction(data);
               setState(result);
@@ -131,18 +149,37 @@ export function FlashcardDeckDialog({
 
           <div className="space-y-2">
             <Label htmlFor="deck-code">Mã bộ *</Label>
+            {/*
+              🔴 `readOnly` chứ KHÔNG `disabled` khi mã bị khoá.
+              Ô `disabled` không được gửi kèm `FormData`, nên Zod nhận `code =
+              undefined` và ném "expected string, received undefined" — hậu quả
+              là bộ nào còn liên kết sống thì không đổi nổi cả TÊN, dù tên chẳng
+              liên quan gì tới mã QR. `readOnly` vẫn gửi giá trị cũ, vẫn không
+              gõ được, và còn đọc/chép được bằng bàn phím.
+
+              Việc khoá ở đây vẫn chỉ là lớp giải thích. Chốt chặn thật là
+              `trg_flashcard_decks_guard_code` ở DB, và nó bỏ qua khi mã không
+              đổi (`is not distinct from`) nên gửi lại đúng mã cũ là hợp lệ.
+            */}
             <Input
               id="deck-code"
               name="code"
               value={code}
-              disabled={codeLocked}
+              readOnly={codeLocked}
               maxLength={FLASHCARD_DECK_CODE_MAX_LENGTH}
-              // Chuẩn hoá NGAY trên ô nhập: cùng phép biến đổi mà Zod và DB
-              // dùng, nên cái người dùng nhìn thấy chính là cái sẽ được lưu.
+              /*
+               * Chuẩn hoá NGAY trên ô nhập, nhưng theo HAI NHỊP:
+               *   • đang gõ  → `…Draft` (giữ dấu gạch cuối, vì đó là ký tự vừa
+               *                bấm — cắt nó là không gõ nổi mã có gạch nối);
+               *   • rời ô    → `…Slug`, tức đúng thứ Zod và DB sẽ áp.
+               * Người dùng vẫn thấy trước cái sẽ được lưu — dòng địa chỉ xem
+               * trước luôn dựng từ bản `…Slug`, không từ chữ đang gõ dở.
+               */
               onChange={(event) =>
-                setCode(flashcardDeckCodeSlug(event.target.value))
+                setCode(flashcardDeckCodeDraft(event.target.value))
               }
-              className="font-mono"
+              onBlur={() => setCode(flashcardDeckCodeSlug(code))}
+              className="read-only:bg-surface-sunken read-only:text-text-secondary font-mono"
               aria-describedby="deck-code-help"
               required
             />

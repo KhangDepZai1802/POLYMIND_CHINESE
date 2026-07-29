@@ -345,8 +345,14 @@ export function FlashcardAdminManager({
             Cột trái DÍNH và cuộn riêng: tìm buổi 27 không được kéo khu soạn thẻ
             đi mất. `max-h` trừ đi chiều cao thanh trên để cột không tràn ra
             ngoài khung nhìn (`fixed-element-offset`).
+
+            `overflow-y-auto` ở đây là VAN AN TOÀN, không phải vùng cuộn chính:
+            bình thường mục lục buổi tự co và cuộn bên trong nên cột này không
+            bao giờ cần cuộn. Nó chỉ mở ra khi các phần KHÔNG co được (danh sách
+            bộ thẻ + sàn 16rem của mục lục) vượt quá chiều cao cột — thà cuộn
+            thêm một tầng còn hơn để nội dung tràn ra ngoài khung thẻ.
           */}
-          <aside className="bg-card sticky top-4 hidden max-h-[calc(100dvh-7rem)] rounded-xl border p-3 lg:flex lg:flex-col">
+          <aside className="bg-card sticky top-4 hidden max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-xl border p-3 lg:flex lg:flex-col">
             {rail}
           </aside>
 
