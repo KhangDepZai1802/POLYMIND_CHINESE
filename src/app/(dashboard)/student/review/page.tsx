@@ -2,9 +2,11 @@ import { BrainCircuit, Layers } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudentFlashcardDeckPicker } from "@/features/flashcards/components/student-flashcard-deck-picker";
 import { StudentFlashcardReader } from "@/features/flashcards/components/student-flashcard-reader";
 import {
   getStudentFlashcardDeck,
+  getStudentFlashcardDeckOptions,
   getStudentStarredPageIds,
 } from "@/features/flashcards/server/queries";
 import { getMyEnrollment } from "@/features/student/server/queries";
@@ -14,19 +16,38 @@ import { requireRole } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Ôn tập" };
 
-export default async function StudentReviewPage() {
+export default async function StudentReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deck?: string }>;
+}) {
   await requireRole("student");
-  const [enrollment, wrongAnswers] = await Promise.all([
+  const [{ deck: deckParam }, enrollment, wrongAnswers] = await Promise.all([
+    searchParams,
     getMyEnrollment(),
     getMyWrongAnswerReviews(),
   ]);
   const course = enrollment?.class.course ?? null;
-  const [deck, starredPageIds] = course
+
+  const [deckOptions, starredPageIds] = course
     ? await Promise.all([
-        getStudentFlashcardDeck(course.id),
+        getStudentFlashcardDeckOptions(course.id),
         getStudentStarredPageIds(),
       ])
-    : [null, []];
+    : [[], []];
+
+  /**
+   * Khoá **một** bộ thì vào thẳng, không bắt bấm qua màn chọn (`MULTIDECK-1f`).
+   * Khoá nhiều bộ mà chưa chọn thì `null` — và đó là tín hiệu để hiện màn chọn,
+   * không phải lỗi.
+   */
+  const selectedDeckId =
+    deckOptions.find((item) => item.id === deckParam)?.id ??
+    (deckOptions.length === 1 ? (deckOptions[0]?.id ?? null) : null);
+
+  const deck = selectedDeckId
+    ? await getStudentFlashcardDeck(selectedDeckId)
+    : null;
 
   return (
     /*
@@ -73,11 +94,19 @@ export default async function StudentReviewPage() {
           </TabsList>
         </nav>
         <TabsContent value="flashcards">
-          <StudentFlashcardReader
-            deck={deck}
-            courseName={course?.title ?? null}
-            starredPageIds={starredPageIds}
-          />
+          {course && deckOptions.length > 1 && !selectedDeckId ? (
+            <StudentFlashcardDeckPicker
+              decks={deckOptions}
+              courseName={course.title}
+            />
+          ) : (
+            <StudentFlashcardReader
+              deck={deck}
+              courseName={course?.title ?? null}
+              starredPageIds={starredPageIds}
+              canSwitchDeck={deckOptions.length > 1}
+            />
+          )}
         </TabsContent>
         <TabsContent value="wrong-answers">
           <WrongAnswerReview initialItems={wrongAnswers} />

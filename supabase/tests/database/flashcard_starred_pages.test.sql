@@ -111,8 +111,8 @@ select set_config(
   true
 );
 
-insert into public.flashcard_decks (id, course_id, title)
-values ('72500000-0000-4000-8000-000000000001', '72200000-0000-4000-8000-000000000001', 'Deck Star A');
+insert into public.flashcard_decks (id, course_id, code, title)
+values ('72500000-0000-4000-8000-000000000001', '72200000-0000-4000-8000-000000000001', 'deck-star-a-72', 'Deck Star A');
 
 insert into public.flashcard_sections (id, deck_id, session_number, title)
 values

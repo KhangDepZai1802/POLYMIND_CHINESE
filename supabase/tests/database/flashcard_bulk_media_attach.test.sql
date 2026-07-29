@@ -80,8 +80,8 @@ select set_config(
   true
 );
 
-insert into public.flashcard_decks (id, course_id, title)
-values ('77500000-0000-4000-8000-000000000001', '77200000-0000-4000-8000-000000000001', 'Deck BulkMedia');
+insert into public.flashcard_decks (id, course_id, code, title)
+values ('77500000-0000-4000-8000-000000000001', '77200000-0000-4000-8000-000000000001', 'deck-bulkmedia-77', 'Deck BulkMedia');
 
 insert into public.flashcard_sections (id, deck_id, session_number, title, status)
 values

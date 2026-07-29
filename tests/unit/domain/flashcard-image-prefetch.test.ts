@@ -74,8 +74,9 @@ describe("flashcardPrefetchUrls", () => {
   );
 
   it("ưu tiên thẻ TIẾN trước, rồi mới tới thẻ lùi", () => {
-    // Thứ tự này là thứ quyết định thẻ nào kịp sẵn sàng: trình duyệt chỉ mở
-    // khoảng 6 kết nối một lúc.
+    // Thứ tự này là thứ quyết định thẻ nào kịp sẵn sàng: hàng đợi tải tuần tự và
+    // dừng khi hết ngân sách thời gian, nên thẻ đứng đầu danh sách là thẻ chắc
+    // chắn được tải.
     expect(flashcardPrefetchUrls(pages, 2)).toEqual([
       "https://x/3",
       "https://x/4",
@@ -84,17 +85,28 @@ describe("flashcardPrefetchUrls", () => {
     ]);
   });
 
+  it("mặc định phủ HẾT buổi về phía trước, không dừng ở 3 thẻ", () => {
+    // Sau `PERF-IMG-2` ảnh còn ~27KB nên cả buổi nhẹ hơn một tấm ảnh cũ. Phanh
+    // nằm ở ngân sách thời gian trong hook, không nằm ở con số cứng.
+    expect(flashcardPrefetchUrls(pages, 0)).toEqual([
+      "https://x/1",
+      "https://x/2",
+      "https://x/3",
+      "https://x/4",
+      "https://x/5",
+    ]);
+  });
+
   it("không bao giờ chứa thẻ ĐANG XEM", () => {
     expect(flashcardPrefetchUrls(pages, 2)).not.toContain("https://x/2");
   });
 
   it("thẻ đầu và thẻ cuối không tràn ra ngoài mảng", () => {
-    expect(flashcardPrefetchUrls(pages, 0)).toEqual([
-      "https://x/1",
-      "https://x/2",
+    expect(flashcardPrefetchUrls(pages, 5)).toEqual(["https://x/4"]);
+    expect(flashcardPrefetchUrls(pages, 4)).toEqual([
+      "https://x/5",
       "https://x/3",
     ]);
-    expect(flashcardPrefetchUrls(pages, 5)).toEqual(["https://x/4"]);
   });
 
   it("buổi chỉ có một thẻ thì không tải trước gì", () => {

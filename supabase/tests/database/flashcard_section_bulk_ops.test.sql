@@ -86,8 +86,8 @@ select set_config(
   true
 );
 
-insert into public.flashcard_decks (id, course_id, title)
-values ('76500000-0000-4000-8000-000000000001', '76200000-0000-4000-8000-000000000001', 'Deck BulkOps');
+insert into public.flashcard_decks (id, course_id, code, title)
+values ('76500000-0000-4000-8000-000000000001', '76200000-0000-4000-8000-000000000001', 'deck-bulkops-76', 'Deck BulkOps');
 
 -- =====================================================================
 -- Tạo nhiều buổi

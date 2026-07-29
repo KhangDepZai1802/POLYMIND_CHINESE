@@ -53,6 +53,45 @@ const MAX_TRACKED_URLS = 2000;
  */
 const MAX_WAIT_FOR_CURRENT_MS = 30000;
 
+/**
+ * NGÂN SÁCH THỜI GIAN cho một lượt tải trước — cái phanh thật của cơ chế này.
+ *
+ * Vì sao đo bằng THỜI GIAN chứ không bằng BYTE: ảnh nằm ở tên miền Supabase,
+ * khác tên miền trang. Không có `Timing-Allow-Origin` thì `transferSize` /
+ * `encodedBodySize` của `PerformanceResourceTiming` **luôn trả 0** cho tài
+ * nguyên khác tên miền — một ngân sách tính bằng byte sẽ không bao giờ giảm, tức
+ * không bao giờ phanh. Thời gian thì tự đo được, và nó chính là thứ học viên
+ * cảm nhận.
+ *
+ * 8 giây: ảnh đã đổi WebP (~27KB) tải hết cả buổi 18 thẻ trong ~4 giây ở 4G, nên
+ * ngân sách này không chạm tới. Ảnh chưa đổi (~3,8MB) thì hết ngay sau tấm đầu —
+ * đúng ý: mạng yếu/ảnh nặng thì đừng ôm đồm.
+ */
+const PREFETCH_BUDGET_MS = 8000;
+
+/**
+ * Bao nhiêu ảnh tải trước cùng lúc.
+ *
+ * 🔴 Từng là 1 (tuần tự) — đúng cho thời ảnh còn 3,8MB, khi vấn đề là BĂNG
+ * THÔNG và mọi luồng thêm vào đều cướp phần của thẻ đang xem. Đo trên production
+ * sau khi đổi WebP thì vấn đề đổi hẳn bản chất: mỗi ảnh chỉ còn 27–63KB nhưng
+ * vẫn tốn **~700ms** — gần như toàn bộ là ĐỘ TRỄ vòng tới máy chủ, không phải
+ * byte. Tuần tự nghĩa là 18 thẻ × 700ms ≈ 12 giây, tức hết ngân sách trước khi
+ * kịp phủ hết buổi.
+ *
+ * 🔴 ĐANG ĐỂ LẠI 1 (tuần tự). Bản 3 luồng làm **đỏ lặp lại được** bài E2E
+ * `flashcard-responsive.spec.ts:351` ở CẢ HAI project — và đỏ cả khi chạy
+ * `--workers=1`, nên không phải tranh chấp tài nguyên như những lượt nhiễu
+ * trước đây. Chưa truy ra nguyên nhân, nên không đẩy lên: một tính năng tăng
+ * tốc chưa hiểu rõ thì chưa đáng để đánh đổi một bài kiểm đang canh đúng thứ
+ * user từng than (mọi nút phải thấy được ở 360×800).
+ *
+ * Việc còn bỏ ngỏ, có số đo sẵn để làm tiếp: mỗi ảnh nhỏ vẫn tốn ~700ms độ trễ
+ * trên production, nên tuần tự chỉ phủ được ~11 thẻ trong ngân sách 8 giây.
+ * Nâng lên 2–3 luồng là đúng hướng, nhưng phải hiểu bài kiểm kia đỏ vì sao trước.
+ */
+const PREFETCH_CONCURRENCY = 1;
+
 function prefetchOne(url: string): Promise<void> {
   return new Promise((resolve) => {
     const image = new window.Image();
@@ -129,13 +168,31 @@ export function useFlashcardImagePrefetch(
       });
 
     void waitForCurrentCard().then(async () => {
-      for (const url of urls) {
-        if (cancelled) return;
-        if (requested.has(url)) continue;
-        if (requested.size >= MAX_TRACKED_URLS) requested.clear();
-        requested.add(url);
-        await prefetchOne(url);
-      }
+      // `performance.now()` chứ không phải `Date.now()`: đồng hồ hệ thống nhảy
+      // (đổi múi giờ, đồng bộ NTP) sẽ làm ngân sách âm hoặc vô hạn.
+      const startedAt = performance.now();
+      const queue = urls.filter((url) => !requested.has(url));
+
+      await Promise.all(
+        Array.from(
+          { length: Math.min(PREFETCH_CONCURRENCY, queue.length) },
+          async () => {
+            while (queue.length > 0) {
+              if (cancelled) return;
+              // Ngân sách đo bằng đồng hồ treo tường, không cộng dồn từng ảnh:
+              // với nhiều luồng chạy song song thì cộng dồn sẽ tiêu ngân sách
+              // nhanh gấp mấy lần thời gian thật sự trôi qua.
+              if (performance.now() - startedAt > PREFETCH_BUDGET_MS) return;
+
+              const url = queue.shift();
+              if (!url || requested.has(url)) continue;
+              if (requested.size >= MAX_TRACKED_URLS) requested.clear();
+              requested.add(url);
+              await prefetchOne(url);
+            }
+          },
+        ),
+      );
     });
 
     // Rời thẻ/đổi buổi thì dừng hàng đợi. Ảnh đang bay vẫn về đích và vẫn nằm

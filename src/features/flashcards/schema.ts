@@ -11,9 +11,38 @@ import {
   MAX_FLASHCARD_UPLOAD_FILES,
   type FlashcardMediaSlot,
 } from "@/features/flashcards/domain/media";
+import {
+  flashcardDeckCodeSlug,
+  FLASHCARD_DECK_CODE_MAX_LENGTH,
+  FLASHCARD_DECK_CODE_MIN_LENGTH,
+} from "@/features/flashcards/domain/public-link";
+
+/**
+ * Mã bộ — tiền tố của địa chỉ QR (`MULTIDECK-1`).
+ *
+ * Chuẩn hoá TRƯỚC rồi mới kiểm, để người dùng gõ `VCB Ngữ Pháp` vẫn ra
+ * `vcb-ngu-phap` thay vì bị chặn với một thông báo khó hiểu. Chuẩn hoá ở đây,
+ * cưỡng chế hình dạng ở DB (`flashcard_decks_code_shape_check`) — một nơi
+ * biến đổi, một nơi làm chốt chặn cuối, không phải hai nguồn sự thật.
+ */
+const deckCodeSchema = z
+  .string()
+  .trim()
+  .min(1, "Nhập mã bộ.")
+  .transform(flashcardDeckCodeSlug)
+  .refine((value) => value.length >= FLASHCARD_DECK_CODE_MIN_LENGTH, {
+    message: "Mã bộ cần ít nhất 2 chữ hoặc số.",
+  })
+  .refine((value) => value.length <= FLASHCARD_DECK_CODE_MAX_LENGTH, {
+    message: `Mã bộ tối đa ${FLASHCARD_DECK_CODE_MAX_LENGTH} ký tự.`,
+  });
 
 export const flashcardDeckSchema = z.object({
+  // Có `id` = sửa bộ đang có, không có = tạo mới. Một schema cho cả hai đường
+  // vì chúng ghi vào cùng một bảng với cùng ràng buộc (`BUG_M10_01`).
+  id: z.uuid().optional(),
   course_id: z.uuid("Khóa học không hợp lệ."),
+  code: deckCodeSchema,
   title: z.string().trim().min(2, "Nhập tên bộ flashcard.").max(120),
   description: z.string().trim().max(500).optional().default(""),
 });

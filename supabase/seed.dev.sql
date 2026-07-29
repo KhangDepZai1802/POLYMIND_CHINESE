@@ -275,14 +275,21 @@ select set_config(
   false
 );
 
-insert into public.flashcard_decks (id, course_id, title, description)
+-- `code` = slug của mã khoá: đây đúng là giá trị mà backfill của migration
+-- `…083` gán cho bộ đang chạy trên cloud, nên seed dev sinh ra CÙNG dải địa chỉ
+-- `vcb-bank-01…` với production. Lệch chỗ này là mọi phép đo mã QR ở local nói
+-- một đằng, cloud một nẻo.
+insert into public.flashcard_decks (id, course_id, code, title, description)
 values (
   'a1000000-0000-4000-8000-000000000001',
   (select id from public.courses where code = 'VCB-BANK'),
+  'vcb-bank',
   'Flashcard — Tiếng Trung ngân hàng',
   'Từ vựng theo từng buổi cho lớp VCB-BANK.'
 )
-on conflict (course_id) do nothing;
+-- `on conflict (course_id)` không còn dùng được: `MULTIDECK-1` đã gỡ ràng buộc
+-- duy nhất trên `course_id` để một khoá có nhiều bộ.
+on conflict (id) do nothing;
 
 insert into public.flashcard_sections (id, deck_id, session_number, title)
 values

@@ -114,11 +114,12 @@ select set_config(
 );
 
 insert into public.flashcard_decks (
-  id, course_id, title, created_by
+  id, course_id, code, title, created_by
 )
 values (
   '66500000-0000-4000-8000-000000000001',
   '66200000-0000-4000-8000-000000000001',
+  'kh-a-66',
   'Flashcard khóa A',
   '66000000-0000-4000-8000-000000000004'
 );
@@ -243,7 +244,7 @@ select ok(
   'Student A được ký media đúng Course'
 );
 select throws_ok(
-  $$insert into public.flashcard_decks(course_id,title) values('66200000-0000-4000-8000-000000000002','Hack')$$,
+  $$insert into public.flashcard_decks(course_id,code,title) values('66200000-0000-4000-8000-000000000002','hack-66','Hack')$$,
   '42501',
   null,
   'student không tự tạo deck'

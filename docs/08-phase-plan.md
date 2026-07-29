@@ -600,6 +600,72 @@ User: *"tốc độ load hình của flashcard quá chậm (cả flashcard QR v�
 
 ⚠️ **Còn nợ, chưa làm (chờ số đo cloud):** ảnh cũ dạng **PNG** chỉ giảm ~74% (còn ~1MB/ảnh) vì PNG vốn dở với ảnh chụp — muốn sâu hơn phải đổi PNG→WebP kèm sửa đường dẫn ở DB, **task riêng**. Tầng **C1** (ổn định hoá chữ ký để cache trình duyệt dùng lại được giữa các lượt mở trang) và **B2** (màn hình chờ tải cả buổi kèm thanh tiến độ) chưa làm.
 
+> ✅ **Cái "task riêng" ở trên đã thành `PERF-IMG-2` ngay bên dưới** — user báo lại rằng `PERF-IMG-1` "nhanh hơn nhưng không đáng kể", và số đo production giải thích vì sao.
+
+---
+
+### Ảnh flashcard sang WebP — `PERF-IMG-2` (user báo lại 2026-07-28)
+
+User: *"hình load vẫn chậm, có nhanh hơn nhưng ko đáng kể… tốc độ load hình phải bằng tốc độ load chữ, người dùng vuốt tới đâu hình theo tới đó"*.
+
+**Số đo trên ảnh production thật** (lấy về từ trang QR công khai, không cần đăng nhập):
+
+| | Kích thước | |
+|---|---|---|
+| PNG gốc trong bucket | 3.770 KB | 1728×2496 |
+| Giữ PNG, thu về 1280px (`PERF-IMG-1`) | 748 KB | −80% |
+| **WebP 1280px q82** | **27 KB** | **−99,3%** |
+
+Ảnh của khoá này là **đồ hoạ phẳng**, không phải ảnh chụp — PNG lưu loại nội dung đó cực kỳ lãng phí, còn WebP thì cực kỳ hiệu quả. Quyết định "giữ nguyên định dạng để khỏi đụng DB" của `PERF-IMG-1` vì thế chỉ lấy được **1/28** phần thắng. Đó chính xác là khoảng cách giữa "đỡ chậm" và "hiện ra ngay".
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| PERF-IMG-2a | **RPC đổi đuôi đường dẫn** (`…082`) | `trg_flashcard_pages_guard_history` chặn mọi sửa đổi trang của buổi đã công bố, kể cả `service_role`. RPC tự hạ buổi về nháp → sửa → công bố lại **đúng mốc `published_at` cũ**, trọn trong MỘT transaction (đứt giữa chừng không để lại buổi ở trạng thái nháp — mã QR in trong sách sẽ hiện "Buổi N sắp mở"). Khoá cứng phạm vi: **chỉ đổi được phần đuôi**, bỏ đuôi ra thì đường dẫn cũ/mới phải trùng khít. Chỉ `service_role`. pgTAP ghim cả chiều thuận lẫn chiều phủ định | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-28. pgTAP **580/580** (+15) |
+| PERF-IMG-2b | **Script chuyển đổi** (`npm run media:webp`) | Mặc định chạy khô. Thứ tự an toàn: nén → **tải file mới lên** → gọi RPC → **chỉ xoá file cũ mà RPC xác nhận đã đổi**. Idempotent | ☑ **DONE** — chạy thật trên bucket local: **11,49MB → 0,07MB**. 🔴 Chưa chạy cloud |
+| PERF-IMG-2c | **Tải trước cả buổi** | Bỏ trần 3 thẻ (con số của thời ảnh 3,8MB). Phanh chuyển sang **ngân sách thời gian 8 giây** | ☑ **DONE** — Claude 2026-07-28 |
+
+🔴 **Hai bài học, cả hai đều do phép đo ép ra chứ không phải chọn trước:**
+
+1. **Đừng suy `section_id` từ đường dẫn.** Bản đầu của RPC nhận `section_id` và bắt script tự cắt từ `actor/deck/section/page/file`. Quy ước đó đúng với ảnh do app tạo nhưng **sai với mọi đường dẫn có sẵn từ trước hoặc nhập tay** — và khi sai thì hàm báo "không tìm thấy buổi" trong khi ảnh vẫn nằm đó, vẫn đang được một trang dùng. Nay DB tự tra ngược từ `media_paths`: không còn giả định nào để mà sai.
+2. **Ngân sách phanh phải tính bằng THỜI GIAN, không phải BYTE.** Ảnh nằm ở tên miền Supabase, khác tên miền trang. Thiếu `Timing-Allow-Origin` thì `transferSize`/`encodedBodySize` **luôn trả 0** cho tài nguyên khác tên miền — một ngân sách tính bằng byte sẽ không bao giờ giảm, tức không bao giờ phanh.
+
+**Đo thật ở 4G giả lập (1,6 Mbps · RTT 150ms), ảnh 3,83MB → WebP:**
+
+| | Bản gốc | Sau `PERF-IMG-1` | Sau `PERF-IMG-2` |
+|---|---|---|---|
+| Chờ ảnh sau khi bấm sang thẻ | 19.712 ms | 163 ms | **207 ms** |
+| Thẻ 1 (mở trang → thấy ảnh) | 44,5 s | 15,7 s | **2,3 s** |
+| Tổng byte ảnh của buổi | 11,49 MB | 3,01 MB | **0,07 MB** |
+
+---
+
+### Một khoá — NHIỀU bộ flashcard + dựng lại màn Admin — `MULTIDECK-1` (user chốt 2026-07-29)
+
+User: *"mỗi khóa chỉ tạo được 1 bộ flash card, tôi muốn mỗi khóa có thể tạo nhìu bộ flashcard… thiết kế lại trang thiết kế flashcard này của admin nhìn cho gọn vì Địa chỉ QR của cả bộ thẻ đang chiếm hết màn hình… phải kéo qua khỏi qr thứ 35 mới thấy được bộ flashcard này"*.
+
+**Hai ràng buộc cứng đọc từ source, không phải suy đoán:**
+
+1. [`20260721000066_flashcards.sql:8`](../supabase/migrations/20260721000066_flashcards.sql#L8) — `course_id uuid not null **unique**` là chỗ chặn "mỗi khoá một bộ". Không phải luật nghiệp vụ ghi ở đâu cả, chỉ là ràng buộc DB.
+2. `app.flashcard_fixed_link_token()` ([`…081`](../supabase/migrations/20260727000081_flashcard_fixed_public_links.sql)) sinh mã từ **mã KHOÁ** + số buổi. Một khoá hai bộ ⇒ buổi 1 của cả hai bộ cùng đòi `vcb-bank-01` ⇒ RPC ném lỗi *"Mã cố định … đã thuộc một buổi khác"*. **Đây là vế bắt buộc phải đổi, không né được.**
+
+**4 điểm user đã chốt (`AskUserQuestion` 2026-07-29):**
+
+| # | Chốt | Hệ quả |
+|---|---|---|
+| 1 | **Mã bộ thay chỗ mã khoá** trong công thức: `<mã bộ>-<số buổi>` | Bộ đang có được backfill mã bộ = slug mã khoá ⇒ **35 địa chỉ đã in không đổi một ký tự**. Bộ mới đặt mã khác ⇒ dải địa chỉ riêng, không va nhau |
+| 2 | **KHÔNG làm link cấp cả bộ thẻ** (user bỏ yêu cầu ban đầu) | ✅ Bề mặt `anon` của `D-36` giữ **nguyên vẹn**: vẫn đúng 1 RPC + 1 policy Storage, `rls_catalog_matrix` không phải nới danh sách trắng |
+| 3 | **Admin: cột trái điều hướng + ngăn kéo QR** | Khu soạn thẻ lên đầu màn; QR là việc của kỳ in, không phải việc mỗi ngày |
+| 4 | **Học viên chọn bộ trước rồi vào buổi** | `getStudentFlashcardDeck` (`.maybeSingle()`) sẽ **vỡ** khi khoá có 2 bộ — phải sửa cùng đợt, không hoãn được |
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| MULTIDECK-1a | **Bỏ `unique(course_id)` + thêm `flashcard_decks.code`** (`…083`) | Mã bộ là slug `^[a-z0-9]+(-[a-z0-9]+)*$`, **unique toàn bảng**, dài 2–40 (trần 40 vì mã liên kết = `mã bộ` + `-NN` phải lọt CHECK 48 ký tự của `…081`). Backfill = slug mã khoá cho mọi bộ đang có. `not null` ngay trong cùng migration, không để cột nullable làm đường ghi thứ hai | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. Backfill có **3 cửa chặn riêng** (slug rỗng / trùng slug / quá dài), mỗi cửa một thông báo nêu đúng mã khoá phải đi sửa. ✅ **ĐÃ PUSH CLOUD 2026-07-29** — xác minh bằng `psql`: đỉnh `20260729000083`, `unique(course_id)` = 0, backfill ra `vcb-bank`/`vcb-exec`, và **0/70** mã đã phát hành bị lệch |
+| MULTIDECK-1b | **`app.flashcard_fixed_link_token()` đọc `d.code` thay `c.code`** | pgTAP ghim **chuỗi cụ thể**: bộ có mã `vcb-bank` ⇒ buổi 35 ra đúng `vcb-bank-35` (bằng chứng mã đã in vẫn sống), và hai bộ khác mã trong **cùng một khoá** ra hai mã khác nhau. Bản sao TS `flashcardFixedPublicToken` đổi tham số theo, có bài ghim cùng cặp vào/ra | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. pgTAP ghim `md-bank-35` (chuỗi) **và** một bài phát biểu thẳng tính chất: bộ có `code = slug(mã khoá)` cho ra Y HỆT công thức cũ của `…081` |
+| MULTIDECK-1c | **Khoá đổi mã bộ khi đã phát hành liên kết** | Đổi `code` của bộ đang có liên kết **chưa thu hồi** ⇒ **từ chối ở DB** (trigger), không chỉ ở app. Lý do: đổi mã bộ làm mọi mã tương lai lệch khỏi mã đã in, mà `…081` thì không bao giờ trỏ một mã đã in sang buổi khác — im lặng cho qua là đúng hình dạng `BUG_M10_01` | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. `trg_flashcard_decks_guard_code`. **Kiểm ngược có sẵn:** bài 22/23 chứng minh bộ chưa phát hành thì đổi mã tự do, và thu hồi hết liên kết là mở lại cửa |
+| MULTIDECK-1d | **Tầng server đọc/ghi theo bộ** | `getAdminFlashcardDecks(courseId)` trả danh sách; trang chọn bộ **qua URL** (`?course=&deck=&session=`) để chia sẻ link và nút Back hoạt động. `saveFlashcardDeckAction` làm cả tạo lẫn sửa | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. `?course=&deck=&session=`; đổi **buổi** cố ý KHÔNG điều hướng (dữ liệu đã ở client — `PERF-NAV-1` đo ~443ms/lượt), chỉ `history.replaceState` |
+| MULTIDECK-1e | **Dựng lại bố cục Admin** | Cột trái: danh sách Bộ thẻ + mục lục buổi **DỌC** có ô nhảy nhanh và chấm trạng thái. Bảng địa chỉ QR vào **ngăn kéo** (`Sheet`). Điện thoại: cột trái thành ngăn kéo. Không còn dải 35 nút kéo ngang | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. E2E `19/19` cả hai project, axe sạch ở 1280, `horizontalOverflow = 0` ở 360/768/1280 |
+| MULTIDECK-1f | **Học viên chọn bộ** | Khoá nhiều bộ ⇒ hiện thẻ chọn bộ; khoá **một** bộ ⇒ vào thẳng như cũ (không bắt bấm thừa một bước cho ca phổ biến nhất) | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-29. 4 bài Vitest mới ghim: một bộ → vào thẳng; nhiều bộ chưa chọn → **không tải bộ nào**; mã bộ lạ trong URL → không kéo được bộ của khoá khác |
+
 ---
 
 ## Bản đồ module ↔ phase (dùng cho QA board)

@@ -6,6 +6,11 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/features/flashcards/server/actions", () => ({
   setFlashcardStarAction: vi.fn(async () => ({ success: "ok" })),
 }));
+// Từ `MULTIDECK-1f` trình đọc có nút "Đổi bộ thẻ" nên nó gọi `useRouter`, mà
+// hook đó ném lỗi khi không có App Router thật bọc ngoài.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 
 import { StudentFlashcardReader } from "@/features/flashcards/components/student-flashcard-reader";
 

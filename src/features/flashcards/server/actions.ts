@@ -52,6 +52,18 @@ function revalidateFlashcards() {
   revalidatePath("/student/review");
 }
 
+/**
+ * Tạo HOẶC sửa một bộ thẻ (`MULTIDECK-1d`).
+ *
+ * Một action cho cả hai đường vì chúng ghi vào cùng một bảng với cùng ràng
+ * buộc — tách đôi là đúng hình dạng `BUG_M10_01` (hai đường ghi cho một hành
+ * động, rồi lệch nhau ở chỗ không ai nhìn).
+ *
+ * ⚠️ Đổi mã bộ khi bộ còn liên kết công khai sống bị **DB** từ chối
+ * (`trg_flashcard_decks_guard_code`, `…083`). Ở đây không kiểm lại: kiểm hai
+ * nơi thì nơi nào cũng có thể lệch, mà nơi ở app thì đường ghi thứ ba đi vòng
+ * qua được. `dbErrorToMessage` đưa nguyên câu tiếng Việt của DB ra giao diện.
+ */
 export async function saveFlashcardDeckAction(
   formData: FormData,
 ): Promise<ActionState> {
@@ -60,15 +72,56 @@ export async function saveFlashcardDeckAction(
   if (!parsed.success) return zodToActionState(parsed.error);
 
   const supabase = await createClient();
+
+  if (parsed.data.id) {
+    const { data: before } = await supabase
+      .from("flashcard_decks")
+      .select("id,code,title,description")
+      .eq("id", parsed.data.id)
+      .maybeSingle();
+    if (!before) return { error: "Không tìm thấy bộ flashcard." };
+
+    const { data, error } = await supabase
+      .from("flashcard_decks")
+      .update({
+        code: parsed.data.code,
+        title: parsed.data.title,
+        description: parsed.data.description || null,
+      })
+      .eq("id", parsed.data.id)
+      // Khoá theo cả khoá học: id đi qua `FormData` nên phải chặn việc sửa bộ
+      // của khoá khác bằng cách đổi một trường ẩn.
+      .eq("course_id", parsed.data.course_id)
+      .select("id,code,title,course_id")
+      .maybeSingle();
+
+    if (error || !data) {
+      return {
+        error: dbErrorToMessage(error, "Không lưu được bộ flashcard."),
+      };
+    }
+
+    await logAudit(supabase, {
+      action: "flashcard.deck.update",
+      resourceType: "flashcard_deck",
+      resourceId: data.id,
+      before: { code: before.code, title: before.title },
+      after: { code: data.code, title: data.title },
+    });
+    revalidateFlashcards();
+    return { success: "Đã lưu bộ flashcard." };
+  }
+
   const { data, error } = await supabase
     .from("flashcard_decks")
     .insert({
       course_id: parsed.data.course_id,
+      code: parsed.data.code,
       title: parsed.data.title,
       description: parsed.data.description || null,
       created_by: actor.id,
     })
-    .select("id,title,course_id")
+    .select("id,code,title,course_id")
     .single();
 
   if (error || !data) {
@@ -81,7 +134,7 @@ export async function saveFlashcardDeckAction(
     action: "flashcard.deck.create",
     resourceType: "flashcard_deck",
     resourceId: data.id,
-    after: { title: data.title, course_id: data.course_id },
+    after: { code: data.code, title: data.title, course_id: data.course_id },
   });
   revalidateFlashcards();
   return { success: "Đã tạo bộ flashcard." };

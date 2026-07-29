@@ -43,7 +43,25 @@ export type FlashcardCourseOption = {
   code: string;
   title: string;
   defaultSessionCount: number | null;
-  deck: { id: string; status: DeckRow["status"] } | null;
+  /**
+   * Số bộ thẻ của khoá. Từ `MULTIDECK-1` một khoá có nhiều bộ nên đây là **số
+   * đếm**, không còn là "bộ duy nhất hay `null`" — ô chọn khoá dùng nó để nói
+   * trước khoá nào đã có nội dung.
+   */
+  deckCount: number;
+};
+
+/** Một dòng trong danh sách bộ thẻ ở cột trái màn Admin (`MULTIDECK-1e`). */
+export type FlashcardDeckSummary = {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  status: DeckRow["status"];
+  sectionCount: number;
+  publishedSectionCount: number;
+  /** Bộ còn liên kết công khai sống thì KHÔNG đổi được mã (`MULTIDECK-1c`). */
+  liveLinkCount: number;
 };
 
 /**
@@ -143,18 +161,83 @@ export async function getFlashcardCourseOptions(): Promise<
     code: course.code,
     title: course.title,
     defaultSessionCount: course.default_session_count,
-    deck: course.flashcard_decks ?? null,
+    deckCount: course.flashcard_decks?.length ?? 0,
   }));
 }
 
-export async function getAdminFlashcardDeck(
+/**
+ * Danh sách bộ thẻ của một khoá — cột trái màn Admin (`MULTIDECK-1`).
+ *
+ * Sắp theo `code` chứ không theo `created_at`: mã bộ là thứ người dùng đọc trên
+ * địa chỉ QR, nên xếp theo nó thì thứ tự trên màn hình khớp thứ tự trong bảng
+ * tính đưa cho bên in.
+ */
+export async function getAdminFlashcardDecks(
   courseId: string,
+): Promise<FlashcardDeckSummary[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("flashcard_decks")
+    .select("id,code,title,description,status,flashcard_sections(id,status)")
+    .eq("course_id", courseId)
+    .order("code");
+  if (error) throw new Error("Không tải được danh sách bộ flashcard.");
+
+  const deckIds = (data ?? []).map((deck) => deck.id);
+  // Đếm liên kết SỐNG theo bộ. Truy từ `flashcard_sections` chứ không từ
+  // `flashcard_public_links` vì bảng liên kết chỉ mang `section_id` — nó cố ý
+  // không biết gì về bộ thẻ.
+  const linkResult =
+    deckIds.length === 0
+      ? { data: [], error: null }
+      : await supabase
+          .from("flashcard_public_links")
+          .select("id,section:flashcard_sections!inner(deck_id)")
+          .in("section.deck_id", deckIds)
+          .is("revoked_at", null);
+  if (linkResult.error) {
+    throw new Error("Không tải được liên kết công khai.");
+  }
+
+  const liveLinksByDeck = new Map<string, number>();
+  for (const row of linkResult.data ?? []) {
+    const deckId = row.section?.deck_id;
+    if (!deckId) continue;
+    liveLinksByDeck.set(deckId, (liveLinksByDeck.get(deckId) ?? 0) + 1);
+  }
+
+  return (data ?? []).map((deck) => {
+    const sections = deck.flashcard_sections ?? [];
+    return {
+      id: deck.id,
+      code: deck.code,
+      title: deck.title,
+      description: deck.description,
+      status: deck.status,
+      sectionCount: sections.length,
+      publishedSectionCount: sections.filter(
+        (section) => section.status === "published",
+      ).length,
+      liveLinkCount: liveLinksByDeck.get(deck.id) ?? 0,
+    };
+  });
+}
+
+/**
+ * Một bộ thẻ đầy đủ, tra theo **id của bộ**.
+ *
+ * Trước `MULTIDECK-1` hàm này tra theo `course_id` và dùng `.maybeSingle()` —
+ * đúng chừng nào mỗi khoá chỉ có một bộ. Khoá hai bộ thì `.maybeSingle()` ném
+ * lỗi ngay, nên đường tra buộc phải đổi chứ không phải "nên đổi".
+ */
+export async function getAdminFlashcardDeck(
+  deckId: string,
 ): Promise<FlashcardDeckView | null> {
   const supabase = await createClient();
   const { data: deck, error: deckError } = await supabase
     .from("flashcard_decks")
     .select("*")
-    .eq("course_id", courseId)
+    .eq("id", deckId)
     .maybeSingle();
 
   if (deckError) throw new Error("Không tải được bộ flashcard.");
@@ -233,14 +316,60 @@ export async function getStudentStarredPageIds(): Promise<string[]> {
   return data.map((row) => row.page_id);
 }
 
-export async function getStudentFlashcardDeck(
+/** Bộ thẻ đã công bố của khoá, dạng rút gọn — màn chọn bộ của học viên. */
+export type StudentFlashcardDeckOption = {
+  id: string;
+  title: string;
+  description: string | null;
+  sectionCount: number;
+};
+
+/**
+ * Các bộ thẻ học viên xem được của một khoá (`MULTIDECK-1f`).
+ *
+ * Cố ý **không** kéo theo trang và **không** ký URL nào: màn chọn bộ chỉ cần
+ * tên và số buổi. Ký media của mọi bộ chỉ để vẽ vài cái thẻ chọn là trả giá
+ * đúng thứ `PERF-IMG-1` vừa mất một phiên để gỡ.
+ *
+ * RLS đã lọc `published` + đúng khoá của học viên; điều kiện `status` ở đây là
+ * vế nghiệp vụ (bộ nháp không hiện), không phải vế phân quyền.
+ */
+export async function getStudentFlashcardDeckOptions(
   courseId: string,
+): Promise<StudentFlashcardDeckOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("flashcard_decks")
+    .select("id,title,description,flashcard_sections(id,status)")
+    .eq("course_id", courseId)
+    .eq("status", "published")
+    .order("code");
+  if (error) throw new Error("Không tải được bộ flashcard của bạn.");
+
+  return (data ?? []).map((deck) => ({
+    id: deck.id,
+    title: deck.title,
+    description: deck.description,
+    sectionCount: (deck.flashcard_sections ?? []).filter(
+      (section) => section.status === "published",
+    ).length,
+  }));
+}
+
+/**
+ * Một bộ thẻ đầy đủ cho học viên, tra theo **id của bộ**.
+ *
+ * Cùng lý do đổi chữ ký như `getAdminFlashcardDeck`: `.maybeSingle()` trên
+ * `course_id` ném lỗi ngay khi khoá có bộ thứ hai.
+ */
+export async function getStudentFlashcardDeck(
+  deckId: string,
 ): Promise<FlashcardDeckView | null> {
   const supabase = await createClient();
   const { data: deck, error: deckError } = await supabase
     .from("flashcard_decks")
     .select("*")
-    .eq("course_id", courseId)
+    .eq("id", deckId)
     .eq("status", "published")
     .maybeSingle();
 

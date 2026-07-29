@@ -7,10 +7,13 @@ import {
   ArrowUp,
   BookOpen,
   ImagePlus,
+  Layers,
   ListPlus,
   Loader2,
+  PanelLeft,
   Pencil,
   Plus,
+  QrCode,
   Send,
   Trash2,
   TriangleAlert,
@@ -53,16 +56,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   FlashcardFaceCard,
   type Face,
 } from "@/features/flashcards/components/flashcard-face";
 import { compressFlashcardImage } from "@/features/flashcards/client/compress-image";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
+import { FlashcardDeckDialog } from "@/features/flashcards/components/flashcard-deck-dialog";
 import { FlashcardDeckPublicLinks } from "@/features/flashcards/components/flashcard-deck-public-links";
+import { FlashcardNavRail } from "@/features/flashcards/components/flashcard-nav-rail";
 import { FlashcardPublicLinkPanel } from "@/features/flashcards/components/flashcard-public-link-panel";
 import { flashcardImportKey } from "@/features/flashcards/domain/bulk-import";
+import { flashcardDeckCodeSlug } from "@/features/flashcards/domain/public-link";
 import {
   VocabularySublistEditor,
   type SublistDraft,
@@ -85,13 +97,13 @@ import {
   discardFlashcardUploadsAction,
   moveFlashcardPageAction,
   publishFlashcardSectionAction,
-  saveFlashcardDeckAction,
   saveFlashcardPageAction,
   saveFlashcardSectionAction,
   unpublishFlashcardSectionAction,
 } from "@/features/flashcards/server/actions";
 import type {
   FlashcardCourseOption,
+  FlashcardDeckSummary,
   FlashcardDeckView,
   FlashcardPageView,
   FlashcardSectionView,
@@ -99,26 +111,75 @@ import type {
 import type { ActionState } from "@/lib/action-state";
 import { createClient } from "@/lib/supabase/client";
 
+/**
+ * Gợi ý mã cho bộ MỚI: slug của mã khoá, và nếu đã có bộ mang mã đó thì thêm
+ * hậu tố số cho tới khi trống.
+ *
+ * Chỉ là **gợi ý** — người dùng sửa được, và chốt chặn thật là unique index ở
+ * DB. Nhưng gợi ý phải đúng ngay từ đầu vì nó là thứ 9/10 lần được giữ nguyên.
+ */
+function suggestDeckCode(
+  courseCode: string,
+  decks: FlashcardDeckSummary[],
+): string {
+  const base = flashcardDeckCodeSlug(courseCode) || "bo-the";
+  const taken = new Set(decks.map((deck) => deck.code));
+  if (!taken.has(base)) return base;
+  for (let index = 2; index < 100; index += 1) {
+    const candidate = `${base}-${index}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return base;
+}
+
+/**
+ * Màn quản trị flashcard — bố cục **hai cột** từ `MULTIDECK-1e`.
+ *
+ * 🔴 Vì sao dựng lại thay vì chỉ gấp bảng QR lại: bản cũ xếp mọi thứ thành MỘT
+ * cột dọc, theo thứ tự `chọn khoá → bảng 35 địa chỉ QR → dải 35 nút buổi → khu
+ * soạn thẻ`. Hai khối ở giữa đẩy khu soạn thẻ — việc làm hằng ngày — xuống dưới
+ * màn hình đầu tiên, trong khi bảng QR chỉ dùng mỗi kỳ in. Cộng thêm tầng "bộ
+ * thẻ" mới thì một cột không còn chứa nổi.
+ *
+ * Bố cục mới theo `content-priority` và `adaptive-navigation`:
+ *   • **cột trái** giữ điều hướng (bộ thẻ + mục lục buổi), cuộn riêng, dính màn;
+ *   • **cột phải** chỉ có khu soạn thẻ, luôn ở đầu màn hình;
+ *   • **bảng QR** vào ngăn kéo, mở bằng nút ở thanh trên;
+ *   • **dưới 1024px** cột trái thành ngăn kéo — không nhân đôi thành bản thẻ
+ *     riêng (`D-31` điểm 2 cấm nhân đôi giao diện theo kích thước màn).
+ */
 export function FlashcardAdminManager({
   courses,
   selectedCourseId,
+  decks,
   deck,
+  initialSectionId,
 }: {
   courses: FlashcardCourseOption[];
   selectedCourseId: string | null;
+  decks: FlashcardDeckSummary[];
   deck: FlashcardDeckView | null;
+  initialSectionId: string | null;
 }) {
   const router = useRouter();
   const selectedCourse = courses.find(
     (course) => course.id === selectedCourseId,
   );
+
   const [selectedSectionId, setSelectedSectionId] = useState(
-    deck?.sections[0]?.id ?? null,
+    initialSectionId ?? deck?.sections[0]?.id ?? null,
   );
+  const [navOpen, setNavOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [deckDialog, setDeckDialog] = useState<
+    { mode: "create" } | { mode: "edit"; deck: FlashcardDeckSummary } | null
+  >(null);
+
   const section =
     deck?.sections.find((item) => item.id === selectedSectionId) ??
     deck?.sections[0] ??
     null;
+  const deckSummary = decks.find((item) => item.id === deck?.id) ?? null;
   const nextSession = selectedCourse?.defaultSessionCount
     ? (Array.from(
         { length: selectedCourse.defaultSessionCount },
@@ -129,18 +190,69 @@ export function FlashcardAdminManager({
       ) ?? null)
     : null;
 
+  function goToCourse(courseId: string) {
+    setSelectedSectionId(null);
+    router.push(`/admin/flashcards?course=${courseId}`);
+  }
+
+  function goToDeck(deckId: string) {
+    if (!selectedCourseId) return;
+    setSelectedSectionId(null);
+    setNavOpen(false);
+    router.push(`/admin/flashcards?course=${selectedCourseId}&deck=${deckId}`);
+  }
+
+  /**
+   * Chọn buổi giữ ở state cục bộ, KHÔNG đi qua `router.push`.
+   *
+   * Dữ liệu của mọi buổi trong bộ đã nằm sẵn ở client, nên đổi buổi bằng điều
+   * hướng chỉ tổ trả thêm một vòng máy chủ cho thứ đã có trong tay — đúng loại
+   * chi phí mà `PERF-NAV-1` vừa đo được là ~443ms/lượt. Địa chỉ vẫn được cập
+   * nhật bằng `history.replaceState` để chia sẻ link và F5 không mất chỗ đang
+   * đứng (`state-preservation`), nhưng nó không kích hoạt render lại ở máy chủ.
+   */
+  function selectSection(sectionId: string) {
+    setSelectedSectionId(sectionId);
+    setNavOpen(false);
+    if (typeof window === "undefined" || !selectedCourseId || !deck) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("course", selectedCourseId);
+    url.searchParams.set("deck", deck.id);
+    url.searchParams.set("session", sectionId);
+    window.history.replaceState(null, "", url);
+  }
+
+  const rail = deck ? (
+    <FlashcardNavRail
+      decks={decks}
+      selectedDeckId={deck.id}
+      sections={deck.sections}
+      selectedSectionId={section?.id ?? null}
+      onSelectDeck={goToDeck}
+      onSelectSection={selectSection}
+      onCreateDeck={() => {
+        setNavOpen(false);
+        setDeckDialog({ mode: "create" });
+      }}
+    />
+  ) : null;
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/*
+        Thanh trên gom đúng ba thứ ở cấp KHOÁ HỌC: đang ở khoá nào, mở mục lục
+        (dưới 1024px), và mở bảng địa chỉ QR. Không nhét hành động cấp buổi vào
+        đây — chúng thuộc về khu soạn thẻ, nơi người dùng đang nhìn.
+      */}
       <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-          <div className="space-y-2">
-            <Label htmlFor="flashcard-course">Khóa học</Label>
+        <CardContent className="flex flex-wrap items-center gap-3 p-3">
+          <div className="flex min-w-56 flex-1 items-center gap-2">
+            <Label htmlFor="flashcard-course" className="sr-only">
+              Khóa học
+            </Label>
             <Select
               value={selectedCourseId ?? undefined}
-              onValueChange={(courseId) => {
-                setSelectedSectionId(null);
-                router.push(`/admin/flashcards?course=${courseId}`);
-              }}
+              onValueChange={goToCourse}
             >
               <SelectTrigger id="flashcard-course" className="w-full">
                 <SelectValue placeholder="Chọn khóa học để quản trị flashcard" />
@@ -149,11 +261,13 @@ export function FlashcardAdminManager({
                 {courses.map((course) => (
                   <SelectItem key={course.id} value={course.id}>
                     {course.code} · {course.title}
+                    {course.deckCount > 0 ? ` · ${course.deckCount} bộ` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
           {selectedCourse && (
             <StatusBadge
               label={
@@ -164,6 +278,28 @@ export function FlashcardAdminManager({
               tone={selectedCourse.defaultSessionCount ? "info" : "warning"}
             />
           )}
+
+          {deck && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="lg:hidden"
+                onClick={() => setNavOpen(true)}
+              >
+                <PanelLeft className="size-4" aria-hidden />
+                Mục lục
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setQrOpen(true)}
+              >
+                <QrCode className="size-4" aria-hidden />
+                Địa chỉ QR
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -173,7 +309,7 @@ export function FlashcardAdminManager({
             <EmptyState
               icon={BookOpen}
               title="Chọn một khóa học"
-              description="Mỗi khóa có một bộ flashcard riêng, chia mục lục theo từng buổi."
+              description="Mỗi khóa có thể có nhiều bộ flashcard, mỗi bộ chia mục lục theo từng buổi."
             />
           </CardContent>
         </Card>
@@ -185,80 +321,104 @@ export function FlashcardAdminManager({
           </AlertDescription>
         </Alert>
       ) : !deck ? (
-        <CreateDeckCard course={selectedCourse} />
-      ) : (
-        <>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold">{deck.title}</h2>
-              <p className="text-muted-foreground text-sm">
-                {deck.description || "Chưa có mô tả."}
-              </p>
-            </div>
-            {/*
-              MỘT hành động chính mỗi vùng: "Thêm buổi" là nút mặc định, "Tạo
-              nhiều buổi" đứng cạnh ở dạng viền. Hành động PHÁ HUỶ không nằm ở
-              đây — chúng ở "Vùng nguy hiểm" cuối trang.
-            */}
-            {nextSession ? (
-              <div className="flex flex-wrap gap-2">
-                <SectionDialog
-                  deckId={deck.id}
-                  maxSessions={selectedCourse.defaultSessionCount}
-                  nextSession={nextSession}
-                />
-                <SectionRangeDialog
-                  deckId={deck.id}
-                  maxSessions={selectedCourse.defaultSessionCount}
-                  nextSession={nextSession}
-                />
-              </div>
-            ) : (
-              <StatusBadge label="Đã đủ số buổi" tone="success" />
-            )}
-          </div>
-
-          {/*
-            Đặt TRÊN mục lục buổi: đây là việc của cả bộ thẻ (đưa danh sách cho
-            bên in), không phải việc của buổi đang chọn. Panel chia sẻ từng buổi
-            vẫn ở nguyên chỗ cũ trong `SectionWorkspace`.
-          */}
-          {deck.sections.length > 0 && (
-            <FlashcardDeckPublicLinks
-              deck={deck}
-              courseCode={selectedCourse.code}
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={Layers}
+              title="Khoá này chưa có bộ flashcard"
+              description="Tạo bộ đầu tiên, đặt mã bộ rồi thêm các buổi. Mỗi bộ có dải địa chỉ QR riêng."
+              action={
+                <Button
+                  type="button"
+                  onClick={() => setDeckDialog({ mode: "create" })}
+                >
+                  <Plus className="size-4" aria-hidden />
+                  Tạo bộ flashcard
+                </Button>
+              }
             />
-          )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
+          {/*
+            Cột trái DÍNH và cuộn riêng: tìm buổi 27 không được kéo khu soạn thẻ
+            đi mất. `max-h` trừ đi chiều cao thanh trên để cột không tràn ra
+            ngoài khung nhìn (`fixed-element-offset`).
+          */}
+          <aside className="bg-card sticky top-4 hidden max-h-[calc(100dvh-7rem)] rounded-xl border p-3 lg:flex lg:flex-col">
+            {rail}
+          </aside>
 
-          {deck.sections.length === 0 ? (
-            <Card>
-              <CardContent className="p-0">
-                <EmptyState
-                  icon={BookOpen}
-                  title="Chưa có buổi flashcard"
-                  description="Thêm Buổi 1, sau đó tạo trang mở đầu và các trang từ vựng."
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <nav
-                aria-label="Mục lục buổi flashcard"
-                className="flex gap-2 overflow-x-auto pb-2"
-              >
-                {deck.sections.map((item) => (
+          <div className="min-w-0 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                {/*
+                  Nút "Sửa bộ" đứng NGOÀI `<h2>`: nhét nút vào trong tiêu đề thì
+                  tên trợ năng của tiêu đề thành "… vcb-bank Sửa bộ" — trình đọc
+                  màn hình đọc một câu lẫn lộn giữa tên bộ và một hành động.
+                */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+                    {deck.title}
+                    <code className="text-text-secondary bg-surface-sunken rounded px-1.5 py-0.5 font-mono text-xs">
+                      {deck.code}
+                    </code>
+                  </h2>
                   <Button
-                    key={item.id}
                     type="button"
-                    variant={item.id === section?.id ? "default" : "outline"}
-                    className="h-11 shrink-0 rounded-t-lg rounded-b-sm"
-                    onClick={() => setSelectedSectionId(item.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    disabled={!deckSummary}
+                    onClick={() =>
+                      deckSummary &&
+                      setDeckDialog({ mode: "edit", deck: deckSummary })
+                    }
                   >
-                    Buổi {item.session_number}
+                    <Pencil className="size-4" aria-hidden />
+                    Sửa bộ
                   </Button>
-                ))}
-              </nav>
-              {section && (
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {deck.description || "Chưa có mô tả."}
+                </p>
+              </div>
+              {/*
+                MỘT hành động chính mỗi vùng: "Thêm buổi" là nút mặc định, "Tạo
+                nhiều buổi" đứng cạnh ở dạng viền. Hành động PHÁ HUỶ không nằm ở
+                đây — chúng ở "Vùng nguy hiểm" cuối trang.
+              */}
+              {nextSession ? (
+                <div className="flex flex-wrap gap-2">
+                  <SectionDialog
+                    deckId={deck.id}
+                    maxSessions={selectedCourse.defaultSessionCount}
+                    nextSession={nextSession}
+                  />
+                  <SectionRangeDialog
+                    deckId={deck.id}
+                    maxSessions={selectedCourse.defaultSessionCount}
+                    nextSession={nextSession}
+                  />
+                </div>
+              ) : (
+                <StatusBadge label="Đã đủ số buổi" tone="success" />
+              )}
+            </div>
+
+            {deck.sections.length === 0 ? (
+              <Card>
+                <CardContent className="p-0">
+                  <EmptyState
+                    icon={BookOpen}
+                    title="Chưa có buổi flashcard"
+                    description="Thêm Buổi 1, sau đó tạo trang mở đầu và các trang từ vựng."
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              section && (
                 <>
                   <SectionWorkspace
                     deck={deck}
@@ -267,71 +427,64 @@ export function FlashcardAdminManager({
                   />
                   <FlashcardDangerZone deck={deck} section={section} />
                 </>
-              )}
-            </>
-          )}
-        </>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cột trái ở dạng ngăn kéo cho màn dưới 1024px — cùng một component. */}
+      <Sheet open={navOpen} onOpenChange={setNavOpen}>
+        <SheetContent side="left" className="w-76 sm:max-w-none">
+          <SheetHeader>
+            <SheetTitle>Mục lục</SheetTitle>
+            <SheetDescription>
+              Chọn bộ thẻ và buổi cần soạn.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{rail}</div>
+        </SheetContent>
+      </Sheet>
+
+      {/*
+        Ngăn kéo địa chỉ QR — rộng hơn mặc định vì mỗi dòng mang một URL đầy đủ.
+        Đặt ở đây chứ không giữa trang: xem `FlashcardDeckPublicLinks`.
+      */}
+      <Sheet open={qrOpen} onOpenChange={setQrOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl"
+          aria-describedby={undefined}
+        >
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <QrCode className="size-4" aria-hidden />
+              Địa chỉ QR — {deck?.title}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            {deck && (
+              <FlashcardDeckPublicLinks deck={deck} deckCode={deck.code} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {selectedCourse && deckDialog && (
+        <FlashcardDeckDialog
+          // Đổi bộ đang sửa ⇒ dựng lại hộp thoại, để ô mã bắt đầu từ mã của bộ
+          // đó thay vì giữ giá trị của lần mở trước.
+          key={deckDialog.mode === "edit" ? deckDialog.deck.id : "new"}
+          open
+          onOpenChange={(next) => {
+            if (!next) setDeckDialog(null);
+          }}
+          course={selectedCourse}
+          deck={deckDialog.mode === "edit" ? deckDialog.deck : undefined}
+          suggestedCode={suggestDeckCode(selectedCourse.code, decks)}
+        />
       )}
     </div>
-  );
-}
-
-function CreateDeckCard({ course }: { course: FlashcardCourseOption }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [state, setState] = useState<ActionState>({});
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Tạo bộ flashcard</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            startTransition(async () => {
-              const result = await saveFlashcardDeckAction(data);
-              setState(result);
-              if (result.success) {
-                toast.success(result.success);
-                router.refresh();
-              }
-            });
-          }}
-        >
-          <input type="hidden" name="course_id" value={course.id} />
-          {state.error && (
-            <Alert variant="destructive">
-              <AlertDescription>{state.error}</AlertDescription>
-            </Alert>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="deck-title">Tên bộ *</Label>
-            <Input
-              id="deck-title"
-              name="title"
-              defaultValue={`Flashcard — ${course.title}`}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="deck-description">Mô tả</Label>
-            <Textarea
-              id="deck-description"
-              name="description"
-              placeholder="Mô tả ngắn cho học viên"
-            />
-          </div>
-          <Button type="submit" disabled={pending}>
-            {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            Tạo bộ flashcard
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
   );
 }
 

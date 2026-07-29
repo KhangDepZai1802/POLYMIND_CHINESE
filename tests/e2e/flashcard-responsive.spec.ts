@@ -733,14 +733,24 @@ test.describe("Flashcard — quản trị", () => {
   }
 
   /**
-   * Mở khu soạn của Buổi 2 (buổi nháp). Bọc cú click "Buổi 2" trong `toPass`:
-   * nếu click rơi vào lúc chưa hydrate thì nó bị mất, workspace đứng ở Buổi 1
-   * (published, KHÔNG có nút "Nhập hàng loạt") — cùng kiểu race như click "next".
-   * Nút "Nhập hàng loạt" chỉ hiện với buổi nháp nên là mỏ neo đúng.
+   * Mở khu soạn của Buổi 2 (buổi nháp). Bọc cú click trong `toPass`: nếu click
+   * rơi vào lúc chưa hydrate thì nó bị mất, workspace đứng ở Buổi 1 (published,
+   * KHÔNG có nút "Nhập hàng loạt") — cùng kiểu race như click "next". Nút "Nhập
+   * hàng loạt" chỉ hiện với buổi nháp nên là mỏ neo đúng.
+   *
+   * 🔴 `MULTIDECK-1e` đổi mục lục từ dải nút ngang sang cột trái, và dưới 1024px
+   * cột đó nằm trong ngăn kéo — nên phải mở "Mục lục" trước ở màn hẹp. `filter`
+   * theo `visible` là bắt buộc: cả cột dính lẫn ngăn kéo đều nằm trong DOM khi
+   * ngăn kéo mở, chỉ một trong hai đang hiện.
    */
   async function openDraftSection(page: Page) {
     await expect(async () => {
-      await page.getByRole("button", { name: "Buổi 2" }).click();
+      const menu = page.getByRole("button", { name: "Mục lục" });
+      if (await menu.isVisible()) await menu.click();
+      await page
+        .getByRole("button", { name: /^Buổi 2 —/ })
+        .filter({ visible: true })
+        .click();
       await expect(
         page.getByRole("button", { name: "Nhập hàng loạt" }),
       ).toBeVisible({ timeout: 8000 });
@@ -1000,8 +1010,17 @@ test.describe("Flashcard — quản trị", () => {
     await expect(page.getByText("Thiếu audio")).toHaveCount(0);
 
     // --- Vòng khép kín: chốt đã gỡ thì buổi công bố được.
+    //
+    // Neo vào ĐÚNG huy hiệu trạng thái của khu soạn thẻ. Từ `MULTIDECK-1e`, chữ
+    // "Đã công bố" còn xuất hiện ở cột trái (đếm buổi của bộ) và ở chú giải các
+    // chấm trạng thái — một locator toàn trang nay khớp 3 chỗ, và nó sẽ xanh cả
+    // khi chính buổi này không hề được công bố.
     await page.getByRole("button", { name: "Công bố buổi" }).click();
-    await expect(page.getByText("Đã công bố")).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page
+        .locator('[data-slot="card-title"]', { hasText: "Buổi 2 ·" })
+        .getByText("Đã công bố"),
+    ).toBeVisible({ timeout: 30_000 });
 
     // Trả buổi về nháp cho lượt sau — và cho chính `openDraftSection`.
     sql(`

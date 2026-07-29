@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Layers,
   Play,
   RotateCw,
   Star,
@@ -53,11 +55,18 @@ export function StudentFlashcardReader({
   deck,
   courseName,
   starredPageIds = [],
+  canSwitchDeck = false,
 }: {
   deck: FlashcardDeckView | null;
   courseName: string | null;
   starredPageIds?: string[];
+  /**
+   * Khoá có nhiều bộ thẻ ⇒ hiện đường quay lại màn chọn bộ (`MULTIDECK-1f`).
+   * Khoá một bộ thì `false` và không có nút nào thừa ra.
+   */
+  canSwitchDeck?: boolean;
 }) {
+  const router = useRouter();
   const [starred, setStarred] = useState<Set<string>>(
     () => new Set(starredPageIds),
   );
@@ -265,11 +274,28 @@ export function StudentFlashcardReader({
         <FlashcardStartHint />
         <Card>
           <CardContent className="space-y-4 p-4 sm:p-6">
-            <div>
-              <h2 className="font-semibold">{deck.title}</h2>
-              <p className="text-muted-foreground text-sm">
-                {courseName} · {cardCount} thẻ · {sections.length} buổi đã mở
-              </p>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className="font-semibold">{deck.title}</h2>
+                <p className="text-muted-foreground text-sm">
+                  {courseName} · {cardCount} thẻ · {sections.length} buổi đã mở
+                </p>
+              </div>
+              {/*
+                Đường quay lại màn chọn bộ. Dạng nút viền, KHÔNG phải nút chính:
+                mỗi màn một CTA, và CTA ở đây là "Bắt đầu ôn thẻ"
+                (`primary-action`).
+              */}
+              {canSwitchDeck && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/student/review")}
+                >
+                  <Layers className="size-4" aria-hidden />
+                  Đổi bộ thẻ
+                </Button>
+              )}
             </div>
             <Button
               type="button"

@@ -129,10 +129,11 @@ select set_config(
   true
 );
 
-insert into public.flashcard_decks (id, course_id, title)
+insert into public.flashcard_decks (id, course_id, code, title)
 values (
   '70500000-0000-4000-8000-000000000001',
   '70200000-0000-4000-8000-000000000001',
+  'struct-a-70',
   'Flashcard Struct A'
 );
 

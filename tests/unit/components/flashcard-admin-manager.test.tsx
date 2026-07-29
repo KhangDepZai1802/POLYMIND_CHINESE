@@ -41,17 +41,32 @@ vi.mock("@/features/flashcards/server/actions", () => ({
   unpublishFlashcardSectionAction: vi.fn(),
 }));
 
+const DECK_ID = "22222222-2222-4222-8222-222222222222";
+
 const course = {
   id: "11111111-1111-4111-8111-111111111111",
   code: "HSK1",
   title: "HSK 1",
   defaultSessionCount: 1,
-  deck: { id: "22222222-2222-4222-8222-222222222222", status: "draft" },
+  deckCount: 1,
+} as const;
+
+/** Dòng bộ thẻ ở cột trái (`MULTIDECK-1e`). */
+const deckSummary = {
+  id: DECK_ID,
+  code: "hsk1",
+  title: "Flashcard HSK 1",
+  description: "Ôn từ vựng",
+  status: "draft",
+  sectionCount: 1,
+  publishedSectionCount: 0,
+  liveLinkCount: 0,
 } as const;
 
 const deck = {
-  id: course.deck.id,
+  id: DECK_ID,
   course_id: course.id,
+  code: "hsk1",
   title: "Flashcard HSK 1",
   description: "Ôn từ vựng",
   status: "draft",
@@ -61,7 +76,7 @@ const deck = {
   sections: [
     {
       id: "44444444-4444-4444-8444-444444444444",
-      deck_id: course.deck.id,
+      deck_id: DECK_ID,
       session_number: 1,
       title: "Chào hỏi",
       status: "draft",
@@ -146,12 +161,22 @@ describe("FlashcardAdminManager", () => {
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
+        decks={[deckSummary] as never}
         deck={deck as never}
+        initialSectionId={null}
       />,
     );
 
-    expect(screen.getByText("Flashcard HSK 1")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Buổi 1" })).toBeInTheDocument();
+    // Tên bộ xuất hiện hai chỗ có chủ ý: ở cột trái (đang chọn bộ nào) và ở
+    // tiêu đề khu soạn thẻ. Tra theo `heading` để ghim đúng cái thứ hai.
+    expect(
+      screen.getByRole("heading", { name: /Flashcard HSK 1/ }),
+    ).toBeInTheDocument();
+    // Mục lục nay là danh sách DỌC ở cột trái: mỗi dòng mang số buổi, tên buổi
+    // và trạng thái ở dạng chữ (`MULTIDECK-1e`).
+    expect(
+      screen.getByRole("button", { name: "Buổi 1 — Chào hỏi — Chưa có trang" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Buổi 1 · Chào hỏi")).toBeInTheDocument();
     expect(screen.getByText("Đã đủ số buổi")).toBeInTheDocument();
     expect(
@@ -163,23 +188,57 @@ describe("FlashcardAdminManager", () => {
   });
 
   /**
-   * `D-39` — bài này ghim đúng cái yêu cầu đã đẻ ra tính năng: bên in cần đọc
-   * được địa chỉ QR **trước khi** ai bấm tạo và **trước khi** buổi được công bố.
-   * Nếu bảng này chỉ hiện địa chỉ sau khi đã tạo liên kết thì tính năng vô dụng
-   * đúng ở tình huống nó sinh ra để giải quyết.
+   * `MULTIDECK-1e` — bảng địa chỉ QR KHÔNG còn nằm giữa dòng chảy của trang.
+   *
+   * Đây là chính lời than đã đẻ ra đợt này: *"phải kéo qua khỏi QR thứ 35 mới
+   * thấy được bộ flashcard"*. Bài kiểm ghim cả hai vế — chưa mở ngăn kéo thì
+   * không có địa chỉ nào trên màn, và khu soạn thẻ thì có ngay.
    */
-  it("hiện trước địa chỉ QR cố định của từng buổi, kể cả buổi còn nháp", () => {
+  it("🔴 bảng địa chỉ QR nằm trong ngăn kéo, không chắn khu soạn thẻ", () => {
     renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
+        decks={[deckSummary] as never}
         deck={deck as never}
+        initialSectionId={null}
       />,
     );
 
-    // Mã khoá `HSK1` + buổi 1 → `hsk1-01`, khớp `app.flashcard_fixed_link_token`.
     expect(
-      screen.getByText("https://www.polymind.vn/t/hsk1-01"),
+      screen.queryByText("https://www.polymind.vn/t/hsk1-01"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Buổi 1 · Chào hỏi")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Địa chỉ QR" }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * `D-39` — bài này ghim đúng cái yêu cầu đã đẻ ra tính năng: bên in cần đọc
+   * được địa chỉ QR **trước khi** ai bấm tạo và **trước khi** buổi được công bố.
+   * Nếu bảng này chỉ hiện địa chỉ sau khi đã tạo liên kết thì tính năng vô dụng
+   * đúng ở tình huống nó sinh ra để giải quyết.
+   *
+   * `MULTIDECK-1` — tiền tố nay lấy từ **mã bộ** (`hsk1`), không phải mã khoá.
+   */
+  it("hiện trước địa chỉ QR cố định của từng buổi, kể cả buổi còn nháp", async () => {
+    const user = userEvent.setup();
+    renderWithConfirmation(
+      <FlashcardAdminManager
+        courses={[course] as never}
+        selectedCourseId={course.id}
+        decks={[deckSummary] as never}
+        deck={deck as never}
+        initialSectionId={null}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Địa chỉ QR" }));
+
+    // Mã bộ `hsk1` + buổi 1 → `hsk1-01`, khớp `app.flashcard_fixed_link_token`.
+    expect(
+      await screen.findByText("https://www.polymind.vn/t/hsk1-01"),
     ).toBeInTheDocument();
     expect(screen.getByText("Còn 1 buổi chưa có mã")).toBeInTheDocument();
     expect(screen.getByText("Chưa tạo")).toBeInTheDocument();
@@ -188,12 +247,47 @@ describe("FlashcardAdminManager", () => {
     ).toBeEnabled();
   });
 
+  /**
+   * `MULTIDECK-1` — hai bộ trong cùng một khoá phải hiện ra hai dải địa chỉ
+   * khác nhau. Đây là vế mà bản `…081` không làm được: nó lấy mã KHOÁ nên cả
+   * hai bộ cùng ra `hsk1-01`, rồi DB ném lỗi ở lần phát hành thứ hai.
+   */
+  it("🔴 địa chỉ QR bám theo MÃ BỘ, nên hai bộ cùng khoá không giành mã", async () => {
+    const user = userEvent.setup();
+    const deckTwo = { ...deck, id: "66666666-6666-4666-8666-666666666666", code: "hsk1-ngu-phap" };
+    renderWithConfirmation(
+      <FlashcardAdminManager
+        courses={[{ ...course, deckCount: 2 }] as never}
+        selectedCourseId={course.id}
+        decks={
+          [
+            deckSummary,
+            { ...deckSummary, id: deckTwo.id, code: "hsk1-ngu-phap", title: "Ngữ pháp" },
+          ] as never
+        }
+        deck={deckTwo as never}
+        initialSectionId={null}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Địa chỉ QR" }));
+
+    expect(
+      await screen.findByText("https://www.polymind.vn/t/hsk1-ngu-phap-01"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("https://www.polymind.vn/t/hsk1-01"),
+    ).not.toBeInTheDocument();
+  });
+
   it("cho phép lưu trữ cả trang mở đầu lẫn trang từ vựng ở buổi nháp", () => {
     renderWithConfirmation(
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
+        decks={[deckSummary] as never}
         deck={deckWithPages as never}
+        initialSectionId={null}
       />,
     );
 
@@ -210,7 +304,9 @@ describe("FlashcardAdminManager", () => {
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
+        decks={[deckSummary] as never}
         deck={deckWithPages as never}
+        initialSectionId={null}
       />,
     );
 
@@ -250,7 +346,9 @@ describe("FlashcardAdminManager", () => {
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
+        decks={[deckSummary] as never}
         deck={deckWithPages as never}
+        initialSectionId={null}
       />,
     );
 
@@ -291,7 +389,9 @@ describe("FlashcardAdminManager", () => {
       <FlashcardAdminManager
         courses={[course] as never}
         selectedCourseId={course.id}
+        decks={[deckSummary] as never}
         deck={deckWithPages as never}
+        initialSectionId={null}
       />,
     );
 

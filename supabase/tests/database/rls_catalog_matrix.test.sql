@@ -86,8 +86,12 @@ select is(
   -- (phát hành liên kết QR cố định cho cả bộ thẻ, chỉ `authenticated` +
   -- super_admin). Con số này là CHỐT CHẶN, không phải chú thích: mỗi lần nó đỏ
   -- là có một RPC public mới cần người đọc lại grant của nó.
-  76,
-  'catalog có đúng 76 RPC public đã review'
+  -- 76 → 77: `PERF-IMG-2` thêm `rewrite_flashcard_media_extension` — vỏ gọi cho
+  -- script vận hành đổi `.png` → `.webp`. 🔴 Đây là RPC DUY NHẤT đi vòng được
+  -- `trg_flashcard_pages_guard_history`, nên nó chỉ cấp cho `service_role`; bài
+  -- ngay dưới ghim việc `authenticated` KHÔNG gọi được.
+  77,
+  'catalog có đúng 77 RPC public đã review'
 );
 /*
  * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở
@@ -118,10 +122,11 @@ select is(
     'finalize_assessment_attempts',
     'finalize_expired_exam_attempts',
     'get_public_flashcard_session',
+    'rewrite_flashcard_media_extension',
     'run_invoice_overdue',
     'run_session_reminders'
   ]::name[],
-  'authenticated bị chặn đúng bốn RPC hệ thống + RPC công khai'
+  'authenticated bị chặn đúng bốn RPC hệ thống + RPC công khai + RPC vận hành đổi đuôi'
 );
 select is(
   (select count(*)::integer

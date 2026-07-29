@@ -48,8 +48,8 @@ select set_config(
   true
 );
 
-insert into public.flashcard_decks (id, course_id, title)
-values ('73500000-0000-4000-8000-000000000001', '73200000-0000-4000-8000-000000000001', 'Deck Import');
+insert into public.flashcard_decks (id, course_id, code, title)
+values ('73500000-0000-4000-8000-000000000001', '73200000-0000-4000-8000-000000000001', 'deck-import-73', 'Deck Import');
 
 insert into public.flashcard_sections (id, deck_id, session_number, title)
 values ('73600000-0000-4000-8000-000000000001', '73500000-0000-4000-8000-000000000001', 1, 'Buổi 1');

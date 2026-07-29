@@ -111,7 +111,7 @@ erDiagram
     classes ||--o{ announcements : "class_id (null = toàn hệ thống)"
     profiles ||--o{ audit_logs : "actor_id"
 
-    courses ||--o| flashcard_decks : "one deck"
+    courses ||--o{ flashcard_decks : "nhiều bộ thẻ (MULTIDECK-1)"
     flashcard_decks ||--o{ flashcard_sections : "sessions"
     flashcard_sections ||--o{ flashcard_pages : "ordered pages"
     students ||--o{ wrong_answer_queue : "owns"
@@ -438,9 +438,17 @@ Trigger ép preference về actor thật và giữ `email_enabled = false` cho u
 
 #### `flashcard_decks`
 
-`id` uuid PK · `course_id` uuid UNIQUE NOT NULL FK → `courses` ON DELETE RESTRICT · `title` text NOT NULL · `description` text · `status` `flashcard_status` NOT NULL DEFAULT `draft` · `published_at` timestamptz · `created_by` uuid NOT NULL FK → `auth.users` · timestamps.
+`id` uuid PK · `course_id` uuid NOT NULL FK → `courses` ON DELETE RESTRICT · `code` text NOT NULL UNIQUE (slug `^[a-z0-9]+(-[a-z0-9]+)*$`, dài 2–40) · `title` text NOT NULL · `description` text · `status` `flashcard_status` NOT NULL DEFAULT `draft` · `published_at` timestamptz · `created_by` uuid NOT NULL FK → `auth.users` · timestamps.
 
-Deck là nội dung dùng chung theo Course, không theo Class. Archive thay cho hard-delete. Một khóa chỉ có một deck để học viên không phải đoán bản nào là nguồn sự thật.
+Deck là nội dung dùng chung theo Course, không theo Class. Archive thay cho hard-delete.
+
+**Một khóa có NHIỀU deck** _(`MULTIDECK-1`, user chốt 2026-07-29 — migration `…083` gỡ `UNIQUE(course_id)` của migration 66)_. Cái phân biệt các bộ với nhau ở phía người dùng cuối là **`code`**, vì nó là tiền tố của địa chỉ QR: `<code>-<số buổi 2 chữ số>` (xem §4.9 `flashcard_public_links`). Vì thế `code` duy nhất **toàn bảng**, không phải theo khóa — hai bộ ở hai khóa khác nhau mà trùng mã là hai dải địa chỉ chồng lên nhau.
+
+Trần 40 ký tự của `code` không phải con số tuỳ ý: mã liên kết = `code` + `-NN`, và nó phải lọt trần **48** của `flashcard_public_links_token_shape_check`.
+
+🔴 **Đổi `code` khi bộ còn liên kết công khai chưa thu hồi bị `trg_flashcard_decks_guard_code` từ chối.** Đổi mã bộ không làm hỏng hàng liên kết nào (mã đã phát hành lưu nguyên văn), nó làm **mọi mã sinh về sau lệch khỏi mã đã in** — hậu quả chỉ lộ ra ở lần phát hành tiếp theo, nên kiểm ở tầng app là không đủ. Đường thoát hợp lệ: thu hồi hết liên kết rồi mới đổi.
+
+Bộ có trước 2026-07-29 được backfill `code` = slug của **mã khóa**, tức đúng chuỗi mà công thức cũ đang dùng ⇒ mọi mã QR đã in giữ nguyên từng ký tự. pgTAP `flashcard_multi_deck.test.sql` ghim cả chuỗi cụ thể lẫn chính tính chất này.
 
 #### `flashcard_sections`
 

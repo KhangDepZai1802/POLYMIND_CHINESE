@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  FLASHCARD_DECK_CODE_MAX_LENGTH,
   FLASHCARD_PUBLIC_TOKEN_ALPHABET,
   FLASHCARD_PUBLIC_TOKEN_LENGTH,
   FLASHCARD_PUBLIC_TOKEN_MAX_LENGTH,
+  flashcardDeckCodeSlug,
   flashcardFixedPublicToken,
   flashcardPublicUrl,
   normalizeFlashcardPublicToken,
@@ -86,10 +88,14 @@ describe("normalizeFlashcardPublicToken", () => {
 
 /**
  * Công thức này có HAI bản cài đặt: ở đây và trong
- * `app.flashcard_fixed_link_token()` (migration `…081`). Bài dưới ghim các cặp
- * vào/ra cụ thể để pgTAP đối chiếu được bằng chính những chuỗi đó — hai bên
- * lệch nhau nghĩa là màn Admin hứa một địa chỉ mà DB phát hành địa chỉ khác,
- * và cái sai chỉ lộ ra sau khi sách đã in.
+ * `app.flashcard_fixed_link_token()` (migration `…081`, sửa bởi `…083`). Bài
+ * dưới ghim các cặp vào/ra cụ thể để pgTAP đối chiếu được bằng chính những chuỗi
+ * đó — hai bên lệch nhau nghĩa là màn Admin hứa một địa chỉ mà DB phát hành địa
+ * chỉ khác, và cái sai chỉ lộ ra sau khi sách đã in.
+ *
+ * 🔴 Từ `MULTIDECK-1` tham số là **mã BỘ**, không phải mã khoá. Các cặp dưới
+ * đây giữ nguyên chuỗi `vcb-bank-*` là CÓ CHỦ Ý: bộ đang chạy trên cloud được
+ * backfill mã bộ = slug mã khoá, nên đây vẫn là chính những địa chỉ đã in.
  */
 describe("flashcardFixedPublicToken", () => {
   it.each([
@@ -103,7 +109,7 @@ describe("flashcardFixedPublicToken", () => {
     ["  VCB--BANK  ", 3, "vcb-bank-03"],
     // Buổi ≥ 100 dài ra 3 chữ số chứ không bị cắt.
     ["VCB-BANK", 100, "vcb-bank-100"],
-  ])("mã khoá %s buổi %i → %s", (code, session, expected) => {
+  ])("mã bộ %s buổi %i → %s", (code, session, expected) => {
     expect(flashcardFixedPublicToken(code, session)).toBe(expected);
   });
 
@@ -123,13 +129,55 @@ describe("flashcardFixedPublicToken", () => {
   });
 
   it.each([
-    ["mã khoá không có chữ số nào", "###", 1],
-    ["mã khoá rỗng", "", 1],
+    ["mã bộ không có chữ số nào", "###", 1],
+    ["mã bộ rỗng", "", 1],
     ["số buổi bằng 0", "VCB-BANK", 0],
     ["số buổi âm", "VCB-BANK", -3],
     ["số buổi lẻ", "VCB-BANK", 1.5],
   ])("trả null khi %s", (_label, code, session) => {
     expect(flashcardFixedPublicToken(code, session)).toBeNull();
+  });
+});
+
+/**
+ * `MULTIDECK-1` — chuẩn hoá mã bộ. Bản TS này chạy trên ô nhập của màn Admin,
+ * còn `flashcard_decks_code_shape_check` (`…083`) là chốt chặn ở DB. Bài dưới
+ * ghim rằng cái ô nhập không bao giờ đẩy xuống DB một chuỗi mà CHECK sẽ từ chối.
+ */
+describe("flashcardDeckCodeSlug", () => {
+  it.each([
+    ["VCB-BANK", "vcb-bank"],
+    ["VCB Ngữ Pháp", "vcb-ng-ph-p"],
+    ["  HSK 1 (A)  ", "hsk-1-a"],
+    ["--vcb--bank--", "vcb-bank"],
+    ["Sách_2026", "s-ch-2026"],
+    ["###", ""],
+    ["", ""],
+  ])("%s → %s", (raw, expected) => {
+    expect(flashcardDeckCodeSlug(raw)).toBe(expected);
+  });
+
+  it("cắt đúng trần 40 ký tự và KHÔNG để lại gạch ở cuối", () => {
+    // 39 ký tự rồi tới một gạch: cắt thô ở 40 sẽ để lại gạch cuối, mà chuỗi kết
+    // thúc bằng gạch thì CHECK ở DB từ chối.
+    const raw = `${"a".repeat(39)} bank`;
+    const slug = flashcardDeckCodeSlug(raw);
+    expect(slug.length).toBeLessThanOrEqual(FLASHCARD_DECK_CODE_MAX_LENGTH);
+    expect(slug.endsWith("-")).toBe(false);
+    expect(slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+  });
+
+  /**
+   * Vòng khép kín: mọi mã bộ đi ra từ hàm này, ghép với số buổi bất kỳ, phải
+   * cho ra một mã liên kết HỢP LỆ. Đây là chỗ hai trần gặp nhau — 40 ký tự cho
+   * mã bộ và 48 cho mã liên kết.
+   */
+  it("mã bộ dài nhất vẫn cho ra mã liên kết hợp lệ ở buổi 3 chữ số", () => {
+    const slug = flashcardDeckCodeSlug("a".repeat(60));
+    expect(slug).toHaveLength(FLASHCARD_DECK_CODE_MAX_LENGTH);
+    const token = flashcardFixedPublicToken(slug, 100);
+    expect(token).not.toBeNull();
+    expect(normalizeFlashcardPublicToken(token)).toBe(token);
   });
 });
 

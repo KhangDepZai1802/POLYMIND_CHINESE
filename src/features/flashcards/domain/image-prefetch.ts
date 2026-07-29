@@ -17,13 +17,19 @@ import {
  */
 
 /**
- * Tải trước bao nhiêu thẻ.
+ * Tải trước bao nhiêu thẻ: **cả buổi** về phía trước, 1 thẻ về phía sau.
  *
- * Tiến 3 / lùi 1, không đối xứng: học viên lướt tiến là chính, còn thẻ lùi thì
- * vừa xem xong nên gần như chắc chắn đã nằm trong cache. Tiến 3 đủ để che một
- * nhịp bấm nhanh mà không kéo cả buổi 18 thẻ về máy người chỉ xem 2 thẻ.
+ * 🔴 Trước `PERF-IMG-2` con số này là 3, và đó là cách nghĩ của thời ảnh còn
+ * nặng 3,8MB. Sau khi ảnh về ~27KB thì cả buổi 18 thẻ chỉ còn ~500KB — nhẹ hơn
+ * MỘT tấm ảnh cũ. Giữ trần 3 lúc đó chỉ còn là tự trói: học viên vuốt nhanh quá
+ * 3 thẻ là lại gặp đúng cái vòng chờ mà tính năng này sinh ra để xoá.
+ *
+ * Phanh KHÔNG nằm ở con số này mà nằm ở **ngân sách thời gian** trong
+ * `use-flashcard-image-prefetch.ts`: mạng yếu hoặc ảnh còn nặng thì hàng đợi tự
+ * dừng sớm. Đó là phanh đo được, thay cho một con số đoán trước.
+ *
+ * Lùi 1 là đủ: thẻ vừa rời khỏi gần như chắc chắn còn trong cache.
  */
-export const FLASHCARD_PREFETCH_AHEAD = 3;
 export const FLASHCARD_PREFETCH_BEHIND = 1;
 
 /** Đúng phần payload cần đọc — cố ý không nhận cả `FlashcardPageView`. */
@@ -75,7 +81,9 @@ export function flashcardPrefetchUrls(
   index: number,
   options?: { ahead?: number; behind?: number },
 ): string[] {
-  const ahead = options?.ahead ?? FLASHCARD_PREFETCH_AHEAD;
+  // Mặc định: hết buổi. Danh sách trả về theo thứ tự ưu tiên nên "lấy hết" không
+  // đồng nghĩa "tải hết bằng mọi giá" — bên gọi dừng khi hết ngân sách.
+  const ahead = options?.ahead ?? pages.length;
   const behind = options?.behind ?? FLASHCARD_PREFETCH_BEHIND;
 
   const order: number[] = [];

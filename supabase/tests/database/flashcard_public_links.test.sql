@@ -126,8 +126,10 @@ select set_config(
   true
 );
 
-insert into public.flashcard_decks (id, course_id, title)
-values ('80500000-0000-4000-8000-000000000001', '80200000-0000-4000-8000-000000000001', 'Deck QR');
+-- Mã bộ = slug mã khoá `KH-QR` → bài kiểm mã cố định bên dưới vẫn ghim đúng
+-- chuỗi `kh-qr-01` như trước `MULTIDECK-1`.
+insert into public.flashcard_decks (id, course_id, code, title)
+values ('80500000-0000-4000-8000-000000000001', '80200000-0000-4000-8000-000000000001', 'kh-qr', 'Deck QR');
 
 insert into public.flashcard_sections (id, deck_id, session_number, title)
 values

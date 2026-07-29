@@ -1397,6 +1397,7 @@ export type Database = {
       }
       flashcard_decks: {
         Row: {
+          code: string
           course_id: string
           created_at: string
           created_by: string
@@ -1408,6 +1409,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          code: string
           course_id: string
           created_at?: string
           created_by?: string
@@ -1419,6 +1421,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          code?: string
           course_id?: string
           created_at?: string
           created_by?: string
@@ -1433,7 +1436,7 @@ export type Database = {
           {
             foreignKeyName: "flashcard_decks_course_id_fkey"
             columns: ["course_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
@@ -3870,6 +3873,10 @@ export type Database = {
       revoke_flashcard_public_link: {
         Args: { p_link_id: string }
         Returns: undefined
+      }
+      rewrite_flashcard_media_extension: {
+        Args: { p_mapping: Json }
+        Returns: Json
       }
       run_exam_regrade: {
         Args: { p_delivery_id: string; p_reason: string; p_rule_override: Json }

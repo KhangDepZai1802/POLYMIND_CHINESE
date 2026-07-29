@@ -51,22 +51,48 @@ export function normalizeFlashcardPublicToken(raw: unknown): string | null {
 }
 
 /**
+ * Trần độ dài mã bộ — bản sao của `flashcard_decks_code_shape_check` (`…083`).
+ *
+ * 40 chứ không phải 48 vì mã liên kết = `mã bộ` + `-NN`. Buổi ≥ 100 chiếm 4 ký
+ * tự đuôi, nên 40 + 4 = 44 vẫn lọt trần 48 của bảng liên kết.
+ */
+export const FLASHCARD_DECK_CODE_MAX_LENGTH = 40;
+export const FLASHCARD_DECK_CODE_MIN_LENGTH = 2;
+
+/**
+ * Biến chữ người gõ thành slug hợp lệ — cùng phép biến đổi mà `…083` dùng để
+ * backfill và mà `app.flashcard_fixed_link_token()` áp lại.
+ *
+ * Trả `""` khi không còn chữ-số nào; caller phải coi đó là "không dùng được"
+ * chứ không phải "chuỗi rỗng hợp lệ".
+ */
+export function flashcardDeckCodeSlug(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, FLASHCARD_DECK_CODE_MAX_LENGTH)
+    .replace(/-+$/g, "");
+}
+
+/**
  * Mã CỐ ĐỊNH của một buổi — bản sao y hệt `app.flashcard_fixed_link_token()`
- * (migration `…081`).
+ * (migration `…081`, sửa bởi `…083`).
  *
  * ⚠️ Hai bản cài đặt cho cùng một công thức là điều bình thường ở đây chứ không
  * phải `BUG_M10_01`: DB là nơi GHI (nguồn sự thật), bản này chỉ để màn Admin
  * **hiện trước** địa chỉ sẽ có trước khi bấm nút, và để bài kiểm đối chiếu hai
  * bên khớp nhau. Không có đường nào dùng giá trị này để ghi xuống DB.
+ *
+ * 🔴 Từ `MULTIDECK-1` tham số là **mã BỘ**, không phải mã khoá. Một khoá nay có
+ * nhiều bộ, mà mã khoá thì chỉ có một — truyền nhầm mã khoá vào đây là hai bộ
+ * cùng hiện ra một dải địa chỉ trong khi DB phát hành ra hai dải khác nhau.
  */
 export function flashcardFixedPublicToken(
-  courseCode: string,
+  deckCode: string,
   sessionNumber: number,
 ): string | null {
-  const slug = courseCode
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const slug = flashcardDeckCodeSlug(deckCode);
   if (!slug) return null;
   if (!Number.isInteger(sessionNumber) || sessionNumber <= 0) return null;
 
