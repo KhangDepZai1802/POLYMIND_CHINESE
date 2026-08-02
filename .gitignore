@@ -53,3 +53,14 @@ yarn-error.log*
 # (Quy tắc phủ định của git phải nằm SAU pattern chặn nó.)
 !.env.example
 !.env.perf.example
+
+# dữ liệu cá nhân của người thật (danh sách lớp do đối tác gửi)
+#
+# Các file này chứa họ tên — kèm chức vụ, phòng ban, có khi cả SĐT/email — của
+# nhân viên đối tác. Commit một lần là nằm VĨNH VIỄN trong lịch sử git: xoá ở
+# commit sau không gỡ được, phải viết lại lịch sử. Dữ liệu này thuộc về DB
+# (bảng `students`), không thuộc về repo.
+#
+# Cần nhập liệu thì để file ở máy, trích ra rồi ghi thẳng vào DB — đừng commit.
+DANH SÁCH HỌC TIÊNG HOA.docx
+*.docx
