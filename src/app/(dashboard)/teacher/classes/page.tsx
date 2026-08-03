@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getClasses } from "@/features/classes/server/queries";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { formatDate } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
@@ -19,7 +19,7 @@ import {
 export const metadata: Metadata = { title: "Lớp của tôi" };
 
 export default async function TeacherClassesPage() {
-  await requireRole("teacher");
+  await requireTeaching();
   const classes = await getClasses();
 
   return (

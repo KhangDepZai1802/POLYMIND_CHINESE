@@ -38,7 +38,7 @@ export async function createQuestionSetAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const actor = await requireRole("teacher", "super_admin");
+  const actor = await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = setSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
@@ -67,7 +67,7 @@ export async function addQuestionSetItemAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = itemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
@@ -98,7 +98,7 @@ export async function addQuestionSetItemsAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = itemsBatchSchema.safeParse({
     set_version_id: formData.get("set_version_id"),
     points: formData.get("points"),
@@ -170,7 +170,7 @@ export async function createQuestionSetSectionAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = sectionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
@@ -195,7 +195,7 @@ export async function moveQuestionSetItemAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("item_id"),
     direction = Number(formData.get("direction"));
   if (typeof id !== "string" || ![-1, 1].includes(direction))
@@ -215,7 +215,7 @@ export async function removeQuestionSetItemAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("item_id");
   if (typeof id !== "string") return { error: "Thiếu item." };
   const supabase = await createClient();
@@ -236,7 +236,7 @@ export async function unlockQuestionSetForEditAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("question_set_id");
   if (typeof id !== "string") return { error: "Thiếu bộ câu hỏi." };
   const supabase = await createClient();
@@ -260,7 +260,7 @@ export async function deleteQuestionSetAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("question_set_id");
   if (typeof id !== "string") return { error: "Thiếu bộ câu hỏi." };
   const supabase = await createClient();
@@ -288,7 +288,7 @@ export async function lockQuestionSetAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("set_version_id");
   if (typeof id !== "string") return { error: "Thiếu phiên bản bộ." };
   const supabase = await createClient();

@@ -92,6 +92,25 @@ export async function requireManager(): Promise<CurrentUser> {
 }
 
 /**
+ * Bắt buộc là người ĐỨNG LỚP: `teacher` hoặc `academic_manager`.
+ *
+ * Giáo vụ được phân công dạy lớp thì phải vào được khu `/teacher` — nếu không,
+ * nhánh menu "Lớp được phân công" hiện ra rồi bấm vào là bị đá về `/admin`.
+ * `GIAOVU-ROUTE-002` (Codex tìm ra 2026-08-03) đúng là ca đó: `…087` mở
+ * `my_teacher_id()` và `teaches_class()` cho giáo vụ ở tầng DB, nhưng 17 page
+ * `/teacher` vẫn gác `requireRole("teacher")` nên chặn ngay trước khi tới RLS.
+ *
+ * ⚠️ Hàm này KHÔNG kiểm "có lớp nào không" — phạm vi dữ liệu là việc của RLS
+ * (`app.teaches_class()`). Giáo vụ chưa được phân lớp vào đây sẽ thấy trang
+ * rỗng, đúng như một giáo viên chưa có lớp.
+ */
+export async function requireTeaching(
+  ...extra: readonly UserRole[]
+): Promise<CurrentUser> {
+  return requireRole("teacher", "academic_manager", ...extra);
+}
+
+/**
  * Giáo vụ này có đang được phân công dạy lớp nào không?
  *
  * Quyết định nhánh menu thứ hai ("Lớp được phân công") có hiện hay không —

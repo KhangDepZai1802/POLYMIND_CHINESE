@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { formatDate, formatTime } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Điểm danh" };
@@ -28,7 +28,7 @@ export default async function TeacherAttendancePage({
 }: {
   searchParams: Promise<{ session?: string }>;
 }) {
-  await requireRole("teacher", "super_admin");
+  await requireTeaching("super_admin");
   const { session: sessionId } = await searchParams;
 
   // --- Chưa chọn buổi → cho chọn -------------------------------------------

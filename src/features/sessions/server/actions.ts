@@ -15,7 +15,7 @@ export async function saveSessionLogAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
 
   const parsed = sessionLogSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);

@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCourseCurriculum } from "@/features/courses/server/queries";
 import { SessionLogForm } from "@/features/sessions/components/session-log-form";
 import { getSessionLog } from "@/features/sessions/server/queries";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { formatDateTime, formatTime } from "@/lib/dates";
 import {
   SESSION_STATUS_LABELS,
@@ -31,7 +31,7 @@ export default async function TeacherSessionLogPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("teacher", "super_admin");
+  await requireTeaching("super_admin");
   const { id } = await params;
   const session = await getSessionLog(id);
   if (!session) notFound();

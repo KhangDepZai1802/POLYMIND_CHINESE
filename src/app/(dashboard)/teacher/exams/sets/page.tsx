@@ -1,6 +1,6 @@
 import { SetsPage } from "@/features/question-builder/components/sets-page";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 export default async function ExamSetsPage() {
-  await requireRole("teacher");
+  await requireTeaching();
   return <SetsPage kind="exam" />;
 }

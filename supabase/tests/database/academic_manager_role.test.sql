@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(35);
 
 -- =============================================================================
 -- GATE `GIAOVU-1`: role thứ 4 `academic_manager` ("Giáo vụ").
@@ -87,9 +87,18 @@ insert into public.flashcard_decks (id, course_id, title, code)
 values ('c5000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000001',
         'Bộ thẻ kiểm giáo vụ', 'test-giaovu');
 
-insert into public.questions (id, owner_id, title, skill, created_by)
-values ('c6000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002',
-        'Câu hỏi kiểm giáo vụ', 'vocabulary', 'c0000000-0000-0000-0000-000000000002');
+insert into public.questions (id, owner_id, title, skill, created_by, visibility)
+values
+  ('c6000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002',
+   'Câu hỏi riêng của GV', 'vocabulary', 'c0000000-0000-0000-0000-000000000002', 'private'),
+  -- `GIAOVU-RLS-001`: câu hỏi `global` là chỗ lỗ hổng sẵn có từ `…038` lộ ra —
+  -- policy cũ không kiểm role nên HỌC VIÊN cũng đọc được cả kho.
+  ('c6000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000002',
+   'Câu hỏi GLOBAL', 'vocabulary', 'c0000000-0000-0000-0000-000000000002', 'global');
+
+insert into public.question_sets (id, owner_id, title, kind)
+values ('c8000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002',
+        'Bộ đề của GV', 'exercise');
 
 insert into public.tuition_invoices (id, invoice_code, student_id, subtotal, total)
 values ('c7000000-0000-0000-0000-000000000001', 'HD-TEST-GIAOVU',
@@ -280,10 +289,108 @@ select is(
   '🔒 giáo vụ KHÔNG thấy bộ flashcard nào (điểm 3 — Flashcard chỉ super admin)'
 );
 
+-- ⚠️ Bài này TRƯỚC ĐÂY ghim "giáo vụ không thấy câu hỏi nào" — mô hình SAI, do
+-- fixture cũ chỉ có câu hỏi `private` nên nó xanh vì may. Ranh giới đúng của
+-- điểm (3) không nằm ở việc ĐỌC câu hỏi (giáo vụ dạy lớp thì soạn bài như giáo
+-- viên) mà ở quyền DUYỆT câu hỏi vào ngân hàng chung.
+select throws_ok(
+  $$select public.review_global_question('c6000000-0000-0000-0000-000000000001', true, null)$$,
+  null,
+  null,
+  '🔒 giáo vụ KHÔNG duyệt được câu hỏi vào ngân hàng chung (điểm 3 — chỉ super admin)'
+);
+
+-- =============================================================================
+-- 21–31. `GIAOVU-RLS-001` — phạm vi ngân hàng câu hỏi (`…089`)
+--
+-- Giáo vụ dạy lớp thì SOẠN bài như giáo viên (câu hỏi của mình + `global` +
+-- được chia sẻ), nhưng KHÔNG có quyền cấp quản trị: `admin_all_question*` và
+-- RPC duyệt vẫn `is_super_admin()` (điểm 3 user chốt).
+-- =============================================================================
+
+select is(
+  (select count(*)::integer from public.questions where visibility = 'global'),
+  1,
+  '✅ giáo vụ ĐỌC được câu hỏi global (họ soạn bài như giáo viên)'
+);
+
+select is(
+  (select count(*)::integer from public.question_sets),
+  0,
+  '🔒 giáo vụ KHÔNG đọc được bộ đề riêng của giáo viên khác'
+);
+
+-- Vế cấp QUẢN TRỊ vẫn đóng: `admin_all_questions` là `is_super_admin()`, nên
+-- câu hỏi `private` của người khác vẫn khuất.
+select is(
+  (select count(*)::integer from public.questions where visibility = 'private'),
+  0,
+  '🔒 giáo vụ KHÔNG đọc được câu hỏi private của giáo viên khác'
+);
+
+-- Bảng con phải tự đóng theo bảng cha — không cần policy riêng.
+select is(
+  (select count(*)::integer from public.question_set_versions),
+  0,
+  '🔒 bảng con question_set_versions đóng theo bảng cha (subquery vẫn chịu RLS)'
+);
+
+-- =============================================================================
+-- Lỗ hổng CÓ SẴN từ `…038`, không do GIAOVU-1: học viên đọc cả kho global và
+-- tạo được question_sets mang tên mình. `…089` vá luôn.
+-- =============================================================================
+
+set local request.jwt.claims = '{"sub":"c0000000-0000-0000-0000-000000000003","role":"authenticated"}';
+
 select is(
   (select count(*)::integer from public.questions),
   0,
-  '🔒 giáo vụ KHÔNG thấy câu hỏi nào (điểm 3 — Duyệt câu hỏi chỉ super admin)'
+  '🔒 HỌC VIÊN không đọc được câu hỏi nào, kể cả global (lỗ có sẵn từ …038, vá ở …089)'
+);
+
+select is(
+  (select count(*)::integer from public.question_sets),
+  0,
+  '🔒 HỌC VIÊN không đọc được bộ đề nào'
+);
+
+select throws_ok(
+  $$insert into public.question_sets (owner_id, title, kind)
+    values ('c0000000-0000-0000-0000-000000000003', 'HV tự tạo', 'exercise')$$,
+  '42501',
+  null,
+  '🔒 HỌC VIÊN không tạo được question_sets mang tên mình (lỗ có sẵn, vá ở …089)'
+);
+
+select throws_ok(
+  $$insert into public.questions (owner_id, title, skill, created_by)
+    values ('c0000000-0000-0000-0000-000000000003', 'HV tự tạo', 'vocabulary',
+            'c0000000-0000-0000-0000-000000000003')$$,
+  '42501',
+  null,
+  '🔒 HỌC VIÊN không tạo được câu hỏi'
+);
+
+-- Giáo viên thường KHÔNG được mất quyền nào sau khi siết.
+set local request.jwt.claims = '{"sub":"c0000000-0000-0000-0000-000000000002","role":"authenticated"}';
+
+select is(
+  (select count(*)::integer from public.questions),
+  2,
+  '✅ giáo viên vẫn đọc đủ câu hỏi của mình (private + global)'
+);
+
+select is(
+  (select count(*)::integer from public.question_sets),
+  1,
+  '✅ giáo viên vẫn đọc được bộ đề của mình'
+);
+
+select lives_ok(
+  $$insert into public.questions (owner_id, title, skill, created_by)
+    values ('c0000000-0000-0000-0000-000000000002', 'GV tạo thêm', 'grammar',
+            'c0000000-0000-0000-0000-000000000002')$$,
+  '✅ giáo viên vẫn tạo được câu hỏi'
 );
 
 reset role;

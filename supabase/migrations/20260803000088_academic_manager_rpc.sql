@@ -12,9 +12,16 @@
 -- chủ hàm nên RLS không đụng tới được: mở policy mà không sửa thân hàm thì giáo
 -- vụ vào được đủ 9 trang, thấy đủ dữ liệu, và bấm nút nào cũng bị từ chối.
 --
--- 48 hàm đang nhắc `is_super_admin`. Chia đôi:
+-- 49 hàm đang nhắc `is_super_admin`. Chia đôi:
 --   26 hàm nghiệp vụ  → `is_manager()`  (file này)
---   22 hàm flashcard/ngân hàng câu hỏi → GIỮ NGUYÊN (user chốt điểm 3)
+--   23 hàm flashcard/ngân hàng câu hỏi → GIỮ NGUYÊN (user chốt điểm 3)
+--
+-- ✏️ Sửa 2026-08-03 sau khi Codex xác minh (`GIAOVU-MIG-005`): bản đầu ghi
+-- 48/22. Con số 48 là số TÊN hàm phân biệt, còn cổng fail-closed đếm số HÀNG
+-- `pg_proc` — chênh 1 vì có một hàm nạp chồng (cùng tên, khác chữ ký). Cổng đã
+-- đúng ngay từ đầu (nó tự bắt lỗi khi chạy lần đầu); chỉ dòng chú thích này sai.
+-- ⛔ CHỈ SỬA CHÚ THÍCH — không một câu SQL nào của file này bị đụng, vì nó đã
+-- áp lên production.
 --
 -- -----------------------------------------------------------------------------
 -- VÌ SAO THÂN HÀM Ở ĐÂY LÀ BẢN SINH TỰ ĐỘNG

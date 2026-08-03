@@ -151,7 +151,7 @@ set local request.jwt.claims = '{"sub":"b0000000-0000-0000-0000-000000000002","r
 select throws_ok(
   $$select public.save_tuition_invoice('b1000000-0000-0000-0000-000000000001', '2026-07-15', 0, '[{"description":"Trái phép","quantity":1,"unit_amount":1}]'::jsonb)$$,
   'P0001',
-  'Chỉ quản trị viên được quản lý hóa đơn',
+  'Chỉ quản trị viên hoặc giáo vụ được quản lý hóa đơn',
   'Giáo viên bị RPC từ chối fail-closed'
 );
 select is((select count(*)::int from public.tuition_invoices), 0, 'Giáo viên đọc trực tiếp được 0 hóa đơn');
@@ -163,7 +163,7 @@ select is((select count(*)::int from public.tuition_invoice_items), 1, 'Học vi
 select throws_ok(
   $$select public.issue_tuition_invoice('00000000-0000-0000-0000-000000000000')$$,
   'P0001',
-  'Chỉ quản trị viên được phát hành hóa đơn',
+  'Chỉ quản trị viên hoặc giáo vụ được phát hành hóa đơn',
   'Học viên không tự phát hành hóa đơn'
 );
 

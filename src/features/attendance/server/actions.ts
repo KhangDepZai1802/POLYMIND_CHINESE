@@ -32,7 +32,7 @@ export async function saveAttendanceAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
 
   const sessionId = formData.get("session_id");
   if (typeof sessionId !== "string" || !z.uuid().safeParse(sessionId).success) {

@@ -3,9 +3,9 @@ import { getExamTeacherData } from "@/features/exams/server/queries";
 import { AssessmentTabs } from "@/components/shared/assessment-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { StepHint } from "@/components/shared/step-hint";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 export default async function TeacherExamsPage() {
-  await requireRole("teacher");
+  await requireTeaching();
   const data = await getExamTeacherData();
   return (
     <>

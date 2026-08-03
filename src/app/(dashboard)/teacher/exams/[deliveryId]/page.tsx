@@ -5,14 +5,14 @@ import { GradingWorkspace } from "@/features/assessment-results/components/gradi
 import { getExamGradingData } from "@/features/exams/server/queries";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 
 export default async function ExamGradingPage({
   params,
 }: {
   params: Promise<{ deliveryId: string }>;
 }) {
-  await requireRole("teacher", "super_admin");
+  await requireTeaching("super_admin");
   const { deliveryId } = await params;
   const delivery = await getExamGradingData(deliveryId);
   if (!delivery) notFound();

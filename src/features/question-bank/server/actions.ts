@@ -51,7 +51,7 @@ export async function createQuestionAudioUploadUrlAction(input: {
   mimeType: string;
   sizeBytes: number;
 }): Promise<{ error: string } | QuestionAudioUploadTicket> {
-  const actor = await requireRole("teacher", "super_admin");
+  const actor = await requireRole("teacher", "academic_manager", "super_admin");
   const format = questionAudioFormat(input.fileName, input.mimeType);
   if (!format) return { error: "Audio chỉ nhận file MP3 hoặc M4A hợp lệ." };
 
@@ -89,7 +89,7 @@ export async function saveQuestionAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const actor = await requireRole("teacher", "super_admin");
+  const actor = await requireRole("teacher", "academic_manager", "super_admin");
 
   const parsed = saveQuestionSchema.safeParse({
     mode: formData.get("mode"),
@@ -429,7 +429,7 @@ export async function archiveQuestionAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const actor = await requireRole("teacher", "super_admin");
+  const actor = await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("id");
   if (typeof id !== "string") return { error: "Thiếu câu hỏi." };
   const supabase = await createClient();
@@ -452,7 +452,7 @@ export async function shareQuestionAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const questionId = formData.get("question_id");
   const teacherId = formData.get("teacher_id");
   if (typeof questionId !== "string" || typeof teacherId !== "string")
@@ -471,7 +471,7 @@ export async function cloneQuestionAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const questionId = formData.get("question_id");
   if (typeof questionId !== "string") return { error: "Thiếu câu hỏi." };
   const supabase = await createClient();
@@ -488,7 +488,7 @@ export async function submitQuestionReviewAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const questionId = formData.get("question_id");
   if (typeof questionId !== "string") return { error: "Thiếu câu hỏi." };
   const supabase = await createClient();

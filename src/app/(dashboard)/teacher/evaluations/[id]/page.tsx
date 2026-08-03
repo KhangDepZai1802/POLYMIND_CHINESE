@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EvaluationProfile } from "@/features/evaluations/components/evaluation-profile";
 import { getEvaluationProfile } from "@/features/evaluations/server/queries";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import {
   ENROLLMENT_STATUS_LABELS,
   ENROLLMENT_STATUS_TONE,
@@ -22,7 +22,7 @@ export default async function EvaluationProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("teacher");
+  await requireTeaching();
   const { id } = await params;
   const enrollment = await getEvaluationProfile(id);
 

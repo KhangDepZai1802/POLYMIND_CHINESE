@@ -57,7 +57,7 @@ export async function createExamDeliveryAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = schema.safeParse({
     ...Object.fromEntries(formData),
     class_ids: formData.getAll("class_ids"),
@@ -187,7 +187,7 @@ export async function gradeExamAnswerAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = gradeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
@@ -207,7 +207,7 @@ export async function gradeExamAnswersBulkAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const rawGrades = formData.get("grades");
   let grades: unknown;
   try {
@@ -236,7 +236,7 @@ export async function publishExamResultsAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("delivery_id");
   if (typeof id !== "string") return { error: "Thiếu kỳ thi." };
   const supabase = await createClient();
@@ -253,7 +253,7 @@ export async function lockExamResultsAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("delivery_id");
   if (typeof id !== "string") return { error: "Thiếu kỳ thi." };
   const supabase = await createClient();
@@ -269,7 +269,7 @@ export async function runExamRegradeAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("delivery_id");
   const reason = formData.get("reason");
   if (typeof id !== "string" || typeof reason !== "string" || !reason.trim()) {

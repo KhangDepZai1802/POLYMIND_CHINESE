@@ -27,6 +27,33 @@ describe("notification links", () => {
     expect(safeNotificationLink("/student/results", "teacher")).toBeNull();
   });
 
+  // `GIAOVU-NOTIFY-004` (Codex 2026-08-03): bản cũ dựng đường bằng `/${role}`
+  // nên giáo vụ nhận `/academic_manager/notifications` — route không tồn tại,
+  // bấm chuông ra 404.
+  it("giáo vụ về /admin/notifications, KHÔNG phải /academic_manager/...", () => {
+    expect(notificationPathForRole("academic_manager")).toBe(
+      "/admin/notifications",
+    );
+  });
+
+  it("giáo vụ nhận deep-link ở CẢ HAI cây vì họ vào được cả hai", () => {
+    expect(safeNotificationLink("/admin/tuition", "academic_manager")).toBe(
+      "/admin/tuition",
+    );
+    expect(
+      safeNotificationLink("/teacher/sessions/abc", "academic_manager"),
+    ).toBe("/teacher/sessions/abc");
+  });
+
+  it("giáo vụ vẫn bị loại link sang khu học viên", () => {
+    expect(
+      safeNotificationLink("/student/results", "academic_manager"),
+    ).toBeNull();
+    expect(
+      safeNotificationLink("//evil.test", "academic_manager"),
+    ).toBeNull();
+  });
+
   it("loại URL ngoài hệ thống và protocol-relative", () => {
     expect(safeNotificationLink("https://evil.test", "student")).toBeNull();
     expect(safeNotificationLink("//evil.test", "student")).toBeNull();

@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getClassOptions } from "@/features/classes/server/queries";
 import { getEvaluationRoster } from "@/features/evaluations/server/queries";
 import { ClassPicker } from "@/features/schedules/components/class-picker";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import {
   CLASS_STATUS_LABELS,
   CLASS_STATUS_TONE,
@@ -24,7 +24,7 @@ export default async function TeacherEvaluationsPage({
 }: {
   searchParams: Promise<{ class?: string }>;
 }) {
-  await requireRole("teacher");
+  await requireTeaching();
   const { class: requestedClassId } = await searchParams;
 
   // RLS quy về `class_teachers` — lớp không có ở đây thì gõ thẳng `?class=` cũng

@@ -96,7 +96,7 @@ export async function createExerciseDeliveryAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = deliverySchema.safeParse({
     ...Object.fromEntries(formData),
     class_ids: formData.getAll("class_ids"),
@@ -227,7 +227,7 @@ export async function publishExerciseResultsAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const id = formData.get("delivery_id");
   if (typeof id !== "string") return { error: "Thiếu lần giao." };
   const supabase = await createClient();
@@ -243,7 +243,7 @@ export async function gradeExerciseAnswerAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const parsed = gradeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
   const supabase = await createClient();
@@ -263,7 +263,7 @@ export async function gradeExerciseAnswersBulkAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("teacher", "super_admin");
+  await requireRole("teacher", "academic_manager", "super_admin");
   const rawGrades = formData.get("grades");
   let grades: unknown;
   try {

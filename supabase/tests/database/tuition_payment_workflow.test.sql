@@ -133,7 +133,7 @@ select throws_ok(
     (select invoice_id from test_invoice_ids)
   ),
   'P0001',
-  'Chỉ quản trị viên được ghi nhận thanh toán',
+  'Chỉ quản trị viên hoặc giáo vụ được ghi nhận thanh toán',
   'Giáo viên gọi RPC payment bị từ chối fail-closed'
 );
 
@@ -146,7 +146,7 @@ select throws_ok(
     (select invoice_id from test_invoice_ids)
   ),
   'P0001',
-  'Chỉ quản trị viên được ghi nhận thanh toán',
+  'Chỉ quản trị viên hoặc giáo vụ được ghi nhận thanh toán',
   'Học viên không tự ghi nhận thanh toán'
 );
 

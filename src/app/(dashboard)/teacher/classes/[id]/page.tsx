@@ -32,7 +32,7 @@ import {
   getCourseMaterials,
 } from "@/features/courses/server/queries";
 import { SessionCalendar } from "@/features/schedules/components/schedule-manager";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import {
   formatClock,
   formatDate,
@@ -78,7 +78,7 @@ export default async function TeacherClassDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ tab?: string }>;
 }) {
-  await requireRole("teacher");
+  await requireTeaching();
   const { id } = await params;
   const { tab } = await searchParams;
 

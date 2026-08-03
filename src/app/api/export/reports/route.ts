@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth/session";
+import { isManagerRole } from "@/types/roles";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { createReportCsv, createReportXlsx } from "@/features/reports/export";
@@ -19,7 +20,11 @@ export const preferredRegion = "hnd1";
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== "super_admin") {
+  // Trang Báo cáo thuộc 9 mục của giáo vụ (`D-2`), mà nút CSV/XLSX trên đó gọi
+  // thẳng route này. Gác `super_admin` thì UI bày nút còn API trả 403
+  // (`GIAOVU-REPORT-003`, Codex tìm ra 2026-08-03). Dùng chung một khái niệm
+  // "quản lý" với `requireManager()` và `app.is_manager()`.
+  if (!isManagerRole(user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const supabase = await createClient();

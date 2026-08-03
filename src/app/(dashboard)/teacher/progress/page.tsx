@@ -19,7 +19,7 @@ import { getClassOptions } from "@/features/classes/server/queries";
 import { AttendanceBars } from "@/features/reports/components/attendance-bars";
 import { getTeacherClassReport } from "@/features/reports/server/teacher-queries";
 import { ClassPicker } from "@/features/schedules/components/class-picker";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { formatPercent, formatScore } from "@/lib/dates";
 import { formatAttendanceScore } from "@/lib/domain/attendance";
 import {
@@ -35,7 +35,7 @@ export default async function TeacherProgressPage({
 }: {
   searchParams: Promise<{ class?: string }>;
 }) {
-  await requireRole("teacher");
+  await requireTeaching();
   const { class: requestedClassId } = await searchParams;
 
   // RLS khoanh về `class_teachers`; không tự lọc thêm ở app.

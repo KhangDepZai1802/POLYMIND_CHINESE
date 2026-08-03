@@ -22,7 +22,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { formatDate, formatTime } from "@/lib/dates";
 import { CLASS_STATUS_LABELS, CLASS_STATUS_TONE } from "@/lib/domain/labels";
 
@@ -31,7 +31,7 @@ export const metadata: Metadata = { title: "Hôm nay" };
 export default async function TeacherDashboardPage() {
   const [user, today, needAttendance, pendingGrading, atRisk, myClasses] =
     await Promise.all([
-      requireRole("teacher"),
+      requireTeaching(),
       getTeacherSessionsToday(),
       getSessionsNeedingAttendance(),
       getPendingGrading(),
