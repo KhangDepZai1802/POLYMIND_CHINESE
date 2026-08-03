@@ -23,7 +23,8 @@ import { ENROLLMENT_STATUS_LABELS } from "@/lib/domain/labels";
 export const metadata: Metadata = { title: "Học viên" };
 
 export default async function AdminStudentsPage() {
-  await requireManager();
+  const me = await requireManager();
+  const canManageAccounts = me.role === "super_admin";
 
   const [students, levels] = await Promise.all([getStudents(), getLevels()]);
 
@@ -135,7 +136,11 @@ export default async function AdminStudentsPage() {
                         />
                       </DataTableCell>
                       <DataTableCell>
-                        <StudentRowActions student={s} levels={levels} />
+                        <StudentRowActions
+                          student={s}
+                          levels={levels}
+                          canManageAccounts={canManageAccounts}
+                        />
                       </DataTableCell>
                     </DataTableRow>
                   );

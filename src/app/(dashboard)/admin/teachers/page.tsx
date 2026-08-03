@@ -21,7 +21,10 @@ import { requireManager } from "@/lib/auth/session";
 export const metadata: Metadata = { title: "Giáo viên" };
 
 export default async function AdminTeachersPage() {
-  await requireManager();
+  // Trang mở cho cả super admin lẫn giáo vụ, nhưng các thao tác TÀI KHOẢN chỉ
+  // super admin — nên phải biết mình đang là ai để không bày nút chết.
+  const me = await requireManager();
+  const canManageAccounts = me.role === "super_admin";
 
   const teachers = await getTeachers();
 
@@ -30,7 +33,10 @@ export default async function AdminTeachersPage() {
       <PageHeader
         title="Giáo viên"
         description="Hồ sơ giáo viên và các lớp được phân công."
-        action={<TeacherFormDialog />}
+        // Tạo giáo viên = tạo tài khoản đăng nhập (`teachers.user_id` là
+        // `not null`), nên giáo vụ KHÔNG có nút này — `D-2` điểm (4).
+        // `createTeacherAction` cũng gác `requireRole("super_admin")`.
+        action={canManageAccounts ? <TeacherFormDialog /> : undefined}
       />
 
       <Card className="py-0">
@@ -39,7 +45,11 @@ export default async function AdminTeachersPage() {
             <EmptyState
               icon={GraduationCap}
               title="Chưa có giáo viên nào"
-              description="Thêm giáo viên và cấp tài khoản để họ đăng nhập."
+              description={
+                canManageAccounts
+                  ? "Thêm giáo viên và cấp tài khoản để họ đăng nhập."
+                  : "Giáo vụ không tạo được giáo viên mới — tạo giáo viên là cấp tài khoản đăng nhập. Nhờ quản trị viên thêm giúp."
+              }
             />
           ) : (
             /*
@@ -112,7 +122,10 @@ export default async function AdminTeachersPage() {
                       />
                     </DataTableCell>
                     <DataTableCell>
-                      <TeacherRowActions teacher={t} />
+                      <TeacherRowActions
+                        teacher={t}
+                        canManageAccounts={canManageAccounts}
+                      />
                     </DataTableCell>
                   </DataTableRow>
                 ))}

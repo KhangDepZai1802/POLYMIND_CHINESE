@@ -44,7 +44,21 @@ type Teacher = {
   } | null;
 };
 
-export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
+/**
+ * `canManageAccounts` = người đang xem có quyền QUẢN TRỊ TÀI KHOẢN không.
+ *
+ * Giáo vụ (`academic_manager`) sửa được hồ sơ nhưng KHÔNG đặt lại mật khẩu và
+ * KHÔNG khóa/mở tài khoản — `D-2` điểm (4). Hai server action tương ứng đã gác
+ * bằng `requireRole("super_admin")`, nên bày nút ra không mở được cửa nào;
+ * nhưng bày một nút mà bấm vào là bị đá về trang chủ thì tệ hơn là không bày.
+ */
+export function TeacherRowActions({
+  teacher,
+  canManageAccounts,
+}: {
+  teacher: Teacher;
+  canManageAccounts: boolean;
+}) {
   const [credentialsOpen, setCredentialsOpen] = useState(false);
   const toggle = useFormAction(toggleTeacherActiveAction, { toastError: true });
   const credentials = useFormAction(resetTeacherPasswordAction, {
@@ -80,18 +94,21 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
             }
           />
 
-          <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              setCredentialsOpen(true);
-            }}
-          >
-            <KeyRound className="size-4" aria-hidden />
-            Đặt lại mật khẩu
-          </DropdownMenuItem>
+          {canManageAccounts && (
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                setCredentialsOpen(true);
+              }}
+            >
+              <KeyRound className="size-4" aria-hidden />
+              Đặt lại mật khẩu
+            </DropdownMenuItem>
+          )}
 
-          <DropdownMenuSeparator />
+          {canManageAccounts && <DropdownMenuSeparator />}
 
+          {canManageAccounts && (
           <form action={toggle.formAction} onSubmit={confirmToggle}>
             <input type="hidden" name="id" value={teacher.id} />
             <input
@@ -116,6 +133,7 @@ export function TeacherRowActions({ teacher }: { teacher: Teacher }) {
               )}
             </button>
           </form>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <Dialog open={credentialsOpen} onOpenChange={setCredentialsOpen}>

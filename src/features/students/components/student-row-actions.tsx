@@ -43,12 +43,20 @@ type Student = NonNullable<
   } | null;
 };
 
+/**
+ * `canManageAccounts` — xem chú thích cùng tên ở `TeacherRowActions`.
+ * Giáo vụ thêm/sửa/lưu trữ được HỒ SƠ học viên, nhưng không cấp được TÀI KHOẢN
+ * đăng nhập (`D-2` điểm 4). Hồ sơ học viên tạo được mà không cần tài khoản
+ * (`students.user_id` nullable) nên giáo vụ vẫn làm được việc của mình.
+ */
 export function StudentRowActions({
   student,
   levels,
+  canManageAccounts,
 }: {
   student: Student;
   levels: Level[];
+  canManageAccounts: boolean;
 }) {
   const [accountOpen, setAccountOpen] = useState(false);
 
@@ -85,19 +93,25 @@ export function StudentRowActions({
             }
           />
 
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              setAccountOpen(true);
-            }}
-          >
-            {student.user_id ? (
-              <KeyRound className="size-4" aria-hidden />
-            ) : (
-              <UserPlus className="size-4" aria-hidden />
-            )}
-            {student.user_id ? "Đặt lại mật khẩu" : "Cấp tài khoản"}
-          </DropdownMenuItem>
+          {/* Cấp tài khoản / đổi mật khẩu là quản trị tài khoản — giáo vụ
+              không có. `provisionStudentAccountAction` đã gác super_admin.
+              Lưu trữ hồ sơ thì KHÔNG ẩn: đó là thao tác trên hồ sơ, thuộc
+              quyền quản lý của giáo vụ. */}
+          {canManageAccounts && (
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setAccountOpen(true);
+              }}
+            >
+              {student.user_id ? (
+                <KeyRound className="size-4" aria-hidden />
+              ) : (
+                <UserPlus className="size-4" aria-hidden />
+              )}
+              {student.user_id ? "Đặt lại mật khẩu" : "Cấp tài khoản"}
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuSeparator />
 

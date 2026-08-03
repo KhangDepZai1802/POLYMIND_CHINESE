@@ -715,6 +715,22 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 
 ---
 
+### Thẻ học viên ở trang chi tiết lớp phải gọn lại — `UX-ENROLL-1` (user báo 2026-08-03, kèm 2 ảnh)
+
+**Nguyên văn:** *"ở trang chi tiết lớp học, phần card học viên quá dài, phải roll rất nhìu xuống mới thấy"*.
+
+**Đo được trước khi sửa** (`/admin/classes/12f6221e-…`, lớp 31 học viên đang học): mỗi hàng dựng sẵn 3–4 nút đổi trạng thái + *Chuyển lớp* + nút lịch sử **thẳng trong hàng**. Cột phải rộng `minmax(21rem, .8fr)` không đủ chỗ ⇒ nhóm nút luôn xuống 2–3 dòng ⇒ **~130px/hàng**, cả thẻ **hơn 4.000px** trong khi cột trái đã hết nội dung từ khoảng 900px. Đây là hình dạng lỗi họ hàng với `UX-UIUX-M16-002` (nhóm nút `shrink-0` rộng 516px trong khung 360px), lần này không tràn ngang nhưng tràn **dọc**.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| UX-ENROLL-1a | **Hàng gọn + thao tác vào menu** | Hàng còn 2 dòng (~52px): tên · badge trạng thái đứng đầu dòng 2 để mọi hàng thẳng một cột · mã + ngày. Toàn bộ thao tác vào **một** menu `⋯`; *Rút học* tách sau `Separator` và mang `variant="destructive"`. Hộp thoại dựng **theo yêu cầu** — bản cũ mount ~5 `Dialog`/hàng, mỗi `TransferDialog` còn kèm `Select` liệt kê toàn bộ lớp đích | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03 |
+| UX-ENROLL-1b | **Chặn chiều dài, không dùng vùng cuộn lồng** | Hiện sẵn tối đa **8 hàng**, phần còn lại sau nút *Xem thêm N học viên*, mở rồi **thu lại được**. ⛔ Không dùng `max-h` + `overflow-y-auto`: trên điện thoại vùng cuộn lồng nuốt cú vuốt của trang. Đổi bộ lọc / gõ tìm kiếm thì tự thu gọn lại | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03 |
+| UX-ENROLL-1c | **Lọc + tìm để khỏi cuộn tay** | Chip *Đang học* / *Đã đóng* (kèm số, `aria-pressed` chứ không chỉ đổi màu nền), mặc định *Đang học* ⇒ ghi danh đã đóng không chen vào danh sách nữa. Ô tìm hiện khi lớp > 8 học viên, **bỏ dấu** để gõ "ngoc dung" ra "Phạm Thị Ngọc Dũng". Thanh sức chứa `aria-hidden` vì con số `31/40` ngay trên đã mang thông tin | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. 3 bài Vitest, **kiểm ngược**: bỏ chặn 8 hàng ⇒ đỏ đúng 2 bài, bài menu vẫn xanh |
+
+⚠️ **Không đụng nghiệp vụ:** `allowedEnrollmentTransitions` · `canTransferEnrollment` · 3 server action giữ nguyên. Đây thuần là đổi chỗ đặt nút và chặn số hàng hiện sẵn.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |
