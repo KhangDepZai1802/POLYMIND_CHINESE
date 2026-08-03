@@ -729,6 +729,25 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 
 ⚠️ **Không đụng nghiệp vụ:** `allowedEnrollmentTransitions` · `canTransferEnrollment` · 3 server action giữ nguyên. Đây thuần là đổi chỗ đặt nút và chặn số hàng hiện sẵn.
 
+📏 **Đo thật ở phiên 92** (Chromium, lớp 26 học viên): trang **5.078px → 1.237px** ở 1280×900 (5,6 → **1,4 màn**), thẻ học viên **639px**; ở 375×800 **6.350px → 2.509px** (7,9 → **3,1 màn**). `horizontalOverflow = 0` cả bốn phép đo. Con số "hơn 4.000px" ghi lúc chưa đo là **ước lượng thấp**.
+
+---
+
+### Trang Học viên gom theo lớp + ô tìm — `UX-STUDENTS-1` (user báo 2026-08-03, kèm ảnh)
+
+**Nguyên văn:** *"học viên mà quá nhiều sẽ bị loạn, chia ra thành thành nhiều lớp (mục) để dễ xem, có thanh tìm kiếm, nói chung thiết kế lại cho đẹp, và tiện xem hơn"*.
+
+**Đo được trước khi sửa** (`/admin/students`, 57 học viên): 57 hàng đổ thẳng vào **một** bảng phẳng — **3.802px** ở 1280×900 (4,2 màn) và **3.838px** ở 375×800 (4,8 màn). Không có ô tìm; muốn biết ai thuộc lớp nào phải dò từng dòng cột *Lớp đang học*; hồ sơ đã lưu trữ bị lọc thẳng ở page nên **không có đường nào xem lại**.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| UX-STUDENTS-1a | **Gom theo lớp, thu gọn sẵn** | Mỗi lớp một mục có tiêu đề bấm được (`aria-expanded` + `aria-controls`), hiện mã lớp · tên lớp · số học viên · số người chưa có tài khoản. Mục cuối *Cần xếp lớp* gom người không có ghi danh `active` — **phải hiện ra**, đó chính là việc còn tồn. Nút *Mở rộng / Thu gọn tất cả* | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. Đo thật: **3.802px → 900px** ở 1280 (4,2 → **1,0 màn**) |
+| UX-STUDENTS-1b | **Ô tìm bỏ dấu, lọc tại chỗ** | Gõ tới đâu lọc tới đó, **tự mở** mục có kết quả (giấu kết quả sau mục thu gọn là bắt tìm hai lần). Khớp mã · họ tên · SĐT · email · **tên và SĐT người giám hộ** · tên đăng nhập. Không khớp gì thì nói rõ + nút xoá từ khoá. `aria-live` báo số kết quả cho trình đọc màn hình | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. ⚠️ Lọc ở **trình duyệt** vì `getStudents()` không phân trang; lên hàng nghìn học viên thì chuyển sang `getStudents({ search })` — hàm đó đã nhận sẵn tham số |
+| UX-STUDENTS-1c | **Ba ô số liệu + chip lưu trữ** | Đang hoạt động (kèm số lớp) · Chưa xếp lớp · Chưa có tài khoản. Số lớp đếm trên **toàn bộ** phạm vi chứ không trên kết quả tìm — hai con số cạnh nhau phải cùng một phạm vi. Chip *Đã lưu trữ* mở lại đường xem hồ sơ đã ẩn | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. 5 bài Vitest, **kiểm ngược 2/2**: `isOpen` luôn `true` ⇒ đỏ 2 bài; bỏ `fold()` ⇒ đỏ bài tìm không dấu |
+| UX-STUDENTS-1d | **Sửa hai lỗi bố cục chỉ trình duyệt mới thấy** | (1) Ba ô số liệu xếp dọc dưới 640px chiếm ~340px, đẩy ô tìm xuống dưới mép màn ⇒ `grid-cols-3` từ 0px, ẩn dòng gợi ý. (2) Ở 375px chuỗi "25 học viên · 23 chưa có tài khoản" là `shrink-0` nên **tên lớp bị cắt còn 0 ký tự** ⇒ đưa con số xuống dòng dưới tên khi hẹp | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. Đo lại sau khi sửa: 375px **1.078px → 896px**. 🔴 Lỗi (2) là lần **thứ ba** cùng một hình dạng (`UX-UIUX-M16-002`, `UX-ENROLL-1`): `shrink-0` cạnh `min-w-0 flex-1` thì khối co được sẽ co tới 0 |
+
+⚠️ **Không đụng nghiệp vụ:** `getStudents()` · `StudentRowActions` · cờ `canManageAccounts` giữ nguyên. Page rút còn 34 dòng: lấy dữ liệu + gác quyền, không tự dựng bảng.
+
 ---
 
 ## Bản đồ module ↔ phase (dùng cho QA board)
