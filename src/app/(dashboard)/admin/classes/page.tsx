@@ -19,7 +19,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatDateOnly } from "@/lib/dates";
 import {
   CLASS_STATUS_LABELS,
@@ -32,7 +32,7 @@ export const metadata: Metadata = { title: "Lớp học" };
 const OPEN_ENROLLMENT_STATUSES = new Set(["pending", "active", "paused"]);
 
 export default async function AdminClassesPage() {
-  await requireRole("super_admin");
+  await requireManager();
   const [classes, courses] = await Promise.all([
     getClasses(),
     getCourseOptionsForClasses(),

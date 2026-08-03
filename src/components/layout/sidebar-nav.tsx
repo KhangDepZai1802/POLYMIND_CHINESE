@@ -1,16 +1,22 @@
 "use client";
 
 import { Logo } from "@/components/shared/logo";
-import { NavLinks } from "@/components/layout/nav-links";
-import { getNavigation } from "@/lib/permissions/navigation";
+import { NavGroups } from "@/components/layout/nav-links";
+import { getNavigationGroups } from "@/lib/permissions/navigation";
 import { ROLE_LABELS, type UserRole } from "@/types/roles";
 
 // Client island: `getNavigation` trả về NavItem có `icon` là component
 // (forwardRef). Nếu SidebarNav là Server Component thì việc truyền `items` sang
 // client `NavLinks` sẽ ném "Functions cannot be passed to Client Components"
 // (chỉ lộ ở prod build). Chạy client như MobileNav để icon không vượt ranh giới.
-export function SidebarNav({ role }: { role: UserRole }) {
-  const items = getNavigation(role);
+export function SidebarNav({
+  role,
+  hasAssignedClasses = false,
+}: {
+  role: UserRole;
+  hasAssignedClasses?: boolean;
+}) {
+  const groups = getNavigationGroups(role, { hasAssignedClasses });
 
   return (
     <aside className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col self-start border-r md:flex">
@@ -33,7 +39,7 @@ export function SidebarNav({ role }: { role: UserRole }) {
       </div>
 
       <nav aria-label="Điều hướng chính" className="flex-1 space-y-1 overflow-y-auto p-3">
-        <NavLinks items={items} />
+        <NavGroups groups={groups} />
       </nav>
     </aside>
   );

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollableNav } from "@/components/shared/scrollable-nav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/dates";
 import {
   CLASS_STATUS_LABELS,
@@ -39,7 +39,7 @@ export default async function CourseDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("super_admin");
+  await requireManager();
   const { id } = await params;
 
   const course = await getCourseById(id);

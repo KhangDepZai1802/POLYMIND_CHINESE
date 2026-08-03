@@ -10,12 +10,12 @@ import {
 } from "@/features/announcements/server/queries";
 import { NotificationCenter } from "@/features/notifications/components/notification-center";
 import { getNotificationCenterData } from "@/features/notifications/server/queries";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Thông báo" };
 
 export default async function AdminNotificationsPage() {
-  await requireRole("super_admin");
+  await requireManager();
   const [notificationData, announcements, classes] = await Promise.all([
     getNotificationCenterData(),
     getAnnouncements(),

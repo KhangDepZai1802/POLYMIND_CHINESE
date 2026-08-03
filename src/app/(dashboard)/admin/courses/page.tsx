@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatCurrency } from "@/lib/dates";
 import {
   COURSE_STATUS_LABELS,
@@ -29,7 +29,7 @@ export const metadata: Metadata = { title: "Khóa học" };
 type CourseRow = Awaited<ReturnType<typeof getCourses>>[number];
 
 export default async function AdminCoursesPage() {
-  await requireRole("super_admin");
+  await requireManager();
 
   const [courses, levels] = await Promise.all([getCourses(), getLevels()]);
 

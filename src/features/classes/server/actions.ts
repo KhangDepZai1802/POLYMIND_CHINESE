@@ -12,7 +12,7 @@ import {
   type ActionState,
 } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 function formToObject(formData: FormData) {
@@ -23,7 +23,7 @@ export async function createClassAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const actor = await requireRole("super_admin");
+  const actor = await requireManager();
   const parsed = classSchema.safeParse(formToObject(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
@@ -59,7 +59,7 @@ export async function updateClassAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Thiếu mã lớp học." };
 
@@ -132,7 +132,7 @@ export async function assignTeacherAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = teacherAssignmentSchema.safeParse(formToObject(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
@@ -197,7 +197,7 @@ export async function removeTeacherAssignmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const id = formData.get("id");
   const classId = formData.get("class_id");
   if (typeof id !== "string" || typeof classId !== "string") {

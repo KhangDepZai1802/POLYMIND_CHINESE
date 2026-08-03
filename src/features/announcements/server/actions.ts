@@ -9,7 +9,7 @@ import {
   zodToActionState,
   type ActionState,
 } from "@/lib/action-state";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { fromLocalInput } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,7 +26,7 @@ export async function saveAnnouncementAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = announcementSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
@@ -54,7 +54,7 @@ export async function publishAnnouncementAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = idSchema.safeParse(formData.get("id"));
   if (!parsed.success) return { error: "Mã thông báo chung không hợp lệ." };
 
@@ -72,7 +72,7 @@ export async function expireAnnouncementAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = idSchema.safeParse(formData.get("id"));
   if (!parsed.success) return { error: "Mã thông báo chung không hợp lệ." };
 

@@ -10,7 +10,7 @@ import { ConfirmationProvider } from "@/components/shared/confirmation-provider"
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { getNotificationBellData } from "@/features/notifications/server/queries";
-import { requireUser } from "@/lib/auth/session";
+import { hasAssignedClasses, requireUser } from "@/lib/auth/session";
 
 /**
  * Trang đã đăng nhập KHÔNG được cache/ISR.
@@ -30,6 +30,9 @@ export default async function DashboardLayout({
     getNotificationBellData(),
   ]);
 
+  // Chỉ tốn round-trip với giáo vụ — hàm tự trả false ngay cho ba role kia.
+  const showAssignedClassesBranch = await hasAssignedClasses(user);
+
   return (
     <ConfirmationProvider>
       <div className="bg-surface-page flex min-h-screen" data-dashboard-shell>
@@ -44,7 +47,10 @@ export default async function DashboardLayout({
           Bỏ qua điều hướng
         </a>
         <div className="contents" data-dashboard-chrome>
-          <SidebarNav role={user.role} />
+          <SidebarNav
+            role={user.role}
+            hasAssignedClasses={showAssignedClassesBranch}
+          />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -57,7 +63,10 @@ export default async function DashboardLayout({
                 chữ đó, để cả hai thì trên màn 360px không đủ chỗ cho chuông
                 thông báo và menu người dùng bên phải. */}
             <div className="flex min-w-0 items-center gap-2 md:hidden">
-              <MobileNav role={user.role} />
+              <MobileNav
+                role={user.role}
+                hasAssignedClasses={showAssignedClassesBranch}
+              />
               <Logo height={28} priority />
             </div>
 

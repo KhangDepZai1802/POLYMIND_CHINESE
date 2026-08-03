@@ -16,7 +16,7 @@ import {
   type ActionState,
 } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireRole, requireUser } from "@/lib/auth/session";
+import { requireManager, requireRole, requireUser } from "@/lib/auth/session";
 import {
   ALLOWED_FILE_EXTENSIONS,
   MATERIALS_BUCKET,
@@ -54,7 +54,7 @@ export async function createCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireRole("super_admin");
+  const user = await requireManager();
 
   const parsed = courseSchema.safeParse(formToObject(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -84,7 +84,7 @@ export async function updateCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Thiếu mã khóa học." };
@@ -126,7 +126,7 @@ export async function archiveCourseAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Thiếu mã khóa học." };
@@ -159,7 +159,7 @@ export async function createModuleAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = moduleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -185,7 +185,7 @@ export async function deleteModuleAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   const courseId = formData.get("course_id");
@@ -207,7 +207,7 @@ export async function createLessonAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = lessonSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -234,7 +234,7 @@ export async function deleteLessonAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   const courseId = formData.get("course_id");
@@ -274,7 +274,7 @@ export async function createMaterialUploadUrlAction(input: {
   fileName: string;
   sizeBytes: number;
 }): Promise<{ error: string } | UploadTicket> {
-  await requireRole("super_admin", "teacher");
+  await requireRole("super_admin", "academic_manager", "teacher");
 
   if (!z.uuid().safeParse(input.courseId).success) {
     return { error: "Khóa học không hợp lệ." };
@@ -324,7 +324,7 @@ export async function registerMaterialAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const user = await requireRole("super_admin", "teacher");
+  const user = await requireRole("super_admin", "academic_manager", "teacher");
 
   const parsed = materialRegisterSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -394,7 +394,7 @@ export async function updateMaterialAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin", "teacher");
+  await requireRole("super_admin", "academic_manager", "teacher");
 
   const id = formData.get("id");
   const courseId = formData.get("course_id");
@@ -441,7 +441,7 @@ export async function deleteMaterialAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin", "teacher");
+  await requireRole("super_admin", "academic_manager", "teacher");
 
   const id = formData.get("id");
   const courseId = formData.get("course_id");

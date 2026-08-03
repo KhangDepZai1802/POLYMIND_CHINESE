@@ -13,7 +13,7 @@ import {
   zodToActionState,
   type ActionState,
 } from "@/lib/action-state";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { fromLocalInput } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/types/database";
@@ -58,7 +58,7 @@ export async function saveTuitionInvoiceAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const result = parseInvoiceForm(formData);
   if ("state" in result) return result.state;
 
@@ -91,7 +91,7 @@ export async function issueTuitionInvoiceAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = invoiceIdSchema.safeParse(formData.get("invoice_id"));
   if (!parsed.success) return zodToActionState(parsed.error);
 
@@ -109,7 +109,7 @@ export async function recordTuitionPaymentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = tuitionPaymentSchema.safeParse({
     invoice_id: formData.get("invoice_id"),
     amount: formData.get("amount"),
@@ -139,7 +139,7 @@ export async function deleteTuitionInvoiceDraftAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = invoiceIdSchema.safeParse(formData.get("invoice_id"));
   if (!parsed.success) return zodToActionState(parsed.error);
 

@@ -15,7 +15,7 @@ import {
   type ActionState,
 } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager, requireRole } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,6 +30,10 @@ export async function createTeacherAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // ⛔ GIỮ super_admin. `teachers.user_id` là `not null` ⇒ tạo giáo viên LUÔN
+  // kéo theo tạo tài khoản đăng nhập. Đây chính là hệ quả user đã nghe và vẫn
+  // chốt ở `D-2` điểm (4): giáo vụ KHÔNG thêm được giáo viên mới.
+  // RLS cũng nói y hệt (`…087`), đừng nới một bên.
   await requireRole("super_admin");
 
   const parsed = teacherSchema.safeParse(Object.fromEntries(formData));
@@ -37,11 +41,15 @@ export async function createTeacherAction(
 
   const input = parsed.data;
 
+  // Giáo vụ đi CHUNG luồng này, không có luồng riêng: hàng `teachers` bên dưới
+  // được tạo cho cả hai vai trò, nên điểm (2) của `D-2` ("giáo vụ luôn có hồ sơ
+  // giáo viên để tự phân công cho mình") đúng theo cấu trúc chứ không nhờ ai
+  // nhớ làm thêm một bước.
   const account = await provisionPasswordAccount({
     username: input.username,
     password: input.password,
     fullName: input.full_name,
-    role: "teacher",
+    role: input.account_role,
     phone: input.phone,
     contactEmail: input.email,
   });
@@ -80,18 +88,25 @@ export async function createTeacherAction(
     action: "teacher.create",
     resourceType: "teacher",
     resourceId: data.id,
-    after: { teacher_code: data.teacher_code, username: input.username },
+    after: {
+      teacher_code: data.teacher_code,
+      username: input.username,
+      role: input.account_role,
+    },
   });
 
   revalidatePath("/admin/teachers");
-  return { success: `Đã tạo giáo viên và cấp tài khoản ${input.username}.` };
+
+  const roleLabel =
+    input.account_role === "academic_manager" ? "giáo vụ" : "giáo viên";
+  return { success: `Đã tạo ${roleLabel} và cấp tài khoản ${input.username}.` };
 }
 
 export async function updateTeacherAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = teacherUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -146,6 +161,7 @@ export async function toggleTeacherActiveAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // ⛔ GIỮ super_admin — khóa/mở là thao tác trên tài khoản.
   await requireRole("super_admin");
 
   const id = formData.get("id");
@@ -192,6 +208,7 @@ export async function resetTeacherPasswordAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // ⛔ GIỮ super_admin — đổi mật khẩu là thao tác trên tài khoản.
   await requireRole("super_admin");
 
   const parsed = teacherCredentialsSchema.safeParse(
@@ -203,13 +220,21 @@ export async function resetTeacherPasswordAction(
   const { data: teacher } = await supabase
     .from("teachers")
     .select(
-      "id, user_id, profile:profiles!fk_teachers_profile(full_name, phone, email)",
+      "id, user_id, profile:profiles!fk_teachers_profile(full_name, phone, email, role)",
     )
     .eq("id", parsed.data.id)
     .maybeSingle();
 
   if (!teacher?.profile) return { error: "Không tìm thấy giáo viên." };
 
+  // ⚠️ GIỮ NGUYÊN role đang có, KHÔNG đóng cứng "teacher".
+  //
+  // `provisionPasswordAccount` upsert thẳng `role` vào `profiles`. Từ khi có
+  // giáo vụ (`D-2`), bảng `teachers` chứa CẢ hai vai trò — nên đóng cứng
+  // "teacher" ở đây biến thao tác "đổi mật khẩu cho giáo vụ" thành "hạ giáo vụ
+  // xuống giáo viên", lặng lẽ, ngay giữa một việc chẳng liên quan gì tới vai
+  // trò. Người bị hạ chỉ phát hiện ở lần đăng nhập sau, khi menu Quản lý biến
+  // mất.
   const result = await provisionPasswordAccount({
     userId: teacher.user_id,
     username: parsed.data.username,
@@ -217,7 +242,7 @@ export async function resetTeacherPasswordAction(
     fullName: teacher.profile.full_name,
     phone: teacher.profile.phone,
     contactEmail: teacher.profile.email,
-    role: "teacher",
+    role: teacher.profile.role,
   });
   if (!result.ok) return { error: result.error };
 

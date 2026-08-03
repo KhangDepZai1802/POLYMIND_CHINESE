@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatDateOnly } from "@/lib/dates";
 import {
   INVOICE_STATUS_LABELS,
@@ -45,7 +45,7 @@ const money = new Intl.NumberFormat("vi-VN", {
 });
 
 export default async function AdminReportsPage({ searchParams }: Props) {
-  await requireRole("super_admin");
+  await requireManager();
   const parsed = parseAdminReportFilters(await searchParams);
   const filters = parsed.success ? parsed.data : {};
   const [report, classes] = await Promise.all([

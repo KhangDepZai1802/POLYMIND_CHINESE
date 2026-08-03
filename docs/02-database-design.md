@@ -26,7 +26,7 @@
 ## 2. Enum types
 
 ```sql
-user_role            : super_admin | teacher | student
+user_role            : super_admin | academic_manager | teacher | student
 course_program       : core | business
 course_type          : hsk | communication | kids | exam_prep | custom
 course_status        : draft | active | archived
@@ -501,8 +501,12 @@ Migration thực thi: `20260721000066_flashcards.sql`…`20260721000069_flashcar
 ```sql
 app.current_role()          -- user_role của người đang đăng nhập, đọc từ public.profiles
 app.is_active()             -- profiles.is_active = true
-app.is_super_admin()        -- current_role = 'super_admin' AND is_active
-app.my_teacher_id()         -- teachers.id của auth.uid(), NULL nếu không phải teacher
+app.is_super_admin()        -- QUẢN TRỊ: current_role = 'super_admin' AND is_active
+                            --   Chỉ dùng cho tài khoản + audit. KHÔNG nới cho giáo vụ.
+app.is_manager()            -- QUẢN LÝ: current_role IN (super_admin, academic_manager)
+                            --   Cổng của toàn bộ RLS nghiệp vụ đào tạo (`D-2`)
+app.my_teacher_id()         -- teachers.id của auth.uid(); nhận CẢ teacher lẫn academic_manager
+                            --   (siết lại về mỗi 'teacher' là giáo vụ được phân lớp vẫn bị chặn sạch)
 app.my_student_id()         -- students.id của auth.uid(), NULL nếu không phải student
 app.teaches_class(uuid)     -- EXISTS trong class_teachers cho teacher hiện tại
 app.studies_class(uuid)     -- EXISTS enrollment (status IN active/paused/completed) cho student hiện tại

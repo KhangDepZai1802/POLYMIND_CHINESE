@@ -112,8 +112,8 @@ src/
 ├─ app/
 │  ├─ (auth)/                    login, forgot-password, reset-password, accept-invite
 │  ├─ (dashboard)/
-│  │  ├─ admin/                  super_admin
-│  │  ├─ teacher/                teacher
+│  │  ├─ admin/                  super_admin · academic_manager (trừ system/flashcards/question-bank-review)
+│  │  ├─ teacher/                teacher · academic_manager (khi được phân lớp)
 │  │  └─ student/                student
 │  ├─ api/
 │  │  ├─ health/                 GET — không lộ secret/schema

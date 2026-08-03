@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { GraduationCap, School, ShieldCheck } from "lucide-react";
+import {
+  ClipboardList,
+  GraduationCap,
+  School,
+  ShieldCheck,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { AccountRowActions } from "@/features/accounts/components/account-row-actions";
@@ -23,6 +28,10 @@ const ROLE_META: Record<UserRole, { icon: LucideIcon; hint: string }> = {
   super_admin: {
     icon: ShieldCheck,
     hint: "Toàn quyền hệ thống.",
+  },
+  academic_manager: {
+    icon: ClipboardList,
+    hint: "Quản lý học viên, giáo viên, khóa/lớp, lịch, học phí, báo cáo, thông báo — và dạy lớp nếu được phân công. KHÔNG cấp được tài khoản, KHÔNG đọc được audit.",
   },
   teacher: {
     icon: GraduationCap,

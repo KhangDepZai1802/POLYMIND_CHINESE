@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatDateOnly } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
 import {
@@ -37,7 +37,7 @@ export default async function AdminClassDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("super_admin");
+  await requireManager();
   const { id } = await params;
   const [classRecord, courses, teachers, enrollments, enrollableStudents, transferTargets] =
     await Promise.all([

@@ -1,0 +1,23 @@
+-- =============================================================================
+-- 86 — Role thứ 4: `academic_manager` (hiển thị "Giáo vụ") — phần ENUM
+--
+-- Task `GIAOVU-1a`, quyết định `D-2` (user chốt 2026-08-03).
+--
+-- ⚠️ VÌ SAO MIGRATION NÀY CHỈ CÓ ĐÚNG MỘT CÂU LỆNH:
+--
+-- Postgres không cho dùng một giá trị enum trong cùng transaction đã tạo ra nó
+-- ("unsafe use of new value ... of enum type"). Supabase CLI bọc mỗi file
+-- migration trong một transaction ⇒ nếu gộp `add value` với các hàm/policy có
+-- nhắc `'academic_manager'` thì `db push` chết giữa chừng, và chết ở đúng thời
+-- điểm enum đã đổi còn RLS thì chưa — tức production nhận role mới mà không có
+-- một policy nào cấp quyền cho nó.
+--
+-- Nên: file này CHỈ thêm giá trị. Helper + RLS nằm ở `…087`.
+-- Đừng gộp lại "cho gọn".
+--
+-- ⚠️ Thêm giá trị enum là thao tác KHÔNG lùi được bằng migration ngược:
+-- Postgres không có `alter type ... drop value`. Gỡ role này về sau = tạo type
+-- mới + đổi cột + drop type cũ, đụng mọi bảng có cột `user_role`.
+-- =============================================================================
+
+alter type public.user_role add value if not exists 'academic_manager';

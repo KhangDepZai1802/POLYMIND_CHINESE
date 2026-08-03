@@ -87,6 +87,52 @@ export function TeacherFormDialog({
             </Alert>
           )}
 
+          {/* Chọn vai trò chỉ có khi TẠO MỚI. Đổi vai trò của người đã có là
+              thao tác trên tài khoản — `trg_profiles_no_self_escalation` chặn
+              nó ở DB cho mọi client trừ service_role, nên bày ô này ở form sửa
+              là hứa một việc mà tầng dưới từ chối. */}
+          {!isEdit && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Vai trò *</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="hover:bg-muted/50 flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                  <input
+                    type="radio"
+                    name="account_role"
+                    value="teacher"
+                    defaultChecked
+                    className="mt-1"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="block text-sm font-medium">Giáo viên</span>
+                    <span className="text-muted-foreground block text-xs">
+                      Dạy các lớp được phân công.
+                    </span>
+                  </span>
+                </label>
+                <label className="hover:bg-muted/50 flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                  <input
+                    type="radio"
+                    name="account_role"
+                    value="academic_manager"
+                    className="mt-1"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="block text-sm font-medium">Giáo vụ</span>
+                    <span className="text-muted-foreground block text-xs">
+                      Quản lý học viên, giáo viên, khóa/lớp, lịch, học phí, báo
+                      cáo, thông báo — và tự nhận lớp nếu muốn. Không cấp được
+                      tài khoản, không đọc được audit.
+                    </span>
+                  </span>
+                </label>
+              </div>
+              {fe["account_role"] && (
+                <p className="text-destructive text-xs">{fe["account_role"]}</p>
+              )}
+            </fieldset>
+          )}
+
           {!isEdit && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

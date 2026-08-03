@@ -7,13 +7,13 @@ import {
   getTuitionInvoices,
   getTuitionStudentOptions,
 } from "@/features/tuition/server/queries";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatCurrency, todayISO } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Học phí" };
 
 export default async function AdminTuitionPage() {
-  await requireRole("super_admin");
+  await requireManager();
   const [invoices, students] = await Promise.all([
     getTuitionInvoices(),
     getTuitionStudentOptions(),

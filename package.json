@@ -19,6 +19,7 @@
     "media:compress": "node scripts/compress-flashcard-media.mjs",
     "media:webp": "node scripts/convert-flashcard-media-webp.mjs",
     "media:prune-cover-back": "node scripts/prune-cover-back-images.mjs",
+    "students:accounts": "node scripts/provision-student-accounts.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset && node scripts/remove-legacy-local-buckets.mjs",

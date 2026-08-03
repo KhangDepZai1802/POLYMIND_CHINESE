@@ -28,7 +28,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatCurrency, formatPercent, formatTime } from "@/lib/dates";
 import {
   CLASS_STATUS_LABELS,
@@ -42,7 +42,7 @@ export const metadata: Metadata = { title: "Tổng quan" };
 export default async function AdminDashboardPage() {
   const [user, overview, sessionsToday, classProgress, atRisk, tuition] =
     await Promise.all([
-      requireRole("super_admin"),
+      requireManager(),
       getAdminOverview(),
       getSessionsToday(),
       getClassProgress(),

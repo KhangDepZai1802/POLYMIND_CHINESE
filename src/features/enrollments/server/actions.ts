@@ -12,7 +12,7 @@ import {
   zodToActionState,
   type ActionState,
 } from "@/lib/action-state";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { ENROLLMENT_STATUS_LABELS } from "@/lib/domain/labels";
 import { createClient } from "@/lib/supabase/server";
 
@@ -57,7 +57,7 @@ export async function enrollStudentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = enrollStudentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -83,7 +83,7 @@ export async function changeEnrollmentStatusAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = changeEnrollmentStatusSchema.safeParse(
     Object.fromEntries(formData),
@@ -112,7 +112,7 @@ export async function transferEnrollmentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = transferEnrollmentSchema.safeParse(
     Object.fromEntries(formData),

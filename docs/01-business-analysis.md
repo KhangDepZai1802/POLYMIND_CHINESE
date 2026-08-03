@@ -24,9 +24,14 @@ Xây dựng web app quản lý toàn bộ vòng đời học tập tại trung t
 | Actor                           | Mô tả                                                                                     | Cách có tài khoản                               |
 | ------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------- |
 | **Super Admin** (`super_admin`) | Chủ trung tâm / quản lý đào tạo. Toàn quyền nghiệp vụ, quản lý tài khoản, học phí, audit. | Seed lúc khởi tạo hệ thống                      |
+| **Giáo vụ** (`academic_manager`) | Điều phối đào tạo: học viên, giáo viên, khóa/lớp, lịch, học phí, báo cáo, thông báo — và phân công giáo viên về lớp, **kể cả chính mình**. **KHÔNG** quản lý tài khoản, **KHÔNG** đọc audit, **KHÔNG** đụng Flashcard và Duyệt câu hỏi. | Super admin tạo ở trang Giáo viên, chọn vai trò *Giáo vụ* |
 | **Giáo viên** (`teacher`)       | Dạy các lớp được phân công. Chỉ thấy lớp mình và học viên trong lớp đó.                   | Super admin tạo hồ sơ → gửi invite email        |
 | **Học viên** (`student`)        | Người học. Chỉ thấy dữ liệu của chính mình.                                               | Super admin tạo hồ sơ → gửi invite email        |
 | **Khách vãng lai** (anonymous)  | Chưa đăng nhập.                                                                           | Không đọc/ghi được bất kỳ dữ liệu nghiệp vụ nào |
+
+⚠️ **Giáo vụ luôn có kèm một hàng `teachers`** ngay khi tạo tài khoản — nếu không thì `class_teachers.teacher_id` không trỏ vào đâu được và họ mất khả năng tự nhận lớp. Đây là lý do vai trò này được tạo ngay tại trang Giáo viên chứ không ở một màn riêng (`D-2` điểm 2).
+
+🔴 **Hệ quả đã chốt của việc không cho đụng tài khoản:** giáo vụ **không thêm được giáo viên mới** và không cho giáo viên nghỉ được — `teachers.user_id` là `not null` nên tạo giáo viên luôn kéo theo tạo tài khoản. Hai việc đó vẫn qua super admin.
 
 **Không có role phụ huynh.** Thông tin người giám hộ (`guardian_name`, `guardian_phone`, `guardian_relation`) chỉ là **trường liên hệ** trên hồ sơ học viên — không phải tài khoản đăng nhập. Đây là bài học rút từ hệ cũ, nơi phụ huynh là một role thật và kéo theo cả một ma trận phân quyền phức tạp.
 

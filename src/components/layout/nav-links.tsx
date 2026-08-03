@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { isNavItemActive, type NavItem } from "@/lib/permissions/navigation";
+import {
+  isNavItemActive,
+  type NavGroup,
+  type NavItem,
+} from "@/lib/permissions/navigation";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,6 +18,44 @@ import { cn } from "@/lib/utils";
  *
  * `onNavigate` để drawer mobile tự đóng sau khi bấm chọn một mục.
  */
+/**
+ * Điều hướng theo NHÓM — bề mặt duy nhất mà sidebar và drawer gọi.
+ *
+ * Nhóm không có tiêu đề (`label = null`) vẽ y hệt danh sách phẳng cũ, không
+ * thêm một khoảng cách hay thẻ bọc nào: ba role cũ phải trông đúng như trước.
+ * Chỉ giáo vụ mới có từ hai nhóm trở lên và mới thấy tiêu đề.
+ */
+export function NavGroups({
+  groups,
+  onNavigate,
+}: {
+  groups: NavGroup[];
+  onNavigate?: () => void;
+}) {
+  return (
+    <>
+      {groups.map((group, index) => (
+        <div
+          key={group.label ?? `group-${index}`}
+          className={cn("space-y-1", index > 0 && "mt-5")}
+        >
+          {group.label && (
+            <p
+              className="text-muted-foreground px-3 pb-1 text-xs font-semibold tracking-wide uppercase"
+              // Tiêu đề nhóm là nhãn của chính danh sách bên dưới, không phải
+              // một mục bấm được — nối bằng aria-label ở <ul> thì trình đọc màn
+              // hình đọc thừa. Để nguyên dạng chữ tĩnh.
+            >
+              {group.label}
+            </p>
+          )}
+          <NavLinks items={group.items} onNavigate={onNavigate} />
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function NavLinks({
   items,
   onNavigate,

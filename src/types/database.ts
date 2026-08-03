@@ -4121,7 +4121,7 @@ export type Database = {
         | "duration_expired"
         | "exam_window_closed"
         | "system_finalize"
-      user_role: "super_admin" | "teacher" | "student"
+      user_role: "super_admin" | "teacher" | "student" | "academic_manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4387,7 +4387,8 @@ export const Constants = {
         "exam_window_closed",
         "system_finalize",
       ],
-      user_role: ["super_admin", "teacher", "student"],
+      user_role: ["super_admin", "teacher", "student", "academic_manager"],
     },
   },
 } as const
+

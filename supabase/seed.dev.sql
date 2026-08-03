@@ -13,6 +13,7 @@
 --
 -- Đăng nhập demo:
 --   admin@polymind.test   / Polymind@2026   (super_admin)
+--   gv.vu@polymind.test   / Polymind@2026   (academic_manager — Giáo vụ)
 --   gv.a@polymind.test    / Polymind@2026   (teacher)
 --   gv.b@polymind.test    / Polymind@2026   (teacher)
 --   hv1@polymind.test     / Polymind@2026   (student)  … hv5
@@ -46,6 +47,7 @@ select
   '', '', '', '', '', '', '', ''
 from (values
   ('11111111-1111-1111-1111-111111111111'::uuid, 'admin@polymind.test'),
+  ('22222222-2222-2222-2222-222222222220'::uuid, 'gv.vu@polymind.test'),
   ('22222222-2222-2222-2222-222222222221'::uuid, 'gv.a@polymind.test'),
   ('22222222-2222-2222-2222-222222222222'::uuid, 'gv.b@polymind.test'),
   ('33333333-3333-3333-3333-333333333331'::uuid, 'hv1@polymind.test'),
@@ -76,6 +78,7 @@ where u.email like '%@polymind.test'
 insert into public.profiles (id, role, full_name, phone)
 values
   ('11111111-1111-1111-1111-111111111111', 'super_admin', 'Quản trị viên Demo', '0900000001'),
+  ('22222222-2222-2222-2222-222222222220', 'academic_manager', 'Giáo vụ Demo', '0900000010'),
   ('22222222-2222-2222-2222-222222222221', 'teacher',     'Giáo viên Demo A',   '0900000011'),
   ('22222222-2222-2222-2222-222222222222', 'teacher',     'Giáo viên Demo B',   '0900000012'),
   ('33333333-3333-3333-3333-333333333331', 'student',     'Học viên Demo 1',    '0900000101'),
@@ -88,8 +91,17 @@ on conflict (id) do update
 
 -- --- teachers -----------------------------------------------------------------
 
+-- ⚠️ Giáo vụ CŨNG có hàng ở đây — điểm (2) của `D-2`, không phải nhầm.
+-- `class_teachers.teacher_id` trỏ vào `teachers`, nên không có hàng này thì giáo
+-- vụ không tự phân công chính mình vào lớp được, tức mất đúng câu user yêu cầu:
+-- "phân bổ các giáo viên về các lớp (kể cả bản thân)".
+--
+-- Giáo vụ Demo cố tình KHÔNG được phân lớp nào: đó là trạng thái mặc định, và
+-- nó cho thấy nhánh menu "Lớp được phân công" đang ẨN đúng như thiết kế. Muốn
+-- xem nhánh đó thì vào Lớp học, phân công `GV000` cho một lớp.
 insert into public.teachers (user_id, teacher_code, specialization)
 values
+  ('22222222-2222-2222-2222-222222222220', 'GV000', 'Giáo vụ — điều phối lớp và giáo viên'),
   ('22222222-2222-2222-2222-222222222221', 'GV001', 'HSK, Tiếng Trung thương mại'),
   ('22222222-2222-2222-2222-222222222222', 'GV002', 'Giao tiếp, Tiếng Trung thiếu nhi')
 on conflict (teacher_code) do update

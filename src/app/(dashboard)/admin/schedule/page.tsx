@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { formatDateOnly } from "@/lib/dates";
 import { CLASS_STATUS_LABELS, CLASS_STATUS_TONE } from "@/lib/domain/labels";
 
@@ -24,7 +24,7 @@ export default async function AdminSchedulePage({
 }: {
   searchParams: Promise<{ class?: string }>;
 }) {
-  await requireRole("super_admin");
+  await requireManager();
 
   const { class: classId } = await searchParams;
   const [classes, board] = await Promise.all([

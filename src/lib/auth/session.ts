@@ -6,7 +6,7 @@ import { cache } from "react";
 import { getVerifiedIdentity } from "@/lib/auth/verified-identity";
 import { homePathForRole } from "@/lib/permissions/routes";
 import { createClient } from "@/lib/supabase/server";
-import { isUserRole, type UserRole } from "@/types/roles";
+import { isUserRole, MANAGER_ROLES, type UserRole } from "@/types/roles";
 
 export type CurrentUser = {
   id: string;
@@ -72,3 +72,58 @@ export async function requireRole(
 
   return user;
 }
+
+/**
+ * Bắt buộc có quyền QUẢN LÝ nghiệp vụ: `super_admin` hoặc `academic_manager`.
+ *
+ * Đây là cặp song sinh phía TS của `app.is_manager()` dưới DB — cùng một khái
+ * niệm, hai tầng.
+ *
+ * ⚠️ Dùng hàm này thay vì gõ tay `requireRole("super_admin", "academic_manager")`
+ * ở ~30 chỗ. Không phải để gõ ít hơn: một danh sách role lặp lại 30 lần là 30 cơ
+ * hội để sót một chỗ khi luật đổi, và sót ở đây nghĩa là giáo vụ bị đá ra khỏi
+ * đúng một trang mà không ai biết vì sao. Đúng bài học `BUG_M10_01`.
+ *
+ * ⛔ KHÔNG dùng cho quản trị tài khoản và audit — hai việc đó gọi thẳng
+ * `requireRole("super_admin")`.
+ */
+export async function requireManager(): Promise<CurrentUser> {
+  return requireRole(...MANAGER_ROLES);
+}
+
+/**
+ * Giáo vụ này có đang được phân công dạy lớp nào không?
+ *
+ * Quyết định nhánh menu thứ hai ("Lớp được phân công") có hiện hay không —
+ * user chốt *"chỉ xuất hiện khi role này cũng được phân công dạy các lớp"*.
+ *
+ * ⚠️ ĐẾM TỪ `class_teachers`, KHÔNG suy từ role. Điểm (2) của `D-2` cho mọi giáo
+ * vụ một hàng `teachers` sẵn ngay khi tạo tài khoản, nên "có hồ sơ giáo viên"
+ * đúng với 100% giáo vụ và không phân biệt được gì cả. Chỉ có phân công thật
+ * mới nói lên điều đó.
+ *
+ * Chỉ chạy cho `academic_manager`: ba role còn lại có menu một nhánh, hỏi thêm
+ * là thêm hai round-trip vào mọi lần dựng layout mà không dùng vào việc gì.
+ */
+export const hasAssignedClasses = cache(async function hasAssignedClasses(
+  user: CurrentUser,
+): Promise<boolean> {
+  if (user.role !== "academic_manager") return false;
+
+  const supabase = await createClient();
+
+  const { data: teacher } = await supabase
+    .from("teachers")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!teacher) return false;
+
+  const { count } = await supabase
+    .from("class_teachers")
+    .select("class_id", { count: "exact", head: true })
+    .eq("teacher_id", teacher.id);
+
+  return (count ?? 0) > 0;
+});

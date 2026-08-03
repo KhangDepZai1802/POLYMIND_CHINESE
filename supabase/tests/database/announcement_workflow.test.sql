@@ -69,14 +69,14 @@ set local request.jwt.claims = '{"sub":"e0000000-0000-0000-0000-000000000002","r
 select throws_ok(
   $$select public.save_announcement('Giáo viên tự tạo', 'Không hợp lệ')$$,
   'P0001',
-  'Chỉ super admin được quản lý announcement',
+  'Chỉ quản trị viên hoặc giáo vụ được quản lý announcement',
   'Giáo viên không gọi được RPC tạo announcement'
 );
 
 select throws_ok(
   $$select public.publish_announcement('e6000000-0000-0000-0000-000000000001')$$,
   'P0001',
-  'Chỉ super admin được phát hành announcement',
+  'Chỉ quản trị viên hoặc giáo vụ được phát hành announcement',
   'Giáo viên không gọi được RPC phát hành announcement'
 );
 

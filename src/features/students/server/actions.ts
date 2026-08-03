@@ -14,7 +14,7 @@ import {
   type ActionState,
 } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager, requireRole } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,7 +29,7 @@ export async function createStudentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = studentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -59,7 +59,7 @@ export async function updateStudentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = studentUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -99,6 +99,10 @@ export async function provisionStudentAccountAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // ⛔ GIỮ super_admin. Đây là CẤP TÀI KHOẢN ĐĂNG NHẬP, không phải sửa hồ sơ —
+  // đúng thứ `D-2` điểm (4) loại khỏi giáo vụ. Hồ sơ học viên tạo được mà không
+  // cần tài khoản (`students.user_id` nullable), nên giáo vụ vẫn thêm được học
+  // viên bình thường; chỉ bước phát tài khoản là dừng ở super admin.
   await requireRole("super_admin");
 
   const parsed = studentAccountSchema.safeParse(Object.fromEntries(formData));
@@ -171,7 +175,7 @@ export async function archiveStudentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   if (typeof id !== "string") return { error: "Thiếu mã học viên." };

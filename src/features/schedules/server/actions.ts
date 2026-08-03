@@ -12,7 +12,7 @@ import {
   type ActionState,
 } from "@/lib/action-state";
 import { logAudit } from "@/lib/audit";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { fromLocalInput } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,7 +35,7 @@ export async function createScheduleAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = classScheduleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -64,7 +64,7 @@ export async function deleteScheduleAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   const classId = formData.get("class_id");
@@ -106,7 +106,7 @@ export async function generateSessionsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const classId = formData.get("class_id");
   if (typeof classId !== "string") return { error: "Thiếu mã lớp." };
@@ -161,7 +161,7 @@ export async function createManualSessionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const parsed = manualSessionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
@@ -221,7 +221,7 @@ export async function deleteAllSessionsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const classId = formData.get("class_id");
   if (typeof classId !== "string") return { error: "Thiếu mã lớp." };
@@ -282,7 +282,7 @@ export async function cancelSessionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   const classId = formData.get("class_id");
@@ -321,7 +321,7 @@ export async function deleteSessionAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole("super_admin");
+  await requireManager();
 
   const id = formData.get("id");
   const classId = formData.get("class_id");

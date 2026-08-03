@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 
-import { NavLinks } from "@/components/layout/nav-links";
+import { NavGroups } from "@/components/layout/nav-links";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,16 +13,22 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { getNavigation } from "@/lib/permissions/navigation";
+import { getNavigationGroups } from "@/lib/permissions/navigation";
 import { ROLE_LABELS, type UserRole } from "@/types/roles";
 
 /**
  * Điều hướng trên di động: nút hamburger ở header mở drawer chứa TOÀN BỘ module
  * của role (không giới hạn 5 mục như bottom nav cũ). Chỉ hiện dưới `md`.
  */
-export function MobileNav({ role }: { role: UserRole }) {
+export function MobileNav({
+  role,
+  hasAssignedClasses = false,
+}: {
+  role: UserRole;
+  hasAssignedClasses?: boolean;
+}) {
   const [open, setOpen] = useState(false);
-  const items = getNavigation(role);
+  const groups = getNavigationGroups(role, { hasAssignedClasses });
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -61,7 +67,7 @@ export function MobileNav({ role }: { role: UserRole }) {
           aria-label="Điều hướng chính trên di động"
           className="flex-1 space-y-1 overflow-y-auto p-3"
         >
-          <NavLinks items={items} onNavigate={() => setOpen(false)} />
+          <NavGroups groups={groups} onNavigate={() => setOpen(false)} />
         </nav>
       </SheetContent>
     </Sheet>

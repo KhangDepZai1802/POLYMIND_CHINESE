@@ -17,13 +17,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireRole } from "@/lib/auth/session";
+import { requireManager } from "@/lib/auth/session";
 import { ENROLLMENT_STATUS_LABELS } from "@/lib/domain/labels";
 
 export const metadata: Metadata = { title: "Học viên" };
 
 export default async function AdminStudentsPage() {
-  await requireRole("super_admin");
+  await requireManager();
 
   const [students, levels] = await Promise.all([getStudents(), getLevels()]);
 
