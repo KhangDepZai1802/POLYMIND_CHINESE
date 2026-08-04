@@ -239,7 +239,9 @@ test("Bảng số liệu có caption và scope cho mọi ô tiêu đề", async 
   await loginTeacher(page);
   await gotoReport(page);
 
-  await expect(page.locator("table caption")).toHaveCount(1);
+  // Từ `REPORT-REDESIGN-1` trang có HAI bảng dữ liệu: Sổ điểm danh trong kỳ
+  // và Chi tiết từng học viên — cả hai đều phải có caption.
+  await expect(page.locator("table caption")).toHaveCount(2);
 
   const headers = page.locator("table thead th");
   const total = await headers.count();
@@ -315,7 +317,11 @@ test("Biểu đồ chuyên cần xếp hạng đúng và đọc được không 
   expect(clipped, "nhãn 'Cần chú ý' bị cắt chữ").toBe(false);
 
   // Bảng đầy đủ vẫn còn nguyên làm bản thay thế đọc được cho biểu đồ.
-  await expect(page.locator("table")).toBeVisible();
+  // (Trang nay có nhiều <table> — trỏ đích danh bảng chi tiết để không dính
+  // strict mode của Playwright.)
+  await expect(
+    page.locator('[data-testid="class-report-students"]'),
+  ).toBeVisible();
 });
 
 test("Nút Ghi nhận xét của từng học viên có tên gọi được riêng", async ({

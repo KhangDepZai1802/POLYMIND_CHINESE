@@ -1,36 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Download } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Download, GraduationCap, Users } from "lucide-react";
 
-import {
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeader,
-  DataTableRow,
-} from "@/components/shared/data-table";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireManager } from "@/lib/auth/session";
-import { formatDateOnly } from "@/lib/dates";
+import { AtRiskPanel } from "@/features/reports/components/at-risk-panel";
+import { ClassOverviewCards } from "@/features/reports/components/class-overview-cards";
+import { PrintButton } from "@/features/reports/components/print-button";
+import { ReportPeriodFilter } from "@/features/reports/components/report-period-filter";
+import { ReportPrintHeader } from "@/features/reports/components/report-print-header";
+import { StatTiles } from "@/features/reports/components/stat-tiles";
+import { TuitionReport } from "@/features/reports/components/tuition-report";
+import { WeeklyTrendChart } from "@/features/reports/components/weekly-trend-chart";
+import { resolveLearningPeriod } from "@/features/reports/learning";
 import {
-  INVOICE_STATUS_LABELS,
-  INVOICE_STATUS_TONE,
-} from "@/lib/domain/labels";
-import {
+  learningFilterSearchParams,
   parseAdminReportFilters,
-  reportFilterSearchParams,
+  parseLearningReportFilters,
 } from "@/features/reports/schema";
 import {
   getAdminReportClasses,
   getAdminTuitionReport,
 } from "@/features/reports/server/admin-queries";
+import { getLearningOverview } from "@/features/reports/server/learning-queries";
+import { requireManager } from "@/lib/auth/session";
+import { formatPercent, formatScore, todayISO } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Báo cáo" };
 
@@ -38,218 +33,185 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const money = new Intl.NumberFormat("vi-VN", {
-  style: "currency",
-  currency: "VND",
-  maximumFractionDigits: 0,
-});
-
+/**
+ * `/admin/reports` (`REPORT-REDESIGN-1`) — hai tab trên URL:
+ *
+ *   • `tab=hoc-tap` (MẶC ĐỊNH) — tiến độ học tập + điểm danh, tầng 1 của cấu
+ *     trúc Trung tâm → Lớp → Học viên (D3).
+ *   • `tab=hoc-phi` — nguyên màn báo cáo học phí cũ (D1), không đổi nghiệp vụ.
+ *
+ * Tab là LINK chứ không phải state client: kỳ lọc + tab sống trên URL để
+ * deep-link/Back/export cùng nhìn một nguồn sự thật.
+ */
 export default async function AdminReportsPage({ searchParams }: Props) {
   await requireManager();
-  const parsed = parseAdminReportFilters(await searchParams);
+  const params = await searchParams;
+  const rawTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  const tab = rawTab === "hoc-phi" ? "hoc-phi" : "hoc-tap";
+
+  return (
+    <>
+      <PageHeader
+        title="Báo cáo"
+        description="Tiến độ học tập, chuyên cần và học phí — số liệu tính từ dữ liệu thật theo kỳ đang chọn."
+      />
+
+      <nav
+        aria-label="Loại báo cáo"
+        data-noprint
+        className="mb-4 flex gap-1 border-b"
+      >
+        {(
+          [
+            { key: "hoc-tap", label: "Học tập", href: "/admin/reports" },
+            {
+              key: "hoc-phi",
+              label: "Học phí",
+              href: "/admin/reports?tab=hoc-phi",
+            },
+          ] as const
+        ).map((item) => {
+          const active = tab === item.key;
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
+                active
+                  ? "border-primary text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground border-transparent font-medium"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {tab === "hoc-phi" ? <TuitionTab params={params} /> : <LearningTab params={params} />}
+    </>
+  );
+}
+
+async function LearningTab({
+  params,
+}: {
+  params: Record<string, string | string[] | undefined>;
+}) {
+  const parsed = parseLearningReportFilters(params);
+  const filters = parsed.success ? parsed.data : {};
+  // Admin mở trang trắng thấy NGAY tháng hiện tại (AC1.1) — kỳ vận hành tự nhiên
+  // của giáo vụ; muốn lũy kế thì một cú bấm "Toàn khóa".
+  const period = resolveLearningPeriod(filters, todayISO(), "month");
+  const overview = await getLearningOverview(period);
+  const search = learningFilterSearchParams(filters).toString();
+
+  const exportHref = (format: "csv" | "xlsx") => {
+    const exportParams = learningFilterSearchParams(filters);
+    exportParams.set("report", "learning");
+    exportParams.set("format", format);
+    return `/api/export/reports?${exportParams.toString()}`;
+  };
+
+  return (
+    <>
+      <ReportPrintHeader
+        title="Báo cáo học tập toàn trung tâm"
+        periodLabel={period.label}
+      />
+
+      <ReportPeriodFilter
+        basePath="/admin/reports"
+        filters={filters}
+        period={period}
+        errorMessage={
+          parsed.success ? undefined : parsed.error.issues[0]?.message
+        }
+      />
+
+      <div data-noprint className="mb-4 flex flex-wrap justify-end gap-2">
+        <PrintButton />
+        {(["csv", "xlsx"] as const).map((format) => (
+          <Button key={format} asChild variant="outline">
+            <a href={exportHref(format)}>
+              <Download /> Xuất {format.toUpperCase()}
+            </a>
+          </Button>
+        ))}
+      </div>
+
+      <StatTiles
+        tiles={[
+          {
+            icon: Users,
+            label: "Đang học",
+            value: String(overview.kpis.activeStudents),
+            hint: `trên ${overview.classes.length} lớp`,
+          },
+          {
+            icon: CalendarCheck,
+            label: "Chuyên cần TB trong kỳ",
+            value:
+              overview.kpis.attendanceRate === null
+                ? "—"
+                : formatPercent(overview.kpis.attendanceRate),
+            hint: `${overview.kpis.sessionsHeld} buổi trong kỳ`,
+          },
+          {
+            icon: GraduationCap,
+            label: "Điểm TB trong kỳ",
+            value:
+              overview.kpis.avgScore === null
+                ? "—"
+                : formatScore(overview.kpis.avgScore),
+            hint: "Bài đã chấm và công bố, thang 100",
+          },
+          {
+            icon: AlertTriangle,
+            label: "Cần chú ý",
+            value: String(overview.kpis.atRiskCount),
+            hint: "Theo ngưỡng của từng khóa học",
+            tone: overview.kpis.atRiskCount > 0 ? "warning" : "default",
+          },
+        ]}
+      />
+
+      <ClassOverviewCards classes={overview.classes} hrefSearch={search} />
+
+      <WeeklyTrendChart points={overview.trend} />
+
+      <AtRiskPanel
+        students={overview.atRisk}
+        showClass
+        studentHref={(student) =>
+          `/admin/reports/${student.class_id}/${student.enrollment_id}${
+            search ? `?${search}` : ""
+          }`
+        }
+      />
+    </>
+  );
+}
+
+async function TuitionTab({
+  params,
+}: {
+  params: Record<string, string | string[] | undefined>;
+}) {
+  const parsed = parseAdminReportFilters(params);
   const filters = parsed.success ? parsed.data : {};
   const [report, classes] = await Promise.all([
     getAdminTuitionReport(filters),
     getAdminReportClasses(),
   ]);
-  const exportParams = reportFilterSearchParams(filters);
 
   return (
-    <>
-      <PageHeader
-        title="Báo cáo học phí"
-        description="Số liệu hóa đơn theo đúng khoảng ngày, lớp và trạng thái đang chọn."
-      />
-
-      <Card className="mb-4 gap-4 py-4">
-        <CardHeader className="px-4">
-          <CardTitle asChild className="text-base">
-            <h2>Bộ lọc</h2>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4">
-          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <label className="grid gap-1 text-sm font-medium">
-              Từ ngày
-              <DatePicker
-                name="from"
-                defaultValue={filters.from}
-                placeholder="Chọn ngày"
-              />
-            </label>
-            <label className="grid gap-1 text-sm font-medium">
-              Đến ngày
-              <DatePicker
-                name="to"
-                defaultValue={filters.to}
-                placeholder="Chọn ngày"
-              />
-            </label>
-            {/*
-             * `NativeSelect` chứ không phải `<select>` tự dựng: hai ô này là bản
-             * chép thứ 7 và thứ 8 của chuỗi class đã gom ở `P17-T1`, và cả hai
-             * đều dùng `border` (**1.27:1** trên nền trắng — gần như vô hình)
-             * thay vì `border-input` (**3.39:1**), kèm `h-9` lệch 4px so với
-             * thang control `h-10` của `DS-013`.
-             */}
-            <div className="grid gap-1">
-              <label htmlFor="report-class" className="text-sm font-medium">
-                Lớp
-              </label>
-              <NativeSelect
-                id="report-class"
-                name="class_id"
-                defaultValue={filters.class_id ?? ""}
-              >
-                <option value="">Tất cả lớp</option>
-                {classes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.code} — {item.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="grid gap-1">
-              <label htmlFor="report-status" className="text-sm font-medium">
-                Trạng thái
-              </label>
-              <NativeSelect
-                id="report-status"
-                name="status"
-                defaultValue={filters.status ?? ""}
-              >
-                <option value="">Tất cả trạng thái</option>
-                {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="flex items-end gap-2">
-              <Button type="submit">Áp dụng</Button>
-              <Button asChild variant="ghost">
-                <Link href="/admin/reports">Xóa lọc</Link>
-              </Button>
-            </div>
-          </form>
-          {!parsed.success && (
-            <p role="alert" className="text-destructive mt-3 text-sm">
-              {parsed.error.issues[0]?.message}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <section aria-labelledby="report-summary-heading" className="mb-4">
-        <h2 id="report-summary-heading" className="sr-only">
-          Tổng hợp theo bộ lọc đang chọn
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <Summary label="Hóa đơn" value={String(report.summary.invoices)} />
-          <Summary label="Tổng tiền" value={money.format(report.summary.total)} />
-          <Summary label="Đã thu" value={money.format(report.summary.paid)} />
-          <Summary label="Còn lại" value={money.format(report.summary.balance)} />
-          <Summary label="Quá hạn" value={String(report.summary.overdue)} />
-        </div>
-      </section>
-
-      <div className="mb-3 flex flex-wrap justify-end gap-2">
-        {(["csv", "xlsx"] as const).map((format) => {
-          const params = new URLSearchParams(exportParams);
-          params.set("format", format);
-          return (
-            <Button key={format} asChild variant="outline">
-              <a href={`/api/export/reports?${params.toString()}`}>
-                <Download /> Xuất {format.toUpperCase()}
-              </a>
-            </Button>
-          );
-        })}
-      </div>
-
-      <Card className="py-0">
-        <CardContent className="p-0">
-          <DataTable
-            caption="Chi tiết hóa đơn theo bộ lọc đang chọn: mã hóa đơn, ngày phát hành, học viên, lớp, trạng thái và số tiền"
-            minWidthClass="min-w-[60rem]"
-          >
-            <DataTableHeader>
-              <tr>
-                <DataTableHead sticky>Hóa đơn</DataTableHead>
-                <DataTableHead>Ngày phát hành</DataTableHead>
-                <DataTableHead>Học viên</DataTableHead>
-                <DataTableHead>Lớp</DataTableHead>
-                <DataTableHead>Trạng thái</DataTableHead>
-                <DataTableHead numeric>Tổng tiền</DataTableHead>
-                <DataTableHead numeric>Đã thu</DataTableHead>
-                <DataTableHead numeric>Còn lại</DataTableHead>
-              </tr>
-            </DataTableHeader>
-            <DataTableBody>
-              {report.rows.map((row) => (
-                <DataTableRow key={row.invoice_id}>
-                  <DataTableCell sticky className="font-medium">
-                    {row.invoice_code}
-                  </DataTableCell>
-                  {/*
-                   * `formatDateOnly`, KHÔNG in thẳng `row.issue_date`.
-                   * `v_tuition_balance.issue_date` là cột `date`, PostgREST trả
-                   * về chuỗi "2026-07-15" nên bản cũ hiện đúng nguyên chuỗi ISO
-                   * ra màn hình — trái `D-12` (`dd/MM/yyyy`). Không ai thấy vì
-                   * seed **không có hóa đơn nào**, bảng luôn rỗng.
-                   */}
-                  <DataTableCell>{formatDateOnly(row.issue_date)}</DataTableCell>
-                  <DataTableCell>
-                    {row.student?.student_code} — {row.student?.full_name}
-                  </DataTableCell>
-                  <DataTableCell>{row.class?.code ?? "—"}</DataTableCell>
-                  <DataTableCell>
-                    {row.status && (
-                      <StatusBadge
-                        tone={INVOICE_STATUS_TONE[row.status]}
-                        label={INVOICE_STATUS_LABELS[row.status]}
-                      />
-                    )}
-                  </DataTableCell>
-                  <DataTableCell numeric>{money.format(row.total)}</DataTableCell>
-                  <DataTableCell numeric>
-                    {money.format(row.paid_amount)}
-                  </DataTableCell>
-                  <DataTableCell numeric>
-                    {money.format(row.balance)}
-                  </DataTableCell>
-                </DataTableRow>
-              ))}
-              {report.rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="text-text-secondary px-4 py-12 text-center"
-                  >
-                    Không có hóa đơn phù hợp bộ lọc.
-                  </td>
-                </tr>
-              )}
-            </DataTableBody>
-          </DataTable>
-        </CardContent>
-      </Card>
-    </>
-  );
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="h-full gap-1 py-3">
-      <CardContent className="px-4">
-        {/* `<dl>` nằm TRONG thẻ: bọc `<dl>` ra ngoài các `Card` thì `<dt>` sâu
-            hai cấp so với `<dl>` và axe báo `definition-list`/`dlitem`. */}
-        <dl>
-          <dt className="text-text-secondary text-sm">{label}</dt>
-          <dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd>
-        </dl>
-      </CardContent>
-    </Card>
+    <TuitionReport
+      filters={filters}
+      errorMessage={parsed.success ? undefined : parsed.error.issues[0]?.message}
+      report={report}
+      classes={classes}
+    />
   );
 }

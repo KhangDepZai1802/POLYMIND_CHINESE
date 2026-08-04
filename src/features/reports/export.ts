@@ -22,7 +22,9 @@ const headers = [
   "Còn lại",
 ] as const;
 
-function safeSpreadsheetText(value: string) {
+// Dùng chung với `learning-export.ts` — chống CSV/formula injection: ô bắt đầu
+// bằng =, +, -, @ sẽ bị Excel thực thi như công thức.
+export function safeSpreadsheetText(value: string) {
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
 
@@ -42,7 +44,7 @@ function values(report: AdminTuitionReport) {
   ]);
 }
 
-function csvCell(value: string | number) {
+export function csvCell(value: string | number) {
   const text = String(value);
   return `"${text.replaceAll('"', '""')}"`;
 }

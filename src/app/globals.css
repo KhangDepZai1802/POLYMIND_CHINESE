@@ -617,8 +617,51 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
   animation-name: flashcard-page-in-previous;
 }
 
+/*
+ * IN BÁO CÁO (`REPORT-REDESIGN-1`, AC4.1) — trang /admin/reports* thiết kế để
+ * bấm Ctrl+P ra thẳng bản PDF gửi cấp trên.
+ *
+ * • `[data-dashboard-chrome]` là sidebar/header/footer — layout đã đánh dấu
+ *   sẵn, ẩn cả cụm thay vì đoán selector từng mảnh.
+ * • `[data-noprint]` cho từng khối trong trang (bộ lọc, nút bấm, breadcrumb).
+ * • `[data-printonly]` ngược lại: khối tiêu đề bản in (tên báo cáo, kỳ, ngày
+ *   xuất) — màn hình không thấy, bản in mới thấy.
+ */
+[data-printonly] {
+  display: none;
+}
+
 @media print {
-  .no-print {
+  .no-print,
+  [data-noprint],
+  [data-dashboard-chrome] {
     display: none !important;
+  }
+
+  [data-printonly] {
+    display: block;
+  }
+
+  [data-dashboard-main] {
+    padding: 0;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* Thẻ trắng phẳng, không bóng — mực in không có "elevation". */
+  [data-slot="card"] {
+    box-shadow: none;
+    border-color: #d1d5db;
+    break-inside: avoid;
+  }
+
+  /* Bảng dài ngắt trang theo hàng, tiêu đề lặp lại ở đầu trang sau. */
+  tr {
+    break-inside: avoid;
+  }
+  thead {
+    display: table-header-group;
   }
 }

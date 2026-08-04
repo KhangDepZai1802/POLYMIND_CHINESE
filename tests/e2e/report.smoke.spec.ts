@@ -35,8 +35,12 @@ test("Báo cáo lớp chỉ hiện lớp GV A dạy, số liệu khớp DB", asy
   const kpi = page.locator("div").filter({ hasText: /^Học viên đang học/ }).last();
   await expect(kpi).toContainText(activeStudents);
 
-  // Bảng chi tiết có đúng số dòng học viên.
-  await expect(page.locator("tbody tr")).toHaveCount(Number(activeStudents));
+  // Bảng chi tiết có đúng số dòng học viên. Scope vào đúng bảng qua
+  // `data-testid`: từ `REPORT-REDESIGN-1` trang còn có Sổ điểm danh (cũng là
+  // <table> với mỗi học viên một hàng) — đếm `tbody tr` cả trang sẽ ra 2N.
+  await expect(
+    page.locator('[data-testid="class-report-students"] tbody tr'),
+  ).toHaveCount(Number(activeStudents));
 
   // --- Gate Phase 4: không thấy lớp GV B ------------------------------------
   await expect(page.getByText("LOP-03")).toHaveCount(0);

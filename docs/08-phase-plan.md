@@ -782,6 +782,23 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 
 ---
 
+### Thiết kế lại module Báo cáo: học phí → tiến độ học tập + điểm danh — `REPORT-REDESIGN-1` (user chốt 2026-08-04)
+
+**Nguyên văn:** *"hiện tại đang là báo cáo học phí, nhưng cái tôi muốn là báo cáo về tiến độ học tập điểm danh của các lớp, các học sinh… đưa được đủ thông tin cần thiết cho người dùng nhất"*. 12 quyết định đã hỏi–chốt với user trong phiên — bảng D1–D12 tại [`docs/12-report-redesign-spec.md`](12-report-redesign-spec.md) (nguồn sự thật về yêu cầu của đợt này).
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| REPORT-REDESIGN-1a | **Lib thuần + schema kỳ lọc** | `features/reports/learning.ts`: kỳ lọc (preset Tuần/Tháng/Toàn khóa, `range=all` tường minh), mốc VN→UTC exclusive, tuần ISO-8601, công thức chuyên cần **(có mặt+muộn)/tổng buổi** đúng view DB; có unit test ghim từng công thức | ☑ **DONE** — Claude 2026-08-04, Vitest 521/521 |
+| REPORT-REDESIGN-1b | **Query theo kỳ qua RLS** | `server/learning-queries.ts`: 4 hàm (overview / lớp / học viên / export rows), **không một dòng `where teacher_id`** — RLS khoanh vùng; điểm danh phân trang tường minh (PostgREST cắt 1000 dòng); KHÔNG migration mới | ☑ **DONE** — Claude 2026-08-04 |
+| REPORT-REDESIGN-1c | **Tầng 1 `/admin/reports`** | Tab **Học tập** mặc định (KPI → thẻ lớp → xu hướng tuần SVG server-render → danh sách cần chú ý toàn trung tâm); tab **Học phí** giữ nguyên màn cũ + export cũ không gãy link | ☑ **DONE** — Claude 2026-08-04, build xanh |
+| REPORT-REDESIGN-1d | **Tầng 2+3 + dùng chung với giáo viên** | `/admin/reports/[classId]` và `/admin/reports/[classId]/[enrollmentId]`; `ClassReportDetail` + `StudentReportDetail` dùng chung cho `/teacher/progress` (+ trang mới `/teacher/progress/[enrollmentId]`); **lưới điểm danh buổi×HV** ký hiệu chữ+màu; GV mặc định Toàn khóa để số liệu lũy kế không đổi | ☑ **DONE** — Claude 2026-08-04 |
+| REPORT-REDESIGN-1e | **Export + In** | `/api/export/reports?report=learning` (mặc định `tuition` — link cũ sống) giữ đúng kỳ lọc (bài học `BUG_M16_01`); XLSX 2 sheet Theo lớp/Theo học viên; print stylesheet (`[data-noprint]`/`[data-printonly]`, khung dashboard ẩn qua `data-dashboard-chrome`) | ☑ **DONE** — Claude 2026-08-04 |
+| REPORT-REDESIGN-1f | **Đo thật trên trình duyệt + xác minh độc lập** | Chạy app local với DB seed, đăng nhập 3 vai (giáo vụ/GV/học viên bị chặn), đo 375px+1280px không tràn ngang, chạy lại 2 e2e spec đã cập nhật selector (`report.smoke`, `teacher-progress-responsive`), bấm In thật ra PDF | ☐ **CHƯA — chờ phiên có Docker/Playwright**; 4 cổng lint/typecheck/test/build đã xanh |
+
+⚠️ **Không đụng nghiệp vụ:** ngưỡng "cần chú ý" vẫn là `v_at_risk_assessment_students` theo cấu hình từng khóa (D5) — app không tự đặt ngưỡng; tuition queries/export giữ nguyên; không sửa view/migration nào.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |
