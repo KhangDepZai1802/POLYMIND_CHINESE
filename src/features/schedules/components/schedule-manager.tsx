@@ -447,7 +447,13 @@ function WeekCalendar({
 
   return (
     <div className="overflow-x-auto border-t">
-      <div className="grid min-w-[840px] grid-cols-7">
+      {/* 1050px = 150px/cột. Không phải số làm tròn cho đẹp: một thẻ buổi học
+          cần ~116px bề rộng trong lòng thẻ (150 − 16 padding cột − 2 viền − 16
+          padding thẻ) để chứa được phần rộng nhất của nó là badge trạng thái
+          (~101px, `whitespace-nowrap` nên không co được) và cụm 2 nút icon
+          (84px chuột / 96px cảm ứng). Ở 840px cũ mỗi cột chỉ 120px → lòng thẻ
+          86px, badge lẫn nút đều tràn ra ngoài viền thẻ. */}
+      <div className="grid min-w-[1050px] grid-cols-7">
         {days.map((dateKey, index) => {
           const dateSessions = sessionsByDate.get(dateKey) ?? [];
           const isToday = dateKey === currentDateKey;
@@ -511,8 +517,8 @@ function WeekSessionCard({
         session.status === "cancelled" && "opacity-60",
       )}
     >
-      <div className="flex items-center gap-1 text-xs font-semibold">
-        <Clock3 className="size-3.5" aria-hidden />
+      <div className="flex items-center gap-1 text-xs font-semibold tabular-nums">
+        <Clock3 className="size-3.5 shrink-0" aria-hidden />
         {formatTime(session.starts_at)}–{formatTime(session.ends_at)}
       </div>
       <p className="mt-1 text-sm font-semibold">
@@ -521,8 +527,15 @@ function WeekSessionCard({
       <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
         {sessionTitle(session)}
       </p>
-      <div className="mt-2 flex items-end justify-between gap-1">
+      {/* `flex-wrap` + `mr-auto`, KHÔNG phải `justify-between`: cả badge lẫn cụm
+          nút đều `shrink-0`, nên một hàng cứng chỉ hoạt động khi cột ≥223px —
+          hẹp hơn thì cụm nút bị đẩy tràn ra ngoài viền thẻ, đè lên cột bên cạnh
+          (đúng lỗi đã thấy khi zoom / trên laptop và điện thoại). Cho phép xuống
+          hàng thì nút rơi xuống dưới badge; `mr-auto` giữ badge sát trái và
+          `justify-end` giữ nút sát phải ở CẢ hai trường hợp. */}
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
         <StatusBadge
+          className="mr-auto"
           label={SESSION_STATUS_LABELS[session.status]}
           tone={SESSION_STATUS_TONE[session.status]}
         />
@@ -714,8 +727,11 @@ function SessionActions({
   const canDelete = session.status === "scheduled";
   const canCancel = session.status === "scheduled";
 
+  // `gap-2` (8px) chứ không phải `gap-1`: hai nút cạnh nhau đều là thao tác phá
+  // hủy ("Hủy buổi" / "Xóa buổi"), 4px là khoảng cách bấm nhầm — WCAG/HIG yêu
+  // cầu tối thiểu 8px giữa hai touch target.
   return (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="flex shrink-0 items-center gap-2">
       {canCancel && (
         <SessionActionButton
           action={cancelSessionAction}

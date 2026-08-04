@@ -764,6 +764,24 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 
 ---
 
+### Nút Hủy/Xóa buổi tràn ra ngoài thẻ ở lưới tuần — `UX-SCHED-1` (user báo 2026-08-03, kèm 3 ảnh)
+
+**Nguyên văn:** *"ở trang lịch học của tài khoản admin, càng zoom web nút hủy buổi và xóa buổi càng lệch… dao diện laptop đến điện thoại đều bị lỗi này, nhưng giao diện pc không sao"*.
+
+**Đo được trước khi sửa** (`/admin/schedule`, kiểu xem *Tuần*): không phải "lệch" mà là **tràn**. Chân thẻ `WeekSessionCard` là một hàng cứng `flex items-end justify-between` mà **cả hai con đều không co được** — badge trạng thái `w-fit shrink-0 whitespace-nowrap` (~101px) và cụm nút `shrink-0` (84px chuột / 96px cảm ứng). Cần ~189px, trong khi lòng thẻ chỉ có `cột − 34px` ⇒ **chỉ vừa khi cột ≥223px ⇔ lưới ≥1561px**, đúng một mình màn PC rộng. Tràn phải đo bằng Chromium: **1440px `-9` · 1280px `+10` · 1024px `+46` · 768/430/360px `+68` · Pixel 7 `+76`** — khớp chính xác ảnh user gửi (nút xóa nằm hẳn sang cột bên cạnh).
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| UX-SCHED-1a | **Chân thẻ cho xuống hàng** | `flex-wrap` + `justify-end` + `mr-auto` trên badge: cột rộng thì badge trái / nút phải như cũ, cột hẹp thì cụm nút **xuống hàng dưới** và vẫn canh phải. ⛔ Không dùng `justify-between` — nó chỉ chia chỗ thừa, không cứu được khi thiếu chỗ | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. Tràn phải **`-9px` ở cả 6 bề rộng + Pixel 7** (`-9` = đúng mép padding của thẻ) |
+| UX-SCHED-1b | **Cột tuần đủ rộng cho một thẻ** | `min-w-[840px]` → `min-w-[1050px]` (120px/cột → **150px/cột** ⇒ lòng thẻ 116px). Con số lấy từ phần rộng nhất của thẻ chứ không làm tròn cho đẹp: badge 101px và cụm nút 96px (cảm ứng) đều phải nằm lọt | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. Ở 840px cũ lòng thẻ chỉ 86px ⇒ **badge cũng tràn** (`-20px` mới là vừa, đo được `+68`) |
+| UX-SCHED-1c | **Giãn hai nút phá hủy** | `gap-1` → `gap-2`: *Hủy buổi* và *Xóa buổi* nằm sát nhau, 4px là khoảng cách bấm nhầm — WCAG/HIG đòi ≥8px giữa hai touch target | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-03. Pixel 7: nút **44×44**, cách nhau **8px** |
+
+⚠️ **Không đụng nghiệp vụ:** `cancelSessionAction` · `deleteSessionAction` · điều kiện `canDelete`/`canCancel` giữ nguyên — chỉ đổi class CSS. `SessionCalendar` dùng chung cho cả ba mode `admin|teacher|student` nên thay đổi có mặt ở cả trang giáo viên và học viên.
+
+⚠️ **Cách đo, ghi cho đúng:** không đăng nhập được vào app local (**`auth.users` rỗng**) và `next dev` chết vì máy hết paging file, nên số đo lấy trên **trang tĩnh dựng từ chính `src/app/globals.css` đã biên dịch** + đúng chuỗi class của component, chạy Chromium/Playwright ở 1440/1280/1024/768/430/360 và Pixel 7. Đây là bằng chứng về **bố cục CSS**, chưa phải ảnh chụp trên app thật — người xác minh nên seed lại DB local rồi chụp trên `/admin/schedule`.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |
