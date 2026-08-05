@@ -165,7 +165,7 @@ export function VideoImportDialog({
                 <span className="bg-muted text-muted-foreground rounded-full px-3 py-0.5 font-medium tabular-nums">
                   {parsed.rows.length} dòng
                 </span>
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--success)_12%,white)] px-3 py-0.5 font-semibold tabular-nums text-[var(--success)]">
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--success)_12%,white)] px-3 py-0.5 font-semibold tabular-nums text-success">
                   hợp lệ {parsed.valid.length}
                 </span>
                 {brokenRows.length > 0 ? (
@@ -282,7 +282,7 @@ export function VideoImportDialog({
                                 Sẽ thay
                               </span>
                             ) : (
-                              <span className="font-semibold text-[var(--success)]">
+                              <span className="font-semibold text-success">
                                 Sẽ thêm
                               </span>
                             )}

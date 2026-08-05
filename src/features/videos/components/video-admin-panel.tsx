@@ -17,7 +17,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { VideoImportDialog } from "@/features/videos/components/video-import-dialog";
 import { youtubeWatchUrl } from "@/features/videos/domain/youtube-url";
 import {
@@ -43,10 +49,12 @@ export function VideoAdminPanel({
   courses,
   selectedCourseId,
   collection,
+  loadError,
 }: {
   courses: VideoCourseOption[];
   selectedCourseId: string | null;
   collection: VideoCollectionView | null;
+  loadError: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -65,31 +73,65 @@ export function VideoAdminPanel({
 
   return (
     <div className="space-y-4">
+      {/*
+        Lỗi tải hiện NGAY ĐẦU màn và ở lại đó, không phải toast thoáng qua:
+        đây là sự cố máy chủ cần người sửa, khác hẳn lỗi thao tác.
+        `role="alert"` để trình đọc màn hình đọc ngay (`aria-live-errors`).
+      */}
+      {loadError ? (
+        <Alert role="alert" variant="destructive">
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <Card>
         <CardContent className="space-y-4 p-4 sm:p-6">
-          <div className="space-y-2">
-            <Label htmlFor="video-course">Khóa học</Label>
-            <NativeSelect
-              id="video-course"
-              value={selectedCourseId ?? ""}
-              onChange={(event) => {
-                const next = event.target.value;
-                router.push(next ? `/admin/flashcards?course=${next}` : "/admin/flashcards");
-              }}
-              className="max-w-md"
+          {/*
+            Dùng Radix `Select` y như tab Bộ thẻ (`flashcard-admin-manager.tsx`),
+            KHÔNG dùng `NativeSelect`. Hai tab nằm cạnh nhau trên cùng một trang
+            nên `<select>` gốc của trình duyệt đứng cạnh Select đã tạo kiểu là
+            thấy lệch ngay — user báo đúng 2026-08-05.
+
+            `NativeSelect` để dành cho `<form>` GET không có JavaScript riêng
+            (bộ lọc Ngân hàng câu hỏi); ở đây điều hướng bằng `router.push` nên
+            không có lý do gì phải dùng nó.
+          */}
+          <div className="flex min-w-56 flex-1 items-center gap-2">
+            <Label htmlFor="video-course" className="sr-only">
+              Khóa học
+            </Label>
+            <Select
+              value={selectedCourseId ?? undefined}
+              onValueChange={(next) =>
+                router.push(`/admin/flashcards?course=${next}`)
+              }
             >
-              <option value="">— Chọn khóa học —</option>
-              {courses.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.code} — {item.title}
-                </option>
-              ))}
-            </NativeSelect>
+              <SelectTrigger id="video-course" className="w-full">
+                <SelectValue placeholder="Chọn khóa học để quản trị video" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.code} · {item.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {!course ? (
             <p className="text-muted-foreground text-sm">
               Chọn một khóa học để quản lý video bài giảng.
+            </p>
+          ) : loadError ? (
+            /*
+              Tải hỏng thì KHÔNG bày "chưa có bộ video nào" kèm nút Tạo — câu đó
+              là một lời khẳng định sai (ta không biết khoá có gì), và cái nút
+              chắc chắn hỏng nốt vì cùng một nguyên nhân. Bấm vào chỉ nhận thêm
+              một thông báo lỗi nữa.
+            */
+            <p className="text-muted-foreground text-sm">
+              Chưa đọc được dữ liệu video của khóa này — xem thông báo phía trên.
             </p>
           ) : !collection ? (
             <div className="space-y-3">
@@ -120,7 +162,7 @@ export function VideoAdminPanel({
                 <p className="text-muted-foreground text-sm">
                   {collection.items.length}/{course.maxSessionNumber} buổi ·{" "}
                   {collection.status === "published" ? (
-                    <span className="font-medium text-[var(--success)]">
+                    <span className="font-medium text-success">
                       Đã công bố
                     </span>
                   ) : (
@@ -249,7 +291,7 @@ export function VideoAdminPanel({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-11 text-[var(--destructive)]"
+                          className="size-11 text-destructive"
                           disabled={pending || collection.status === "published"}
                           onClick={() => {
                             if (

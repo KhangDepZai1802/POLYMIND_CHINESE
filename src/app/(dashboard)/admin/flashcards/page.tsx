@@ -11,8 +11,7 @@ import {
 } from "@/features/flashcards/server/queries";
 import { VideoAdminPanel } from "@/features/videos/components/video-admin-panel";
 import {
-  getAdminVideoCollection,
-  getAdminVideoCollections,
+  getAdminVideoData,
   getVideoCourseOptions,
 } from "@/features/videos/server/queries";
 import { requireRole } from "@/lib/auth/session";
@@ -67,12 +66,9 @@ export default async function AdminFlashcardsPage({
    * nhiều bộ, đúng đường `flashcard_decks` đã đi ở `…083`.
    */
   const videoCourses = await getVideoCourseOptions();
-  const videoCollections = selectedCourseId
-    ? await getAdminVideoCollections(selectedCourseId)
-    : [];
-  const videoCollection = videoCollections[0]
-    ? await getAdminVideoCollection(videoCollections[0].id)
-    : null;
+  const videoData = selectedCourseId
+    ? await getAdminVideoData(selectedCourseId)
+    : { collection: null, loadError: null };
 
   return (
     <>
@@ -106,7 +102,8 @@ export default async function AdminFlashcardsPage({
           <VideoAdminPanel
             courses={videoCourses}
             selectedCourseId={selectedCourseId}
-            collection={videoCollection}
+            collection={videoData.collection}
+            loadError={videoData.loadError}
           />
         </TabsContent>
       </Tabs>

@@ -37,7 +37,29 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> 🔵 **`VIDEO-1` — ĐANG LÀM — Claude — 2026-08-05.** Video bài giảng qua **liên kết YouTube** (không tự lưu trữ). Thiết kế đã chốt ở [`docs/13-thiet-ke-video-bai-giang.md`](docs/13-thiet-ke-video-bai-giang.md), user duyệt bản mẫu giao diện 2026-08-05.
+> ✅ **`…090` ĐÃ ÁP CLOUD 2026-08-05** (user cấp `SUPABASE_DB_PASSWORD` và yêu cầu chạy luôn). `db push --dry-run` trước khi chạy cho đúng **1** migration, không drift. **Xác minh bằng `psql` trên chính production trong `BEGIN READ ONLY`, không tin output CLI** (CLI có in warning `pgdelta` về certificate — chỉ là bộ nhớ đệm catalog phía CLI, không ảnh hưởng migration): đỉnh `schema_migrations` = **`20260805000090`** · bảng `video%` = **2** · policy = **6** · RPC `save_lesson_videos` = **1** · `relrowsecurity` = **t** cho cả hai bảng · `anon` đọc `video_items` = **false** · `db push --dry-run` lần hai = **"Remote database is up to date."**
+>
+> ⚠️ **Dữ liệu KHÔNG bị đụng** (đo sau khi push): profiles **59** · students **55** · enrollments active **55** · flashcard_pages **1.134** · video_items **0**. *(flashcard_pages 962 → 1.134 là do user thêm nội dung giữa hai phiên, không phải tác động của migration này.)*
+>
+> 🔴 **VIỆC GẤP: XOAY MẬT KHẨU DATABASE — LẦN THỨ BA.** Mật khẩu `postgres` của production vừa đi qua khung chat phiên này. Đây là **cửa bypass toàn bộ RLS**, ngang mức nghiêm trọng với `service_role` key. Supabase Dashboard → Settings → Database → Reset database password. WORKLOG đã có **hai** cảnh báo cùng loại chưa được xử lý (phiên 87 và phiên 95).
+>
+> 🟡 **Còn nợ: DEPLOY LẠI CODE.** DB đã đi trước (đúng `D-37`, thay đổi thuần mở rộng). Nút *Tạo bộ video* trên production **chạy được ngay từ bây giờ** kể cả với code cũ; nhưng **dropdown vẫn còn kiểu cũ** và **thông báo lỗi vẫn còn chung chung** cho tới khi user commit + deploy bản sửa của phiên này.
+>
+> 📌 **`VIDEO-1` — hai lỗi user báo trên production 2026-08-05, đã sửa xong.** (1) dropdown lệch style, (2) *"lỗi không tạo được bộ video"*. Nguyên nhân gốc của (2) là migration chưa lên cloud — đã áp ở trên.
+>
+> 🔴 **Bug do chính Claude gây ra, đã sửa — `getAdminVideoCollections` NUỐT LỖI.** Bản đầu viết `const { data } = …; return data ?? []` không kiểm `error`, nên **bảng không tồn tại trông y hệt "khóa chưa có bộ video nào"**. Đúng kiểu hỏng im lặng `AGENTS.md` cấm: sự cố vận hành đội lốt trạng thái rỗng hợp lệ. Nay gộp thành `getAdminVideoData()` trả `{ collection, loadError }`, hiện Alert đỏ ngay đầu màn và **ẩn nút "Tạo bộ video"** khi tải hỏng (bấm vào chỉ nhận thêm một lỗi nữa). ⚠️ Phía **học viên cố ý vẫn nuốt lỗi** thành "không có video" — fail-closed đúng cho người học.
+>
+> 🔴 **BÀI HỌC ĐẮT NHẤT PHIÊN — bản sửa lỗi ĐẦU TIÊN hoàn toàn vô dụng vì đoán mã lỗi.** Tôi thêm `case "42P01"` (undefined_table của Postgres) vào `dbErrorToMessage` và tưởng xong. **Đo thật trên REST local mới lòi ra: app đi supabase-js → PostgREST, mà PostgREST KHÔNG chuyển tiếp mã Postgres** — bảng lạ trả HTTP 404 **`PGRST205`**, RPC lạ trả **`PGRST202`**. Tức nhánh `42P01` không bao giờ chạy trong đường app. Nay bắt **cả bốn mã**, có `tests/unit/db-error-message.test.ts` (7 bài) ghim để không ai "dọn dẹp" mất nhánh `PGRST*`. 📌 Luật rút ra: **mã lỗi phải đo, không được suy từ tên hàm Postgres.**
+>
+> 🟢 **Dropdown đã đồng bộ:** tab Video dùng `NativeSelect` (dropdown gốc trình duyệt) trong khi tab Bộ thẻ cạnh nó dùng Radix `Select` — đứng cạnh nhau là thấy lệch ngay. Đã đổi sang Radix `Select` cùng khuôn `flashcard-admin-manager.tsx`.
+>
+> 🟢 **`VIDEO-1` — CODE XONG 2026-08-05, chờ xác minh độc lập — Claude.** Video bài giảng qua **liên kết YouTube** (không tự lưu trữ). Thiết kế + bản mẫu user đã duyệt: [`docs/13-thiet-ke-video-bai-giang.md`](docs/13-thiet-ke-video-bai-giang.md). Cổng: lint **0** · typecheck **0** · Vitest **553/553** (521 → **+32**) · build **exit 0** · pgTAP `lesson_videos` **24/24**. ⛔ Migration `…090` **mới áp local, CHƯA push cloud**. ⚠️ **Chưa đo trình duyệt thật** (chưa mở 375px, chưa bấm thử luồng dán → lưu → học viên thấy).
+>
+> 🔒 **Hai kiểm ngược đã chạy thật, cả hai đỏ đúng MỘT bài:** (a) bỏ điều kiện enrollment khỏi policy `video_items_student_read` ⇒ pgTAP bài 21 *"Học viên KHÁC khóa thấy 0 buổi"* **đỏ**; (b) bỏ `items.length > 0` khỏi điều kiện hiện tab ⇒ Vitest bài *"bộ video rỗng cũng KHÔNG hiện tab"* **đỏ**. Đã khôi phục nguyên trạng, xanh lại.
+>
+> 🔴 **Một chỗ bài test SAI còn code ĐÚNG, ghi để nhớ:** bài anon ban đầu viết `is(count(*), 0)` và đỏ — vì `revoke all … from anon` khiến select **ném `42501`** chứ không trả 0 hàng, tức hàng rào **chặt hơn** giả định. Đã sửa **bài test** thành `throws_ok` để ghim đúng hành vi thật, **không** nới bài test cho nó xanh.
+>
+> 🔀 **User báo giữa lúc code, đã xử lý:** *"bên youtube tôi sẽ đặt tiêu đề có chữ buổi luôn… nếu bên Web mình cũng để sẵn buổi 1 luôn thì sẽ bị trùng 2 chữ buổi 1 buổi 1"*. Giải: `stripSessionPrefix()` cắt tiền tố `Buổi N` khỏi tiêu đề YouTube, **giữ badge số lấy từ `session_number`** (badge luôn đúng và luôn đều, kể cả khi admin quên gõ "Buổi" trên YouTube). Áp **ở tầng query** chứ không ở component để admin và học viên thấy y hệt nhau (`BUG_M10_01`). Hai lối thoát: **số không khớp thì KHÔNG cắt** (để lộ ra chỗ đặt nhầm link), cắt xong rỗng thì trả bản gốc.
 >
 > 📐 **Vì sao KHÔNG tự lưu video — đo thật, không suy đoán.** Thư mục `VIDEO_GIAOTRINH/` (15 file) = **2,03 GB / 33,3 phút**, suy ra 35 buổi ≈ **4,73 GB**. Đọc metadata MP4 bằng Python (máy không có `ffprobe`): tất cả **1080p**, nhưng bitrate chênh **6,6×** — buổi 1–7 ở 2,0–3,2 Mbps còn buổi 8–15 ở 7,4–13,3 Mbps. Bằng chứng gọn nhất: **buổi 7 = 41 MB / 2,80 phút** vs **buổi 14 = 255 MB / 2,69 phút**, cùng 1080p, nặng gấp **6,2×**. Supabase gói **Free** chặn ở ba tầng: mỗi file **50 MB** (8/15 file bị từ chối), tổng **1 GB** (cần 4,73), và **egress 5 GB/tháng** (55 HV × 1 lượt = **260 GB**, vượt **52×**). 🔴 **Nén KHÔNG cứu được egress**: nén xuống 480p thì cả khóa còn ~400 MB, 55 HV vẫn ngốn **22 GB = 4,4×** hạn mức. Chia ngược: 5 GB ÷ 55 HV = **93 MB/người/tháng** cho toàn hệ thống.
 >
@@ -450,6 +472,18 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**➡️ ƯU TIÊN 0 — 🔴 VIỆC CỦA USER: XOAY MẬT KHẨU DATABASE PRODUCTION.** Mật khẩu `postgres` đã đi qua khung chat phiên 97 khi user nhờ Claude push `…090`. Nó **bypass toàn bộ RLS**. Supabase Dashboard → Settings → Database → Reset database password, rồi cập nhật lại chỗ nào đang dùng. **Đây là lần thứ ba** repo này có cảnh báo cùng loại (phiên 87: `service_role` key; phiên 95: mật khẩu DB) và **chưa lần nào được xử lý**.
+
+✅ ~~Push migration `…090` lên cloud~~ — **XONG 2026-08-05**, đã xác minh bằng `psql`; xem `TRẠNG THÁI HIỆN TẠI`.
+
+**➡️ ƯU TIÊN 0.5 — VIỆC CỦA USER: commit + deploy bản sửa 2 lỗi UI.** DB đã đi trước nên nút *Tạo bộ video* chạy được ngay, nhưng dropdown và thông báo lỗi chỉ đúng sau khi deploy code mới.
+
+**➡️ ƯU TIÊN 1 — VIỆC CỦA USER: đăng video lên YouTube chế độ "Không công khai".** Code đã sẵn sàng nhưng chưa có link thật nào để chạy. 🔴 Chọn **Riêng tư** thì **học viên KHÔNG xem được** (chế độ đó chỉ mở cho tài khoản Google được mời đích danh); chọn **Công khai** thì giáo trình lọt vào tìm kiếm Google. Đúng lựa chọn là **Không công khai (Unlisted)**. Đăng xong **1 video** thì gửi link cho agent để đo nốt câu hỏi còn treo: *oEmbed có đọc được tiêu đề của video unlisted không?* — nếu không thì tiêu đề rơi về `"Buổi N"` (fail-open, không hỏng tính năng) và ta biết để bỏ nút *Lấy lại tiêu đề*.
+
+**➡️ `VIDEO-1-VERIFY` — Codex xác minh độc lập `VIDEO-1`.** Claude viết code nên không tự ghi `Verified`. Đường xác minh: (1) `npm run db:reset` → kiểm `select max(version) from supabase_migrations.schema_migrations` = **`20260805000090`**; (2) chạy `supabase/tests/database/lesson_videos.test.sql` phải **24/24**; (3) **kiểm ngược bắt buộc** — sửa policy `video_items_student_read` bỏ vế `can_student_read_flashcard_course` ⇒ bài **21** phải **đỏ**, không đỏ nghĩa là bài test vô dụng; (4) `npm run dev`, đăng nhập super admin → `/admin/flashcards` tab *Video bài giảng* → dán 3 dòng (một dòng link hỏng để xem có báo đúng số dòng không) → xem trước phải ra **Sẽ thêm / Không đọc được** đúng hàng → Lưu → *Công bố cho học viên*; (5) đăng nhập **học viên có lớp** thấy tab thứ ba và bấm ra đúng video, đăng nhập **học viên khoá khác** **không** thấy tab; (6) 🔴 **đo 375px**: tiêu đề dài 60 ký tự phải cắt bằng `…` và mũi tên ↗ **vẫn nằm trong thẻ**, `scrollWidth - clientWidth = 0` — đây là bài ghim cho lỗi đã lặp **3 lần** (`UX-UIUX-M16-002`, `UX-STUDENTS-1`); (7) kiểm `stripSessionPrefix`: đặt tiêu đề YouTube `"Buổi 1. Chào hỏi"` cho buổi 1 ⇒ học viên thấy `"Buổi 1 · Chào hỏi"`, còn đặt `"Buổi 10. Chào hỏi"` cho buổi 1 ⇒ **cố ý** hiện cả hai để lộ chỗ đặt nhầm.
+
+**➡️ `VIDEO-1-PUSH` — push `…090` lên cloud khi user duyệt.** Đây là thay đổi **thuần mở rộng** (2 bảng mới, không đụng bảng cũ) nên theo `D-37` được đẩy DB trước code. Vẫn phải `db push --dry-run` trước và đối chiếu đỉnh migration bằng `psql`, không tin output CLI.
+
 ✅ **`P16-T13` đã xong; không còn việc dữ liệu VCB bị treo.** User review file `docs/data/VCB_35_BUOI_MAU_CAU_TAC_CHIEN_IMPORT.md`; các dấu `/` còn lại chỉ thuộc ký hiệu cố định như `24/7` hoặc định dạng ngày, không phải hai câu thay thế.
 
 **➡️ `REPORT-REDESIGN-1f` — đo thật + xác minh độc lập module báo cáo mới (Claude viết code nên không tự ghi Verified).** Đường xác minh: `npm run db:reset` + `db:seed:dev` → `npm run dev` → (1) đăng nhập super admin/giáo vụ: `/admin/reports` mặc định tab Học tập kỳ **Tháng này**, đổi preset/khoảng ngày thì KPI + thẻ lớp + xu hướng tuần đổi theo, bấm thẻ lớp → `/admin/reports/[classId]` **giữ nguyên kỳ trên URL**, bấm tên học viên → hồ sơ tầng 3; (2) tab Học phí và nút export cũ chạy y như trước; (3) export mới `?report=learning` phải trả đúng kỳ đang lọc (đổi kỳ → nội dung file đổi — bài học `BUG_M16_01`), XLSX đủ 2 sheet; (4) Ctrl+P ở cả 3 tầng: khung dashboard/bộ lọc/nút biến mất, khối `ReportPrintHeader` hiện tên báo cáo + kỳ; (5) đăng nhập giáo viên: `/teacher/progress` số liệu lũy kế KHỚP số cũ (kỳ mặc định Toàn khóa), lưới điểm danh hiện đủ buổi, RLS không lộ lớp GV khác (gõ tay `?class=` và `/teacher/progress/<enrollment lớp khác>` phải 404/rơi về lớp mình); (6) học viên bị chặn khỏi cả 5 route mới; (7) chạy lại 2 e2e đã đổi selector: `report.smoke.spec.ts`, `teacher-progress-responsive.spec.ts` (caption nay đếm **2**, bảng chi tiết trỏ `data-testid="class-report-students"`); (8) đo 375px + 1280px: `scrollWidth - clientWidth = 0` ở cả 3 tầng (lưới điểm danh cuộn TRONG container riêng). Kiểm ngược gợi ý: sửa `attendanceRate` trong `learning.ts` bỏ cộng `late` ⇒ `learning-report.test.ts` phải đỏ bài 75%.
@@ -756,6 +790,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-08-05] Phiên 97 — Claude — `VIDEO-1`: video bài giảng qua liên kết YouTube
+
+- **Làm được:** cả 6 subtask `VIDEO-1a…1f`. User ban đầu muốn **upload video vào hệ thống**; tôi đo trước khi code và chứng minh **không khả thi**, user đổi sang **dán link YouTube**. Admin: tab *Video bài giảng* ở `/admin/flashcards`, dán một khối → bảng xem trước → lưu. Học viên: tab thứ ba ở `/student/review`, hàng 56px chỉ có icon YouTube + tiêu đề + mũi tên ↗.
+- **File thay đổi:** `supabase/migrations/20260805000090_lesson_videos.sql` · `src/features/videos/{domain/youtube-url.ts, server/{queries,actions,youtube-oembed}.ts, components/{student-video-list,video-admin-panel,video-import-dialog}.tsx}` · `src/app/(dashboard)/{student/review,admin/flashcards}/page.tsx` · `tests/unit/domain/youtube-url.test.ts` · `tests/unit/components/student-review-page.test.tsx` · `supabase/tests/database/lesson_videos.test.sql` · `docs/13` (mới) · `docs/08-phase-plan.md` · `src/types/database.ts`.
+- **Migration/data impact:** `…090` — 2 bảng `video_collections`/`video_items`, enum `video_status`, 6 policy, 1 RPC, 3 hàm `app.*`. **KHÔNG đụng bảng nào đang có.** Đã áp local (đỉnh `20260805000090`), **chưa push cloud**.
+- **Đã test:** lint **0** · typecheck **0** · Vitest **553/553** (521 → +32) · build **exit 0** · pgTAP `lesson_videos` **24/24**. **2 kiểm ngược đều đỏ đúng một bài** (chi tiết ở `TRẠNG THÁI HIỆN TẠI`).
+- **Quyết định mới:** (1) **Không tự lưu video** — đo thật 15 file = 2,03 GB, suy ra 4,73 GB/khóa; Supabase Free chặn ở file 50 MB / tổng 1 GB / **egress 5 GB** (cần 260 GB), và **nén không cứu được egress**. (2) User loại cả Cloudflare R2 (free 10 GB) vì *"lỡ sau này có những vid lớn hơn"* → chọn YouTube **Không công khai**. (3) ⚠️ **Đánh đổi có ý thức: bỏ yêu cầu "chỉ học viên khoá đó mới xem được"** — RLS chỉ giấu *danh sách link*. (4) Lưu **video ID 11 ký tự**, không lưu URL. (5) `stripSessionPrefix` chống lặp "Buổi 1 · Buổi 1.".
+- **Blocker/rủi ro:** ⚠️ **CHƯA kiểm được oEmbed trên video chế độ *Không công khai*** (không có mẫu) — đã thiết kế **fail-open** nên hỏng chỉ mất tiêu đề tự động, không mất tính năng; cần đo lại khi user đăng video đầu tiên. ⚠️ **Chưa đo trình duyệt thật** ở 375px. ⛔ `…090` chưa push cloud.
+- **Next action:** `VIDEO-1-VERIFY` — Codex xác minh độc lập (Claude viết code nên không tự ghi `Verified`). Đường đo ở `VIỆC TIẾP THEO`.
 
 ### [2026-08-04] Phiên 96 — Codex — `P16-T13`: chuẩn hoá 35 buổi mẫu câu tác chiến để nhập Flashcard
 

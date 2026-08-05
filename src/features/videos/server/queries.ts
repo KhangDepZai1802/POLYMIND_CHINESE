@@ -38,7 +38,13 @@ function toView(row: ItemRow): VideoItemView {
   return { ...row, displayTitle: stripSessionPrefix(row.title, row.session_number) };
 }
 
-/** Khoá học kèm số buổi — dùng cho ô chọn khoá ở màn admin. */
+/**
+ * Khoá học kèm số buổi — dùng cho ô chọn khoá ở màn admin.
+ *
+ * Bảng `courses` có từ lâu nên ở đây nuốt lỗi thành danh sách rỗng là chấp nhận
+ * được: ô chọn rỗng tự nó đã là tín hiệu nhìn thấy được, khác hẳn ca bảng video
+ * (xem `AdminVideoData.loadError`).
+ */
 export async function getVideoCourseOptions(): Promise<VideoCourseOption[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -54,42 +60,80 @@ export async function getVideoCourseOptions(): Promise<VideoCourseOption[]> {
   }));
 }
 
-/** Danh sách bộ video của một khoá (màn admin). */
-export async function getAdminVideoCollections(
-  courseId: string,
-): Promise<CollectionRow[]> {
+export type AdminVideoData = {
+  collection: VideoCollectionView | null;
+  /**
+   * Lỗi tải, `null` nếu bình thường.
+   *
+   * 🔴 **Vì sao phải có, và vì sao khác phía học viên:** bản đầu hàm này nuốt
+   * lỗi (`return data ?? []`), nên khi bảng chưa tồn tại trên máy chủ — tức
+   * migration chưa chạy — màn admin hiện y hệt trạng thái bình thường
+   * *"khóa này chưa có bộ video nào"*. Bấm **Tạo bộ video** thì đổ lỗi chung
+   * chung, mà trên màn hình không có một dấu hiệu nào chỉ tới nguyên nhân thật.
+   *
+   * Đây đúng kiểu **hỏng im lặng** mà `AGENTS.md` cấm: một sai sót vận hành đội
+   * lốt trạng thái rỗng hợp lệ.
+   *
+   * Phía **học viên** thì ngược lại — cố ý vẫn nuốt lỗi thành "không có video",
+   * vì fail-closed đúng cho người học: thà không thấy tab còn hơn dội một thông
+   * báo kỹ thuật vào mặt các em.
+   */
+  loadError: string | null;
+};
+
+/**
+ * Lấy bộ video của khoá cho màn admin, kèm lỗi tải nếu có.
+ *
+ * Gộp hai lượt đọc vào một hàm để phía gọi không tự ghép rồi quên mất vế lỗi.
+ * Bản đầu mỗi khóa một bộ nên lấy bộ đầu tiên; schema đã chừa nhiều bộ.
+ */
+export async function getAdminVideoData(courseId: string): Promise<AdminVideoData> {
   const supabase = await createClient();
-  const { data } = await supabase
+
+  const { data: collections, error: listError } = await supabase
     .from("video_collections")
     .select("*")
     .eq("course_id", courseId)
     .order("position")
     .order("created_at");
 
-  return data ?? [];
-}
+  if (listError) {
+    return { collection: null, loadError: describeLoadError(listError) };
+  }
 
-/** Một bộ kèm toàn bộ buổi, sắp theo số buổi (màn admin). */
-export async function getAdminVideoCollection(
-  collectionId: string,
-): Promise<VideoCollectionView | null> {
-  const supabase = await createClient();
+  const collection = collections?.[0];
+  if (!collection) return { collection: null, loadError: null };
 
-  const { data: collection } = await supabase
-    .from("video_collections")
-    .select("*")
-    .eq("id", collectionId)
-    .maybeSingle();
-
-  if (!collection) return null;
-
-  const { data: items } = await supabase
+  const { data: items, error: itemError } = await supabase
     .from("video_items")
     .select("*")
-    .eq("collection_id", collectionId)
+    .eq("collection_id", collection.id)
     .order("session_number");
 
-  return { ...collection, items: (items ?? []).map(toView) };
+  if (itemError) {
+    return { collection: null, loadError: describeLoadError(itemError) };
+  }
+
+  return {
+    collection: { ...collection, items: (items ?? []).map(toView) },
+    loadError: null,
+  };
+}
+
+/**
+ * Nói đúng nguyên nhân thay vì "có lỗi xảy ra".
+ *
+ * 🔴 `PGRST205` là mã THẬT của ca này, đã đo trên REST local (bảng lạ → HTTP 404
+ * `PGRST205`). Mã Postgres `42P01` giữ kèm cho các đường chạy SQL thẳng, nhưng
+ * app đi qua PostgREST nên nếu chỉ bắt `42P01` thì nhánh này không bao giờ chạy.
+ */
+const MISSING_SCHEMA_CODES = new Set(["PGRST205", "PGRST202", "42P01", "42883"]);
+
+function describeLoadError(error: { code?: string; message?: string }): string {
+  if (error.code && MISSING_SCHEMA_CODES.has(error.code)) {
+    return "Bảng dữ liệu video chưa có trên máy chủ này — migration 20260805000090_lesson_videos chưa được chạy. Chạy `npx supabase db push` rồi tải lại trang.";
+  }
+  return "Không tải được danh sách video. Vui lòng tải lại trang.";
 }
 
 /**
