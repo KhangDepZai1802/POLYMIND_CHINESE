@@ -835,6 +835,53 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 
 ---
 
+### Bỏ cuộn ngang khỏi giao diện điện thoại — `UX-MOBILE-1` (user chốt 2026-08-05, kèm 2 ảnh)
+
+**Nguyên văn:** *"khi vào 1 module nào có nhiều tab ví dụ như lớp của tôi hay bài tập cần phải cuộn ngang các tab đó để thấy toàn bộ tab nhưng tôi không thích giao diện điện thoại mà phải cuộn ngang và việc cuộn ngang này có thể khiến người ta không biết là 'phải cuộn ngang hả'"* · *"1 cái đặc biệt cần thay đổi kĩ đó là tab lịch/buổi trong trang lớp của tôi… nhìn cực kì mất thẩm mỹ và không có gu và thiếu chuyên nghiệp"*.
+
+Bản thiết kế + mockup 375px user đã duyệt: <https://claude.ai/code/artifact/309b9694-a647-47ed-bedd-886e07e76d17>
+
+**Bốn quyết định user chốt trên bản thiết kế:**
+
+1. Dải tab dùng **nút chọn mục + bảng trượt** (phương án B), **không** dùng lưới 2 cột.
+2. **Giữ nguyên 7 tab** ở `/student/class` — không gộp *Bài tập*+*Kiểm tra*, không nhập *Chuyên cần* vào *Tiến độ*.
+3. Ngày không có buổi trong lịch tuần **vẫn hiện**, dạng dòng rút gọn.
+4. Làm luôn mục lục 35 buổi flashcard, **và mở rộng phạm vi ra mọi vai trò**: *"triển khai với tất cả giao diện điện thoại không chỉ với tài khoản học viên mà với cả admin giáo viên giáo vụ"*.
+
+⚠️ **Ràng buộc user thêm giữa lúc làm:** *"giao diện pc và laptop đang rất đẹp đừng thay đổi gì nhé"* → làm rõ lại: *"có thay đổi mà vẫn đẹp là được chứ đừng thay đổi làm xấu đi"*. Vì vậy mọi mốc chuyển bố cục đều **giữ nguyên bề mặt cũ ở phía màn rộng**: tab đổi ở `sm` (640px), lịch đổi ở `xl` (1280px).
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| UX-MOBILE-1a | **Component dải tab dùng chung** | `components/shared/responsive-tabs.tsx`: dưới `sm` là nút chọn (`data-slot="tab-picker"`, có `n/N`) + `Sheet` từ dưới lên; từ `sm` là `TabsList` cũ, `min-w-max` → `flex-wrap`. ⛔ **Chỉ MỘT `TabsList`** — hai list sẽ cho id trigger trùng vì Radix sinh id theo `(baseId, value)`. Nhận cả dải lái bằng state lẫn lái bằng URL | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05 |
+| UX-MOBILE-1b | **Áp cho cả 7 dải tab, mọi vai trò** | Học viên: `/student/class` (7 tab) · `/student/exercises` (5) · `/student/results` (3) · `/student/review` (2–3). Giáo viên + **giáo vụ**: `/teacher/classes/[id]` (8 tab, lái bằng `?tab=`). Quản trị: `/admin/courses/[id]` (4) · `/admin/notifications` (2). `data-review-chrome` của màn Ôn tập giữ nguyên qua `navProps` | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05 |
+| UX-MOBILE-1c | **Lịch tuần dạng danh sách dọc** | Dưới `xl`: 7 ngày xếp dọc, ngày có buổi = thẻ rộng hết ngang, **ngày trống = một dòng ~32px** (không ẩn). Hôm nay có vạch trái + **chữ** "Hôm nay", không chỉ dựa vào màu. Hàm `getWeekDaySlots` nằm ở `calendar.ts` để test được | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05 |
+| UX-MOBILE-1d | **Lịch tháng cỡ điện thoại** | Dưới `xl`: giữ lưới 7 cột nhưng ô chỉ còn **số ngày + chấm** (7×44px vừa 343px), chạm ngày → panel chi tiết ngay dưới, **dùng chung `DaySessionCard`** với chế độ Tuần. `pickMonthFocusDateKey` chọn ngày mặc định: hôm nay → buổi sắp tới → buổi cuối → ngày 1 | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05 |
+| UX-MOBILE-1e | **Mục lục 35 buổi flashcard** | `flashcard-section-picker.tsx`: dưới `sm` nút *Buổi N* + **lưới số 5 cột** (35 buổi trong 7 hàng, một chạm tới bất kỳ buổi nào); từ `sm` là dải nút `flex-wrap`. Nút mở giữ `h-9` theo yêu cầu user 2026-07-25 | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05 |
+| UX-MOBILE-1f | **Test + cổng + đo trình duyệt** | Vitest cho hàm thuần lịch và cho chính component; **kiểm ngược** phải đỏ đúng chỗ. E2E: helper `selectTab`/`expectTabCount` vì dưới 640px `getByRole("tab")` **không** còn khớp gì (phần tử `display:none` không nằm trong cây trợ năng). Đo Chromium: **0 khung cuộn ngang** ở mọi màn × mọi bề rộng | ☑ **DONE, chờ xác minh độc lập** — lint 0 · typecheck 0 · Vitest **580/580** · build 0 · đo **11 màn × 7 bề rộng = 0** |
+
+**Kiểm ngược đã chạy thật, cả ba đều đỏ đúng chỗ:**
+
+1. Cho `getWeekDaySlots` lọc bỏ ngày trống ⇒ **5 bài đỏ**, trong đó có đúng bài *"GIỮ ngày không có buổi thay vì lọc bỏ"*.
+2. Bọc lưới tháng điện thoại vào `overflow-x-auto` ⇒ đỏ đúng bài *"chế độ Tháng cho màn hẹp KHÔNG nằm trong khung cuộn ngang"*.
+3. Trả `ResponsiveTabs` về `overflow-x-auto` + `min-w-max` ⇒ đỏ đúng bài *"KHÔNG đặt dải tab trong khung cuộn ngang"*.
+
+🔴 **Phép đo đầu tiên ĐO SAI CHỖ — ghi lại vì nó làm hỏng cả một họ bài kiểm.** `documentElement.scrollWidth - innerWidth` (chỉ số các đợt UX trước vẫn dùng) **vẫn ra 0** ngay cả khi khôi phục lưới tuần 1050px cũ: `overflow-x-auto` giữ cuộn ngang **bên trong khung con**, trang không tràn pixel nào. Chỉ số đúng cho vấn đề này là **đếm phần tử con có `scrollWidth > clientWidth` và `overflow-x: auto|scroll`**.
+
+📏 **Số đo thật bằng Chromium (2026-08-05), mốc 360 · 375 · 390 · 414 · 768 · 1280 · 1440px:**
+
+| | Trước (khôi phục lưới cũ để đo) | Sau |
+|---|---|---|
+| Lịch Tuần | cần **1050px** / có **326 · 341 · 356 · 380 · 462 · 974 · 1050+** ⇒ @360 phải kéo **724px ≈ 3,2 màn** | **0** ở mọi mốc |
+| 10 màn còn lại (3 vai trò) | — | **0** ở mọi mốc |
+
+🔴 **Phép đo đúng bắt được lỗi trong chính bản sửa này:** mốc `xl` (1280px) **sai** — @1280 vùng nội dung chỉ **974px** mà lưới cần **1050px**, vẫn vuốt ngang **76px**. Vùng nội dung ≈ bề rộng màn − **306px** ⇒ ranh giới thật **1356px**, đổi sang `min-[1360px]`. Xác nhận bề mặt: @360/768/1280 = danh sách dọc · @1360/1440 = **đúng lưới 7 cột cũ**, laptop 1440 không đổi gì.
+
+🟡 **Bug KHÁC lộ ra khi chạy `teacher-cross-module`, đã mở task riêng `UX-REPORT-360`:** `/teacher/progress` (Báo cáo lớp) tràn **59px @360 · 29px @390**. Thuộc `REPORT-REDESIGN-1`, **không** liên quan đợt này — đã truy: trang đó không import file nào trong diff.
+
+⛔ **Không đụng trong đợt này:** nghiệp vụ, RLS, truy vấn, migration, và **bảng dữ liệu nhiều cột** (`DataTable`, lưới điểm danh, nhật ký audit) — cuộn ngang là bố cục ĐÚNG cho dữ liệu dạng bảng và repo đã có luật riêng cho nó (`DS-038`).
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |

@@ -3,6 +3,8 @@ import { execFileSync } from "node:child_process";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { expectTabCount } from "./helpers/select-tab";
+
 const DB = "supabase_db_Polymind_Chinese";
 const TEACHER_USER_ID = "22222222-2222-2222-2222-222222222221";
 /*
@@ -204,7 +206,7 @@ test("Bài tập học viên giữ đúng hành trình và responsive ba màn", 
     await expect(
       page.getByRole("heading", { name: "Bài tập", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByRole("tab")).toHaveCount(5);
+    await expectTabCount(page, 5);
     await expect(page.getByText("1 cần làm · 1 quá hạn")).toBeVisible();
     await expectAccessibleAndContained(page, `list-${viewport.name}`);
     if (process.env.UIUX_CAPTURE === "1") {

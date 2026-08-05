@@ -19,7 +19,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import type { StudentExerciseOverview } from "@/features/assessment-results/server/overview";
 import { startExerciseAction } from "@/features/exercises/server/actions";
 import { formatDateTime } from "@/lib/dates";
@@ -145,29 +146,28 @@ export function StudentExerciseList({
         </div>
       </section>
 
-      <Tabs
+      {/* Dải 5 tab trạng thái: dưới `sm` là nút chọn + bảng trượt, từ `sm` trở
+          lên giữ nguyên dải ngang cũ (`UX-MOBILE-1`). */}
+      <ResponsiveTabs
+        label="Trạng thái bài tập"
         value={tab}
         onValueChange={(value) => setTab(value as Tab)}
         activationMode="manual"
+        items={TAB_CONFIG.map((item) => ({
+          value: item.value,
+          label: item.label,
+          icon: <item.icon className="size-4" aria-hidden />,
+          badge: (
+            <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
+              {byTab[item.value].length}
+            </span>
+          ),
+        }))}
+        listWrapperClassName="border-student-sky-border bg-student-sky-surface rounded-xl border p-1"
+        listClassName="bg-transparent p-0"
+        triggerClassName="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+        pickerClassName="border-student-sky-border bg-student-sky-surface text-student-sky-ink"
       >
-        <nav
-          aria-label="Trạng thái bài tập"
-          tabIndex={0}
-          className="border-student-sky-border bg-student-sky-surface focus-visible:ring-ring overflow-x-auto rounded-xl border p-1 focus-visible:ring-2 focus-visible:outline-none"
-        >
-          <TabsList className="min-w-max bg-transparent p-0">
-            {TAB_CONFIG.map((item) => (
-              <ExerciseTab
-                key={item.value}
-                value={item.value}
-                label={item.label}
-                icon={item.icon}
-                count={byTab[item.value].length}
-              />
-            ))}
-          </TabsList>
-        </nav>
-
         {TAB_CONFIG.map((item) => (
           <TabsContent key={item.value} value={item.value} className="mt-4">
             {byTab[item.value].length === 0 ? (
@@ -191,7 +191,7 @@ export function StudentExerciseList({
             )}
           </TabsContent>
         ))}
-      </Tabs>
+      </ResponsiveTabs>
     </div>
   );
 }
@@ -249,31 +249,6 @@ function OverviewCard({
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function ExerciseTab({
-  value,
-  label,
-  icon: Icon,
-  count,
-}: {
-  value: Tab;
-  label: string;
-  icon: LucideIcon;
-  count: number;
-}) {
-  return (
-    <TabsTrigger
-      value={value}
-      className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-    >
-      <Icon className="size-4" aria-hidden />
-      {label}
-      <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
-        {count}
-      </span>
-    </TabsTrigger>
   );
 }
 

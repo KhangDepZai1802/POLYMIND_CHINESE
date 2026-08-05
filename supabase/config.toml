@@ -85,7 +85,9 @@ allowed_cidrs_v6 = ["::/0"]
 # enabled = true
 
 [realtime]
-enabled = true
+# Tat de tiet kiem ~230MB RAM: du an khong dung Realtime (khong co .channel()/postgres_changes).
+# Bat lai bang cach doi thanh true neu can subscription realtime.
+enabled = false
 # Bind realtime via either IPv4 or IPv6. (default: IPv4)
 # ip_version = "IPv6"
 # The maximum length in bytes of HTTP request headers. (default: 4096)

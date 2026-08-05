@@ -3,6 +3,8 @@ import { execFileSync } from "node:child_process";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { expectTabCount, selectTab } from "./helpers/select-tab";
+
 const DB = "supabase_db_Polymind_Chinese";
 const TEACHER_USER_ID = "22222222-2222-2222-2222-222222222221";
 /*
@@ -197,7 +199,10 @@ async function waitForTabColorsToSettle(page: Page) {
   await expect
     .poll(() =>
       page
-        .getByRole("tablist")
+        // Bám `data-slot` chứ không phải `role`: dưới 640px dải tab ngang là
+        // `display:none` nên nó KHÔNG còn trong cây trợ năng, `getByRole` sẽ
+        // không tìm thấy gì và hàm này treo tới hết giờ (`UX-MOBILE-1`).
+        .locator('[data-slot="tabs-list"]')
         .evaluate((list) =>
           Array.from(list.querySelectorAll('[role="tab"]')).every(
             (tab) => tab.getAnimations().length === 0,
@@ -234,7 +239,7 @@ test("Kết quả giữ đúng ba nhóm và responsive ba màn", async ({ page }
     await expect(
       page.getByRole("heading", { name: "Tổng quan học tập", level: 2 }),
     ).toBeVisible();
-    await expect(page.getByRole("tab")).toHaveCount(3);
+    await expectTabCount(page, 3);
 
     // Tab Điểm — mặc định.
     await expect(
@@ -249,7 +254,7 @@ test("Kết quả giữ đúng ba nhóm và responsive ba màn", async ({ page }
     await expectAccessibleAndContained(page, `results-diem-${viewport.name}`);
 
     // Tab Đánh giá.
-    await page.getByRole("tab", { name: /Đánh giá/ }).click();
+    await selectTab(page, /Đánh giá/);
     await expect(
       page.getByRole("heading", { name: "Đánh giá học tập", level: 2 }),
     ).toBeVisible();
@@ -261,7 +266,7 @@ test("Kết quả giữ đúng ba nhóm và responsive ba màn", async ({ page }
     await expectAccessibleAndContained(page, `results-danhgia-${viewport.name}`);
 
     // Tab Tiến độ.
-    await page.getByRole("tab", { name: /Tiến độ/ }).click();
+    await selectTab(page, /Tiến độ/);
     await expect(
       page.getByRole("heading", { name: "Chặng đường khóa học", level: 2 }),
     ).toBeVisible();

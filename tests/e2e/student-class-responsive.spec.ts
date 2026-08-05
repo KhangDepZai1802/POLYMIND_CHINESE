@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+import { selectTab } from "./helpers/select-tab";
+
 const viewports = [
   { name: "mobile-360", width: 360, height: 800 },
   { name: "tablet-768", width: 768, height: 1024 },
@@ -37,7 +39,7 @@ test("Lớp của tôi giữ 7 tab, WCAG AA và responsive ba tầng", async ({
 
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
-    await page.getByRole("tab", { name: "Tổng quan" }).click();
+    await selectTab(page, "Tổng quan");
     await expect(
       page.getByRole("heading", { name: "Thông tin lớp", level: 2 }),
     ).toBeVisible();
@@ -60,7 +62,12 @@ test("Lớp của tôi giữ 7 tab, WCAG AA và responsive ba tầng", async ({
     }
   }
 
-  await page.setViewportSize(viewports[0]);
+  /*
+   * Phím mũi tên (roving tabindex của Radix) chỉ có nghĩa ở nơi dải tab NGANG
+   * đang hiện — từ 640px trở lên. Dưới mốc đó dải bị `display:none` và đường đi
+   * bằng bàn phím là nút chọn + bảng trượt, kiểm riêng ở khối kế tiếp.
+   */
+  await page.setViewportSize(viewports[2]);
   const overviewTab = page.getByRole("tab", { name: "Tổng quan" });
   await overviewTab.focus();
   await page.keyboard.press("ArrowRight");
@@ -69,8 +76,16 @@ test("Lớp của tôi giữ 7 tab, WCAG AA và responsive ba tầng", async ({
     page.getByRole("heading", { name: "Lịch học lặp", level: 2 }),
   ).toBeVisible();
 
+  // `UX-MOBILE-1`: ở 360px dải tab ngang phải BIẾN MẤT, thay bằng đúng một nút
+  // chọn nói rõ đang ở mục nào trên tổng bao nhiêu mục.
+  await page.setViewportSize(viewports[0]);
+  await expect(page.getByRole("tab", { name: "Tổng quan" })).toBeHidden();
+  const picker = page.locator('[data-slot="tab-picker"]');
+  await expect(picker).toBeVisible();
+  await expect(picker).toContainText(`/${tabs.length}`);
+
   for (const tab of ["Tiến độ", "Chuyên cần", "Tài liệu"] as const) {
-    await page.getByRole("tab", { name: tab }).click();
+    await selectTab(page, tab);
     await expect(
       page.locator('[data-slot="tabs-content"][data-state="active"]'),
     ).toBeVisible();
@@ -78,5 +93,18 @@ test("Lớp của tôi giữ 7 tab, WCAG AA và responsive ba tầng", async ({
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
     expect(overflow, tab).toBeLessThanOrEqual(1);
+  }
+
+  // Chế độ Tuần và Tháng của tab Lịch/Buổi là hai chỗ tràn ngang nặng nhất
+  // trước đợt này (1050px và 840px trong khung 360px).
+  await selectTab(page, "Lịch/Buổi");
+  for (const view of ["Tuần", "Tháng"] as const) {
+    // `exact: true`: không có nó thì "Tuần" khớp luôn cả hai nút điều hướng
+    // "Xem tuần trước" / "Xem tuần sau".
+    await page.getByRole("button", { name: view, exact: true }).click();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow, `Lịch/Buổi · ${view}`).toBeLessThanOrEqual(1);
   }
 });

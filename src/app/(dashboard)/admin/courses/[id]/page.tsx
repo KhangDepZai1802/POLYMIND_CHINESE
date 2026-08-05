@@ -18,8 +18,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ScrollableNav } from "@/components/shared/scrollable-nav";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { requireManager } from "@/lib/auth/session";
 import { formatCurrency, formatDate } from "@/lib/dates";
 import {
@@ -91,29 +91,22 @@ export default async function CourseDetailPage({
         </span>
       </div>
 
-      <Tabs defaultValue="overview">
-        {/*
-         * Dải 4 tab đo được **450px** trong khung 360px → trang tràn 106px.
-         * Cho cuộn ngang và **phải tới được bằng bàn phím**: Radix dùng roving
-         * tabindex nên "bên trong có nút" không cứu được vùng cuộn — đúng lỗi
-         * `UX-UIUX-M21-009` đã sửa ở khu học viên và lặp lại ở `P17-T5`.
-         * Dùng lại nguyên mẫu `/student/class` để hai khu không lệch nhau.
-         */}
-        <ScrollableNav label="Nội dung khóa học">
-          <TabsList className="min-w-max">
-            <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-            <TabsTrigger value="curriculum">
-              Giáo trình ({lessonCount})
-            </TabsTrigger>
-            <TabsTrigger value="materials">
-              Tài liệu ({materials.length})
-            </TabsTrigger>
-            <TabsTrigger value="classes">
-              Lớp đã mở ({classes.length})
-            </TabsTrigger>
-          </TabsList>
-        </ScrollableNav>
-
+      {/*
+       * Dải 4 tab đo được **450px** trong khung 360px → trang tràn 106px. Trước
+       * `UX-MOBILE-1` cách chữa là cho cuộn ngang; nay dưới `sm` đổi hẳn sang
+       * nút chọn + bảng trượt nên **không còn gì để cuộn**. Dùng lại nguyên mẫu
+       * `/student/class` để hai khu không lệch nhau.
+       */}
+      <ResponsiveTabs
+        label="Nội dung khóa học"
+        defaultValue="overview"
+        items={[
+          { value: "overview", label: "Tổng quan" },
+          { value: "curriculum", label: `Giáo trình (${lessonCount})` },
+          { value: "materials", label: `Tài liệu (${materials.length})` },
+          { value: "classes", label: `Lớp đã mở (${classes.length})` },
+        ]}
+      >
         <TabsContent value="overview" className="mt-4">
           {/* `min-w-0`: DS-039 — đo được trang tràn 106px @360 trước khi sửa. */}
           <div className="grid gap-4 md:grid-cols-2">
@@ -242,7 +235,7 @@ export default async function CourseDetailPage({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </ResponsiveTabs>
     </>
   );
 }

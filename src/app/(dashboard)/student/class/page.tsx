@@ -18,10 +18,11 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { getStudentAssessmentOverview } from "@/features/assessment-results/server/overview";
 import { SessionCalendar } from "@/features/schedules/components/schedule-manager";
 import { MaterialList } from "@/features/student/components/material-list";
@@ -135,38 +136,58 @@ export default async function StudentClassPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="overview">
-        {/*
-          `tabIndex={0}` + vòng focus: ở 360px bảy tab không đủ chỗ nên dải này
-          cuộn ngang, mà vùng cuộn không focus được thì người dùng bàn phím
-          không tới được ba tab cuối (axe `scrollable-region-focusable`).
-          Ba dải tab học viên còn lại (`/student/exercises`, `/student/review`,
-          `/student/results`) đã có từ trước — chỉ màn này bị sót (`P15-T9`).
-        */}
-        <nav
-          aria-label="Nội dung lớp học"
-          tabIndex={0}
-          className="border-student-sky-border bg-student-sky-surface focus-visible:ring-ring overflow-x-auto rounded-xl border p-1 focus-visible:ring-2 focus-visible:outline-none"
-        >
-          <TabsList className="min-w-max bg-transparent p-0">
-            <StudentTab value="overview" icon={School} label="Tổng quan" />
-            <StudentTab
-              value="schedule"
-              icon={CalendarDays}
-              label="Lịch/Buổi"
-            />
-            <StudentTab value="exercises" icon={FileText} label="Bài tập" />
-            <StudentTab value="exams" icon={GraduationCap} label="Kiểm tra" />
-            <StudentTab value="progress" icon={Target} label="Tiến độ" />
-            <StudentTab
-              value="attendance"
-              icon={ClipboardList}
-              label="Chuyên cần"
-            />
-            <StudentTab value="materials" icon={BookOpen} label="Tài liệu" />
-          </TabsList>
-        </nav>
-
+      {/*
+        Dải 7 tab này từng là vùng `overflow-x-auto`: ở 375px nó cần ~754px nên
+        bốn tab cuối nằm ngoài mép mà không có dấu hiệu nào báo là còn nữa.
+        `ResponsiveTabs` thay bằng nút chọn mục + bảng trượt dưới `sm`
+        (`UX-MOBILE-1`, user chốt phương án này 2026-08-05 và chốt **giữ đủ 7
+        tab**, không gộp).
+      */}
+      <ResponsiveTabs
+        label="Nội dung lớp học"
+        defaultValue="overview"
+        items={[
+          {
+            value: "overview",
+            label: "Tổng quan",
+            icon: <School className="size-4" aria-hidden />,
+          },
+          {
+            value: "schedule",
+            label: "Lịch/Buổi",
+            icon: <CalendarDays className="size-4" aria-hidden />,
+          },
+          {
+            value: "exercises",
+            label: "Bài tập",
+            icon: <FileText className="size-4" aria-hidden />,
+          },
+          {
+            value: "exams",
+            label: "Kiểm tra",
+            icon: <GraduationCap className="size-4" aria-hidden />,
+          },
+          {
+            value: "progress",
+            label: "Tiến độ",
+            icon: <Target className="size-4" aria-hidden />,
+          },
+          {
+            value: "attendance",
+            label: "Chuyên cần",
+            icon: <ClipboardList className="size-4" aria-hidden />,
+          },
+          {
+            value: "materials",
+            label: "Tài liệu",
+            icon: <BookOpen className="size-4" aria-hidden />,
+          },
+        ]}
+        listWrapperClassName="border-student-sky-border bg-student-sky-surface rounded-xl border p-1"
+        listClassName="bg-transparent p-0"
+        triggerClassName="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+        pickerClassName="border-student-sky-border bg-student-sky-surface text-student-sky-ink"
+      >
         <TabsContent value="overview" className="mt-4">
           {!overview ? (
             <EmptyPanel
@@ -652,28 +673,8 @@ export default async function StudentClassPage() {
             </CardContent>
           </StudentSectionCard>
         </TabsContent>
-      </Tabs>
+      </ResponsiveTabs>
     </div>
-  );
-}
-
-function StudentTab({
-  value,
-  icon: Icon,
-  label,
-}: {
-  value: string;
-  icon: LucideIcon;
-  label: string;
-}) {
-  return (
-    <TabsTrigger
-      value={value}
-      className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-    >
-      <Icon className="size-4" aria-hidden />
-      {label}
-    </TabsTrigger>
   );
 }
 

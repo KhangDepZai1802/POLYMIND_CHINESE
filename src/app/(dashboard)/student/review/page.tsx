@@ -1,7 +1,8 @@
 import { BrainCircuit, Layers, Youtube } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { StudentFlashcardDeckPicker } from "@/features/flashcards/components/student-flashcard-deck-picker";
 import { StudentFlashcardReader } from "@/features/flashcards/components/student-flashcard-reader";
 import {
@@ -69,48 +70,48 @@ export default async function StudentReviewPage({
           description="Ôn từ vựng theo từng buổi và luyện lại các câu bạn từng làm sai."
         />
       </div>
-      <Tabs defaultValue="flashcards" className="space-y-4">
-        <nav
-          aria-label="Hình thức ôn tập"
-          tabIndex={0}
-          data-review-chrome
-          className="border-student-sky-border bg-student-sky-surface focus-visible:ring-ring overflow-x-auto rounded-xl border p-1 focus-visible:ring-2 focus-visible:outline-none"
-        >
-          <TabsList className="min-w-max bg-transparent p-0">
-            <TabsTrigger
-              value="flashcards"
-              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-            >
-              <Layers className="size-4" aria-hidden />
-              Flashcard Từ Vựng
-            </TabsTrigger>
-            <TabsTrigger
-              value="wrong-answers"
-              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-            >
-              <BrainCircuit className="size-4" aria-hidden />
-              Ôn Tập Câu Sai
+      <ResponsiveTabs
+        label="Hình thức ôn tập"
+        defaultValue="flashcards"
+        className="space-y-4"
+        navProps={{ "data-review-chrome": "" }}
+        items={[
+          {
+            value: "flashcards",
+            label: "Flashcard Từ Vựng",
+            icon: <Layers className="size-4" aria-hidden />,
+          },
+          {
+            value: "wrong-answers",
+            label: "Ôn Tập Câu Sai",
+            icon: <BrainCircuit className="size-4" aria-hidden />,
+            badge: (
               <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
                 {wrongAnswers.length}
               </span>
-            </TabsTrigger>
-            {/*
-              Tab thứ ba chỉ hiện khi khoá THẬT SỰ có video đã công bố. Bày một
-              tab rỗng ra cho cả lớp bấm vào rồi thấy trống là bắt người ta trả
-              giá bằng một cú bấm để biết "không có gì" (`empty-nav-state` chỉ
-              đòi giải thích khi đích đến TỒN TẠI mà chưa mở).
-            */}
-            {videoCollection && videoCollection.items.length > 0 ? (
-              <TabsTrigger
-                value="videos"
-                className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-              >
-                <Youtube className="size-4" aria-hidden />
-                Video Bài Giảng
-              </TabsTrigger>
-            ) : null}
-          </TabsList>
-        </nav>
+            ),
+          },
+          /*
+            Tab thứ ba chỉ hiện khi khoá THẬT SỰ có video đã công bố. Bày một
+            tab rỗng ra cho cả lớp bấm vào rồi thấy trống là bắt người ta trả
+            giá bằng một cú bấm để biết "không có gì" (`empty-nav-state` chỉ
+            đòi giải thích khi đích đến TỒN TẠI mà chưa mở).
+          */
+          ...(videoCollection && videoCollection.items.length > 0
+            ? [
+                {
+                  value: "videos",
+                  label: "Video Bài Giảng",
+                  icon: <Youtube className="size-4" aria-hidden />,
+                },
+              ]
+            : []),
+        ]}
+        listWrapperClassName="border-student-sky-border bg-student-sky-surface rounded-xl border p-1"
+        listClassName="bg-transparent p-0"
+        triggerClassName="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+        pickerClassName="border-student-sky-border bg-student-sky-surface text-student-sky-ink"
+      >
         <TabsContent value="flashcards">
           {course && deckOptions.length > 1 && !selectedDeckId ? (
             <StudentFlashcardDeckPicker
@@ -137,7 +138,7 @@ export default async function StudentReviewPage({
             />
           </TabsContent>
         ) : null}
-      </Tabs>
+      </ResponsiveTabs>
     </>
   );
 }

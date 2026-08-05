@@ -409,16 +409,36 @@ test("M14 — danh sách lớp hiện đủ tên lớp ở 360px, không cắt c
   expect(clipped, `tên lớp bị cắt cụt: ${clipped.join(" | ")}`).toEqual([]);
 });
 
-test("M14 — dải 8 tab chi tiết lớp đọc được đủ nhãn ở 360px", async ({
+test("M14 — chi tiết lớp: 360px dùng nút chọn mục, 768px dải 8 tab không cắt nhãn", async ({
   page,
 }) => {
   await loginTeacher(page);
-  await visit(page, `/teacher/classes/${CLASS_ID}`, 360);
 
   /*
-   * Bài học `UX-UIUX-M19-007`: E2E xanh không thay thế được việc NHÌN. Nhãn bị
-   * CSS cắt cụt thì `toContainText` vẫn xanh vì DOM đủ chữ. Đo bề rộng thật.
+   * `UX-MOBILE-1` (2026-08-05): ở 360px dải tab ngang KHÔNG còn tồn tại — nó là
+   * `display:none` nên cũng không nằm trong cây trợ năng. Bề mặt duy nhất là
+   * nút chọn mục, và con số `1/8` trên nút chính là thứ thay cho affordance mà
+   * vùng cuộn ngang cũ không có.
    */
+  await visit(page, `/teacher/classes/${CLASS_ID}`, 360);
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  const picker = page.locator('[data-slot="tab-picker"]');
+  await expect(picker).toBeVisible();
+  await expect(picker).toContainText("1/8");
+
+  // Bảng trượt phải liệt kê đủ 8 mục và đi tới được.
+  await picker.click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("link")).toHaveCount(8);
+  await sheet.getByRole("link", { name: "Điểm danh" }).click();
+  await page.waitForURL(/tab=attendance/);
+
+  /*
+   * Từ 640px trở lên dải tab ngang trở lại. Bài học `UX-UIUX-M19-007`: E2E xanh
+   * không thay thế được việc NHÌN. Nhãn bị CSS cắt cụt thì `toContainText` vẫn
+   * xanh vì DOM đủ chữ. Đo bề rộng thật.
+   */
+  await visit(page, `/teacher/classes/${CLASS_ID}`, 768);
   const tabs = page.getByRole("tab");
   const total = await tabs.count();
   expect(total).toBe(8);

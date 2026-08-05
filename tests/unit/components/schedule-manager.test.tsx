@@ -59,7 +59,13 @@ describe("ScheduleManager — chuyển kiểu thời khóa biểu", () => {
     const weekButton = screen.getByRole("button", { name: "Tuần" });
     expect(weekButton).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("20/07 – 26/07/2099")).toBeInTheDocument();
-    expect(screen.getByText("Chào hỏi cơ bản")).toBeInTheDocument();
+    /*
+     * ĐÚNG HAI bản: danh sách dọc (dưới `xl`) và lưới 7 cột (từ `xl`). Cả hai
+     * cùng nằm trong DOM, CSS ẩn bớt một — `UX-MOBILE-1` cố ý chọn cách này chứ
+     * không đọc bề rộng bằng JS, vì đọc bằng JS thì máy chủ dựng ra một đằng và
+     * trình duyệt dựng lại một nẻo (hydration mismatch + nháy hình).
+     */
+    expect(screen.getAllByText("Chào hỏi cơ bản")).toHaveLength(2);
 
     await user.click(screen.getByRole("button", { name: "Tối giản" }));
     expect(screen.getByRole("button", { name: "Tối giản" })).toHaveAttribute(
@@ -101,7 +107,53 @@ describe("ScheduleManager — chuyển kiểu thời khóa biểu", () => {
       />,
     );
 
-    expect(screen.getByText("Vắng")).toBeInTheDocument();
+    expect(screen.getAllByText("Vắng")).toHaveLength(2);
     expect(screen.queryByText("Nhật ký")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * Bố cục dọc trên điện thoại (`UX-MOBILE-1`).
+ *
+ * Ba bài dưới đây ghim đúng ba điều user chốt 2026-08-05, để lần sau không ai
+ * "dọn dẹp" mất: (1) ngày trống vẫn hiện, (2) lưới tháng không còn khung cuộn
+ * ngang, (3) chạm một ngày thì chi tiết đổi theo.
+ */
+describe("SessionCalendar — bố cục dọc cho màn hẹp", () => {
+  it("chế độ Tuần liệt kê đủ 7 ngày, ngày trống thành một dòng rút gọn", () => {
+    render(<SessionCalendar mode="student" sessions={SESSIONS} />);
+
+    // Tuần 20/07–26/07/2099 có buổi ở Thứ Hai và Thứ Tư ⇒ 5 ngày còn lại phải
+    // xuất hiện dưới dạng dòng rút gọn, KHÔNG được biến mất.
+    expect(screen.getAllByText("— không có buổi")).toHaveLength(5);
+    expect(screen.getByText("Thứ Hai · 20/07")).toBeInTheDocument();
+    expect(screen.getByText("Thứ Tư · 22/07")).toBeInTheDocument();
+  });
+
+  it("chế độ Tháng cho màn hẹp KHÔNG nằm trong khung cuộn ngang", async () => {
+    const user = userEvent.setup();
+    render(<SessionCalendar mode="student" sessions={SESSIONS} />);
+    await user.click(screen.getByRole("button", { name: "Tháng" }));
+
+    const dayButton = screen.getByRole("button", {
+      name: /20\/07\/2099 — 1 buổi học/,
+    });
+    // Lưới điện thoại phải nằm ngoài mọi tổ tiên `overflow-x-auto`; chỉ lưới
+    // desktop (`min-w-[840px]`) mới được ở trong khung cuộn.
+    expect(dayButton.closest(".overflow-x-auto")).toBeNull();
+  });
+
+  it("chạm một ngày trong lưới tháng thì panel chi tiết đổi theo", async () => {
+    const user = userEvent.setup();
+    render(<SessionCalendar mode="student" sessions={SESSIONS} />);
+    await user.click(screen.getByRole("button", { name: "Tháng" }));
+
+    expect(screen.getByText(/20\/07\/2099/)).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /22\/07\/2099 — 1 buổi học/ }),
+    );
+    expect(screen.getByText(/22\/07\/2099/)).toBeInTheDocument();
+    expect(screen.getByText("Giới thiệu bản thân")).toBeInTheDocument();
   });
 });

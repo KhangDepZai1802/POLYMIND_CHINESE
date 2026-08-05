@@ -13,11 +13,12 @@ import {
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentStatCard } from "@/components/shared/student-stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { RATING_FIELDS } from "@/features/evaluations/schema";
 import { getMyResults } from "@/features/student/server/result-queries";
 import { getMyEnrollment } from "@/features/student/server/queries";
@@ -110,42 +111,34 @@ export default async function StudentResultsPage({
         </div>
       </section>
 
-      <Tabs defaultValue={defaultTab} className="mt-6 space-y-4">
-        <nav
-          aria-label="Nhóm kết quả"
-          tabIndex={0}
-          className="border-student-sky-border bg-student-sky-surface focus-visible:ring-ring overflow-x-auto rounded-xl border p-1 focus-visible:ring-2 focus-visible:outline-none"
-        >
-          <TabsList className="min-w-max bg-transparent p-0">
-            <TabsTrigger
-              value="results"
-              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-            >
-              <GraduationCap className="size-4" aria-hidden />
-              Điểm
-              <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
-                {results.length}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="evaluations"
-              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-            >
-              <ClipboardPen className="size-4" aria-hidden />
-              Đánh giá
-              <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
-                {evaluations.length}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="progress"
-              className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-            >
-              <TrendingUp className="size-4" aria-hidden />
-              Tiến độ
-            </TabsTrigger>
-          </TabsList>
-        </nav>
+      <ResponsiveTabs
+        label="Nhóm kết quả"
+        defaultValue={defaultTab}
+        className="mt-6 space-y-4"
+        items={[
+          {
+            value: "results",
+            label: "Điểm",
+            icon: <GraduationCap className="size-4" aria-hidden />,
+            badge: <TabCount value={results.length} />,
+          },
+          {
+            value: "evaluations",
+            label: "Đánh giá",
+            icon: <ClipboardPen className="size-4" aria-hidden />,
+            badge: <TabCount value={evaluations.length} />,
+          },
+          {
+            value: "progress",
+            label: "Tiến độ",
+            icon: <TrendingUp className="size-4" aria-hidden />,
+          },
+        ]}
+        listWrapperClassName="border-student-sky-border bg-student-sky-surface rounded-xl border p-1"
+        listClassName="bg-transparent p-0"
+        triggerClassName="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+        pickerClassName="border-student-sky-border bg-student-sky-surface text-student-sky-ink"
+      >
 
         {/* --- Điểm bài kiểm tra --- */}
         <TabsContent value="results" className="space-y-4">
@@ -394,8 +387,17 @@ export default async function StudentResultsPage({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </ResponsiveTabs>
     </>
+  );
+}
+
+/** Con số bám sau nhãn tab — dùng chung cho cả dải ngang và bảng trượt. */
+function TabCount({ value }: { value: number }) {
+  return (
+    <span className="rounded-full border border-current px-1.5 text-sm font-semibold">
+      {value}
+    </span>
   );
 }
 

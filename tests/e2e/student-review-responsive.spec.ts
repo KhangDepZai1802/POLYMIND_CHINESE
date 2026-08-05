@@ -3,6 +3,8 @@ import { execFileSync } from "node:child_process";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { expectTabCount, selectTab } from "./helpers/select-tab";
+
 const DB = "supabase_db_Polymind_Chinese";
 const TEACHER_USER_ID = "22222222-2222-2222-2222-222222222221";
 /*
@@ -160,7 +162,11 @@ async function waitForTabColorsToSettle(page: Page) {
   await expect
     .poll(() =>
       page
-        .getByRole("tab", { name: /Flashcard Từ Vựng/ })
+        // Bám `data-slot` chứ không phải `role`: dưới 640px dải tab ngang là
+        // `display:none` nên nó không còn trong cây trợ năng và `getByRole` sẽ
+        // treo tới hết giờ (`UX-MOBILE-1`).
+        .locator('[data-slot="tabs-trigger"][data-state="inactive"]')
+        .first()
         .evaluate((el) => getComputedStyle(el).backgroundColor),
     )
     .toBe("rgba(0, 0, 0, 0)");
@@ -191,9 +197,9 @@ test("Ôn câu sai giữ đúng hành trình và responsive ba màn", async ({
     await expect(
       page.getByRole("heading", { name: "Ôn tập", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByRole("tab")).toHaveCount(2);
+    await expectTabCount(page, 2);
 
-    await page.getByRole("tab", { name: /Ôn Tập Câu Sai/ }).click();
+    await selectTab(page, /Ôn Tập Câu Sai/);
     await expect(
       page.getByRole("heading", { name: "Tổng quan câu cần ôn", level: 2 }),
     ).toBeVisible();

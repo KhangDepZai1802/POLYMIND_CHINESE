@@ -1,8 +1,8 @@
 ﻿import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { ScrollableNav } from "@/components/shared/scrollable-nav";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { AnnouncementManager } from "@/features/announcements/components/announcement-manager";
 import {
   getAnnouncementClassOptions,
@@ -32,15 +32,17 @@ export default async function AdminNotificationsPage() {
         title="Thông báo"
         description="Thông báo cá nhân và thông báo chung một chiều cho toàn hệ thống hoặc theo lớp."
       />
-      <Tabs defaultValue="announcements" className="space-y-4">
-        {/* Cùng khuôn với `/admin/courses/[id]`: dải tab cuộn ngang được và tới
-            được bằng bàn phím, để hai màn Quản trị không lệch nhau. */}
-        <ScrollableNav label="Nhóm thông báo">
-          <TabsList className="min-w-max">
-            <TabsTrigger value="announcements">Thông báo chung</TabsTrigger>
-            <TabsTrigger value="notifications">Thông báo của tôi</TabsTrigger>
-          </TabsList>
-        </ScrollableNav>
+      {/* Cùng khuôn với `/admin/courses/[id]` để hai màn Quản trị không lệch
+          nhau (`UX-MOBILE-1`). */}
+      <ResponsiveTabs
+        label="Nhóm thông báo"
+        defaultValue="announcements"
+        className="space-y-4"
+        items={[
+          { value: "announcements", label: "Thông báo chung" },
+          { value: "notifications", label: "Thông báo của tôi" },
+        ]}
+      >
         <TabsContent value="announcements">
           <AnnouncementManager
             announcements={announcements}
@@ -50,7 +52,7 @@ export default async function AdminNotificationsPage() {
         <TabsContent value="notifications">
           <NotificationCenter {...notificationData} role={me.role} />
         </TabsContent>
-      </Tabs>
+      </ResponsiveTabs>
     </>
   );
 }

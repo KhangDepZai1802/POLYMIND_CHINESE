@@ -7,6 +7,15 @@ import { cn } from "@/lib/utils";
 /**
  * Vùng cuộn ngang cho dải tab.
  *
+ * ⚠️ **Từ `UX-MOBILE-1` (2026-08-05) KHÔNG dải tab nào còn dùng component này.**
+ * User bác bỏ hẳn lối cuộn ngang trên điện thoại: *"tôi không thích giao diện
+ * điện thoại mà phải cuộn ngang và việc cuộn ngang này có thể khiến người ta
+ * không biết là phải cuộn ngang hả"*. Dải tab nay đi qua
+ * `components/shared/responsive-tabs.tsx` — nút chọn mục + bảng trượt dưới
+ * `sm`, dải ngang `flex-wrap` từ `sm` trở lên. **Đừng dựng dải tab mới bằng
+ * file này.** Giữ lại vì luật `tabIndex` có điều kiện ở dưới vẫn đúng cho
+ * những vùng THẬT SỰ phải cuộn ngang (bảng dữ liệu nhiều cột).
+ *
  * Cùng một luật với `DataTable`: **chỉ nhận tiêu điểm khi thật sự cuộn được**
  * (`DS-038` luật 3).
  *

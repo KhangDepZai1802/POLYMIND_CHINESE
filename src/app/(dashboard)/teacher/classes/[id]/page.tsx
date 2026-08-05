@@ -18,10 +18,11 @@ import {
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import {
   getClassById,
   getClassProgress,
@@ -150,48 +151,22 @@ export default async function TeacherClassDetailPage({
         </span>
       </div>
 
-      <Tabs value={activeTab} activationMode="manual">
-        {/* `tabIndex={0}` + vòng focus: ở 360px tám tab không đủ chỗ nên dải này
-            cuộn ngang. Radix `Tabs` dùng **roving tabindex** — chỉ tab đang chọn
-            có `tabindex=0`, các tab còn lại là `-1` — nên "bên trong có link"
-            KHÔNG làm vùng cuộn đi được bằng bàn phím; người dùng bàn phím không
-            tới được các tab bên phải (axe `scrollable-region-focusable`).
-            Đúng lỗi `UX-UIUX-M21-009` đã sửa ở `/student/class`, sửa đúng bằng
-            cách màn đó làm (`P17-T5`). */}
-        <nav
-          aria-label="Khu vực của lớp"
-          tabIndex={0}
-          className="bg-muted focus-visible:ring-ring overflow-x-auto rounded-lg pb-1 focus-visible:ring-2 focus-visible:outline-none"
-          style={{
-            // Bóng mép chỉ hiện khi CÒN nội dung cuộn, tắt khi đã cuộn hết.
-            // Hai lớp `local` mang màu nền cuộn theo nội dung và che hai lớp
-            // `scroll` đứng yên phía dưới — thuần CSS, không thêm JS.
-            backgroundImage:
-              "linear-gradient(to right, var(--muted), transparent)," +
-              "linear-gradient(to left, var(--muted), transparent)," +
-              "linear-gradient(to right, rgb(0 0 0 / 0.14), transparent)," +
-              "linear-gradient(to left, rgb(0 0 0 / 0.14), transparent)",
-            backgroundPosition:
-              "left center, right center, left center, right center",
-            backgroundSize: "28px 100%, 28px 100%, 12px 100%, 12px 100%",
-            backgroundRepeat: "no-repeat",
-            backgroundAttachment: "local, local, scroll, scroll",
-          }}
-        >
-          <TabsList className="min-w-max bg-transparent">
-            {CLASS_TABS.map((item) => (
-              <TabsTrigger key={item.value} value={item.value} asChild>
-                <Link
-                  href={`/teacher/classes/${id}?tab=${item.value}`}
-                  scroll={false}
-                >
-                  {item.label}
-                </Link>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </nav>
-
+      {/* Tám tab lái bằng URL. Trước `UX-MOBILE-1` đây là vùng cuộn ngang có
+          bóng mép báo "còn nữa" — vẫn phải vuốt. Nay dưới `sm` là nút chọn +
+          bảng trượt; từ `sm` trở lên giữ nguyên dải ngang trên nền `bg-muted`,
+          chỉ bỏ `min-w-max` để nó xuống hàng thay vì tràn. */}
+      <ResponsiveTabs
+        label="Khu vực của lớp"
+        value={activeTab}
+        activationMode="manual"
+        items={CLASS_TABS.map((item) => ({
+          value: item.value,
+          label: item.label,
+          href: `/teacher/classes/${id}?tab=${item.value}`,
+        }))}
+        listWrapperClassName="bg-muted rounded-lg"
+        listClassName="bg-transparent"
+      >
         <TabsContent value="overview" className="mt-4">
           <div className="grid gap-5 xl:grid-cols-2">
             <Card>
@@ -691,7 +666,7 @@ export default async function TeacherClassDetailPage({
             modules={curriculum}
           />
         </TabsContent>
-      </Tabs>
+      </ResponsiveTabs>
     </>
   );
 }

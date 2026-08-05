@@ -29,6 +29,10 @@ import {
   FlashcardReaderFrame,
   FlashcardTapArea,
 } from "@/features/flashcards/components/flashcard-reader-frame";
+import {
+  FlashcardSectionPicker,
+  FlashcardSectionRail,
+} from "@/features/flashcards/components/flashcard-section-picker";
 import { FlashcardStartHint } from "@/features/flashcards/components/flashcard-start-hint";
 import { FlashcardSurface } from "@/features/flashcards/components/flashcard-surface";
 import { setFlashcardStarAction } from "@/features/flashcards/server/actions";
@@ -392,40 +396,35 @@ export function StudentFlashcardReader({
         }
       >
         {/*
-          Mục lục buổi: cuộn ngang vì một khoá có tới 35 buổi.
+          Mục lục buổi (`UX-MOBILE-1`): dưới `sm` là nút chọn + lưới số, từ `sm`
+          trở lên là dải nút ngang **tự xuống hàng** thay cho `overflow-x-auto`
+          cũ — một khoá 35 buổi thì kéo tới buổi 27 phải qua 26 nút.
 
-          Nút `h-9` (36px) — LÙN hơn ngưỡng 44px một cách CÓ CHỦ Ý, theo yêu cầu
-          user 2026-07-25 (*"chỗ mục lục buổi có thể cho nút nó lùn lại hơn xíu
-          để flashcard có thêm khoảng trống"*). Đánh đổi đã cân: đây là hàng
-          chuyển buổi, dùng thưa và các nút cách nhau 8px; ba control chính của
-          màn (◀ Lật thẻ ▶) vẫn 48px. Trên cảm ứng `globals.css` còn ép
-          `min-height: 44px` nên thực tế ngón tay vẫn có 44px — 36px chỉ áp cho
-          con trỏ chuột.
-
-          Chỉ dựng khi có TỪ HAI BUỔI trở lên: một buổi thì hàng nút này không
-          chọn được gì khác mà vẫn lấy chỗ của thẻ.
+          Chỉ dựng khi có TỪ HAI BUỔI trở lên: một buổi thì hàng này không chọn
+          được gì khác mà vẫn lấy chỗ của thẻ.
         */}
         {sections.length > 1 && (
-          <nav
-            aria-label="Mục lục buổi flashcard"
-            className="mt-1.5 flex gap-2 overflow-x-auto pb-1"
-          >
-            {sections.map((candidate) => (
-              <Button
-                key={candidate.id}
-                type="button"
-                size="sm"
-                variant={candidate.id === section.id ? "default" : "outline"}
-                className="h-9 shrink-0"
-                onClick={() => {
+          <>
+            <div className="sm:hidden">
+              <FlashcardSectionPicker
+                sections={sections}
+                currentSectionId={section.id}
+                onSelect={(nextId) => {
                   setPageTransition(null);
-                  setSectionId(candidate.id);
+                  setSectionId(nextId);
                 }}
-              >
-                Buổi {candidate.session_number}
-              </Button>
-            ))}
-          </nav>
+              />
+            </div>
+            <FlashcardSectionRail
+              className="hidden sm:flex"
+              sections={sections}
+              currentSectionId={section.id}
+              onSelect={(nextId) => {
+                setPageTransition(null);
+                setSectionId(nextId);
+              }}
+            />
+          </>
         )}
       </FlashcardFrameHeader>
 

@@ -25,8 +25,10 @@ import {
   formatCalendarPeriod,
   getMonthGridDateKeys,
   getWeekDateKeys,
+  getWeekDaySlots,
   monthKey,
   pickInitialDateKey,
+  pickMonthFocusDateKey,
   shiftCalendarAnchor,
   type CalendarView,
 } from "@/features/schedules/calendar";
@@ -303,8 +305,11 @@ export function SessionCalendar({
   return (
     <div className="border-t">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* `w-full` dưới `sm`: ba nút giãn đều thành một dải phân đoạn đầy bề
+            ngang, mỗi nút vẫn ≥44px cho ngón tay. Từ `sm` trở lên giữ nguyên
+            dạng cụm nút ôm sát chữ như cũ. */}
         <div
-          className="bg-muted inline-flex w-fit rounded-lg p-1"
+          className="bg-muted inline-flex w-full rounded-lg p-1 sm:w-fit"
           role="group"
           aria-label="Kiểu hiển thị thời khóa biểu"
         >
@@ -329,7 +334,7 @@ export function SessionCalendar({
         </div>
 
         {view !== "compact" && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <Button
               type="button"
               variant="outline"
@@ -342,8 +347,10 @@ export function SessionCalendar({
             >
               <ChevronLeft className="size-4" aria-hidden />
             </Button>
+            {/* Dưới `sm` nhãn kỳ ăn hết chỗ thừa để ‹ › nằm hai mép; `min-w-40`
+                chỉ bật lại từ `sm` — ở 375px nó ép cả cụm tràn ra ngoài. */}
             <p
-              className="min-w-40 text-center text-sm font-semibold"
+              className="min-w-0 flex-1 text-center text-sm font-semibold sm:min-w-40 sm:flex-none"
               aria-live="polite"
             >
               {formatCalendarPeriod(anchorKey, view)}
@@ -383,23 +390,324 @@ export function SessionCalendar({
         </ul>
       )}
 
+      {/* Dưới `xl` là bố cục dọc, từ `xl` trở lên giữ NGUYÊN hai lưới cũ.
+          Vì sao mốc là `xl` chứ không phải `lg`: lưới tuần cần 1050px bề rộng
+          thật, mà ở khung 1024px vùng nội dung còn chưa tới 800px — chuyển ở
+          `lg` thì laptop nhỏ vẫn phải vuốt ngang, đúng cái đang muốn bỏ. */}
       {view === "week" && (
-        <WeekCalendar
-          classId={classId}
-          mode={mode}
-          anchorKey={anchorKey}
-          currentDateKey={currentDateKey}
-          sessionsByDate={sessionsByDate}
-        />
+        <>
+          <WeekDayList
+            classId={classId}
+            mode={mode}
+            anchorKey={anchorKey}
+            currentDateKey={currentDateKey}
+            sessionsByDate={sessionsByDate}
+          />
+          <WeekCalendar
+            classId={classId}
+            mode={mode}
+            anchorKey={anchorKey}
+            currentDateKey={currentDateKey}
+            sessionsByDate={sessionsByDate}
+          />
+        </>
       )}
 
       {view === "month" && (
-        <MonthCalendar
-          anchorKey={anchorKey}
-          currentDateKey={currentDateKey}
-          sessionsByDate={sessionsByDate}
-        />
+        <>
+          <MonthDayPicker
+            classId={classId}
+            mode={mode}
+            anchorKey={anchorKey}
+            currentDateKey={currentDateKey}
+            sessionsByDate={sessionsByDate}
+          />
+          <MonthCalendar
+            anchorKey={anchorKey}
+            currentDateKey={currentDateKey}
+            sessionsByDate={sessionsByDate}
+          />
+        </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Chế độ Tuần cho màn hẹp: **bảy ngày xếp DỌC** thay vì bảy cột ngang.
+ *
+ * Lưới 7 cột là bố cục của màn rộng — ép vào 375px thì cần 1050px, tức hơn ba
+ * màn hình vuốt ngang để đọc đúng hai buổi học, mà năm cột còn lại chỉ chứa
+ * dòng chữ "Không có buổi học". Xếp dọc thì cả tuần lọt trong một màn.
+ *
+ * Ngày không có buổi **vẫn hiện**, dạng một dòng ~32px (user chốt 2026-08-05):
+ * ẩn hẳn thì danh sách ngắn hơn nhưng mất cảm giác "đây là cả một tuần" và
+ * người xem không còn biết mình đang đứng ở tuần nào.
+ */
+function WeekDayList({
+  classId,
+  mode,
+  anchorKey,
+  currentDateKey,
+  sessionsByDate,
+}: {
+  classId?: string;
+  mode: SessionCalendarMode;
+  anchorKey: string;
+  currentDateKey: string;
+  sessionsByDate: Map<string, SessionCalendarRecord[]>;
+}) {
+  const slots = getWeekDaySlots(anchorKey, sessionsByDate, currentDateKey);
+
+  return (
+    <ul className="border-t min-[1360px]:hidden">
+      {slots.map((slot) => {
+        const weekday = WEEKDAYS[slot.weekdayIndex];
+        const dayLabel = formatCalendarDay(slot.dateKey, "dd/MM");
+
+        if (slot.items.length === 0) {
+          return (
+            <li
+              key={slot.dateKey}
+              className={cn(
+                "text-muted-foreground flex items-center gap-2 border-b px-4 py-2 text-xs",
+                slot.isToday && "border-l-primary bg-primary/5 border-l-4",
+              )}
+            >
+              <span className="text-foreground font-medium tabular-nums">
+                {weekday?.short} · {dayLabel}
+              </span>
+              <span>— không có buổi</span>
+              {slot.isToday && (
+                <StatusBadge className="ml-auto" label="Hôm nay" tone="info" />
+              )}
+            </li>
+          );
+        }
+
+        return (
+          <li
+            key={slot.dateKey}
+            className={cn(
+              "border-b p-3",
+              slot.isToday && "border-l-primary bg-primary/5 border-l-4",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold tabular-nums">
+                {weekday?.label} · {dayLabel}
+              </h3>
+              {slot.isToday ? (
+                <StatusBadge label="Hôm nay" tone="info" />
+              ) : (
+                <span className="text-muted-foreground text-xs">
+                  {slot.items.length} buổi
+                </span>
+              )}
+            </div>
+            <div className="mt-2 space-y-2">
+              {slot.items.map((session) => (
+                <DaySessionCard
+                  key={session.id}
+                  classId={classId}
+                  mode={mode}
+                  session={session}
+                />
+              ))}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Thẻ buổi học của bố cục dọc — dùng CHUNG cho chế độ Tuần và panel chi tiết
+ * ngày của chế độ Tháng, để hai chỗ không bao giờ hiển thị lệch nhau.
+ *
+ * Thẻ rộng hết bề ngang nên cụm nút *Hủy buổi* / *Xóa buổi* của admin luôn đủ
+ * chỗ: lỗi tràn nút `UX-SCHED-1` (03/08) sinh ra từ chỗ thẻ bị nhốt trong cột
+ * 150px, ở đây **không còn cột hẹp để tràn**.
+ */
+function DaySessionCard({
+  classId,
+  mode,
+  session,
+}: {
+  classId?: string;
+  mode: SessionCalendarMode;
+  session: SessionCalendarRecord;
+}) {
+  const cancelled = session.status === "cancelled";
+
+  return (
+    <article
+      className={cn(
+        "bg-card rounded-lg border border-l-4 p-3 shadow-sm",
+        cancelled ? "border-l-muted-foreground/40 opacity-70" : "border-l-primary",
+      )}
+    >
+      <div className="flex items-baseline gap-2">
+        <Clock3
+          className="text-muted-foreground size-3.5 shrink-0 self-center"
+          aria-hidden
+        />
+        <span className="text-sm font-semibold tabular-nums">
+          {formatTime(session.starts_at)}–{formatTime(session.ends_at)}
+        </span>
+        <span className="text-muted-foreground ml-auto text-xs font-semibold">
+          Buổi {session.session_number}
+        </span>
+      </div>
+      <p className="text-muted-foreground mt-1 text-xs">
+        {sessionTitle(session)}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <StatusBadge
+          label={SESSION_STATUS_LABELS[session.status]}
+          tone={SESSION_STATUS_TONE[session.status]}
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <SessionTrailing classId={classId} mode={mode} session={session} />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Chế độ Tháng cho màn hẹp: **giữ lưới, bỏ chữ ra khỏi ô**.
+ *
+ * Lưới tháng vẫn đáng là lưới — đó là giá trị riêng của chế độ này. Cái làm nó
+ * cần 840px là chữ nhét trong ô ("08:00 · Buổi 2") và tiêu đề cột viết đủ ("Thứ
+ * Hai"). Rút ô còn *số ngày + chấm*, tiêu đề còn "T2" thì 7 cột vừa trong
+ * 343px mà mỗi ô vẫn ≥44px cho ngón tay. Chạm một ngày → chi tiết hiện ngay
+ * dưới lưới. Đây cũng là cách lịch trên iOS/Android làm.
+ */
+function MonthDayPicker({
+  classId,
+  mode,
+  anchorKey,
+  currentDateKey,
+  sessionsByDate,
+}: {
+  classId?: string;
+  mode: SessionCalendarMode;
+  anchorKey: string;
+  currentDateKey: string;
+  sessionsByDate: Map<string, SessionCalendarRecord[]>;
+}) {
+  const days = getMonthGridDateKeys(anchorKey);
+  const activeMonth = monthKey(anchorKey);
+  const [picked, setPicked] = useState<string | null>(null);
+
+  // Ngày chọn suy ra từ props chứ không đồng bộ bằng `useEffect`: đổi tháng thì
+  // ngày đã chọn thuộc tháng cũ, tự động rơi về ngày mặc định của tháng mới.
+  const focusKey =
+    picked && monthKey(picked) === activeMonth
+      ? picked
+      : pickMonthFocusDateKey(anchorKey, sessionsByDate.keys(), currentDateKey);
+  const focusSessions = sessionsByDate.get(focusKey) ?? [];
+
+  return (
+    <div className="border-t xl:hidden">
+      <div className="grid grid-cols-7 gap-0.5 p-2">
+        {WEEKDAYS.map((weekday) => (
+          <div
+            key={weekday.value}
+            className="text-muted-foreground py-1 text-center text-[11px] font-semibold"
+          >
+            {weekday.short}
+          </div>
+        ))}
+
+        {days.map((dateKey) => {
+          const dateSessions = sessionsByDate.get(dateKey) ?? [];
+          const isToday = dateKey === currentDateKey;
+          const isOutside = monthKey(dateKey) !== activeMonth;
+          const isFocus = dateKey === focusKey;
+
+          return (
+            <button
+              key={dateKey}
+              type="button"
+              aria-pressed={isFocus}
+              aria-label={`${formatCalendarDay(dateKey, "dd/MM/yyyy")} — ${
+                dateSessions.length === 0
+                  ? "không có buổi học"
+                  : `${dateSessions.length} buổi học`
+              }`}
+              onClick={() => setPicked(dateKey)}
+              className={cn(
+                "focus-visible:ring-ring flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg text-sm tabular-nums focus-visible:ring-2 focus-visible:outline-none",
+                isOutside && "text-muted-foreground/60",
+                isFocus && "ring-primary bg-accent font-semibold ring-2",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full leading-none",
+                  isToday && "bg-primary text-primary-foreground font-semibold",
+                )}
+              >
+                {formatCalendarDay(dateKey, "d")}
+              </span>
+              {/* Chấm là chỉ dấu PHỤ — trạng thái thật đọc được bằng chữ ở panel
+                  bên dưới, nên người mù màu không mất thông tin nào. */}
+              <span className="flex h-1.5 items-center gap-0.5" aria-hidden>
+                {dateSessions.slice(0, 3).map((session) => (
+                  <span
+                    key={session.id}
+                    className={cn(
+                      "size-1.5 rounded-full",
+                      session.status === "cancelled"
+                        ? "ring-muted-foreground/60 ring-1 ring-inset"
+                        : "bg-primary",
+                    )}
+                  />
+                ))}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-2 text-[11px]">
+        <span className="flex items-center gap-1.5">
+          <span className="bg-primary size-1.5 rounded-full" aria-hidden />
+          Có buổi
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="ring-muted-foreground/60 size-1.5 rounded-full ring-1 ring-inset"
+            aria-hidden
+          />
+          Đã hủy
+        </span>
+      </p>
+
+      <div className="border-t p-3">
+        <h3 className="text-sm font-semibold">
+          {formatCalendarDay(focusKey, "EEEE, dd/MM/yyyy")}
+        </h3>
+        {focusSessions.length === 0 ? (
+          <p className="text-muted-foreground mt-1 text-xs">
+            Không có buổi học trong ngày này.
+          </p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {focusSessions.map((session) => (
+              <DaySessionCard
+                key={session.id}
+                classId={classId}
+                mode={mode}
+                session={session}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -446,7 +754,13 @@ function WeekCalendar({
   const days = getWeekDateKeys(anchorKey);
 
   return (
-    <div className="overflow-x-auto border-t">
+    /* Mốc `min-[1360px]` KHÔNG phải số làm tròn cho đẹp — đo bằng Chromium:
+       vùng nội dung ≈ bề rộng màn − 306px (thanh bên + lề). Ở **1280px** vùng
+       nội dung chỉ **974px** trong khi lưới cần **1050px**, tức màn 1280 VẪN
+       phải kéo ngang 76px; ở **1440px** thì vừa (đo được 0). Nên ranh giới thật
+       nằm ở 1050 + 306 = **1356px**, làm tròn lên 1360. Dùng `xl` (1280) là để
+       lọt đúng cái lỗi đang đi sửa. */
+    <div className="hidden overflow-x-auto border-t min-[1360px]:block">
       {/* 1050px = 150px/cột. Không phải số làm tròn cho đẹp: một thẻ buổi học
           cần ~116px bề rộng trong lòng thẻ (150 − 16 padding cột − 2 viền − 16
           padding thẻ) để chứa được phần rộng nhất của nó là badge trạng thái
@@ -558,7 +872,7 @@ function MonthCalendar({
   const activeMonth = monthKey(anchorKey);
 
   return (
-    <div className="overflow-x-auto border-t">
+    <div className="hidden overflow-x-auto border-t xl:block">
       <div className="min-w-[840px]">
         <div className="grid grid-cols-7 border-b">
           {WEEKDAYS.map((weekday) => (

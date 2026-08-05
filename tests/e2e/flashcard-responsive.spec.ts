@@ -459,12 +459,15 @@ test.describe("Flashcard — học viên", () => {
     expect(Number(fitScale)).toBeGreaterThanOrEqual(0.78);
     expect(Number(fitScale)).toBeLessThanOrEqual(1);
 
-    // Thoát phải trả lại vỏ dashboard + hai tab — không có trạng thái chết.
+    // Thoát phải trả lại vỏ dashboard + đường qua mục khác — không có trạng
+    // thái chết. Ở 360px đường đó là nút chọn mục, không còn là dải tab ngang
+    // (`UX-MOBILE-1`); nút phải nói rõ đang ở mục 1 trên tổng số mục.
     await page.getByRole("button", { name: "Thoát ôn thẻ" }).click();
     await expect(page.getByRole("heading", { name: "Ôn tập" })).toBeVisible();
-    await expect(
-      page.getByRole("tab", { name: /Ôn Tập Câu Sai/ }),
-    ).toBeVisible();
+    const tabPicker = page.locator('[data-slot="tab-picker"]');
+    await expect(tabPicker).toBeVisible();
+    await expect(tabPicker).toContainText("Flashcard Từ Vựng");
+    await expect(tabPicker).toContainText("1/");
     await expect(
       page.getByRole("button", { name: "Bắt đầu ôn thẻ" }),
     ).toBeVisible();
