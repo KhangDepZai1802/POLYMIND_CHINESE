@@ -22,6 +22,8 @@ const ITEM_A_ID = "e2400000-0000-4000-8000-000000000006";
 const ITEM_B_ID = "e2400000-0000-4000-8000-000000000007";
 const QUEUE_A_ID = "e2400000-0000-4000-8000-000000000008";
 const QUEUE_B_ID = "e2400000-0000-4000-8000-000000000009";
+/** Bộ thẻ thứ hai, tên dài — để màn "Chọn bộ thẻ" thật sự được dựng ra. */
+const LONG_DECK_ID = "e2400000-0000-4000-8000-00000000000a";
 
 const viewports = [
   { name: "mobile-360", width: 360, height: 800 },
@@ -67,6 +69,7 @@ function purgeFixture() {
       where question_version_id in ('${VERSION_A_ID}', '${VERSION_B_ID}');
     delete from public.question_versions where id in ('${VERSION_A_ID}', '${VERSION_B_ID}');
     delete from public.questions where id = '${QUESTION_ID}';
+    delete from public.flashcard_decks where id = '${LONG_DECK_ID}';
     set session_replication_role = origin;
   `);
 }
@@ -139,6 +142,32 @@ function setupFixture() {
        clock_timestamp() - interval '5 day', clock_timestamp() - interval '1 day', 3),
       ('${QUEUE_B_ID}', '${STUDENT_ID}', '${VERSION_B_ID}', 'exam', '${ITEM_B_ID}',
        clock_timestamp() - interval '2 day', clock_timestamp() - interval '2 day', 1);
+
+    -- 🔴 Bộ thẻ THỨ HAI có tên và mô tả DÀI — fixture ghim lỗi user báo
+    -- 2026-08-05 kèm ảnh. Màn "Chọn bộ thẻ" chỉ hiện khi khoá có TỪ HAI BỘ
+    -- TRỞ LÊN, nên dữ liệu seed một bộ khiến cả màn đó KHÔNG BAO GIỜ được dựng
+    -- ra khi chạy e2e — lỗi tràn 544px @375px vì thế lọt qua toàn bộ cổng.
+    --
+    -- Không dựng buổi cho bộ này: validate_flashcard_section_publish() đòi mỗi
+    -- buổi phải có trang mở đầu + trang từ vựng, mà bài kiểm ở đây đo bố cục
+    -- của THẺ CHỌN BỘ, không phụ thuộc số buổi.
+    --
+    -- set_config vì trigger force_flashcard_actor() ép created_by = auth.uid()
+    -- (bài học BUG_M06_01).
+    select set_config(
+      'request.jwt.claims',
+      '{"sub":"${TEACHER_USER_ID}","role":"authenticated"}',
+      true
+    );
+    insert into public.flashcard_decks (
+      id, course_id, code, title, description, status, published_at, created_by
+    )
+    select
+      '${LONG_DECK_ID}', c.course_id, 'uiux-m24-bo-dai',
+      'Mẫu Câu Tác Chiến — Tiếng Trung Đàm Phán Tài Chính Chiến Lược',
+      'Các mẫu câu tác chiến thường sử dụng dành cho lớp Tiếng Trung Đàm Phán Tài Chính Chiến Lược',
+      'published', clock_timestamp(), '${TEACHER_USER_ID}'
+    from public.classes c where c.code = 'LOP-02';
     commit;
   `);
 }
@@ -216,6 +245,41 @@ test("Ôn câu sai giữ đúng hành trình và responsive ba màn", async ({
         fullPage: true,
       });
     }
+  }
+
+  /*
+   * `UX-MOBILE-2` — user báo 2026-08-05 kèm 3 ảnh: màn "Chọn bộ thẻ" vỡ bố cục,
+   * và mở bảng trượt chọn mục thì cả trang bị bóp lại.
+   *
+   * Một nguyên nhân, hai triệu chứng: `<li>` là **grid item** nên `min-width:
+   * auto`, cộng `truncate` (`white-space: nowrap`) ⇒ bề rộng tối thiểu của thẻ
+   * bằng CẢ DÒNG CHỮ ⇒ trang tràn phải **544px @375px**. Bảng trượt không hỏng
+   * riêng: Radix khoá cuộn (`overflow:hidden` lên body) trên một trang vốn đã
+   * tràn thì bố cục bị bóp — đúng ảnh thứ hai user gửi.
+   *
+   * Bài này đo HÌNH HỌC THẬT chứ không kiểm tên class: đổi class mà nhìn vẫn
+   * sai thì bài vẫn phải đỏ.
+   */
+  for (const width of [360, 375, 414]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/student/review", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: "Chọn bộ thẻ", level: 2 }),
+    ).toBeVisible();
+
+    const closed = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(closed, `chọn bộ thẻ @${width}px (bảng trượt đóng)`).toBeLessThanOrEqual(1);
+
+    // Mở bảng trượt chọn mục rồi đo lại — đây là triệu chứng thứ hai.
+    await page.locator('[data-slot="tab-picker"]').click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    const opened = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(opened, `chọn bộ thẻ @${width}px (bảng trượt MỞ)`).toBeLessThanOrEqual(1);
+    await page.keyboard.press("Escape");
   }
 
   // Trả lời đúng thì câu rời hàng đợi và thanh tiến độ phải nhích lên.

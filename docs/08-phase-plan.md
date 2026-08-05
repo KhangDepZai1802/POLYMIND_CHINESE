@@ -882,6 +882,25 @@ Bản thiết kế + mockup 375px user đã duyệt: <https://claude.ai/code/art
 
 ---
 
+### Màn "Chọn bộ thẻ" vỡ bố cục ở điện thoại — `UX-MOBILE-2` (user báo 2026-08-05, kèm 3 ảnh)
+
+**Nguyên văn:** *"lỗi giao diện khi bấm vào dropdown tab flashcard từ vựng trong chức năng ôn tập tài khoản học viên. cả giao diện ngay chức năng ôn tập cũng bị lỗi hiển thị 2 bộ thẻ"*.
+
+**Một nguyên nhân gốc, hai triệu chứng.** `<li>` chứa thẻ chọn bộ là **grid item** ⇒ `min-width: auto` ⇒ bề rộng tối thiểu bằng min-content của nội dung; `truncate` mang `white-space: nowrap` ⇒ min-content = **cả dòng chữ**. Trang tràn phải **559px @360 · 544px @375 · 529px @390 · 505px @414** (đo Chromium). Bảng trượt chọn mục **không hỏng riêng**: Radix khoá cuộn bằng `overflow:hidden` lên `body`, áp lên trang vốn đã tràn thì bố cục bị bóp lại — đúng ảnh thứ hai.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| UX-MOBILE-2a | **Sửa tận gốc, không vá** | Tên bộ `truncate` → **`line-clamp-2` + `break-words`** (bỏ `nowrap` thì min-content tụt về **một từ**); mô tả `line-clamp-2`; `min-w-0` trên `<li>` làm lớp chặn thứ hai; icon canh `items-start` cho khớp tiêu đề 2 dòng | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05. Đo lại **0** ở 360/375/390/414, **cả khi bảng trượt đang mở** |
+| UX-MOBILE-2b | **Vá lỗ hổng FIXTURE đã để lọt lỗi** | `student-review-responsive.spec.ts` tự dựng **bộ thẻ thứ hai tên dài** trong `setupFixture`, dọn ở `purgeFixture`; bài kiểm đo **hình học thật** ở 3 bề rộng, cả trạng thái đóng lẫn mở bảng trượt | ☑ **DONE** — **kiểm ngược:** trả `truncate` về ⇒ đỏ đúng chỗ, **257px** |
+
+🔴 **Vì sao cổng của `UX-MOBILE-1` không bắt được — lỗi ở FIXTURE, không ở phép đo.** Màn *"Chọn bộ thẻ"* chỉ dựng khi khoá có **từ hai bộ trở lên**, mà seed local chỉ có **một** ⇒ màn đó **chưa từng được dựng ra** trong bất kỳ lần chạy e2e nào. 📌 Luật rút ra: **màn nào chỉ hiện khi dữ liệu đủ một hình dạng nhất định thì fixture phải dựng đúng hình dạng ấy — nếu không, cổng xanh chỉ chứng minh được là màn đó không tồn tại.**
+
+⚠️ **Bẫy CSS gặp ngay trong lúc sửa, ghi để khỏi mất công lần nữa:** `line-clamp-*` **im lặng mất tác dụng** khi đứng cạnh `block` — `line-clamp` đặt `display: -webkit-box` còn `block` ghi đè đúng thuộc tính đó. Đo ra **5 dòng** thay vì 2, và **con số tràn ngang vẫn 0** nên chỉ phát hiện được bằng cách **nhìn ảnh chụp**.
+
+📌 **Lần THỨ TƯ repo dính cùng một hình dạng lỗi** (`UX-UIUX-M16-002` · `UX-ENROLL-1` · `UX-STUDENTS-1` · nay `UX-MOBILE-2`): khối co được đặt cạnh nội dung không co được, thiếu `min-w-0` ở đúng tầng bị tính `min-width: auto`. Ba lần trước tầng đó là **flex item**; lần này là **grid item** — nên mẹo cũ *"thêm `min-w-0` cạnh `flex-1`"* **không đủ**, phải nhìn xem tầng nào mới thật sự là item của layout.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |
