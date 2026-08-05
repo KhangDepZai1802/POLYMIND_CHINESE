@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ChevronRight, Layers } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Layers, Loader2 } from "lucide-react";
 
+import { useNavProgress } from "@/components/shared/use-nav-progress";
 import { Card, CardContent } from "@/components/ui/card";
 import type { StudentFlashcardDeckOption } from "@/features/flashcards/server/queries";
 
@@ -25,7 +26,18 @@ export function StudentFlashcardDeckPicker({
   decks: StudentFlashcardDeckOption[];
   courseName: string;
 }) {
-  const router = useRouter();
+  /*
+   * `useNavProgress` chứ không `router.push` trần (user báo 2026-08-05:
+   * *"khi bấm vào 1 trong 2 bộ chưa có hiệu ứng loading"*).
+   *
+   * `router.push` trần **không phát `navstart`** nên ngay cả thanh tiến trình
+   * toàn cục ở đỉnh màn cũng không chạy — bấm xong màn hình đứng im trong lúc
+   * máy chủ dựng bộ thẻ, và người học bấm lại lần nữa. Thanh 2px ở đỉnh cũng
+   * quá nhỏ trên điện thoại để làm tín hiệu duy nhất, nên thẻ vừa bấm còn tự
+   * hiện spinner tại chỗ.
+   */
+  const { navigate, isPending } = useNavProgress();
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   return (
     <Card>
@@ -50,11 +62,23 @@ export function StudentFlashcardDeckPicker({
             <li key={deck.id} className="min-w-0">
               <button
                 type="button"
-                onClick={() => router.push(`/student/review?deck=${deck.id}`)}
-                className="border-student-sky-border bg-student-sky-surface hover:border-primary focus-visible:ring-ring flex min-h-16 w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                disabled={isPending}
+                aria-busy={openingId === deck.id}
+                onClick={() => {
+                  setOpeningId(deck.id);
+                  navigate(`/student/review?deck=${deck.id}`);
+                }}
+                className="border-student-sky-border bg-student-sky-surface hover:border-primary focus-visible:ring-ring flex min-h-16 w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-progress aria-[busy=false]:disabled:opacity-55"
               >
                 <span className="bg-card flex size-10 shrink-0 items-center justify-center rounded-lg">
-                  <Layers className="text-primary size-5" aria-hidden />
+                  {openingId === deck.id ? (
+                    <Loader2
+                      className="text-primary size-5 animate-spin"
+                      aria-hidden
+                    />
+                  ) : (
+                    <Layers className="text-primary size-5" aria-hidden />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   {/*

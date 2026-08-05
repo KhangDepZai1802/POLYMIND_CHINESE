@@ -901,6 +901,35 @@ Bản thiết kế + mockup 375px user đã duyệt: <https://claude.ai/code/art
 
 ---
 
+### Thiếu báo hiệu chờ + ngõ cụt không có đường ra — `UX-MOBILE-3` (user báo 2026-08-05, kèm 2 ảnh)
+
+**Nguyên văn:** *"khi bấm vào 1 trong 2 bộ chưa có hiệu ứng loading"* · *"đã vào 1 trong 2 bộ thẻ nhưng không có nút back ra"* · *"rà soát lại những module mới khắp nơi trong hệ thống coi có cái nào chưa có hiệu ứng loading không"*.
+
+🔴 **Mấu chốt của cả nhóm lỗi này: `router.push` trần KHÔNG phát `navstart`.** Hạ tầng đã có sẵn `NavProgress` (thanh tiến trình đỉnh màn) bắt được mọi `<a>`, nhưng điều hướng bằng code thì phải tự phát sự kiện. Thiếu nó thì **không có tín hiệu nào** — không phải "thiếu spinner cho đẹp".
+
+**Kết quả rà soát 6 chỗ điều hướng bằng code:**
+
+| Chỗ | Trước | Sau |
+|---|---|---|
+| `class-picker.tsx` (lọc lớp) | ✅ đã có `useNavProgress` | giữ nguyên |
+| `student-flashcard-deck-picker` (chọn bộ thẻ) | ❌ `router.push` trần | ✅ spinner tại thẻ + khoá thẻ còn lại |
+| `student-flashcard-reader` (quay ra) | ❌ `router.push` trần | ✅ spinner trên nút quay ra |
+| `flashcard-admin-manager` (chọn khoá) | ❌ `router.push` trần | ✅ `useNavProgress` + khoá `Select` |
+| `flashcard-admin-manager` (chọn bộ) | ❌ `router.push` trần | ✅ `useNavProgress` |
+| `video-admin-panel` (chọn khoá) | ❌ `router.push` trần | ✅ `useNavProgress` + khoá `Select` |
+| `exam-attempt` · `exercise-attempt` | ✅ đã tự phát `navstart` | không đụng |
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| UX-MOBILE-3a | **Mọi điều hướng bằng code đi qua `useNavProgress`** | Không còn `router.push`/`replace` trần ở đường người dùng bấm; thẻ/ô chọn vừa bấm tự khoá + hiện spinner tại chỗ | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-05 |
+| UX-MOBILE-3b | **Đường quay ra đọc được là "quay ra"** | Nút lên **trên-trái, trên cả tiêu đề**, mũi tên ←, nhãn *"Chọn bộ thẻ khác"*. Bản cũ nằm bên phải tiêu đề với nhãn *"Đổi bộ thẻ"* + icon `Layers`, màn hẹp thì bị đẩy xuống dưới mô tả | ☑ **DONE, chờ xác minh độc lập** |
+| UX-MOBILE-3c | **Trạng thái rỗng cũng phải có đường ra** | Bộ chưa công bố buổi nào ⇒ *"Chưa có flashcard để ôn"* — trước đây **không nút, không link**. Nay dùng CHUNG `BackToDecksButton` với màn có nội dung | ☑ **DONE** — ngõ cụt do chính bài kiểm phát hiện, user chưa gặp |
+| UX-MOBILE-3d | **Bài kiểm thấy được trạng thái chờ** | Làm chậm chính request điều hướng **1,2s** rồi mới đo — không có bước này thì máy local trả quá nhanh, bài chớp mắt là qua và **vẫn xanh kể cả khi báo hiệu bị gỡ** | ☑ **DONE** — **kiểm ngược:** gỡ `aria-busy`/`disabled` ⇒ đỏ đúng chỗ |
+
+⚠️ **Bẫy Playwright ghi để khỏi mất công lần nữa:** `page.unroute` **cắt ngang** handler đang ngủ; nó tỉnh dậy và gọi `route.continue()` trên route đã xử lý xong ⇒ *"Route is already handled!"* làm đỏ bài ở **tận cuối**, chẳng liên quan gì tới chỗ đang kiểm. Dùng `page.route(..., { times: 1 })`.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |

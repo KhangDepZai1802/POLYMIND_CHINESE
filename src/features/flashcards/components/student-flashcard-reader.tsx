@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavProgress } from "@/components/shared/use-nav-progress";
 import {
+  ArrowLeft,
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  Layers,
+  Loader2,
   Play,
   RotateCw,
   Star,
@@ -36,6 +37,7 @@ import {
 import { FlashcardStartHint } from "@/features/flashcards/components/flashcard-start-hint";
 import { FlashcardSurface } from "@/features/flashcards/components/flashcard-surface";
 import { setFlashcardStarAction } from "@/features/flashcards/server/actions";
+import { cn } from "@/lib/utils";
 import type { FlashcardDeckView } from "@/features/flashcards/server/queries";
 
 /**
@@ -70,7 +72,15 @@ export function StudentFlashcardReader({
    */
   canSwitchDeck?: boolean;
 }) {
-  const router = useRouter();
+  /*
+   * `useNavProgress` chứ không `router.push` trần: `router.push` không phát
+   * `navstart` nên thanh tiến trình toàn cục cũng không chạy, bấm xong màn đứng
+   * im (user báo 2026-08-05). `isLeaving` cho nút tự khoá + hiện spinner.
+   */
+  // Đặt tên `leaveTo` chứ không `navigate`: trong file này `navigate(index)` đã
+  // là hàm LẬT THẺ. Hai thứ khác hẳn nhau, đặt trùng tên là mời gọi bug.
+  const { navigate: leaveTo, isPending: isLeaving } = useNavProgress();
+  const goBackToDecks = () => leaveTo("/student/review");
   const [starred, setStarred] = useState<Set<string>>(
     () => new Set(starredPageIds),
   );
@@ -189,6 +199,18 @@ export function StudentFlashcardReader({
             icon={BookOpen}
             title="Chưa có flashcard để ôn"
             description={`Nội dung đã công bố cho ${courseName} sẽ xuất hiện tại đây.`}
+            /*
+              🔴 Trạng thái rỗng cũng PHẢI có đường quay ra. Khoá nhiều bộ mà
+              học viên chọn trúng bộ chưa công bố buổi nào thì màn này là **ngõ
+              cụt**: không nút, không link, chỉ còn nút Back của trình duyệt.
+              Phát hiện khi dựng bài kiểm cho `UX-MOBILE-3` — chính bộ fixture
+              0 buổi rơi vào đây.
+            */
+            action={
+              canSwitchDeck ? (
+                <BackToDecksButton pending={isLeaving} onClick={goBackToDecks} />
+              ) : undefined
+            }
           />
         </CardContent>
       </Card>
@@ -278,28 +300,31 @@ export function StudentFlashcardReader({
         <FlashcardStartHint />
         <Card>
           <CardContent className="space-y-4 p-4 sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h2 className="font-semibold">{deck.title}</h2>
-                <p className="text-muted-foreground text-sm">
-                  {courseName} · {cardCount} thẻ · {sections.length} buổi đã mở
-                </p>
-              </div>
-              {/*
-                Đường quay lại màn chọn bộ. Dạng nút viền, KHÔNG phải nút chính:
-                mỗi màn một CTA, và CTA ở đây là "Bắt đầu ôn thẻ"
-                (`primary-action`).
-              */}
-              {canSwitchDeck && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push("/student/review")}
-                >
-                  <Layers className="size-4" aria-hidden />
-                  Đổi bộ thẻ
-                </Button>
-              )}
+            {/*
+              🔴 Đường quay ra nằm TRÊN tiêu đề, đầu dòng, mang mũi tên trái —
+              user báo 2026-08-05: *"đã vào 1 trong 2 bộ thẻ nhưng không có nút
+              back ra"*. Bản cũ đúng là CÓ nút, nhưng nó nằm **bên phải tiêu
+              đề**, nhãn *"Đổi bộ thẻ"* và icon `Layers` — ở màn hẹp tiêu đề dài
+              đẩy nó xuống dưới phần mô tả, thành ra trông như một hành động
+              phụ giữa thân thẻ chứ không phải đường lùi. Vị trí trên-trái +
+              mũi tên là quy ước quay lại mà người dùng điện thoại đọc được ngay
+              (`back-behavior`).
+
+              Vẫn là `ghost` chứ không phải nút chính: mỗi màn đúng một CTA, và
+              CTA ở đây là "Bắt đầu ôn thẻ" (`primary-action`).
+            */}
+            {canSwitchDeck && (
+              <BackToDecksButton
+                pending={isLeaving}
+                onClick={goBackToDecks}
+                className="-ml-2"
+              />
+            )}
+            <div className="min-w-0">
+              <h2 className="font-semibold">{deck.title}</h2>
+              <p className="text-muted-foreground text-sm">
+                {courseName} · {cardCount} thẻ · {sections.length} buổi đã mở
+              </p>
             </div>
             <Button
               type="button"
@@ -549,5 +574,43 @@ export function StudentFlashcardReader({
         </div>
       </FlashcardFrameControls>
     </FlashcardReaderFrame>
+  );
+}
+
+/**
+ * Đường quay lại màn chọn bộ thẻ.
+ *
+ * Tách riêng để **màn có nội dung và màn rỗng dùng chung đúng một nút** — nhãn,
+ * icon, vị trí và trạng thái chờ không thể lệch nhau (`BUG_M10_01`: một hành
+ * động thì một đường code).
+ *
+ * `ghost` chứ không phải nút chính: màn này đã có CTA "Bắt đầu ôn thẻ", mỗi màn
+ * chỉ một CTA (`primary-action`).
+ */
+function BackToDecksButton({
+  pending,
+  onClick,
+  className,
+}: {
+  pending: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={pending}
+      className={cn("text-text-secondary h-9", className)}
+      onClick={onClick}
+    >
+      {pending ? (
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+      ) : (
+        <ArrowLeft className="size-4" aria-hidden />
+      )}
+      Chọn bộ thẻ khác
+    </Button>
   );
 }

@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useConfirmation } from "@/components/shared/confirmation-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useNavProgress } from "@/components/shared/use-nav-progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,7 +163,7 @@ export function FlashcardAdminManager({
   deck: FlashcardDeckView | null;
   initialSectionId: string | null;
 }) {
-  const router = useRouter();
+  const { navigate, isPending: isNavigating } = useNavProgress();
   const selectedCourse = courses.find(
     (course) => course.id === selectedCourseId,
   );
@@ -191,16 +192,22 @@ export function FlashcardAdminManager({
       ) ?? null)
     : null;
 
+  /*
+   * Đi qua `useNavProgress` chứ không `router.push` trần: `router.push` không
+   * phát `navstart` nên thanh tiến trình ở đỉnh màn cũng đứng im, mà đổi khoá /
+   * đổi bộ là một vòng máy chủ thật (đo được ~443ms ở `PERF-NAV-1`). Cùng một
+   * khuôn với `class-picker.tsx`.
+   */
   function goToCourse(courseId: string) {
     setSelectedSectionId(null);
-    router.push(`/admin/flashcards?course=${courseId}`);
+    navigate(`/admin/flashcards?course=${courseId}`);
   }
 
   function goToDeck(deckId: string) {
     if (!selectedCourseId) return;
     setSelectedSectionId(null);
     setNavOpen(false);
-    router.push(`/admin/flashcards?course=${selectedCourseId}&deck=${deckId}`);
+    navigate(`/admin/flashcards?course=${selectedCourseId}&deck=${deckId}`);
   }
 
   /**
@@ -253,6 +260,7 @@ export function FlashcardAdminManager({
             </Label>
             <Select
               value={selectedCourseId ?? undefined}
+              disabled={isNavigating}
               onValueChange={goToCourse}
             >
               <SelectTrigger id="flashcard-course" className="w-full">

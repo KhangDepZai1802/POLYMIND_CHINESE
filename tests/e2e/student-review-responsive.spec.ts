@@ -293,3 +293,74 @@ test("Ôn câu sai giữ đúng hành trình và responsive ba màn", async ({
   ).toHaveAttribute("aria-valuenow", "50");
   await expect(page.getByRole("heading", { name: "Câu 1/1" })).toBeVisible();
 });
+
+/**
+ * `UX-MOBILE-3` — user báo 2026-08-05 kèm 2 ảnh: *"khi bấm vào 1 trong 2 bộ
+ * chưa có hiệu ứng loading"* và *"đã vào 1 trong 2 bộ thẻ nhưng không có nút
+ * back ra"*.
+ *
+ * Bài này ghim cả hai, ở 375px — bề rộng người học thật dùng.
+ */
+test("chọn bộ thẻ: có báo hiệu chờ, và luôn có đường quay ra", async ({
+  page,
+}) => {
+  await loginStudent(page);
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/student/review", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Chọn bộ thẻ", level: 2 }),
+  ).toBeVisible();
+
+  /*
+   * Làm chậm CHÍNH request điều hướng để trạng thái chờ quan sát được. Không
+   * có bước này thì máy local trả quá nhanh, bài kiểm chớp mắt là qua và sẽ
+   * vẫn xanh kể cả khi báo hiệu chờ bị gỡ mất.
+   */
+  await page.route(
+    "**/student/review?deck=**",
+    async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.continue();
+    },
+    // ⚠️ `times: 1` chứ KHÔNG phải `page.unroute` sau đó: unroute cắt ngang
+    // handler đang ngủ, nó tỉnh dậy và gọi `route.continue()` trên một route đã
+    // xử lý xong ⇒ *"Route is already handled!"* làm đỏ bài ở tận cuối.
+    { times: 1 },
+  );
+
+  const decks = page.locator("ul > li > button");
+  await expect(decks).toHaveCount(2);
+  await decks.first().click();
+
+  // Thẻ vừa bấm báo bận; các thẻ còn lại khoá để không bấm chồng lệnh.
+  await expect(decks.first()).toHaveAttribute("aria-busy", "true");
+  await expect(decks.nth(1)).toBeDisabled();
+  await expect(
+    page.getByRole("status", { name: "Đang tải trang" }),
+  ).toBeVisible();
+
+  await page.waitForURL("**/student/review?deck=**");
+
+  /*
+   * 🔴 Bộ fixture này chưa công bố buổi nào ⇒ rơi vào trạng thái rỗng. Trước
+   * đợt sửa, màn đó là **ngõ cụt**: không nút, không link, chỉ còn nút Back của
+   * trình duyệt. Trạng thái rỗng cũng phải có đường ra.
+   */
+  const back = page.getByRole("button", { name: "Chọn bộ thẻ khác" });
+  await expect(back).toBeVisible();
+  await back.click();
+  await page.waitForURL((url) => !url.search.includes("deck="));
+  await expect(
+    page.getByRole("heading", { name: "Chọn bộ thẻ", level: 2 }),
+  ).toBeVisible();
+
+  // Bộ CÓ nội dung: đường quay ra nằm cùng chỗ, cùng nhãn.
+  await decks.nth(1).click();
+  await page.waitForURL("**/student/review?deck=**");
+  await expect(
+    page.getByRole("button", { name: "Bắt đầu ôn thẻ" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Chọn bộ thẻ khác" }),
+  ).toBeVisible();
+});

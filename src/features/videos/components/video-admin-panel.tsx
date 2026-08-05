@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useNavProgress } from "@/components/shared/use-nav-progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,6 +58,9 @@ export function VideoAdminPanel({
   loadError: string | null;
 }) {
   const router = useRouter();
+  // Đổi khoá là một vòng máy chủ thật ⇒ phải báo hiệu. `router.push` trần không
+  // phát `navstart` nên đến thanh tiến trình ở đỉnh màn cũng đứng im.
+  const { navigate, isPending: isNavigating } = useNavProgress();
   const [pending, startTransition] = useTransition();
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
 
@@ -102,8 +106,9 @@ export function VideoAdminPanel({
             </Label>
             <Select
               value={selectedCourseId ?? undefined}
+              disabled={isNavigating}
               onValueChange={(next) =>
-                router.push(`/admin/flashcards?course=${next}`)
+                navigate(`/admin/flashcards?course=${next}`)
               }
             >
               <SelectTrigger id="video-course" className="w-full">
