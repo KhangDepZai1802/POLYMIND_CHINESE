@@ -492,6 +492,12 @@ User đổi cơ chế mặt sau: nay dựng bằng CHỮ (4 khối §7ter) nên 
 | --- | --- | --- | --- |
 | P16-T12 | **Thẻ từ vựng không còn `back_image_path`** | ⛔ KHÔNG drop cột (dùng chung với trang mở đầu — vẫn hai ảnh). Thêm vế `kind='vocabulary' ⇒ back null` vào `flashcard_pages_image_kind_check` (`…078`). Đo cloud trước khi siết (`co_anh_mat_sau=0`). Bỏ khỏi Zod nhánh vocabulary, `pageValues`/`declaredMedia`, ô UI (giữ cho cover), `VocabularyBack`, seed. `distinct_media_check` giữ nguyên cho cover | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-07-25 (đợt 19). `…078`. pgTAP `flashcard_structured_vocabulary` cập nhật (bài mới "thẻ từ vựng KHÔNG được mang ảnh mặt sau"); Vitest `299/299`, pgTAP `516/516`, E2E `34/34`. **Kiểm ngược:** làm yếu constraint → đỏ đúng bài 11. ⛔ CHƯA push cloud |
 
+### `P16-T13` — Bộ dữ liệu 35 buổi từ “Mẫu câu tác chiến” (user yêu cầu 2026-08-04)
+
+| ID | Task | Definition of Done | Trạng thái |
+| --- | --- | --- | --- |
+| P16-T13 | **Chuẩn hoá dữ liệu nhập Flashcard từ 3 module VCB** | Đọc đúng `PHẦN 2 - MẪU CÂU TÁC CHIẾN` của từng buổi trong 3 file TXT; tạo một file Markdown chia Module/Buổi; bỏ buổi kiểm tra/thi và không nhân đôi phần nguồn trùng; tách mọi câu lựa chọn dùng `/` thành các thẻ độc lập; mỗi thẻ đúng một dòng 5 cột, cột 4 đúng một mục có nhãn hợp lệ, cột 5 đúng ba mục với mục đầu là khung câu; không có Tab hoặc ký tự phân cách lọt vào nội dung; toàn bộ dòng chạy xanh qua parser nhập hàng loạt thật và nằm trong giới hạn Zod hiện hành. | ☑ **DONE — Codex 2026-08-04.** `docs/data/VCB_35_BUOI_MAU_CAU_TAC_CHIEN_IMPORT.md`: 162 thẻ; bỏ 14/28/35; khử lặp Buổi 30; tách lựa chọn `/` ở Buổi 1 và 5. Parser thật 2/2; lint 0; typecheck 0; Vitest 521/521; build 0. |
+
 ### `BUG-P16-002` — Nhập hàng loạt báo "N file tải lên không hợp lệ hoặc đã mất" (user báo 2026-07-25)
 
 User thả 34 file (17 ảnh + 17 mp3) vào tab "Ảnh & Audio", chờ rất lâu rồi nhận `31 file tải lên không hợp lệ hoặc đã mất` và **mất sạch** công tải lên. Kèm yêu cầu thứ hai: *"load 34 ảnh và mp3 lên cùng lúc rất chậm"*.
@@ -796,6 +802,36 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 | REPORT-REDESIGN-1f | **Đo thật trên trình duyệt + xác minh độc lập** | Chạy app local với DB seed, đăng nhập 3 vai (giáo vụ/GV/học viên bị chặn), đo 375px+1280px không tràn ngang, chạy lại 2 e2e spec đã cập nhật selector (`report.smoke`, `teacher-progress-responsive`), bấm In thật ra PDF | ☐ **CHƯA — chờ phiên có Docker/Playwright**; 4 cổng lint/typecheck/test/build đã xanh |
 
 ⚠️ **Không đụng nghiệp vụ:** ngưỡng "cần chú ý" vẫn là `v_at_risk_assessment_students` theo cấu hình từng khóa (D5) — app không tự đặt ngưỡng; tuition queries/export giữ nguyên; không sửa view/migration nào.
+
+---
+
+### Video bài giảng qua liên kết YouTube — `VIDEO-1` (user chốt 2026-08-05)
+
+**Nguyên văn:** *"ở trang thiết kế flashcard của admin tôi muốn có 1 nơi import video, mỗi buổi 1 video, có thể nhập hàng loạt"* → sau khi Claude đo dung lượng, user đổi hướng: *"tôi quyết định đăng youtube tất cả những vid này rồi dán link youtube từng vid này lên web"*. Thiết kế đầy đủ + bản mẫu giao diện user đã duyệt: [`docs/13-thiet-ke-video-bai-giang.md`](13-thiet-ke-video-bai-giang.md).
+
+🔴 **Vì sao KHÔNG tự lưu trữ (đo thật, xem `WORKLOG`):** `VIDEO_GIAOTRINH/` 15 file = **2,03 GB**, suy ra 35 buổi ≈ **4,73 GB**. Supabase Free chặn ba tầng: file **50 MB** · tổng **1 GB** · **egress 5 GB/tháng** (cần **260 GB**). Nén không cứu được egress. User chọn YouTube vì R2 free trần 10 GB vẫn có ngày vỡ.
+
+⚠️ **Đánh đổi đã ghi nhận, KHÔNG phải sơ suất:** hướng này **bỏ** yêu cầu *"chỉ học viên khoá đó mới xem được"*. RLS chỉ giấu **danh sách link**; ai cầm link thì xem được vì video nằm trên YouTube. Bù lại bằng chế độ **Không công khai** (Unlisted) — việc của user trên YouTube, không phải code.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| VIDEO-1a | **Migration + RLS + RPC** | `video_collections` + `video_items`; `unique (collection_id, session_number)` **ở DB** (bài học `BUG_M09_01`); `created_by` mặc định `auth.uid()` + trigger ép actor (bài học `BUG_M06_01`); RPC `save_lesson_videos` `security definer` + `set search_path = ''`; RLS student read = published + enrollment, **fail-closed** | ☑ **DONE** — `…090`, áp local, đỉnh `20260805000090`. ⛔ chưa push cloud |
+| VIDEO-1b | **Domain thuần** | `domain/youtube-url.ts`: bóc ID từ **8 dạng URL** (`youtu.be`, `watch?v=`, `m.`, `/embed/`, `/shorts/`, `?si=`, ID trần, link lạ → `null`); ép `^[A-Za-z0-9_-]{11}$`; parse text nhập hàng loạt + phát hiện **trùng số buổi → không đoán**. Không import React/Supabase | ☑ **DONE** — kèm `stripSessionPrefix` (§5.2.1) |
+| VIDEO-1c | **Server** | `queries.ts` + `actions.ts`; kiểm ID **lại ở server** (client không đáng tin); lấy tiêu đề qua **oEmbed fail-open** (hỏng → `"Buổi N"`, không chặn nhập); `logAudit` mỗi buổi | ☑ **DONE** — 5 action + `youtube-oembed.ts` |
+| VIDEO-1d | **UI admin** | Tab *Video bài giảng* cạnh *Bộ thẻ* ở `/admin/flashcards`; dialog dán hàng loạt → **bảng xem trước** → mới lưu (đúng mô hình `flashcard-import-dialog`); số bị thay in **trên nút** | ☑ **DONE** — bảng admin hiện `displayTitle`, tức đúng chuỗi HV thấy |
+| VIDEO-1e | **UI học viên** | Tab thứ ba ở `/student/review`; hàng 56px, `<a target="_blank" rel="noopener noreferrer">`; 🔴 **`min-w-0` + `truncate`** (lỗi đã lặp 3 lần: `UX-UIUX-M16-002`, `UX-STUDENTS-1`); buổi chưa công bố **mờ + ổ khoá, KHÔNG ẩn** | ☑ **DONE** — tab chỉ hiện khi bộ có buổi thật |
+| VIDEO-1f | **Test + cổng** | Unit: đủ 8 dạng URL + trùng số + ngoài phạm vi. pgTAP: fail-closed 3 vai · HV ngoài lớp **0 hàng** · `draft` **0 hàng** · `on conflict` chạy 2 lần ra **1 hàng**. **Kiểm ngược**: bỏ điều kiện enrollment ⇒ pgTAP phải **đỏ**. Đo 375px `horizontalOverflow = 0` | ◐ **Cổng xanh, CHƯA đo trình duyệt.** Vitest **553/553** · pgTAP **24/24** · lint/typecheck/build 0. **2 kiểm ngược đều đỏ đúng chỗ.** ☐ chưa đo 375px thật |
+
+**Kiểm ngược đã chạy thật, cả hai đều đỏ đúng một bài:**
+
+1. Bỏ điều kiện enrollment khỏi `video_items_student_read` ⇒ pgTAP bài 21 *"Học viên KHÁC khóa thấy 0 buổi"* **đỏ**.
+2. Bỏ điều kiện `items.length > 0` khỏi điều kiện hiện tab ⇒ Vitest bài *"bộ video rỗng cũng KHÔNG hiện tab"* **đỏ**.
+
+🔴 **Phát hiện trong lúc viết test, ghi lại vì nó chặt hơn thiết kế:** bài anon ban đầu viết `is(count(*), 0)` và **đỏ** — vì `revoke all … from anon` khiến câu select **ném lỗi `42501`** chứ không trả 0 hàng. Sai ở bài test, không phải ở code. Đã sửa bài test thành `throws_ok` để ghim đúng hành vi thật, thay vì nới bài test cho nó xanh.
+
+📌 **User chốt:** video đánh số **liên tục 1→35**; flashcard bỏ buổi thi **14/28/35** ⇒ số buổi hai bên vẫn khớp, 3 buổi đó đơn giản là không có flashcard. Không cần bảng tra.
+
+⚠️ **Chưa kiểm được:** oEmbed trên video chế độ *Không công khai* (không có mẫu để thử). Đã thiết kế fail-open nên không chặn đường; cần đo lại khi user đăng xong video đầu tiên.
 
 ---
 

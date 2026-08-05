@@ -3229,6 +3229,100 @@ export type Database = {
           },
         ]
       }
+      video_collections: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          position: number
+          published_at: string | null
+          status: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          position?: number
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          position?: number
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["video_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_collections_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_items: {
+        Row: {
+          collection_id: string
+          created_at: string
+          created_by: string
+          id: string
+          published_at: string | null
+          session_number: number
+          status: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at: string
+          youtube_video_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          published_at?: string | null
+          session_number: number
+          status?: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at?: string
+          youtube_video_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          published_at?: string | null
+          session_number?: number
+          status?: Database["public"]["Enums"]["video_status"]
+          title?: string
+          updated_at?: string
+          youtube_video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "video_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wrong_answer_queue: {
         Row: {
           created_at: string
@@ -3918,6 +4012,14 @@ export type Database = {
         }
         Returns: string
       }
+      save_lesson_videos: {
+        Args: {
+          p_allow_overwrite?: boolean
+          p_collection_id: string
+          p_items: Json
+        }
+        Returns: Json
+      }
       save_session_log: {
         Args: {
           p_complete: boolean
@@ -4122,6 +4224,7 @@ export type Database = {
         | "exam_window_closed"
         | "system_finalize"
       user_role: "super_admin" | "teacher" | "student" | "academic_manager"
+      video_status: "draft" | "published"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4388,6 +4491,7 @@ export const Constants = {
         "system_finalize",
       ],
       user_role: ["super_admin", "teacher", "student", "academic_manager"],
+      video_status: ["draft", "published"],
     },
   },
 } as const

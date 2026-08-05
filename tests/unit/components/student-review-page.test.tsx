@@ -7,10 +7,14 @@ import {
   getStudentFlashcardDeckOptions,
 } from "@/features/flashcards/server/queries";
 import { getMyEnrollment } from "@/features/student/server/queries";
+import { getStudentVideoCollection } from "@/features/videos/server/queries";
 import { getMyWrongAnswerReviews } from "@/features/wrong-answer-review/server/queries";
 import { requireRole } from "@/lib/auth/session";
 
 vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));
+vi.mock("@/features/videos/server/queries", () => ({
+  getStudentVideoCollection: vi.fn(),
+}));
 vi.mock("@/features/student/server/queries", () => ({
   getMyEnrollment: vi.fn(),
 }));
@@ -61,7 +65,28 @@ describe("StudentReviewPage", () => {
     ]);
     vi.mocked(getStudentFlashcardDeck).mockResolvedValue({} as never);
     vi.mocked(getMyWrongAnswerReviews).mockResolvedValue([]);
+    // Mặc định khoá CHƯA có video — đây là trạng thái của mọi khoá hiện tại,
+    // nên các bài cũ phải chạy đúng y như trước khi có `VIDEO-1`.
+    vi.mocked(getStudentVideoCollection).mockResolvedValue(null);
   });
+
+  /** Một buổi đã công bố, dùng chung cho các bài về tab Video. */
+  function videoCollection() {
+    return {
+      id: "col-1",
+      title: "Video bài giảng",
+      items: [
+        {
+          id: "item-1",
+          session_number: 1,
+          status: "published",
+          youtube_video_id: "dQw4w9WgXcQ",
+          title: "Buổi 1. Chào hỏi",
+          displayTitle: "Chào hỏi",
+        },
+      ],
+    } as never;
+  }
 
   it("khóa role học viên, lấy đúng khóa đang học và hiển thị hai tab ôn tập", async () => {
     render(await StudentReviewPage(params()));
@@ -78,6 +103,49 @@ describe("StudentReviewPage", () => {
       screen.getByRole("tab", { name: /Ôn Tập Câu Sai/ }),
     ).toHaveTextContent("Ôn Tập Câu Sai0");
     expect(screen.getByText("Flashcard của HSK 1")).toBeInTheDocument();
+  });
+
+  /**
+   * `VIDEO-1e` — khoá CHƯA có video thì KHÔNG bày tab thứ ba.
+   *
+   * Bày một tab rỗng ra cho cả lớp bấm vào rồi thấy trống là bắt người ta trả
+   * giá bằng một cú bấm để biết "không có gì".
+   */
+  it("khoá chưa có video thì KHÔNG hiện tab Video Bài Giảng", async () => {
+    render(await StudentReviewPage(params()));
+
+    expect(getStudentVideoCollection).toHaveBeenCalledWith("course-1");
+    expect(
+      screen.queryByRole("tab", { name: /Video Bài Giảng/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("khoá CÓ video đã công bố thì hiện tab thứ ba", async () => {
+    vi.mocked(getStudentVideoCollection).mockResolvedValue(videoCollection());
+
+    render(await StudentReviewPage(params()));
+
+    expect(
+      screen.getByRole("tab", { name: /Video Bài Giảng/ }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * Bộ tồn tại nhưng RỖNG (admin vừa tạo, chưa dán link nào) cũng không được
+   * bày tab — cùng lý do với bài trên.
+   */
+  it("bộ video rỗng cũng KHÔNG hiện tab", async () => {
+    vi.mocked(getStudentVideoCollection).mockResolvedValue({
+      id: "col-1",
+      title: "Video bài giảng",
+      items: [],
+    } as never);
+
+    render(await StudentReviewPage(params()));
+
+    expect(
+      screen.queryByRole("tab", { name: /Video Bài Giảng/ }),
+    ).not.toBeInTheDocument();
   });
 
   /**

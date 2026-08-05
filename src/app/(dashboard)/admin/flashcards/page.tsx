@@ -1,12 +1,20 @@
+import { Layers, Youtube } from "lucide-react";
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FlashcardAdminManager } from "@/features/flashcards/components/flashcard-admin-manager";
 import {
   getAdminFlashcardDeck,
   getAdminFlashcardDecks,
   getFlashcardCourseOptions,
 } from "@/features/flashcards/server/queries";
+import { VideoAdminPanel } from "@/features/videos/components/video-admin-panel";
+import {
+  getAdminVideoCollection,
+  getAdminVideoCollections,
+  getVideoCourseOptions,
+} from "@/features/videos/server/queries";
 import { requireRole } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Flashcard" };
@@ -51,19 +59,57 @@ export default async function AdminFlashcardsPage({
   const initialSectionId =
     deck?.sections.find((item) => item.id === session)?.id ?? null;
 
+  /*
+   * Video bài giảng dùng CHUNG tham số `?course=` với tab Bộ thẻ, nên đổi khóa ở
+   * tab này rồi chuyển tab kia vẫn đúng khóa đó (`VIDEO-1d`).
+   *
+   * Bản đầu mỗi khóa một bộ video, nên lấy bộ đầu tiên — nhưng schema đã chừa
+   * nhiều bộ, đúng đường `flashcard_decks` đã đi ở `…083`.
+   */
+  const videoCourses = await getVideoCourseOptions();
+  const videoCollections = selectedCourseId
+    ? await getAdminVideoCollections(selectedCourseId)
+    : [];
+  const videoCollection = videoCollections[0]
+    ? await getAdminVideoCollection(videoCollections[0].id)
+    : null;
+
   return (
     <>
       <PageHeader
-        title="Flashcard"
-        description="Mỗi khóa học có thể có nhiều bộ thẻ; mỗi bộ chia theo buổi và có dải địa chỉ QR riêng."
+        title="Nội dung khóa học"
+        description="Bộ thẻ flashcard và video bài giảng của từng khóa."
       />
-      <FlashcardAdminManager
-        courses={courses}
-        selectedCourseId={selectedCourseId}
-        decks={decks}
-        deck={deck}
-        initialSectionId={initialSectionId}
-      />
+      <Tabs defaultValue="decks" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="decks" className="gap-2">
+            <Layers className="size-4" aria-hidden />
+            Bộ thẻ
+          </TabsTrigger>
+          <TabsTrigger value="videos" className="gap-2">
+            <Youtube className="size-4" aria-hidden />
+            Video bài giảng
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="decks">
+          <FlashcardAdminManager
+            courses={courses}
+            selectedCourseId={selectedCourseId}
+            decks={decks}
+            deck={deck}
+            initialSectionId={initialSectionId}
+          />
+        </TabsContent>
+
+        <TabsContent value="videos">
+          <VideoAdminPanel
+            courses={videoCourses}
+            selectedCourseId={selectedCourseId}
+            collection={videoCollection}
+          />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

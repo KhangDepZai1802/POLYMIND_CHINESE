@@ -1,4 +1,4 @@
-import { BrainCircuit, Layers } from "lucide-react";
+import { BrainCircuit, Layers, Youtube } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,8 @@ import {
   getStudentStarredPageIds,
 } from "@/features/flashcards/server/queries";
 import { getMyEnrollment } from "@/features/student/server/queries";
+import { StudentVideoList } from "@/features/videos/components/student-video-list";
+import { getStudentVideoCollection } from "@/features/videos/server/queries";
 import { WrongAnswerReview } from "@/features/wrong-answer-review/components/wrong-answer-review";
 import { getMyWrongAnswerReviews } from "@/features/wrong-answer-review/server/queries";
 import { requireRole } from "@/lib/auth/session";
@@ -29,12 +31,13 @@ export default async function StudentReviewPage({
   ]);
   const course = enrollment?.class.course ?? null;
 
-  const [deckOptions, starredPageIds] = course
+  const [deckOptions, starredPageIds, videoCollection] = course
     ? await Promise.all([
         getStudentFlashcardDeckOptions(course.id),
         getStudentStarredPageIds(),
+        getStudentVideoCollection(course.id),
       ])
-    : [[], []];
+    : [[], [], null];
 
   /**
    * Khoá **một** bộ thì vào thẳng, không bắt bấm qua màn chọn (`MULTIDECK-1f`).
@@ -91,6 +94,21 @@ export default async function StudentReviewPage({
                 {wrongAnswers.length}
               </span>
             </TabsTrigger>
+            {/*
+              Tab thứ ba chỉ hiện khi khoá THẬT SỰ có video đã công bố. Bày một
+              tab rỗng ra cho cả lớp bấm vào rồi thấy trống là bắt người ta trả
+              giá bằng một cú bấm để biết "không có gì" (`empty-nav-state` chỉ
+              đòi giải thích khi đích đến TỒN TẠI mà chưa mở).
+            */}
+            {videoCollection && videoCollection.items.length > 0 ? (
+              <TabsTrigger
+                value="videos"
+                className="text-student-sky-ink data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+              >
+                <Youtube className="size-4" aria-hidden />
+                Video Bài Giảng
+              </TabsTrigger>
+            ) : null}
           </TabsList>
         </nav>
         <TabsContent value="flashcards">
@@ -111,6 +129,14 @@ export default async function StudentReviewPage({
         <TabsContent value="wrong-answers">
           <WrongAnswerReview initialItems={wrongAnswers} />
         </TabsContent>
+        {videoCollection && videoCollection.items.length > 0 ? (
+          <TabsContent value="videos">
+            <StudentVideoList
+              collection={videoCollection}
+              courseName={course?.title ?? null}
+            />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </>
   );
