@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import {
   classScheduleSchema,
   manualSessionSchema,
+  rescheduleSessionWithMakeupSchema,
 } from "@/features/schedules/schema";
 import {
   dbErrorToMessage,
@@ -115,16 +116,18 @@ export async function generateSessionsAction(
 
   // Đếm TRƯỚC để giải thích được vì sao ra 0 buổi: lớp linh hoạt (không có lịch
   // lặp) và lớp đã đủ buổi đều trả 0, nhưng là hai chuyện hoàn toàn khác nhau.
-  const [{ count: scheduleCount }, { count: sessionCount }] = await Promise.all([
-    supabase
-      .from("class_schedules")
-      .select("id", { count: "exact", head: true })
-      .eq("class_id", classId),
-    supabase
-      .from("class_sessions")
-      .select("id", { count: "exact", head: true })
-      .eq("class_id", classId),
-  ]);
+  const [{ count: scheduleCount }, { count: sessionCount }] = await Promise.all(
+    [
+      supabase
+        .from("class_schedules")
+        .select("id", { count: "exact", head: true })
+        .eq("class_id", classId),
+      supabase
+        .from("class_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("class_id", classId),
+    ],
+  );
 
   const { data: created, error } = await supabase.rpc(
     "generate_class_sessions",
@@ -169,17 +172,48 @@ export async function createManualSessionAction(
   const { class_id, starts_at, ends_at, topic, lesson_id } = parsed.data;
   const supabase = await createClient();
 
-  const { data: last } = await supabase
-    .from("class_sessions")
-    .select("session_number")
-    .eq("class_id", class_id)
-    .order("session_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [classResult, sessionsResult] = await Promise.all([
+    supabase
+      .from("classes")
+      .select("planned_session_count")
+      .eq("id", class_id)
+      .maybeSingle(),
+    supabase
+      .from("class_sessions")
+      .select("session_number")
+      .eq("class_id", class_id)
+      .order("session_number", { ascending: false }),
+  ]);
+
+  if (classResult.error) {
+    return { error: dbErrorToMessage(classResult.error) };
+  }
+  if (sessionsResult.error) {
+    return { error: dbErrorToMessage(sessionsResult.error) };
+  }
+
+  const classRecord = classResult.data;
+  const existing = sessionsResult.data;
+
+  const lastNumber = existing?.[0]?.session_number ?? 0;
+  const plannedCount = classRecord?.planned_session_count ?? null;
+
+  if (plannedCount !== null && (existing?.length ?? 0) >= plannedCount) {
+    return {
+      error: `Lớp đã đủ ${plannedCount} buổi. Nếu lớp nghỉ học, hãy dùng “Nghỉ học / xếp lịch bù” trên buổi cần nghỉ.`,
+    };
+  }
+
+  if (plannedCount !== null && lastNumber + 1 > plannedCount) {
+    return {
+      error:
+        "Dãy số buổi đang bị thiếu ở giữa. Hệ thống không tự đoán số; hãy dùng “Nghỉ học / xếp lịch bù”.",
+    };
+  }
 
   const { error } = await supabase.from("class_sessions").insert({
     class_id,
-    session_number: (last?.session_number ?? 0) + 1,
+    session_number: lastNumber + 1,
     // Giờ VN từ form → UTC. DB luôn lưu UTC.
     starts_at: fromLocalInput(starts_at).toISOString(),
     ends_at: fromLocalInput(ends_at).toISOString(),
@@ -207,6 +241,50 @@ export async function createManualSessionAction(
 
   revalidateClass(class_id);
   return { success: "Đã thêm buổi học." };
+}
+
+/**
+ * Nghỉ một ngày + thêm ngày bù mà KHÔNG sinh thêm session_number.
+ * Mutation dời nhiều row nên bắt buộc đi qua một RPC transaction ở DB.
+ */
+export async function rescheduleSessionWithMakeupAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireManager();
+
+  const parsed = rescheduleSessionWithMakeupSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) return zodToActionState(parsed.error);
+
+  const {
+    class_id,
+    session_id,
+    request_id,
+    new_starts_at,
+    new_ends_at,
+    reason,
+  } = parsed.data;
+  const supabase = await createClient();
+
+  const { data: affected, error } = await supabase.rpc(
+    "reschedule_class_session_with_makeup",
+    {
+      p_session_id: session_id,
+      p_new_starts_at: fromLocalInput(new_starts_at).toISOString(),
+      p_new_ends_at: fromLocalInput(new_ends_at).toISOString(),
+      p_reason: reason,
+      p_request_id: request_id,
+    },
+  );
+
+  if (error) return { error: dbErrorToMessage(error) };
+
+  revalidateClass(class_id);
+  return {
+    success: `Đã xếp lịch bù và dời ${affected ?? 0} buổi. Tổng số buổi không thay đổi.`,
+  };
 }
 
 /**

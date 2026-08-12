@@ -37,6 +37,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> 🟢 **`BUG-SCHED-MAKEUP-1` — DONE, chờ xác minh độc lập — Codex — 2026-08-12.** Migration `…091` đã áp cloud: LOP-02/LOP-03 đều trở về đúng **35 row, số 1…35**, ngày cuối 03/12 và 02/12; hai ID Buổi 36 cũ được giữ thành Buổi 35, **156/156 điểm danh còn nguyên**, có 2 audit data-fix. Luồng mới “Nghỉ học / xếp lịch bù” đổi time slot nguyên tử trên row hiện hữu, có history/idempotency/xung đột/RLS; app và trigger DB cùng chặn sinh số buổi vượt kế hoạch. pgTAP **708/708**, Vitest **585/585**, lint/typecheck/build xanh; dry-run lần hai: **Remote database is up to date**.
+>
 > 🔴 **`UX-MOBILE-3` — THIẾU BÁO HIỆU CHỜ + NGÕ CỤT KHÔNG CÓ ĐƯỜNG RA, ĐÃ SỬA 2026-08-05, chờ xác minh độc lập — Claude.** User báo kèm 2 ảnh: *"khi bấm vào 1 trong 2 bộ chưa có hiệu ứng loading"* · *"đã vào 1 trong 2 bộ thẻ nhưng không có nút back ra"*, và yêu cầu **rà soát toàn hệ thống**.
 >
 > 📊 **Kết quả rà soát — 6 chỗ điều hướng bằng code, chỉ 1 chỗ có báo hiệu.** `class-picker.tsx` là nơi DUY NHẤT dùng `useNavProgress`. 🔴 Điểm mấu chốt: **`router.push` trần không phát `navstart`**, nên đến cả thanh tiến trình toàn cục ở đỉnh màn cũng đứng im — không phải "thiếu spinner cho đẹp" mà là **không có tín hiệu nào cả**. Đã chuyển 5 chỗ sang `useNavProgress`: chọn bộ thẻ (HV) · quay lại danh sách bộ (HV) · chọn khoá + chọn bộ ở `/admin/flashcards` · chọn khoá ở tab Video. ✅ Hai màn làm bài (`exam-attempt`, `exercise-attempt`) **đã tự phát `navstart`** từ trước — không đụng.
@@ -520,6 +522,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**➡️ `BUG-SCHED-MAKEUP-1-VERIFY` — Claude/agent khác xác minh độc lập.** Kiểm read-only cloud: hai lớp đủ 1…35, ID Buổi 36 cũ nay là Buổi 35, điểm danh 156; smoke UI bằng giáo vụ: chọn một buổi tương lai sạch → dialog phải báo đúng số buổi bị dời và tổng số vẫn giữ nguyên; không thực hiện submit trên production nếu không có thay đổi lịch thật.
+
 **➡️ ƯU TIÊN 0 — 🔴 VIỆC CỦA USER: XOAY MẬT KHẨU DATABASE PRODUCTION.** Mật khẩu `postgres` đã đi qua khung chat phiên 97 khi user nhờ Claude push `…090`. Nó **bypass toàn bộ RLS**. Supabase Dashboard → Settings → Database → Reset database password, rồi cập nhật lại chỗ nào đang dùng. **Đây là lần thứ ba** repo này có cảnh báo cùng loại (phiên 87: `service_role` key; phiên 95: mật khẩu DB) và **chưa lần nào được xử lý**.
 
 ✅ ~~Push migration `…090` lên cloud~~ — **XONG 2026-08-05**, đã xác minh bằng `psql`; xem `TRẠNG THÁI HIỆN TẠI`.
@@ -844,6 +848,17 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
+### [2026-08-12] Phiên 102 — Codex — `BUG-SCHED-MAKEUP-1`: học bù không sinh Buổi 36
+
+- **Làm được:** thay luồng xóa + thêm tay bằng RPC `reschedule_class_session_with_makeup` nguyên tử: bỏ mốc nghỉ, thêm mốc bù và dời time slot trên chính các session hiện hữu; giữ tổng row/ID/số buổi/nội dung/điểm danh. UI đưa “Nghỉ học / xếp lịch bù” thành thao tác chính, tách “Xóa buổi sinh nhầm” vào menu; lớp có lịch lặp không còn dùng “Thêm buổi” để học bù.
+- **File thay đổi:** migration + pgTAP `…091`; schema/action/component lịch; 2 unit/component test; generated DB types; docs 01/02/03/04/08, QA board và WORKLOG.
+- **Migration/data impact:** đã dry-run rồi push cloud. LOP-02/LOP-03 từ 35 row có lỗ số 4 + max 36 thành đúng 35 row, số 1…35; ID cũ của Buổi 36 giữ nguyên thành Buổi 35; ngày cuối 03/12 và 02/12; 156 điểm danh giữ nguyên; 2 audit data-fix. Migration history = `20260812000091`; dry-run lần hai báo `Remote database is up to date`.
+- **Đã test:** local reset áp đủ migration; pgTAP **708/708**; lint **0**; typecheck **0**; Vitest **585/585**; build exit **0**. Target schema/component **11/11**.
+- **Quyết định mới:** nghỉ có ngày bù không tạo/xóa session; đổi chuỗi time slot trên row hiện hữu và ghi lịch sử. `session_number` bị chặn ở DB trong `1..planned_session_count`.
+- **Docker:** theo yêu cầu user “chỉ giữ lại 2 dự án”, đã restart và xóa tài nguyên local của BikeForce + POLYMIND APP, giữ Polymind Chinese + CQ; mã nguồn và mọi bản deploy/cloud không bị ảnh hưởng. Volume local đã xóa không tự khôi phục được nếu không có seed/backup.
+- **Blocker/rủi ro:** fix đã do Codex thực hiện nên QA board vẫn chờ xác minh độc lập. Supabase CLI cảnh báo cache pg-delta thiếu CA sau push, nhưng migration được xác minh bằng kết nối PostgreSQL mới và dry-run lần hai up-to-date.
+- **Next action:** `BUG-SCHED-MAKEUP-1-VERIFY`; user review/commit/deploy source mới.
+
 ### [2026-08-05] Phiên 101 — Claude — `UX-MOBILE-3`: thiếu báo hiệu chờ + ngõ cụt không có đường ra
 
 - **User báo (nguyên văn):** *"khi bấm vào 1 trong 2 bộ chưa có hiệu ứng loading"* · *"đã vào 1 trong 2 bộ thẻ nhưng không có nút back ra"* · *"rà soát lại những module mới khắp nơi trong hệ thống coi có cái nào chưa có hiệu ứng loading không"*.
@@ -909,13 +924,5 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Blocker/rủi ro:** ⚠️ **CHƯA kiểm được oEmbed trên video chế độ *Không công khai*** (không có mẫu) — đã thiết kế **fail-open** nên hỏng chỉ mất tiêu đề tự động, không mất tính năng; cần đo lại khi user đăng video đầu tiên. ⚠️ **Chưa đo trình duyệt thật** ở 375px. ⛔ `…090` chưa push cloud.
 - **Next action:** `VIDEO-1-VERIFY` — Codex xác minh độc lập (Claude viết code nên không tự ghi `Verified`). Đường đo ở `VIỆC TIẾP THEO`.
 
-### [2026-08-04] Phiên 96 — Codex — `P16-T13`: chuẩn hoá 35 buổi mẫu câu tác chiến để nhập Flashcard
-
-- **User yêu cầu:** lấy `PHẦN 2 - MẪU CÂU TÁC CHIẾN` từ 3 file TXT, tạo một MD đúng định dạng nhập liệu 5 cột, chia Module 14/14/7 và bỏ buổi kiểm tra/thi. Bổ sung bắt buộc: câu nguồn có dấu `/` biểu thị hai lựa chọn phải tách thành hai thẻ; một buổi được phép hơn 5 câu.
-- **Kết quả:** tạo `docs/data/VCB_35_BUOI_MAU_CAU_TAC_CHIEN_IMPORT.md`, ghi rõ đủ Buổi 01–35; bỏ Buổi 14, 28, 35; khử phần Buổi 30 bị lặp nguyên block trong nguồn. Hai mẫu có lựa chọn qua `/` ở Buổi 1 và Buổi 5 đã tách thành bốn thẻ độc lập, nên tổng từ 160 thành **162 thẻ**. Dấu `/` thuộc ký hiệu cố định như `24/7` và định dạng ngày được giữ nguyên.
-- **Kiểm dữ liệu:** dùng chính `parseFlashcardImportText` của app kiểm đủ 35 heading, đúng ba buổi bỏ qua, 162 dòng, 5 cột, cột 4 đúng một mục/nhãn hợp lệ, cột 5 đúng ba mục với khung câu đứng đầu, không Tab, không lựa chọn ` / ` trong cột 1; **2/2 test tạm xanh**, sau đó đã xoá test và script tạm. `git diff --check` sạch; regex đếm đúng 162 dòng.
-- **Cổng toàn repo:** lint exit 0 · typecheck exit 0 · Vitest **521/521** · build exit 0. Lượt build trong sandbox ban đầu không tải được Google Font; chạy lại với quyền mạng thì build xanh. Không migration, không đụng cloud, không commit.
-- **Next action:** user review dữ liệu và tự commit; task kỹ thuật kế tiếp của repo vẫn là `REPORT-REDESIGN-1f`.
-
-<!-- Phiên 95 (`REPORT-REDESIGN-1`), 94 (`UX-SCHED-1`), 93 (`GIAOVU-1-VERIFY`), 92 (`UX-STUDENTS-1`) và 91 (`UX-ENROLL-1`) đã cắt theo luật "giữ 6 entry". Tra lại ở lịch sử git. 📌 Kết luận còn dùng của phiên 94 vẫn nằm ở `TRẠNG THÁI HIỆN TẠI` và ở chú thích trong `schedule-manager.tsx`: lưới tuần cần **1050px = 150px/cột** vì lòng thẻ phải chứa badge ~101px và cụm nút 96px cảm ứng — **đừng thu con số đó lại**. Của phiên 93 nằm ở `BLK-8`. -->
+<!-- Phiên 96 (`P16-T13`), 95 (`REPORT-REDESIGN-1`), 94 (`UX-SCHED-1`), 93 (`GIAOVU-1-VERIFY`), 92 (`UX-STUDENTS-1`) và 91 (`UX-ENROLL-1`) đã cắt theo luật "giữ 6 entry". Tra lại ở lịch sử git. 📌 Kết luận còn dùng của phiên 94 vẫn nằm ở `TRẠNG THÁI HIỆN TẠI` và ở chú thích trong `schedule-manager.tsx`: lưới tuần cần **1050px = 150px/cột** vì lòng thẻ phải chứa badge ~101px và cụm nút 96px cảm ứng — **đừng thu con số đó lại**. Của phiên 93 nằm ở `BLK-8`. -->
 

@@ -188,7 +188,7 @@ Form bắt đầu lượt Bài tập/Thi dùng `SubmitButton` + `useFormStatus`:
 
 Mutation nhiều bảng **phải** là RPC PostgreSQL (`SECURITY DEFINER`, `SET search_path = ''`, kiểm quyền ở dòng đầu):
 
-`enroll_student` · `transfer_enrollment` · `change_enrollment_status` · `bulk_mark_attendance` · `generate_class_sessions` · `save_session_log` · assessment engine RPC (`create/version/share/import`, `publish/start/save/submit/grade/release/regrade/finalize`) · `publish_evaluation` · `save_tuition_invoice` · `issue_tuition_invoice` · `delete_tuition_invoice_draft` · `record_tuition_payment` · `save_announcement` · `publish_announcement` · `expire_announcement`
+`enroll_student` · `transfer_enrollment` · `change_enrollment_status` · `bulk_mark_attendance` · `generate_class_sessions` · `save_session_log` · `reschedule_class_session_with_makeup` · assessment engine RPC (`create/version/share/import`, `publish/start/save/submit/grade/release/regrade/finalize`) · `publish_evaluation` · `save_tuition_invoice` · `issue_tuition_invoice` · `delete_tuition_invoice_draft` · `record_tuition_payment` · `save_announcement` · `publish_announcement` · `expire_announcement`
 
 **Idempotency được cưỡng chế ở DB, không ở app** (app-level check luôn thua race condition — bài học từ lỗi trả hoa hồng 2 lần ở hệ cũ):
 
@@ -196,6 +196,7 @@ Mutation nhiều bảng **phải** là RPC PostgreSQL (`SECURITY DEFINER`, `SET 
 | ------------------- | ----------------------------------------------------------------- |
 | Điểm danh hàng loạt | UNIQUE `(session_id, enrollment_id)` + `ON CONFLICT DO UPDATE`    |
 | Sinh buổi học       | UNIQUE `(class_id, session_number)` + `ON CONFLICT DO NOTHING`    |
+| Nghỉ/học bù         | `request_id` UNIQUE + khóa lớp/session + giữ row/ID/số buổi; trigger chặn số ngoài `1..planned_session_count` |
 | Ghi nhận thanh toán | UNIQUE `tuition_receipts.payment_id` → **đúng 1 phiếu thu**       |
 | Ghi danh vượt sĩ số | `SELECT ... FOR UPDATE` trên `classes` trong transaction          |
 | Cron sinh thông báo | UNIQUE partial `(user_id, dedupe_key)`                            |

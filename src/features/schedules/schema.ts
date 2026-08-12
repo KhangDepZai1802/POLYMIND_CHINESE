@@ -46,7 +46,9 @@ export const classScheduleSchema = z
   })
   .refine(
     (d) =>
-      !d.effective_from || !d.effective_to || d.effective_to >= d.effective_from,
+      !d.effective_from ||
+      !d.effective_to ||
+      d.effective_to >= d.effective_from,
     { message: "Ngày kết thúc phải sau ngày bắt đầu", path: ["effective_to"] },
   );
 
@@ -71,5 +73,30 @@ export const manualSessionSchema = z
     path: ["ends_at"],
   });
 
+/**
+ * Nghỉ một ngày và xếp ngày học bù. Server/RPC sẽ bỏ time slot cũ, thêm slot
+ * mới rồi dời chính các session hiện hữu — không tạo Buổi N+1.
+ */
+export const rescheduleSessionWithMakeupSchema = z
+  .object({
+    class_id: z.uuid(),
+    session_id: z.uuid(),
+    request_id: z.uuid(),
+    new_starts_at: z.string().min(1, { message: "Chọn thời gian bắt đầu" }),
+    new_ends_at: z.string().min(1, { message: "Chọn thời gian kết thúc" }),
+    reason: z
+      .string()
+      .trim()
+      .min(3, { message: "Nhập lý do ít nhất 3 ký tự" })
+      .max(500, { message: "Lý do tối đa 500 ký tự" }),
+  })
+  .refine((d) => d.new_ends_at > d.new_starts_at, {
+    message: "Giờ kết thúc phải sau giờ bắt đầu",
+    path: ["new_ends_at"],
+  });
+
 export type ClassScheduleInput = z.infer<typeof classScheduleSchema>;
 export type ManualSessionInput = z.infer<typeof manualSessionSchema>;
+export type RescheduleSessionWithMakeupInput = z.infer<
+  typeof rescheduleSessionWithMakeupSchema
+>;

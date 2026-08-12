@@ -303,6 +303,76 @@ export type Database = {
           },
         ]
       }
+      class_session_schedule_changes: {
+        Row: {
+          affected_session_count: number
+          changed_by: string
+          changes: Json
+          class_id: string
+          created_at: string
+          id: string
+          makeup_ends_at: string
+          makeup_starts_at: string
+          old_ends_at: string
+          old_starts_at: string
+          reason: string
+          request_id: string
+          source_session_id: string
+        }
+        Insert: {
+          affected_session_count: number
+          changed_by: string
+          changes: Json
+          class_id: string
+          created_at?: string
+          id?: string
+          makeup_ends_at: string
+          makeup_starts_at: string
+          old_ends_at: string
+          old_starts_at: string
+          reason: string
+          request_id: string
+          source_session_id: string
+        }
+        Update: {
+          affected_session_count?: number
+          changed_by?: string
+          changes?: Json
+          class_id?: string
+          created_at?: string
+          id?: string
+          makeup_ends_at?: string
+          makeup_starts_at?: string
+          old_ends_at?: string
+          old_starts_at?: string
+          reason?: string
+          request_id?: string
+          source_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_session_schedule_changes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_session_schedule_changes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_class_assessment_progress"
+            referencedColumns: ["class_id"]
+          },
+          {
+            foreignKeyName: "class_session_schedule_changes_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "class_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_sessions: {
         Row: {
           class_id: string
@@ -3968,6 +4038,16 @@ export type Database = {
         Args: { p_page_ids: string[]; p_section_id: string }
         Returns: undefined
       }
+      reschedule_class_session_with_makeup: {
+        Args: {
+          p_new_ends_at: string
+          p_new_starts_at: string
+          p_reason: string
+          p_request_id: string
+          p_session_id: string
+        }
+        Returns: number
+      }
       review_global_question: {
         Args: { p_approve: boolean; p_reason?: string; p_request_id: string }
         Returns: undefined
@@ -4495,4 +4575,3 @@ export const Constants = {
     },
   },
 } as const
-

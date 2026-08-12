@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Clock3,
   List,
+  MoreHorizontal,
   Plus,
   Repeat,
   Trash2,
@@ -40,6 +41,7 @@ import {
   deleteScheduleAction,
   deleteSessionAction,
   generateSessionsAction,
+  rescheduleSessionWithMakeupAction,
 } from "@/features/schedules/server/actions";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -61,6 +63,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -141,6 +150,9 @@ export function ScheduleManager({
 }) {
   const isFlexible = schedules.length === 0;
   const generated = sessions.length;
+  const canAddManualSession =
+    isFlexible &&
+    (plannedSessionCount === null || generated < plannedSessionCount);
 
   // Lớp chưa chốt số buổi / ngày khai giảng thì RPC sẽ từ chối — nói trước cho
   // admin thay vì để họ bấm rồi ăn lỗi đỏ.
@@ -239,12 +251,15 @@ export function ScheduleManager({
           <div>
             <CardTitle className="text-base">Buổi học ({generated})</CardTitle>
             <p className="text-muted-foreground mt-1 text-sm">
-              Giờ hiển thị theo múi giờ Việt Nam.
+              Giờ hiển thị theo múi giờ Việt Nam. Khi nghỉ học và có ngày bù,
+              dùng nút lịch trên chính buổi cần nghỉ để giữ nguyên tổng số buổi.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {generated > 0 && <DeleteAllSessionsButton classId={classId} />}
-            <ManualSessionDialog classId={classId} lessons={lessons} />
+            {canAddManualSession && (
+              <ManualSessionDialog classId={classId} lessons={lessons} />
+            )}
           </div>
         </CardHeader>
 
@@ -260,7 +275,11 @@ export function ScheduleManager({
               }
             />
           ) : (
-            <SessionCalendar mode="admin" classId={classId} sessions={sessions} />
+            <SessionCalendar
+              mode="admin"
+              classId={classId}
+              sessions={sessions}
+            />
           )}
         </CardContent>
       </Card>
@@ -278,6 +297,10 @@ export function SessionCalendar({
   mode?: SessionCalendarMode;
 }) {
   const currentDateKey = todayISO();
+  const lastSessionNumber = sessions.reduce(
+    (highest, session) => Math.max(highest, session.session_number),
+    0,
+  );
   const [view, setView] = useState<CalendarView>("week");
   const [anchorKey, setAnchorKey] = useState(() =>
     pickInitialDateKey(
@@ -385,6 +408,7 @@ export function SessionCalendar({
               classId={classId}
               session={session}
               mode={mode}
+              lastSessionNumber={lastSessionNumber}
             />
           ))}
         </ul>
@@ -402,6 +426,7 @@ export function SessionCalendar({
             anchorKey={anchorKey}
             currentDateKey={currentDateKey}
             sessionsByDate={sessionsByDate}
+            lastSessionNumber={lastSessionNumber}
           />
           <WeekCalendar
             classId={classId}
@@ -409,6 +434,7 @@ export function SessionCalendar({
             anchorKey={anchorKey}
             currentDateKey={currentDateKey}
             sessionsByDate={sessionsByDate}
+            lastSessionNumber={lastSessionNumber}
           />
         </>
       )}
@@ -421,6 +447,7 @@ export function SessionCalendar({
             anchorKey={anchorKey}
             currentDateKey={currentDateKey}
             sessionsByDate={sessionsByDate}
+            lastSessionNumber={lastSessionNumber}
           />
           <MonthCalendar
             anchorKey={anchorKey}
@@ -450,12 +477,14 @@ function WeekDayList({
   anchorKey,
   currentDateKey,
   sessionsByDate,
+  lastSessionNumber,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   anchorKey: string;
   currentDateKey: string;
   sessionsByDate: Map<string, SessionCalendarRecord[]>;
+  lastSessionNumber: number;
 }) {
   const slots = getWeekDaySlots(anchorKey, sessionsByDate, currentDateKey);
 
@@ -512,6 +541,7 @@ function WeekDayList({
                   classId={classId}
                   mode={mode}
                   session={session}
+                  lastSessionNumber={lastSessionNumber}
                 />
               ))}
             </div>
@@ -534,10 +564,12 @@ function DaySessionCard({
   classId,
   mode,
   session,
+  lastSessionNumber,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   session: SessionCalendarRecord;
+  lastSessionNumber: number;
 }) {
   const cancelled = session.status === "cancelled";
 
@@ -545,7 +577,9 @@ function DaySessionCard({
     <article
       className={cn(
         "bg-card rounded-lg border border-l-4 p-3 shadow-sm",
-        cancelled ? "border-l-muted-foreground/40 opacity-70" : "border-l-primary",
+        cancelled
+          ? "border-l-muted-foreground/40 opacity-70"
+          : "border-l-primary",
       )}
     >
       <div className="flex items-baseline gap-2">
@@ -569,7 +603,12 @@ function DaySessionCard({
           tone={SESSION_STATUS_TONE[session.status]}
         />
         <div className="ml-auto flex items-center gap-2">
-          <SessionTrailing classId={classId} mode={mode} session={session} />
+          <SessionTrailing
+            classId={classId}
+            mode={mode}
+            session={session}
+            lastSessionNumber={lastSessionNumber}
+          />
         </div>
       </div>
     </article>
@@ -591,12 +630,14 @@ function MonthDayPicker({
   anchorKey,
   currentDateKey,
   sessionsByDate,
+  lastSessionNumber,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   anchorKey: string;
   currentDateKey: string;
   sessionsByDate: Map<string, SessionCalendarRecord[]>;
+  lastSessionNumber: number;
 }) {
   const days = getMonthGridDateKeys(anchorKey);
   const activeMonth = monthKey(anchorKey);
@@ -703,6 +744,7 @@ function MonthDayPicker({
                 classId={classId}
                 mode={mode}
                 session={session}
+                lastSessionNumber={lastSessionNumber}
               />
             ))}
           </div>
@@ -744,12 +786,14 @@ function WeekCalendar({
   anchorKey,
   currentDateKey,
   sessionsByDate,
+  lastSessionNumber,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   anchorKey: string;
   currentDateKey: string;
   sessionsByDate: Map<string, SessionCalendarRecord[]>;
+  lastSessionNumber: number;
 }) {
   const days = getWeekDateKeys(anchorKey);
 
@@ -803,6 +847,7 @@ function WeekCalendar({
                       classId={classId}
                       mode={mode}
                       session={session}
+                      lastSessionNumber={lastSessionNumber}
                     />
                   ))
                 )}
@@ -819,10 +864,12 @@ function WeekSessionCard({
   classId,
   mode,
   session,
+  lastSessionNumber,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   session: SessionCalendarRecord;
+  lastSessionNumber: number;
 }) {
   return (
     <article
@@ -853,7 +900,12 @@ function WeekSessionCard({
           label={SESSION_STATUS_LABELS[session.status]}
           tone={SESSION_STATUS_TONE[session.status]}
         />
-        <SessionTrailing classId={classId} mode={mode} session={session} />
+        <SessionTrailing
+          classId={classId}
+          mode={mode}
+          session={session}
+          lastSessionNumber={lastSessionNumber}
+        />
       </div>
     </article>
   );
@@ -941,10 +993,12 @@ function SessionRow({
   classId,
   mode,
   session,
+  lastSessionNumber,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   session: SessionCalendarRecord;
+  lastSessionNumber: number;
 }) {
   return (
     <li className="flex items-center gap-3 px-5 py-3">
@@ -971,6 +1025,7 @@ function SessionRow({
         classId={classId}
         mode={mode}
         session={session}
+        lastSessionNumber={lastSessionNumber}
         showTeacherLabel
       />
     </li>
@@ -990,15 +1045,23 @@ function SessionTrailing({
   classId,
   mode,
   session,
+  lastSessionNumber,
   showTeacherLabel = false,
 }: {
   classId?: string;
   mode: SessionCalendarMode;
   session: SessionCalendarRecord;
+  lastSessionNumber: number;
   showTeacherLabel?: boolean;
 }) {
   if (mode === "admin" && classId) {
-    return <SessionActions classId={classId} session={session} />;
+    return (
+      <SessionActions
+        classId={classId}
+        session={session}
+        lastSessionNumber={lastSessionNumber}
+      />
+    );
   }
 
   if (mode === "teacher") {
@@ -1032,64 +1095,99 @@ function SessionTrailing({
 function SessionActions({
   classId,
   session,
+  lastSessionNumber,
 }: {
   classId: string;
   session: SessionCalendarRecord;
+  lastSessionNumber: number;
 }) {
   // Buổi đã dạy: không cho xóa ở UI, và DB cũng chặn (migration 22). Ẩn nút chỉ
   // là lịch sự — chốt chặn thật nằm ở trigger.
   const canDelete = session.status === "scheduled";
   const canCancel = session.status === "scheduled";
+  const canReschedule = session.status === "scheduled";
 
-  // `gap-2` (8px) chứ không phải `gap-1`: hai nút cạnh nhau đều là thao tác phá
-  // hủy ("Hủy buổi" / "Xóa buổi"), 4px là khoảng cách bấm nhầm — WCAG/HIG yêu
-  // cầu tối thiểu 8px giữa hai touch target.
   return (
     <div className="flex shrink-0 items-center gap-2">
-      {canCancel && (
-        <SessionActionButton
-          action={cancelSessionAction}
-          id={session.id}
+      {canReschedule && (
+        <RescheduleSessionDialog
           classId={classId}
-          icon={<XCircle className="size-4" aria-hidden />}
-          label={`Hủy buổi ${session.session_number}`}
-          confirmMessage={`Hủy buổi ${session.session_number}? Buổi vẫn được giữ trong lịch sử.`}
+          session={session}
+          affectedCount={Math.max(
+            1,
+            lastSessionNumber - session.session_number + 1,
+          )}
         />
       )}
-      {canDelete && (
-        <SessionActionButton
-          action={deleteSessionAction}
-          id={session.id}
-          classId={classId}
-          icon={<Trash2 className="text-destructive size-4" aria-hidden />}
-          label={`Xóa buổi ${session.session_number}`}
-          confirmMessage={`Xóa hẳn buổi ${session.session_number}? Chỉ dùng khi sinh nhầm — buổi đã điểm danh sẽ bị DB từ chối.`}
-        />
+
+      {(canCancel || canDelete) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={`Thao tác khác cho buổi ${session.session_number}`}
+            >
+              <MoreHorizontal className="size-4" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            {canCancel && (
+              <SessionMenuAction
+                action={cancelSessionAction}
+                id={session.id}
+                classId={classId}
+                icon={<XCircle className="size-4" aria-hidden />}
+                label="Hủy buổi, không xếp học bù"
+                confirmLabel="Hủy buổi"
+                confirmMessage={`Hủy Buổi ${session.session_number} mà không xếp học bù? Buổi vẫn được giữ trong lịch sử.`}
+              />
+            )}
+            {canCancel && canDelete && <DropdownMenuSeparator />}
+            {canDelete && (
+              <SessionMenuAction
+                action={deleteSessionAction}
+                id={session.id}
+                classId={classId}
+                icon={<Trash2 className="size-4" aria-hidden />}
+                label="Xóa buổi sinh nhầm"
+                confirmLabel="Xóa buổi sinh nhầm"
+                confirmMessage={`Xóa hẳn Buổi ${session.session_number}? Chỉ dùng khi buổi được sinh nhầm, không dùng cho nghỉ học hoặc học bù.`}
+                destructive
+              />
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );
 }
 
-function SessionActionButton({
+function SessionMenuAction({
   action,
   id,
   classId,
   icon,
   label,
+  confirmLabel,
   confirmMessage,
+  destructive = false,
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   id: string;
   classId: string;
   icon: React.ReactNode;
   label: string;
+  confirmLabel: string;
   confirmMessage: string;
+  destructive?: boolean;
 }) {
   const { formAction } = useFormAction(action, { toastError: true });
   const confirmAction = useConfirmSubmit({
     title: "Xác nhận thao tác",
     description: confirmMessage,
-    confirmLabel: label,
+    confirmLabel,
     variant: "destructive",
   });
 
@@ -1097,11 +1195,142 @@ function SessionActionButton({
     <form action={formAction} onSubmit={confirmAction}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="class_id" value={classId} />
-      <Button type="submit" variant="ghost" size="icon" aria-label={label}>
-        {icon}
-      </Button>
+      <DropdownMenuItem
+        asChild
+        variant={destructive ? "destructive" : "default"}
+      >
+        <button type="submit" className="w-full cursor-pointer">
+          {icon}
+          {label}
+        </button>
+      </DropdownMenuItem>
     </form>
   );
+}
+
+function RescheduleSessionDialog({
+  classId,
+  session,
+  affectedCount,
+}: {
+  classId: string;
+  session: SessionCalendarRecord;
+  affectedCount: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [requestId, setRequestId] = useState("");
+  const { state, formAction } = useFormAction(
+    rescheduleSessionWithMakeupAction,
+    { onSuccess: () => setOpen(false) },
+  );
+  const fe = state.fieldErrors ?? {};
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) setRequestId(crypto.randomUUID());
+    setOpen(next);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Nghỉ học và xếp lịch bù cho buổi ${session.session_number}`}
+        >
+          <CalendarClock className="size-4" aria-hidden />
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            Nghỉ học / xếp lịch bù · Buổi {session.session_number}
+          </DialogTitle>
+          <DialogDescription>
+            Ngày nghỉ hiện tại: {formatDateTime(session.starts_at)}. Hệ thống sẽ
+            bỏ ngày này và dời lịch từ Buổi {session.session_number} đến cuối
+            khóa.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form action={formAction} className="space-y-4">
+          <input type="hidden" name="class_id" value={classId} />
+          <input type="hidden" name="session_id" value={session.id} />
+          <input type="hidden" name="request_id" value={requestId} />
+
+          {state.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" aria-hidden />
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          )}
+
+          <Alert>
+            <CalendarClock className="size-4" aria-hidden />
+            <AlertDescription>
+              <strong>Tổng số buổi vẫn giữ nguyên.</strong> {affectedCount} buổi
+              từ Buổi {session.session_number} đến Buổi{" "}
+              {lastLabel(session, affectedCount)}
+              sẽ được gán lại ngày; ID, bài học và điểm danh không đổi.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-2">
+            <Label htmlFor={`makeup-start-${session.id}`}>
+              Bắt đầu buổi bù *
+            </Label>
+            <DateTimePicker
+              id={`makeup-start-${session.id}`}
+              name="new_starts_at"
+              placeholder="Chọn ngày giờ"
+            />
+            <FieldError message={fe["new_starts_at"]} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`makeup-end-${session.id}`}>
+              Kết thúc buổi bù *
+            </Label>
+            <DateTimePicker
+              id={`makeup-end-${session.id}`}
+              name="new_ends_at"
+              placeholder="Chọn ngày giờ"
+            />
+            <FieldError message={fe["new_ends_at"]} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`makeup-reason-${session.id}`}>Lý do nghỉ *</Label>
+            <Textarea
+              id={`makeup-reason-${session.id}`}
+              name="reason"
+              rows={3}
+              maxLength={500}
+              placeholder="Ví dụ: Nghỉ theo thông báo của đơn vị"
+            />
+            <FieldError message={fe["reason"]} />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Đóng
+            </Button>
+            <SubmitButton>Xác nhận đổi lịch</SubmitButton>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function lastLabel(session: SessionCalendarRecord, affectedCount: number) {
+  return session.session_number + affectedCount - 1;
 }
 
 function GenerateButton({
@@ -1334,8 +1563,9 @@ function ManualSessionDialog({
         <DialogHeader>
           <DialogTitle>Thêm buổi học</DialogTitle>
           <DialogDescription>
-            Dùng cho lớp linh hoạt (không có lịch lặp) hoặc buổi học bù. Nhập
-            giờ Việt Nam.
+            Chỉ dùng cho lớp linh hoạt không có lịch lặp. Với nghỉ học hoặc học
+            bù, dùng nút “Nghỉ học / xếp lịch bù” trên buổi cần nghỉ. Nhập giờ
+            Việt Nam.
           </DialogDescription>
         </DialogHeader>
 

@@ -274,6 +274,14 @@ Index: `class_id`, `starts_at`, `(class_id, starts_at)`, `status`.
 
 > **Idempotency khi sinh buổi:** UNIQUE `(class_id, session_number)` là chốt chặn ở DB. RPC `generate_class_sessions` phải `INSERT ... ON CONFLICT DO NOTHING` và dừng đúng `planned_session_count`.
 
+> **Giới hạn số buổi:** trigger DB bắt buộc `session_number BETWEEN 1 AND classes.planned_session_count`. Luồng nghỉ có học bù không insert thêm session: RPC thay một time slot rồi gán lại các mốc thời gian trên chính những row hiện hữu.
+
+#### `class_session_schedule_changes`
+
+Lịch sử bất biến của thao tác nghỉ/học bù: `id` uuid PK · `class_id` FK RESTRICT · `source_session_id` FK RESTRICT · `request_id` uuid UNIQUE · `reason` text 3–500 ký tự · `old_starts_at`/`old_ends_at` · `makeup_starts_at`/`makeup_ends_at` · `affected_session_count` > 0 · `changes` jsonb chứa ảnh chụp trước/sau · `changed_by` FK `auth.users` RESTRICT · `created_at`.
+
+RLS: manager và giáo viên phụ trách lớp chỉ được SELECT; role ứng dụng không có quyền INSERT/UPDATE/DELETE trực tiếp. Chỉ RPC đổi lịch được ghi bảng này.
+
 #### `enrollments`
 
 `id` uuid PK · `student_id` FK → `students` ON DELETE RESTRICT · `class_id` FK → `classes` ON DELETE RESTRICT · ~~UNIQUE `(student_id, class_id)`~~ **(đã gỡ ở migration 23 — xem D-19 bên dưới)** · `status` `enrollment_status` NOT NULL DEFAULT `'pending'` · `enrolled_on` date NOT NULL DEFAULT current_date · `started_on` / `ended_on` date · `reason` text · `tuition_override_amount` numeric(14,2) CHECK ≥ 0 nullable · `created_by` uuid FK · timestamps.
@@ -536,6 +544,7 @@ app.teaches_enrollment(uuid)-- enrollment thuộc lớp mà teacher hiện tại
 | `class_teachers`            | ALL                   | SELECT: lớp mình dạy. **Không INSERT/UPDATE/DELETE** — không tự gán mình sang lớp khác | SELECT: lớp mình học                                                    |
 | `class_schedules`           | ALL                   | SELECT: lớp mình dạy                                                                   | SELECT: lớp mình học                                                    |
 | `class_sessions`            | ALL                   | SELECT + UPDATE (nhật ký, trạng thái): lớp mình dạy · INSERT: lớp mình dạy             | SELECT: lớp mình học                                                    |
+| `class_session_schedule_changes` | ALL              | SELECT: lớp mình dạy; không ghi trực tiếp                                               | DENY                                                                    |
 | `enrollments`               | ALL                   | SELECT: lớp mình dạy                                                                   | SELECT: own                                                             |
 | `enrollment_status_history` | SELECT                | SELECT: enrollment lớp mình dạy                                                        | SELECT: own. **Không ai UPDATE/DELETE**                                 |
 | `attendance_records`        | ALL                   | SELECT/INSERT/UPDATE: session của lớp mình dạy                                         | SELECT: own                                                             |
@@ -600,6 +609,7 @@ progress = 0.40 × (bài học completed / tổng bài học)
 | `bulk_mark_attendance(session_id, records[])`                                 | `INSERT ... ON CONFLICT (session_id, enrollment_id) DO UPDATE` → chạy lại **không sinh trùng**                                                                                                                                                      |
 | `generate_class_sessions(class_id)`                                           | Sinh buổi từ recurrence, `ON CONFLICT DO NOTHING`, dừng ở `planned_session_count` → **idempotent**                                                                                                                                                  |
 | `save_session_log(session_id, lesson_id, lesson_log, teacher_note, complete)` | Lưu nội dung thực dạy; khi hoàn tất thì cập nhật `class_sessions` + upsert `lesson_progress` cho enrollment đang mở trong **một transaction**, actor lấy từ `auth.uid()`                                                                            |
+| `reschedule_class_session_with_makeup(session_id, new_starts_at, new_ends_at, reason, request_id)` | Manager bỏ mốc nghỉ, thêm mốc bù và gán lại time slot từ buổi nghỉ tới cuối khóa trên các row hiện hữu; khóa lớp/session, kiểm xung đột + dữ liệu đã dạy/điểm danh, giữ nguyên tổng row/ID/số buổi, ghi history + notification + audit trong **một transaction**; `request_id` chống gửi trùng |
 | Assessment engine RPC                                                         | Create/version/share/import/set structure; publish/start/save/submit/grade/release/regrade/finalize. Chấm hàng loạt dùng `grade_*_answers_bulk` atomic; kết quả học viên qua `get_my_assessment_result` fail-closed theo owner/release. Tất cả kiểm scope, idempotency và actor ở DB; danh sách đầy đủ tại docs/09. |
 | `publish_evaluation(evaluation_id)`                                           | Khóa hàng, đặt **cùng lúc** `published_at` + `visible_to_student = true` (không bao giờ lệch nửa vời) + notification (`dedupe_key` chặn trùng) + audit, atomic                                                                                      |
 | `save_tuition_invoice(student_id, issue_date, discount, items, ...)`          | Tạo/cập nhật invoice draft + thay toàn bộ items trong **một transaction**; DB tính `line_total`, `subtotal`, `total`; enrollment phải thuộc đúng học viên                                                                                           |

@@ -180,7 +180,8 @@ Nguyên tắc bất di bất dịch:
 - Lịch lặp theo thứ trong tuần (ISO 1–7 = Thứ Hai → Chủ Nhật), có `start_time`/`end_time` với `end > start`.
 - **Lớp linh hoạt được phép không có lịch lặp** (`LOP-01` — theo lịch Ban Giám đốc). Không ép mọi lớp phải có recurrence.
 - Sinh buổi học từ lịch lặp phải **idempotent**: chạy lại không tạo buổi trùng, và dừng đúng ở `planned_session_count`.
-- Nghỉ/đổi lịch/học bù là **override trên session** (`status` + `original_session_id`), không xóa hay sửa đè làm mất lịch sử.
+- Nghỉ có ngày học bù dùng **đổi chuỗi time slot trên chính các session hiện hữu**: bỏ mốc nghỉ, thêm mốc bù rồi dời thời gian từ buổi bị nghỉ tới cuối khóa. Tổng row, `id`, `session_number`, bài học/nội dung và điểm danh không đổi; mọi lần đổi được ghi ở `class_session_schedule_changes` kèm actor, lý do và ảnh chụp trước/sau. Hủy hẳn một buổi và xóa buổi sinh nhầm là hai thao tác riêng, không dùng để xếp học bù.
+- `session_number` luôn nằm trong `1..classes.planned_session_count`; DB chặn tạo “Buổi N+1” ngay cả khi client cũ gọi thẳng API.
 - Mọi thời điểm lưu **UTC**. Hiển thị và sinh recurrence theo `Asia/Ho_Chi_Minh`.
 - Card Buổi học mặc định hiển thị **thời khóa biểu tuần** (Thứ Hai → Chủ Nhật), có lùi/tiến tuần và về hôm nay. Admin, giáo viên trong tab `Lịch / Buổi` của lớp và học viên tại `Lịch học` đều chuyển được giữa `Tối giản` (danh sách đánh số buổi), `Tuần` và `Tháng`; tuần/tháng gom buổi theo ngày Việt Nam, không theo múi giờ máy người dùng.
 

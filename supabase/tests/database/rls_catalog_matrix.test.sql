@@ -4,12 +4,16 @@ select plan(20);
 
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public'),
-  58,
-  'catalog có đúng 58 bảng public đã review'
+  -- 58 → 60: `VIDEO-1` thêm `lesson_video_collections` và `lesson_videos`.
+  -- 60 → 61: `BUG-SCHED-MAKEUP-1` thêm lịch sử bất biến
+  -- `class_session_schedule_changes`; bảng chỉ cho staff đọc qua RLS và không
+  -- cấp quyền ghi trực tiếp cho role ứng dụng.
+  61,
+  'catalog có đúng 61 bảng public đã review'
 );
 select is(
   (select count(*)::integer from pg_tables where schemaname = 'public' and rowsecurity),
-  58,
+  61,
   'mọi bảng public đều bật RLS'
 );
 select is(
@@ -94,8 +98,13 @@ select is(
   -- mở đầu hàng loạt cho cả bộ. Cấp cho `authenticated` + chặn bằng
   -- `app.is_super_admin()` bên trong; bề mặt `anon` KHÔNG đổi (bài ngay dưới vẫn
   -- ghim đúng một tên).
-  78,
-  'catalog có đúng 78 RPC public đã review'
+  -- 78 → 79: `VIDEO-1` thêm `save_lesson_videos`; chỉ manager được ghi và hàm
+  -- tự kiểm quyền fail-closed.
+  -- 79 → 80: `BUG-SCHED-MAKEUP-1` thêm
+  -- `reschedule_class_session_with_makeup`; chỉ manager được gọi, cập nhật lịch
+  -- nguyên tử và giữ nguyên số lượng/ID/số thứ tự buổi.
+  80,
+  'catalog có đúng 80 RPC public đã review'
 );
 /*
  * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở

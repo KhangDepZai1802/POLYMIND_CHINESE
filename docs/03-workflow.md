@@ -140,10 +140,17 @@ Giáo viên mở Dashboard "Hôm nay"
 **Đổi lịch / nghỉ / học bù:**
 
 ```text
-Buổi gốc: status → 'cancelled' hoặc 'rescheduled' (KHÔNG xóa row)
-Buổi bù:  tạo session mới, original_session_id = <buổi gốc>
-          → thông báo cho học viên trong lớp
+Manager chọn buổi scheduled cần nghỉ + ngày/giờ bù + lý do
+  → RPC khóa lớp và chuỗi session từ buổi nghỉ tới cuối khóa
+  → từ chối nếu buổi/chuỗi đã dạy, có điểm danh, ngày bù không ở sau ngày nghỉ
+    hoặc trùng lịch lớp/giáo viên
+  → bỏ time slot ngày nghỉ, thêm time slot ngày bù, sắp thời gian tăng dần
+  → gán lại time slot trên CHÍNH các row hiện hữu
+  → tổng row, ID, session_number 1…N, bài học/nội dung/điểm danh không đổi
+  → ghi class_session_schedule_changes + audit + một thông báo cho học viên
 ```
+
+Hủy hẳn buổi và xóa buổi sinh nhầm là luồng riêng. Không xóa rồi “Thêm buổi” để học bù; thao tác thêm tay chỉ dành cho lớp linh hoạt còn thiếu so với `planned_session_count`, và DB chặn mọi `session_number > planned_session_count`.
 
 ---
 

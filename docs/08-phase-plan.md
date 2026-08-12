@@ -788,6 +788,17 @@ User: *"tôi muốn có thêm 1 role là giáo vụ, role này có thể quản 
 
 ---
 
+### Nghỉ học / xếp lịch bù không sinh Buổi 36 — `BUG-SCHED-MAKEUP-1` (user báo 2026-08-12)
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| BUG-SCHED-MAKEUP-1a | **RPC đổi lịch nguyên tử** | Chọn một buổi `scheduled`, bỏ mốc nghỉ và thêm mốc bù; giữ nguyên tổng số row/ID/số buổi 1…N, dời các mốc thời gian từ buổi bị nghỉ tới cuối khóa trong một transaction; fail-closed với buổi đã dạy/có điểm danh, lịch bù trùng, actor không có quyền và request lặp | ☑ **DONE — Codex 2026-08-12** |
+| BUG-SCHED-MAKEUP-1b | **Lịch sử + UI** | Lưu actor/lý do/mốc cũ-mới; card có hành động “Nghỉ học / xếp lịch bù” với bản xem trước nói rõ số buổi vẫn giữ nguyên; “Xóa buổi sinh nhầm” tách rõ khỏi luồng học bù | ☑ **DONE — chờ xác minh độc lập** |
+| BUG-SCHED-MAKEUP-1c | **Sửa hai lớp hiện tại** | Xác minh đúng LOP-02/LOP-03 có lỗ số và Buổi 36; sửa trong transaction có guard theo dữ liệu hiện tại; sau sửa mỗi lớp đúng 35 row, số 1…35 liên tục, ngày cuối 03/12 và 02/12 tương ứng, điểm danh/nội dung còn nguyên | ☑ **DONE trên cloud — 35/35, điểm danh 156/156** |
+| BUG-SCHED-MAKEUP-1d | **Cổng + cloud** | pgTAP phủ success/failure/idempotency/RLS; unit/component test luồng UI; lint/typecheck/test/build xanh; migration dry-run → push cloud → migration history + dry-run lần hai “Remote database is up to date” | ☑ **DONE — pgTAP 708/708, Vitest 585/585, cloud up-to-date** |
+
+---
+
 ### Thiết kế lại module Báo cáo: học phí → tiến độ học tập + điểm danh — `REPORT-REDESIGN-1` (user chốt 2026-08-04)
 
 **Nguyên văn:** *"hiện tại đang là báo cáo học phí, nhưng cái tôi muốn là báo cáo về tiến độ học tập điểm danh của các lớp, các học sinh… đưa được đủ thông tin cần thiết cho người dùng nhất"*. 12 quyết định đã hỏi–chốt với user trong phiên — bảng D1–D12 tại [`docs/12-report-redesign-spec.md`](12-report-redesign-spec.md) (nguồn sự thật về yêu cầu của đợt này).

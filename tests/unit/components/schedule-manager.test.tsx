@@ -10,6 +10,7 @@ vi.mock("@/features/schedules/server/actions", () => ({
   deleteScheduleAction: vi.fn(),
   deleteSessionAction: vi.fn(),
   generateSessionsAction: vi.fn(),
+  rescheduleSessionWithMakeupAction: vi.fn(),
 }));
 
 import {
@@ -84,7 +85,9 @@ describe("ScheduleManager — chuyển kiểu thời khóa biểu", () => {
 
     render(<SessionCalendar mode="teacher" sessions={SESSIONS} />);
 
-    expect(screen.getByRole("button", { name: "Tối giản" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tối giản" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tuần" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tháng" })).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Nhật ký" })[0]).toHaveAttribute(
@@ -109,6 +112,77 @@ describe("ScheduleManager — chuyển kiểu thời khóa biểu", () => {
 
     expect(screen.getAllByText("Vắng")).toHaveLength(2);
     expect(screen.queryByText("Nhật ký")).not.toBeInTheDocument();
+  });
+
+  it("đưa nghỉ/học bù thành thao tác chính và tách xóa sinh nhầm vào menu", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ConfirmationProvider>
+        <SessionCalendar
+          mode="admin"
+          classId="33333333-3333-4333-8333-333333333333"
+          sessions={SESSIONS}
+        />
+      </ConfirmationProvider>,
+    );
+
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "Nghỉ học và xếp lịch bù cho buổi 1",
+      })[0]!,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Nghỉ học / xếp lịch bù · Buổi 1" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Tổng số buổi vẫn giữ nguyên/)).toBeInTheDocument();
+    expect(screen.getByText(/2 buổi từ Buổi 1 đến Buổi 2/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Đóng" }));
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "Thao tác khác cho buổi 1",
+      })[0]!,
+    );
+
+    expect(
+      screen.getByRole("menuitem", { name: "Hủy buổi, không xếp học bù" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Xóa buổi sinh nhầm" }),
+    ).toBeInTheDocument();
+  });
+
+  it("lớp có lịch lặp không còn nút Thêm buổi thủ công để làm học bù", () => {
+    render(
+      <ConfirmationProvider>
+        <ScheduleManager
+          classId="33333333-3333-4333-8333-333333333333"
+          plannedSessionCount={2}
+          hasStartDate
+          schedules={[
+            {
+              id: "44444444-4444-4444-8444-444444444444",
+              weekday: 1,
+              start_time: "08:00",
+              end_time: "09:30",
+              effective_from: null,
+              effective_to: null,
+            },
+          ]}
+          sessions={SESSIONS}
+          lessons={[]}
+        />
+      </ConfirmationProvider>,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Thêm buổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/dùng nút lịch trên chính buổi cần nghỉ/),
+    ).toBeInTheDocument();
   });
 });
 
