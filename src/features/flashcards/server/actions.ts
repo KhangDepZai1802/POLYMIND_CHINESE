@@ -1643,3 +1643,75 @@ export async function archiveFlashcardPageAction(
   revalidateFlashcards();
   return { success: "Đã lưu trữ trang flashcard." };
 }
+
+/**
+ * Công bố / bỏ công bố MỌI buổi của một bộ (`FLASHCARD-BULKPUB-1`, `D-43` điểm 4).
+ *
+ * Trả về kết quả TỪNG BUỔI để hộp thoại nói đúng buổi nào hỏng vì lý do gì.
+ * Lý do lấy nguyên văn từ trigger `validate_flashcard_section_publish` dưới DB
+ * — app KHÔNG nhân bản luật "thế nào là buổi hợp lệ", vì nhân bản là có ngày
+ * hai bên lệch nhau và admin nhận được câu giải thích sai.
+ */
+export type BulkPublishOutcome = {
+  sessionNumber: number;
+  outcome: "changed" | "skipped" | "failed";
+  reason: string | null;
+};
+
+export type BulkPublishResult = ActionState & {
+  outcomes?: BulkPublishOutcome[];
+};
+
+export async function bulkSetFlashcardSectionStatusAction(
+  formData: FormData,
+): Promise<BulkPublishResult> {
+  await requireRole("super_admin");
+
+  const deckId = String(formData.get("deck_id") ?? "");
+  const target = String(formData.get("target") ?? "");
+
+  if (!deckId) return { error: "Bộ flashcard không hợp lệ." };
+  if (target !== "published" && target !== "draft") {
+    return { error: "Chỉ công bố hoặc đưa về nháp được." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "bulk_set_flashcard_section_status",
+    { p_deck_id: deckId, p_target: target },
+  );
+
+  if (error) {
+    return {
+      error: dbErrorToMessage(
+        error,
+        target === "published"
+          ? "Không công bố được các buổi."
+          : "Không đưa được các buổi về nháp.",
+      ),
+    };
+  }
+
+  const outcomes: BulkPublishOutcome[] = (data ?? []).map((row) => ({
+    sessionNumber: row.session_number,
+    outcome: row.outcome as BulkPublishOutcome["outcome"],
+    reason: row.reason,
+  }));
+
+  revalidateFlashcards();
+
+  const changed = outcomes.filter((row) => row.outcome === "changed").length;
+  const failed = outcomes.filter((row) => row.outcome === "failed").length;
+
+  // Câu tóm tắt phải nói cả phần KHÔNG thành công. Báo "đã công bố 26 buổi" mà
+  // im lặng bỏ qua 2 buổi hỏng là để admin tưởng cả bộ đã xong.
+  const summary =
+    target === "published"
+      ? `Đã công bố ${changed} buổi.`
+      : `Đã đưa ${changed} buổi về nháp.`;
+
+  return {
+    success: failed > 0 ? `${summary} ${failed} buổi chưa đạt điều kiện.` : summary,
+    outcomes,
+  };
+}

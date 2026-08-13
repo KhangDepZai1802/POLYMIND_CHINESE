@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
+  ClipboardList,
   ClipboardPen,
   FileText,
   GraduationCap,
@@ -69,6 +70,10 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: "Hôm nay", href: "/teacher", icon: LayoutDashboard },
     { label: "Lớp của tôi", href: "/teacher/classes", icon: School },
     { label: "Điểm danh", href: "/teacher/attendance", icon: ClipboardCheck },
+    // Đứng ngay sau Điểm danh vì đó là thứ tự làm việc thật: điểm danh xong mới
+    // báo cáo được. Giáo vụ có đứng lớp cũng thấy mục này — nhánh "Lớp được
+    // phân công" dùng chung đúng danh sách `NAVIGATION.teacher` (`D-2`).
+    { label: "Báo cáo buổi dạy", href: "/teacher/reports", icon: ClipboardList },
     { label: "Bài tập", href: "/teacher/exercises", icon: FileText },
     { label: "Kiểm tra / Thi", href: "/teacher/exams", icon: GraduationCap },
     {

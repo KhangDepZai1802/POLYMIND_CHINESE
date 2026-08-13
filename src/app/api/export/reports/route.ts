@@ -20,6 +20,9 @@ import {
   getLearningOverview,
   getLearningStudentRows,
 } from "@/features/reports/server/learning-queries";
+import { parseTeacherReportFilters } from "@/features/session-reports/schema";
+import { buildSessionReportDocx } from "@/features/session-reports/server/export-docx";
+import { getReportsForExport } from "@/features/session-reports/server/queries";
 import { todayISO } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
@@ -51,16 +54,80 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const format = url.searchParams.get("format");
-  if (format !== "csv" && format !== "xlsx") {
+  if (format !== "csv" && format !== "xlsx" && format !== "docx") {
     return NextResponse.json({ error: "Định dạng export không hợp lệ." }, { status: 400 });
   }
 
   const reportKind = url.searchParams.get("report") ?? "tuition";
-  if (reportKind !== "tuition" && reportKind !== "learning") {
+  if (
+    reportKind !== "tuition" &&
+    reportKind !== "learning" &&
+    reportKind !== "teacher-reports"
+  ) {
     return NextResponse.json({ error: "Loại báo cáo không hợp lệ." }, { status: 400 });
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
+
+  /*
+   * Báo cáo buổi dạy của giáo viên (`TEACHER-REPORT-1`).
+   *
+   * 🔴 Bộ lọc đọc từ CHÍNH query string mà nút trên màn hình dựng ra, và kỳ mặc
+   * định giống hệt trang (`Tháng này`). Gõ tay URL export không kèm kỳ vẫn phải
+   * ra đúng cái người dùng đang thấy — `BUG_M16_01`.
+   *
+   * PDF KHÔNG đi qua đây: nó là bản in của trình duyệt (`PrintButton` + print
+   * stylesheet), không thêm thư viện nào.
+   */
+  if (reportKind === "teacher-reports") {
+    if (format !== "docx") {
+      return NextResponse.json(
+        { error: "Báo cáo buổi dạy chỉ xuất được DOCX (PDF dùng bản in của trình duyệt)." },
+        { status: 400 },
+      );
+    }
+
+    const params: Record<string, string | string[] | undefined> = {};
+    for (const key of ["from", "to", "range", "class", "teacher", "state"] as const) {
+      params[key] = url.searchParams.get(key) || undefined;
+    }
+
+    const parsed = parseTeacherReportFilters(params);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message },
+        { status: 400 },
+      );
+    }
+
+    const period = resolveLearningPeriod(parsed.data, todayISO(), "month");
+    const reports = await getReportsForExport({
+      ...parsed.data,
+      from: period.from ?? undefined,
+      to: period.to ?? undefined,
+    });
+
+    const buffer = await buildSessionReportDocx(reports, {
+      periodLabel: period.label,
+      generatedAt: new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }),
+    });
+
+    return new Response(buffer as BodyInit, {
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Disposition": `attachment; filename="bao-cao-buoi-day-${stamp}.docx"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  }
+
+  if (format === "docx") {
+    return NextResponse.json(
+      { error: "Chỉ báo cáo buổi dạy mới xuất được DOCX." },
+      { status: 400 },
+    );
+  }
 
   if (reportKind === "learning") {
     const input: Record<string, string | undefined> = {};

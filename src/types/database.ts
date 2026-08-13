@@ -2845,6 +2845,249 @@ export type Database = {
           },
         ]
       }
+      session_report_evidence: {
+        Row: {
+          bytes: number
+          created_at: string
+          id: string
+          report_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          bytes: number
+          created_at?: string
+          id?: string
+          report_id: string
+          storage_path: string
+          uploaded_by?: string
+        }
+        Update: {
+          bytes?: number
+          created_at?: string
+          id?: string
+          report_id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_report_evidence_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "session_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_report_students: {
+        Row: {
+          category: Database["public"]["Enums"]["session_report_student_category"]
+          created_at: string
+          enrollment_id: string
+          id: string
+          note: string | null
+          report_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["session_report_student_category"]
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          note?: string | null
+          report_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["session_report_student_category"]
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          note?: string | null
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_report_students_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_report_students_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "v_at_risk_assessment_students"
+            referencedColumns: ["enrollment_id"]
+          },
+          {
+            foreignKeyName: "session_report_students_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrollment_assessment_progress"
+            referencedColumns: ["enrollment_id"]
+          },
+          {
+            foreignKeyName: "session_report_students_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "v_student_attendance_summary"
+            referencedColumns: ["enrollment_id"]
+          },
+          {
+            foreignKeyName: "session_report_students_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "session_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_reports: {
+        Row: {
+          attendance_snapshot: Json | null
+          class_id: string
+          closing_note: string | null
+          comprehension_level: number | null
+          confirmed: boolean
+          created_at: string
+          created_by: string
+          evidence_kinds: string[]
+          focus_level: number | null
+          has_homework: boolean | null
+          has_issue: boolean | null
+          has_unfinished: boolean | null
+          homework_assigned: string | null
+          homework_completion: string | null
+          id: string
+          interaction_level: number | null
+          issue_categories: string[]
+          issue_description: string | null
+          issue_impact: string | null
+          issue_other: string | null
+          issue_severity: string | null
+          mode: Database["public"]["Enums"]["session_report_mode"] | null
+          needs_support: boolean | null
+          next_content: string | null
+          no_students_of_note: boolean
+          overall_rating: string | null
+          plan_completion: string | null
+          review_content: string | null
+          session_id: string
+          status: Database["public"]["Enums"]["session_report_status"]
+          submitted_at: string | null
+          submitted_by: string | null
+          support_request: string | null
+          teacher_watch_note: string | null
+          topic: string | null
+          unfinished_content: string | null
+          unfinished_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          attendance_snapshot?: Json | null
+          class_id: string
+          closing_note?: string | null
+          comprehension_level?: number | null
+          confirmed?: boolean
+          created_at?: string
+          created_by?: string
+          evidence_kinds?: string[]
+          focus_level?: number | null
+          has_homework?: boolean | null
+          has_issue?: boolean | null
+          has_unfinished?: boolean | null
+          homework_assigned?: string | null
+          homework_completion?: string | null
+          id?: string
+          interaction_level?: number | null
+          issue_categories?: string[]
+          issue_description?: string | null
+          issue_impact?: string | null
+          issue_other?: string | null
+          issue_severity?: string | null
+          mode?: Database["public"]["Enums"]["session_report_mode"] | null
+          needs_support?: boolean | null
+          next_content?: string | null
+          no_students_of_note?: boolean
+          overall_rating?: string | null
+          plan_completion?: string | null
+          review_content?: string | null
+          session_id: string
+          status?: Database["public"]["Enums"]["session_report_status"]
+          submitted_at?: string | null
+          submitted_by?: string | null
+          support_request?: string | null
+          teacher_watch_note?: string | null
+          topic?: string | null
+          unfinished_content?: string | null
+          unfinished_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attendance_snapshot?: Json | null
+          class_id?: string
+          closing_note?: string | null
+          comprehension_level?: number | null
+          confirmed?: boolean
+          created_at?: string
+          created_by?: string
+          evidence_kinds?: string[]
+          focus_level?: number | null
+          has_homework?: boolean | null
+          has_issue?: boolean | null
+          has_unfinished?: boolean | null
+          homework_assigned?: string | null
+          homework_completion?: string | null
+          id?: string
+          interaction_level?: number | null
+          issue_categories?: string[]
+          issue_description?: string | null
+          issue_impact?: string | null
+          issue_other?: string | null
+          issue_severity?: string | null
+          mode?: Database["public"]["Enums"]["session_report_mode"] | null
+          needs_support?: boolean | null
+          next_content?: string | null
+          no_students_of_note?: boolean
+          overall_rating?: string | null
+          plan_completion?: string | null
+          review_content?: string | null
+          session_id?: string
+          status?: Database["public"]["Enums"]["session_report_status"]
+          submitted_at?: string | null
+          submitted_by?: string | null
+          support_request?: string | null
+          teacher_watch_note?: string | null
+          topic?: string | null
+          unfinished_content?: string | null
+          unfinished_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_reports_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_reports_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_class_assessment_progress"
+            referencedColumns: ["class_id"]
+          },
+          {
+            foreignKeyName: "session_reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "class_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_notes: {
         Row: {
           body: string
@@ -3762,6 +4005,18 @@ export type Database = {
         Args: { p_records: Json; p_session_id: string }
         Returns: number
       }
+      bulk_set_flashcard_section_status: {
+        Args: {
+          p_deck_id: string
+          p_target: Database["public"]["Enums"]["flashcard_status"]
+        }
+        Returns: {
+          outcome: string
+          reason: string
+          section_id: string
+          session_number: number
+        }[]
+      }
       change_enrollment_status: {
         Args: {
           p_enrollment_id: string
@@ -4110,6 +4365,10 @@ export type Database = {
         }
         Returns: number
       }
+      save_session_report: {
+        Args: { p_form: Json; p_session_id: string; p_students?: Json }
+        Returns: string
+      }
       save_tuition_invoice: {
         Args: {
           p_discount: number
@@ -4162,6 +4421,7 @@ export type Database = {
         Args: { p_question_id: string }
         Returns: string
       }
+      submit_session_report: { Args: { p_session_id: string }; Returns: string }
       submit_wrong_answer_review: {
         Args: { p_answer_payload: Json; p_queue_id: string }
         Returns: Json
@@ -4297,6 +4557,15 @@ export type Database = {
         | "rejected"
         | "archived"
       result_release_mode: "after_graded" | "after_due" | "manual"
+      session_report_mode: "offline" | "online" | "hybrid"
+      session_report_status: "draft" | "submitted"
+      session_report_student_category:
+        | "outstanding"
+        | "needs_support"
+        | "low_engagement"
+        | "missing_homework"
+        | "escalate"
+        | "follow_up_next"
       session_status: "scheduled" | "completed" | "cancelled" | "rescheduled"
       submission_reason:
         | "manual"
@@ -4563,6 +4832,16 @@ export const Constants = {
         "archived",
       ],
       result_release_mode: ["after_graded", "after_due", "manual"],
+      session_report_mode: ["offline", "online", "hybrid"],
+      session_report_status: ["draft", "submitted"],
+      session_report_student_category: [
+        "outstanding",
+        "needs_support",
+        "low_engagement",
+        "missing_homework",
+        "escalate",
+        "follow_up_next",
+      ],
       session_status: ["scheduled", "completed", "cancelled", "rescheduled"],
       submission_reason: [
         "manual",
@@ -4575,3 +4854,4 @@ export const Constants = {
     },
   },
 } as const
+

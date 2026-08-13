@@ -941,6 +941,31 @@ Bản thiết kế + mockup 375px user đã duyệt: <https://claude.ai/code/art
 
 ---
 
+### Báo cáo sau buổi dạy + công bố flashcard hàng loạt — `TEACHER-REPORT-1` / `FLASHCARD-BULKPUB-1` (user chốt 2026-08-13 → `D-43`)
+
+**Nguyên văn user:** *"tài khoản admin ở trang thiết kế flashcard cho thêm 2 nút công bố hàng loạt và bỏ công bố hàng loạt… 2 nút này để kế nút ảnh mở đầu hàng loạt"* · *"tạo 1 module báo cáo dành cho giáo viên (cả giáo vụ nếu như người này có đứng lớp) đang đứng lớp… giáo viên phải điểm danh rồi mới được làm báo cáo vì nội dung báo cáo có lấy dữ liệu của điểm danh qua"* · *"ở module báo cáo của admin cho thêm 1 tab tên là báo cáo của giáo viên kế hai tab hiện tại"*.
+
+Bản thiết kế user duyệt: <https://claude.ai/code/artifact/ef31d801-b47f-4b15-8814-11f529673202>. Bốn quyết định chốt qua `AskUserQuestion` → `D-43`.
+
+📌 **Không có "module báo cáo của admin" riêng để clone.** `/admin/reports` là MỘT trang, gác bằng `requireManager()` = `super_admin` ∪ `academic_manager`, và cả hai role đều trỏ `href: "/admin/reports"` trong `navigation.ts`. Thêm tab một lần là cả admin lẫn giáo vụ cùng thấy — đúng chủ ý của `D-2` khi chọn dùng lại `/admin` thay vì dựng cây `/staff/*`.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| FLASHCARD-BULKPUB-1 | **Công bố / bỏ công bố hàng loạt cả bộ thẻ** | RPC `bulk_set_flashcard_section_status` chạy **mỗi buổi một subtransaction** nên buổi hỏng không kéo đổ cả lô; trả `changed/skipped/failed` kèm lý do **lấy từ chính trigger** `validate_flashcard_section_publish` (app không nhân bản luật hợp lệ); chạy lại **không đổi `published_at`**. Hai nút đứng cạnh *Ảnh mở đầu hàng loạt* ở màn rộng, gom vào bảng trượt ở < 640px | ☑ **DONE, chờ xác minh độc lập** — Claude 2026-08-13 |
+| TEACHER-REPORT-1a | **Schema + hàng rào** | 3 bảng (`session_reports` + 2 bảng con), RLS bật đủ, **`anon` bị revoke tường minh** (bẫy `BLK-6` — bảng mới vẫn được `pg_default_acl` cấp lại), `authenticated` được grant tường minh (grant ở migration 15 chỉ chạy một lần). Unique index trên `session_id` chặn ở DB | ☑ **DONE** |
+| TEACHER-REPORT-1b | **Cổng điểm danh — vế sống còn** | Kiểm ở **ba tầng**: danh sách hiện nút *Điểm danh trước* · trang biểu mẫu chặn khi gõ thẳng URL · RPC `submit_session_report` kiểm lần cuối. **Chỉ tầng ba là chốt chặn thật** — pgTAP gọi thẳng RPC bỏ qua UI vẫn phải bị từ chối | ☑ **DONE** — kiểm ngược (a) gỡ vế kiểm ⇒ **đỏ đúng bài 8 và 10** |
+| TEACHER-REPORT-1c | **Mục 2 không gõ tay + chụp lại lúc gửi** | Không có cột nào cho sĩ số/có mặt/vắng do người dùng nhập; lúc gửi ghi `attendance_snapshot`. Sửa điểm danh **sau khi gửi** không làm đổi báo cáo đã ký | ☑ **DONE** — pgTAP bài 19 canh đúng chuyện này |
+| TEACHER-REPORT-1d | **Gộp nhật ký buổi học** | Ba ô `lesson_id`/`lesson_log`/`teacher_note` vẫn sống ở `class_sessions` và đi qua `save_session_log()`; gửi báo cáo gọi lại chính RPC đó với `p_complete => true` ⇒ **một hành động, một đường ghi** | ☑ **DONE** — pgTAP bài 18 |
+| TEACHER-REPORT-1e | **Luật "xong" của 9 mục** | `domain/completion.ts` — tính từ **nội dung đã lưu**, không có tham số nào về "đã ghé qua mục"; `isComplete` CHÍNH LÀ điều kiện nút Gửi dùng; bỏ trống mục 5/6 **không** tính là xong | ☑ **DONE** — 23 unit test, có bài ghim "mục lục và nút Gửi dùng chung một luật" |
+| TEACHER-REPORT-1f | **Biểu mẫu 9 mục, laptop + 360px** | Cột mục lục dính ở ≥1024px, nút nhảy mục + bảng trượt ở màn hẹp (khuôn `TabPicker` của `UX-MOBILE-1`); ba trạng thái phân biệt **bằng hình** (tích / chấm / vòng nét đứt), mục đang dở nói rõ thiếu gì; nháp tự lưu 1,5s | ☑ **DONE** |
+| TEACHER-REPORT-1g | **Tab thứ ba + badge đếm nợ** | Badge đếm **toàn bộ** nợ, KHÔNG theo kỳ đang lọc (chạy theo lọc thì đổi tháng là nợ biến mất); hai khối cảnh báo đứng **trước** các ô số; bảng 11 cột cuộn trong khung riêng, < 768px thành thẻ | ☑ **DONE** |
+| TEACHER-REPORT-1h | **Xuất PDF + DOCX** | PDF = bản in trình duyệt (không thêm thư viện); DOCX qua `docx` với `import "server-only"`. Cả hai đọc từ **cùng** `buildReportSections()`. Nội dung đủ 9 mục + XÁC NHẬN, ô trống in `—`, thang điểm in đúng dòng được chọn | ☑ **DONE** |
+| TEACHER-REPORT-1i | **Đo bằng trình duyệt thật** | 360/375/390/414px trên 3 màn mới, **đếm phần tử con có `overflow-x` cuộn được** chứ không dùng `documentElement.scrollWidth` (bài học đắt nhất của `UX-MOBILE-1`) | ☐ **CHƯA LÀM** — xem `VIỆC TIẾP THEO` |
+
+**Cổng đã chạy thật:** lint **0** · typecheck **0** · Vitest **608/608** (585 → **+23**) · build **exit 0** · pgTAP `session_reports` **27/27**, `flashcard_bulk_publish` **13/13**. Migration `…092` **đã áp cloud** và xác minh bằng `psql` trong `BEGIN READ ONLY`.
+
+---
+
 ## Bản đồ module ↔ phase (dùng cho QA board)
 
 | Module | Tên                                | Sinh ra ở phase |

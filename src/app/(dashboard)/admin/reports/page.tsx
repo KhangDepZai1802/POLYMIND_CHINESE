@@ -24,6 +24,12 @@ import {
   getAdminTuitionReport,
 } from "@/features/reports/server/admin-queries";
 import { getLearningOverview } from "@/features/reports/server/learning-queries";
+import { AdminTeacherReportsTab } from "@/features/session-reports/components/admin-teacher-reports";
+import { parseTeacherReportFilters } from "@/features/session-reports/schema";
+import {
+  getAdminTeacherReports,
+  getMissingReportCount,
+} from "@/features/session-reports/server/queries";
 import { requireManager } from "@/lib/auth/session";
 import { formatPercent, formatScore, todayISO } from "@/lib/dates";
 
@@ -47,49 +53,126 @@ export default async function AdminReportsPage({ searchParams }: Props) {
   await requireManager();
   const params = await searchParams;
   const rawTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const tab = rawTab === "hoc-phi" ? "hoc-phi" : "hoc-tap";
+  const tab =
+    rawTab === "hoc-phi"
+      ? "hoc-phi"
+      : rawTab === "bao-cao-gv"
+        ? "bao-cao-gv"
+        : "hoc-tap";
+
+  /*
+   * 🔴 Con số đỏ đếm TOÀN BỘ nợ, KHÔNG theo kỳ đang lọc.
+   *
+   * Chạy theo bộ lọc thì đổi sang tháng khác là nợ biến mất khỏi màn hình —
+   * đúng thứ không được phép giấu. Vì vậy nó tải ở TẦNG TRANG, không nằm trong
+   * tab, để đứng ở tab Học phí vẫn thấy.
+   */
+  const missingReports = await getMissingReportCount();
+
+  const tabs = [
+    { key: "hoc-tap", label: "Học tập", href: "/admin/reports" },
+    { key: "hoc-phi", label: "Học phí", href: "/admin/reports?tab=hoc-phi" },
+    {
+      key: "bao-cao-gv",
+      label: "Báo cáo của giáo viên",
+      href: "/admin/reports?tab=bao-cao-gv",
+      badge: missingReports,
+    },
+  ] as const;
 
   return (
     <>
       <PageHeader
         title="Báo cáo"
-        description="Tiến độ học tập, chuyên cần và học phí — số liệu tính từ dữ liệu thật theo kỳ đang chọn."
+        description="Tiến độ học tập, chuyên cần, học phí và báo cáo buổi dạy — số liệu tính từ dữ liệu thật theo kỳ đang chọn."
       />
 
+      {/*
+        `flex-wrap` chứ không `overflow-x-auto`: ba nhãn ở 360px thì xuống dòng,
+        không sinh thêm một vùng cuộn ngang không có dấu hiệu nào — bài học
+        `UX-MOBILE-1`.
+      */}
       <nav
         aria-label="Loại báo cáo"
         data-noprint
-        className="mb-4 flex gap-1 border-b"
+        className="mb-4 flex flex-wrap gap-1 border-b"
       >
-        {(
-          [
-            { key: "hoc-tap", label: "Học tập", href: "/admin/reports" },
-            {
-              key: "hoc-phi",
-              label: "Học phí",
-              href: "/admin/reports?tab=hoc-phi",
-            },
-          ] as const
-        ).map((item) => {
+        {tabs.map((item) => {
           const active = tab === item.key;
+          const badge = "badge" in item ? item.badge : 0;
           return (
             <Link
               key={item.key}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
+              className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors ${
                 active
                   ? "border-primary text-foreground font-semibold"
                   : "text-muted-foreground hover:text-foreground border-transparent font-medium"
               }`}
             >
               {item.label}
+              {badge > 0 && (
+                /*
+                  Con số LÀ tín hiệu, không phải màu. Nhãn trợ năng nói rõ nó
+                  đếm cái gì — "3" đứng trần trụi thì trình đọc màn hình chỉ đọc
+                  được một con số vô nghĩa.
+                */
+                <span
+                  className="bg-destructive/12 text-danger-ink border-destructive/25 min-w-5 rounded-full border px-1.5 text-center font-mono text-xs font-bold tabular-nums"
+                  aria-label={`${badge} buổi chưa có báo cáo`}
+                >
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {tab === "hoc-phi" ? <TuitionTab params={params} /> : <LearningTab params={params} />}
+      {tab === "hoc-phi" ? (
+        <TuitionTab params={params} />
+      ) : tab === "bao-cao-gv" ? (
+        <TeacherReportsTab params={params} />
+      ) : (
+        <LearningTab params={params} />
+      )}
+    </>
+  );
+}
+
+async function TeacherReportsTab({
+  params,
+}: {
+  params: Record<string, string | string[] | undefined>;
+}) {
+  const parsed = parseTeacherReportFilters(params);
+  const filters = parsed.success ? parsed.data : {};
+  // Mặc định tháng hiện tại — cùng kỳ vận hành với tab Học tập, để giáo vụ đổi
+  // tab không bị nhảy sang một khoảng thời gian khác.
+  const period = resolveLearningPeriod(filters, todayISO(), "month");
+
+  // `period.from/to` là null khi kỳ = Toàn khóa; query hiểu `undefined` là
+  // không giới hạn nên phải quy về đúng kiểu đó.
+  const data = await getAdminTeacherReports({
+    ...filters,
+    from: period.from ?? undefined,
+    to: period.to ?? undefined,
+  });
+
+  return (
+    <>
+      <ReportPrintHeader
+        title="Báo cáo buổi dạy của giáo viên"
+        periodLabel={period.label}
+      />
+      <ReportPeriodFilter
+        basePath="/admin/reports?tab=bao-cao-gv"
+        filters={filters}
+        period={period}
+        errorMessage={parsed.success ? undefined : parsed.error.issues[0]?.message}
+      />
+      <AdminTeacherReportsTab data={data} filters={filters} />
     </>
   );
 }

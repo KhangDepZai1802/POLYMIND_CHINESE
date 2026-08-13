@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   BookOpen,
+  ChevronDown,
   ImagePlus,
   Layers,
   ListPlus,
@@ -63,6 +64,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import {
   FlashcardFaceCard,
@@ -71,6 +73,7 @@ import {
 import { compressFlashcardImage } from "@/features/flashcards/client/compress-image";
 import { FlashcardImportDialog } from "@/features/flashcards/components/flashcard-import-dialog";
 import { FlashcardDeckDialog } from "@/features/flashcards/components/flashcard-deck-dialog";
+import { FlashcardBulkPublishActions } from "@/features/flashcards/components/flashcard-bulk-publish";
 import { FlashcardDeckCoverDialog } from "@/features/flashcards/components/flashcard-deck-cover-dialog";
 import { FlashcardDeckPublicLinks } from "@/features/flashcards/components/flashcard-deck-public-links";
 import { FlashcardNavRail } from "@/features/flashcards/components/flashcard-nav-rail";
@@ -173,6 +176,7 @@ export function FlashcardAdminManager({
   );
   const [navOpen, setNavOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [deckDialog, setDeckDialog] = useState<
     { mode: "create" } | { mode: "edit"; deck: FlashcardDeckSummary } | null
   >(null);
@@ -219,6 +223,26 @@ export function FlashcardAdminManager({
    * nhật bằng `history.replaceState` để chia sẻ link và F5 không mất chỗ đang
    * đứng (`state-preservation`), nhưng nó không kích hoạt render lại ở máy chủ.
    */
+  /*
+    Đếm buổi theo trạng thái để hai nút hàng loạt nói trước sẽ đụng bao nhiêu.
+    `archived_at` không lọt vào `deck.sections` nên không phải trừ ở đây.
+  */
+  const draftSectionCount =
+    deck?.sections.filter((item) => item.status !== "published").length ?? 0;
+  const publishedSectionCount =
+    deck?.sections.filter((item) => item.status === "published").length ?? 0;
+
+  /**
+   * Nhảy tới một buổi theo SỐ BUỔI — lối thoát của hộp thoại kết quả công bố
+   * hàng loạt. Buổi hỏng liệt kê theo số, còn `selectSection` cần id.
+   */
+  function jumpToSessionNumber(sessionNumber: number) {
+    const target = deck?.sections.find(
+      (item) => item.session_number === sessionNumber,
+    );
+    if (target) selectSection(target.id);
+  }
+
   function selectSection(sectionId: string) {
     setSelectedSectionId(sectionId);
     setNavOpen(false);
@@ -414,27 +438,105 @@ export function FlashcardAdminManager({
                 nó chỉ gắn ảnh cho buổi đã có; gói nó vào nhánh `nextSession` thì
                 đúng bộ đã soạn xong 35 buổi lại là bộ mất nút.
               */}
-              <div className="flex flex-wrap items-center gap-2">
-                {nextSession ? (
-                  <>
-                    <SectionDialog
-                      deckId={deck.id}
-                      maxSessions={selectedCourse.defaultSessionCount}
-                      nextSession={nextSession}
-                    />
-                    <SectionRangeDialog
-                      deckId={deck.id}
-                      maxSessions={selectedCourse.defaultSessionCount}
-                      nextSession={nextSession}
-                    />
-                  </>
-                ) : (
-                  <StatusBadge label="Đã đủ số buổi" tone="success" />
-                )}
+              {/*
+                HAI CỤM, cách nhau bằng khoảng trống rộng gấp bốn (`gap-x-6` vs
+                `gap-2`) chứ không thêm vạch ngăn: mắt tự đọc ra "tạo buổi" và
+                "thao tác cả bộ" là hai nhóm khác nhau — Gestalt proximity, đỡ
+                được một phần tử trang trí.
+
+                Dưới `sm` cả hàng này ẩn đi, nhường cho nút "Thao tác hàng loạt"
+                mở bảng trượt: năm nút xếp dọc chiếm ~220px trước khi thấy nội
+                dung, đúng thứ `UX-MOBILE-1` vừa dọn khỏi repo.
+              */}
+              <div className="hidden flex-wrap items-center gap-x-6 gap-y-2 sm:flex">
+                <div className="flex flex-wrap items-center gap-2">
+                  {nextSession ? (
+                    <>
+                      <SectionDialog
+                        deckId={deck.id}
+                        maxSessions={selectedCourse.defaultSessionCount}
+                        nextSession={nextSession}
+                      />
+                      <SectionRangeDialog
+                        deckId={deck.id}
+                        maxSessions={selectedCourse.defaultSessionCount}
+                        nextSession={nextSession}
+                      />
+                    </>
+                  ) : (
+                    <StatusBadge label="Đã đủ số buổi" tone="success" />
+                  )}
+                </div>
+
                 {deck.sections.length > 0 && (
-                  <FlashcardDeckCoverDialog deck={deck} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FlashcardDeckCoverDialog deck={deck} />
+                    <FlashcardBulkPublishActions
+                      deckId={deck.id}
+                      draftCount={draftSectionCount}
+                      publishedCount={publishedSectionCount}
+                      onJumpToSession={jumpToSessionNumber}
+                    />
+                  </div>
                 )}
               </div>
+
+              {deck.sections.length > 0 && (
+                <Sheet open={bulkOpen} onOpenChange={setBulkOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11 w-full justify-between sm:hidden"
+                    >
+                      Thao tác hàng loạt
+                      <ChevronDown className="size-4" aria-hidden />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="bottom"
+                    className="max-h-[80dvh] gap-0 rounded-t-2xl"
+                  >
+                    <SheetHeader>
+                      <SheetTitle>Thao tác hàng loạt</SheetTitle>
+                      <SheetDescription>
+                        Áp dụng cho tất cả các buổi trong bộ {deck.title}.
+                      </SheetDescription>
+                    </SheetHeader>
+                    {/*
+                      Hai nhóm có tiêu đề: thao tác đổi thứ HỌC VIÊN NHÌN THẤY
+                      không được lẫn với thao tác soạn bài.
+                    */}
+                    <div className="grid gap-2 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                      <p className="text-muted-foreground pt-1 text-xs font-semibold tracking-wide uppercase">
+                        Tạo nội dung
+                      </p>
+                      {nextSession && (
+                        <SectionRangeDialog
+                          deckId={deck.id}
+                          maxSessions={selectedCourse.defaultSessionCount}
+                          nextSession={nextSession}
+                        />
+                      )}
+                      <FlashcardDeckCoverDialog deck={deck} />
+
+                      <p className="text-muted-foreground pt-2 text-xs font-semibold tracking-wide uppercase">
+                        Hiển thị với học viên
+                      </p>
+                      <FlashcardBulkPublishActions
+                        deckId={deck.id}
+                        draftCount={draftSectionCount}
+                        publishedCount={publishedSectionCount}
+                        onJumpToSession={(sessionNumber) => {
+                          setBulkOpen(false);
+                          jumpToSessionNumber(sessionNumber);
+                        }}
+                        layout="stack"
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
             </div>
 
             {deck.sections.length === 0 ? (
