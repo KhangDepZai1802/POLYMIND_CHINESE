@@ -3,7 +3,12 @@
 > **Đọc [`AGENTS.md`](AGENTS.md) — toàn bộ luật cứng nằm ở đó và áp dụng y hệt cho Claude.**
 > File này chỉ bổ sung phần riêng của Claude. Không lặp lại nội dung AGENTS.md để tránh hai bản lệch nhau.
 >
-> ⛔ **Claude không được tự chạy `git commit` / `git commit --amend`. User sẽ tự review và commit, trừ khi user yêu cầu rõ trong chính lượt làm việc đó.**
+> ✅ **CODE XONG LÀ TỰ `git commit` + `git push origin main`** _(user chốt 2026-08-13, đảo lại `D-20`)_ — không chờ user nhắc. Vercel chỉ deploy khi có push, nên code không push thì tính năng không sống trên production.
+>
+> Ba ràng buộc đi kèm, không được bỏ:
+> 1. **Cổng phải xanh TRƯỚC khi commit:** `npm run lint && npm run typecheck && npm test`. Không xanh thì không commit — báo lại blocker thật.
+> 2. **Repo này PUBLIC** (`github.com/KhangDepZai1802/POLYMIND_CHINESE`). Soát secret trong diff đã stage trước mỗi push, và **không tự commit file có thể chứa dữ liệu thật của học viên** (ví dụ `docs/BaoCao.pdf`) — hỏi user trước.
+> 3. **Cập nhật `WORKLOG.md` + `docs/08-phase-plan.md` trong CÙNG commit** với thay đổi nghiệp vụ.
 
 ---
 

@@ -357,12 +357,17 @@ export function SessionReportFormView({
       />
 
       <div className="grid min-w-0 gap-4">
+        {/*
+          `top-16` = đúng chiều cao header dashboard (`sticky top-0 h-16`).
+          `top-2` thì thanh chọn mục nằm LỌT sau header — cùng một lỗi với cột
+          mục lục màn rộng, chỉ khác là ở đây nó bị che hoàn toàn.
+        */}
         <ReportSectionPicker
           sections={completion.sections}
           doneCount={completion.doneCount}
           activeSection={activeSection}
           onSelect={goToSection}
-          className="sticky top-2 z-10 shadow-sm"
+          className="sticky top-16 z-10 shadow-sm"
         />
 
         {locked && (

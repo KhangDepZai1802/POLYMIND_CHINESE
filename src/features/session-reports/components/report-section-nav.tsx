@@ -84,9 +84,17 @@ export function ReportSectionRail({
   onSelect: (sectionNumber: number) => void;
 }) {
   return (
+    /*
+     * 🔴 `top-20` (5rem) chứ KHÔNG phải `top-4`. Header của dashboard là
+     * `sticky top-0 z-30 h-16` — dính ở 1rem thì cột mục lục trượt xuống DƯỚI
+     * header và mục 1 bị che mất hẳn (user báo kèm ảnh 2026-08-13). 5rem = 4rem
+     * header + 1rem thở, đúng con số mà `scroll-mt-20` của `SectionCard` đã
+     * dùng để canh chỗ nhảy tới — hai chỗ phải cùng một mốc, lệch nhau thì bấm
+     * vào mục N sẽ dừng ở chỗ tiêu đề N nằm sau header.
+     */
     <nav
       aria-label="Mục lục báo cáo"
-      className="bg-card sticky top-4 hidden max-h-[calc(100dvh-7rem)] flex-col overflow-y-auto rounded-xl border p-2 lg:flex"
+      className="bg-card sticky top-20 hidden max-h-[calc(100dvh-6rem)] flex-col overflow-y-auto rounded-xl border p-2 lg:flex"
     >
       <ul className="grid gap-0.5">
         {sections.map((section) => (
