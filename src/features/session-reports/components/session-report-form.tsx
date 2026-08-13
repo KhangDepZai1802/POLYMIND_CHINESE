@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  AlertCircle,
   Camera,
   Info,
   Loader2,
@@ -30,15 +29,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { compressFlashcardImage } from "@/features/flashcards/client/compress-image";
 import { createClient } from "@/lib/supabase/client";
@@ -86,20 +76,11 @@ import { StudentCategoryField } from "./report-student-picker";
 const EVIDENCE_BUCKET = "session-report-evidence";
 const MAX_EVIDENCE = 4;
 
-export type LessonOption = {
-  id: string;
-  title: string;
-  moduleId: string;
-  moduleTitle: string;
-};
-
 export function SessionReportFormView({
   data,
-  lessons,
   userId,
 }: {
   data: SessionReportEditorData;
-  lessons: LessonOption[];
   userId: string;
 }) {
   const router = useRouter();
@@ -107,12 +88,18 @@ export function SessionReportFormView({
 
   const [form, setForm] = useState<SessionReportForm>(data.report.form);
   const [students, setStudents] = useState<ReportStudentEntry[]>(data.report.students);
-  const [lessonId, setLessonId] = useState<string | null>(data.session.lessonId);
   const [lessonLog, setLessonLog] = useState(data.session.lessonLog);
-  // Giữ nguyên ghi chú nội bộ của nhật ký cũ, KHÔNG dựng ô sửa: mẫu
-  // `BaoCao.pdf` không có trường này, thêm vào là "thêm" (`D-43` điểm 3).
-  // Truyền lại nguyên giá trị để dữ liệu cũ không bị xoá trắng khi lưu.
+  // Hai giá trị của nhật ký buổi học mà biểu mẫu này KHÔNG dựng ô sửa, nhưng
+  // vẫn truyền lại NGUYÊN VĂN để `save_session_log()` không xoá trắng dữ liệu
+  // cũ:
+  //   • `teacherNote` — mẫu `BaoCao.pdf` không có trường này, thêm vào là
+  //     "thêm" (`D-43` điểm 3).
+  //   • `lessonId` — từ `TEACHER-REPORT-2`, "Bài học đã dạy" là chữ giáo viên
+  //     tự gõ (`form.lesson_title`). Cột `lesson_id` vẫn là đường liên kết tiến
+  //     độ bài học, chỉ là biểu mẫu báo cáo thôi không ghi vào nó nữa — buổi
+  //     nào đã gắn bài từ trước thì giữ nguyên.
   const teacherNote = data.session.teacherNote;
+  const lessonId = data.session.lessonId;
   const [reasons, setReasons] = useState<Record<string, string>>(() =>
     Object.fromEntries(data.attendance.lines.map((line) => [line.enrollmentId, line.note])),
   );
@@ -134,7 +121,7 @@ export function SessionReportFormView({
     () =>
       getReportCompletion({
         form,
-        lesson: { lessonId, lessonLog },
+        lesson: { lessonLog },
         attendance: {
           needingReason: data.attendance.lines.length,
           withReason: Object.values(reasons).filter((note) => note.trim()).length,
@@ -142,7 +129,7 @@ export function SessionReportFormView({
         students,
         evidenceCount: evidence.length,
       }),
-    [form, lessonId, lessonLog, reasons, students, evidence.length, data.attendance.lines.length],
+    [form, lessonLog, reasons, students, evidence.length, data.attendance.lines.length],
   );
 
   // --- Tự lưu nháp -----------------------------------------------------------
@@ -337,16 +324,6 @@ export function SessionReportFormView({
     router.refresh();
   }
 
-  const lessonsByModule = useMemo(() => {
-    const map = new Map<string, { title: string; lessons: LessonOption[] }>();
-    for (const lesson of lessons) {
-      const entry = map.get(lesson.moduleId) ?? { title: lesson.moduleTitle, lessons: [] };
-      entry.lessons.push(lesson);
-      map.set(lesson.moduleId, entry);
-    }
-    return [...map.entries()];
-  }, [lessons]);
-
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
       <ReportSectionRail
@@ -510,40 +487,28 @@ export function SessionReportFormView({
           register={registerSection}
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field id="lesson" label="Bài học đã dạy" required>
-              {lessons.length === 0 ? (
-                <Alert>
-                  <AlertCircle className="size-4" aria-hidden />
-                  <AlertDescription>
-                    Khóa học chưa có bài học. Quản trị viên cần bổ sung giáo trình.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Select
-                  value={lessonId ?? ""}
-                  disabled={locked}
-                  onValueChange={(value) => {
-                    dirty.current = true;
-                    setLessonId(value);
-                  }}
-                >
-                  <SelectTrigger id="lesson" className="w-full">
-                    <SelectValue placeholder="Chọn bài học" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lessonsByModule.map(([moduleId, group]) => (
-                      <SelectGroup key={moduleId}>
-                        <SelectLabel>{group.title}</SelectLabel>
-                        {group.lessons.map((lesson) => (
-                          <SelectItem key={lesson.id} value={lesson.id}>
-                            {lesson.title}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+            {/*
+              🔴 Ô GÕ TAY, KHÔNG phải dropdown tra giáo trình (`TEACHER-REPORT-2`).
+
+              Bản đầu bắt chọn từ bảng `lessons`. Khoá học chưa nhập giáo trình
+              thì ô này chỉ hiện được câu *"Khóa học chưa có bài học"* và
+              `lesson_id` KHÔNG BAO GIỜ set được ⇒ mục 3 mãi "chưa xong" ⇒ nút
+              Gửi bị chặn vĩnh viễn. User gặp đúng ca đó trên production
+              2026-08-13.
+
+              Bài học: một ràng buộc fail-closed chỉ đúng khi nó chặn thứ NGƯỜI
+              DÙNG kiểm soát được. Bắt giáo viên trả giá vì module giáo trình
+              chưa được nhập là đặt cổng sai chỗ.
+            */}
+            <Field id="lesson-title" label="Bài học đã dạy" required>
+              <Input
+                id="lesson-title"
+                value={form.lesson_title}
+                maxLength={500}
+                disabled={locked}
+                placeholder="Ví dụ: Bài 11 — Đàm phán lãi suất vay doanh nghiệp"
+                onChange={(event) => patch({ lesson_title: event.target.value })}
+              />
             </Field>
 
             <SegmentedChoice

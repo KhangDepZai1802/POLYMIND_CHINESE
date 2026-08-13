@@ -54,6 +54,13 @@ export type SessionReportForm = {
   mode: SessionReportMode | null;
   topic: string;
   // Mục 3 (phần KHÔNG thuộc nhật ký buổi học)
+  //
+  // 🔴 `lesson_title` là chữ giáo viên TỰ GÕ, không phải id tra từ giáo trình
+  // (`TEACHER-REPORT-2`). Bản đầu đọc `class_sessions.lesson_id`; khoá chưa
+  // nhập giáo trình thì ô đó không chọn được gì ⇒ mục 3 mãi "chưa xong" ⇒ nút
+  // Gửi bị chặn vĩnh viễn. Liên kết tiến độ bài học vẫn ở `lesson_id`, chỉ là
+  // biểu mẫu này thôi không ghi vào đó nữa.
+  lesson_title: string;
   plan_completion: PlanCompletion | null;
   has_unfinished: boolean;
   unfinished_content: string;
@@ -98,13 +105,15 @@ export type ReportStudentEntry = {
 /**
  * Những thứ mục lục cần mà KHÔNG nằm trong biểu mẫu:
  *
- * - `lesson` — mục 3 lấy từ `class_sessions` (một đường ghi, xem `D-43` điểm 1)
+ * - `lesson.lessonLog` — "Nội dung đã giảng" sống ở `class_sessions` (một đường
+ *   ghi, xem `D-43` điểm 1). ⚠️ KHÔNG còn `lessonId`: từ `TEACHER-REPORT-2`,
+ *   "Bài học đã dạy" là `form.lesson_title` do giáo viên tự gõ.
  * - `attendance` — mục 2 lấy từ điểm danh, giáo viên chỉ điền lý do
  * - `evidenceCount` — mục 8 đếm file đã tải lên
  */
 export type CompletionInput = {
   form: SessionReportForm;
-  lesson: { lessonId: string | null; lessonLog: string };
+  lesson: { lessonLog: string };
   attendance: { needingReason: number; withReason: number };
   students: ReportStudentEntry[];
   evidenceCount: number;
@@ -179,7 +188,7 @@ export function getSectionStatuses(input: CompletionInput): SectionStatus[] {
 
   // --- Mục 3 ----------------------------------------------------------------
   {
-    const hasLesson = Boolean(lesson.lessonId);
+    const hasLesson = filled(form.lesson_title);
     const hasLog = filled(lesson.lessonLog);
     const hasPlan = form.plan_completion !== null;
     const unfinishedOk =
@@ -362,6 +371,7 @@ export function emptySessionReportForm(): SessionReportForm {
   return {
     mode: null,
     topic: "",
+    lesson_title: "",
     plan_completion: null,
     // Hai ô Không/Có mặc định là "Không": biểu mẫu giấy cũng ngầm hiểu vậy, và
     // để `null` thì mục 3 mắc kẹt ở "đang dở" dù giáo viên đã điền đủ ba ô

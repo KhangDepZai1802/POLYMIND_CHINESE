@@ -18,7 +18,7 @@ import {
 function blank(overrides: Partial<CompletionInput> = {}): CompletionInput {
   return {
     form: emptySessionReportForm(),
-    lesson: { lessonId: null, lessonLog: "" },
+    lesson: { lessonLog: "" },
     attendance: { needingReason: 2, withReason: 0 },
     students: [],
     evidenceCount: 0,
@@ -32,6 +32,8 @@ function completeForm(): SessionReportForm {
     ...emptySessionReportForm(),
     mode: "offline",
     topic: "Bài 11 — Đàm phán lãi suất",
+    // `TEACHER-REPORT-2`: mục 3 đọc chữ giáo viên GÕ, không còn tra `lesson_id`.
+    lesson_title: "Bài 11 — Đàm phán lãi suất vay doanh nghiệp",
     plan_completion: "70_89",
     comprehension_level: 4,
     interaction_level: 5,
@@ -48,7 +50,7 @@ function completeForm(): SessionReportForm {
 function complete(overrides: Partial<CompletionInput> = {}): CompletionInput {
   return blank({
     form: completeForm(),
-    lesson: { lessonId: "11111111-1111-4111-8111-111111111111", lessonLog: "Đã dạy xong" },
+    lesson: { lessonLog: "Đã dạy xong" },
     // Hai người vắng, cả hai đã có lý do.
     attendance: { needingReason: 2, withReason: 2 },
     ...overrides,
@@ -180,11 +182,35 @@ describe("mục 2 — chuyên cần", () => {
 
 describe("mục 3 — gộp nhật ký buổi học", () => {
   it("thiếu bài học hoặc nội dung đã giảng ⇒ chưa xong", () => {
-    const input = complete({ lesson: { lessonId: null, lessonLog: "Đã dạy xong" } });
+    const input = complete({ form: { ...completeForm(), lesson_title: "" } });
     const section = getSectionStatuses(input).find((s) => s.number === 3);
 
     expect(section?.state).toBe("partial");
     expect(section?.hint).toContain("bài học đã dạy");
+  });
+
+  /**
+   * 🔴 `TEACHER-REPORT-2` — ghim lại chỗ đã khoá cứng nút Gửi trên production.
+   *
+   * Bản đầu tính mục 3 xong hay chưa bằng `lesson.lessonId` tra từ bảng
+   * `lessons`. Khoá học chưa nhập giáo trình thì `lesson_id` KHÔNG BAO GIỜ set
+   * được ⇒ mục 3 mãi "chưa xong" ⇒ nút Gửi bị chặn vĩnh viễn, và giáo viên
+   * không có cách nào tự gỡ. Nay mục 3 chỉ nhìn chữ giáo viên gõ.
+   *
+   * Bài này đỏ ngay nếu ai đó nối lại mục 3 với giáo trình: `CompletionInput`
+   * không còn nhận `lessonId`, nên gõ tay là điều kiện DUY NHẤT.
+   */
+  it("🔴 mục 3 xong CHỈ nhờ chữ giáo viên gõ — không cần khoá có giáo trình", () => {
+    const typed = complete({
+      form: { ...completeForm(), lesson_title: "Bài tự gõ, khoá chưa có giáo trình" },
+    });
+    expect(stateOf(typed, 3)).toBe("done");
+    expect(getReportCompletion(typed).isComplete).toBe(true);
+
+    // Và bỏ trống ô đó thì mục 3 đứt ngay — không có đường vòng nào khác.
+    const blankTitle = complete({ form: { ...completeForm(), lesson_title: "   " } });
+    expect(stateOf(blankTitle, 3)).toBe("partial");
+    expect(getReportCompletion(blankTitle).isComplete).toBe(false);
   });
 
   it("chọn 'Có' phần chưa hoàn thành thì phải kèm mô tả VÀ lý do", () => {
@@ -267,7 +293,7 @@ describe("mục lục và nút Gửi dùng CHUNG một luật", () => {
       complete({ form: { ...completeForm(), overall_rating: null } }),
       complete({ form: { ...completeForm(), has_issue: null } }),
       complete({ attendance: { needingReason: 2, withReason: 0 } }),
-      complete({ lesson: { lessonId: null, lessonLog: "" } }),
+      complete({ lesson: { lessonLog: "" } }),
     ];
 
     for (const input of cases) {

@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getCourseCurriculum } from "@/features/courses/server/queries";
 import { SessionReportFormView } from "@/features/session-reports/components/session-report-form";
 import { getSessionReportEditorData } from "@/features/session-reports/server/queries";
 import { requireTeaching } from "@/lib/auth/session";
@@ -28,16 +27,11 @@ export default async function TeacherSessionReportPage({
   const data = await getSessionReportEditorData(sessionId);
   if (!data) notFound();
 
-  const curriculum = await getCourseCurriculum(data.session.courseId);
-  const lessons = curriculum.flatMap((module) =>
-    module.lessons.map((lesson) => ({
-      id: lesson.id,
-      title: lesson.title,
-      moduleId: module.id,
-      moduleTitle: module.title,
-    })),
-  );
-
+  /*
+   * ⛔ KHÔNG tải giáo trình nữa (`TEACHER-REPORT-2`). Ô "Bài học đã dạy" ở mục 3
+   * giờ là chữ giáo viên tự gõ, nên trang này không còn phụ thuộc vào việc khoá
+   * đã nhập bài học hay chưa — đó chính là thứ từng khoá cứng nút Gửi.
+   */
   return (
     <>
       <Link
@@ -93,7 +87,7 @@ export default async function TeacherSessionReportPage({
           </CardContent>
         </Card>
       ) : (
-        <SessionReportFormView data={data} lessons={lessons} userId={user.id} />
+        <SessionReportFormView data={data} userId={user.id} />
       )}
 
       {data.report.status === "submitted" && (

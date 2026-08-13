@@ -2966,6 +2966,7 @@ export type Database = {
           issue_impact: string | null
           issue_other: string | null
           issue_severity: string | null
+          lesson_title: string | null
           mode: Database["public"]["Enums"]["session_report_mode"] | null
           needs_support: boolean | null
           next_content: string | null
@@ -3006,6 +3007,7 @@ export type Database = {
           issue_impact?: string | null
           issue_other?: string | null
           issue_severity?: string | null
+          lesson_title?: string | null
           mode?: Database["public"]["Enums"]["session_report_mode"] | null
           needs_support?: boolean | null
           next_content?: string | null
@@ -3046,6 +3048,7 @@ export type Database = {
           issue_impact?: string | null
           issue_other?: string | null
           issue_severity?: string | null
+          lesson_title?: string | null
           mode?: Database["public"]["Enums"]["session_report_mode"] | null
           needs_support?: boolean | null
           next_content?: string | null

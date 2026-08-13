@@ -366,6 +366,7 @@ function rowToForm(row: ReportRow): SessionReportForm {
     ...base,
     mode: pick("mode", null),
     topic: pick("topic", "") ?? "",
+    lesson_title: pick("lesson_title", "") ?? "",
     plan_completion: pick("plan_completion", null),
     has_unfinished: pick("has_unfinished", false) ?? false,
     unfinished_content: pick("unfinished_content", "") ?? "",
@@ -399,7 +400,7 @@ function rowToForm(row: ReportRow): SessionReportForm {
 export function completionOf(data: SessionReportEditorData) {
   return getReportCompletion({
     form: data.report.form,
-    lesson: { lessonId: data.session.lessonId, lessonLog: data.session.lessonLog },
+    lesson: { lessonLog: data.session.lessonLog },
     attendance: {
       needingReason: data.attendance.lines.length,
       withReason: data.attendance.lines.filter((line) => line.note.trim()).length,
@@ -713,7 +714,12 @@ export async function getReportsForExport(
       startsAt: formatDate(row.session?.starts_at ?? null),
       endsAt: formatTime(row.session?.ends_at ?? null),
       sessionNumber: row.session?.session_number ?? 0,
-      lessonTitle: row.session?.lesson?.title ?? null,
+      // `TEACHER-REPORT-2`: "Bài học đã dạy" đọc từ chữ giáo viên gõ trong
+      // BÁO CÁO. `row.session.lesson.title` chỉ còn là dự phòng cho các báo cáo
+      // đã gửi TRƯỚC đợt này — hồi đó ô ấy là dropdown chọn từ giáo trình, và
+      // bản in của một báo cáo cũ không được phép trống đi.
+      lessonTitle:
+        (row.lesson_title as string | null) ?? row.session?.lesson?.title ?? null,
       lessonLog: row.session?.lesson_log ?? null,
       teacherNote: row.session?.teacher_note ?? null,
     },
@@ -731,6 +737,8 @@ export async function getReportsForExport(
 type ExportRow = {
   id: string;
   submitted_by: string | null;
+  /** `TEACHER-REPORT-2` — chữ giáo viên tự gõ ở mục 3. `select("*")` đã kéo về. */
+  lesson_title: string | null;
   attendance_snapshot: ReportForRender["snapshot"];
   students: { category: string; enrollment_id: string; note: string | null }[] | null;
   evidence: { id: string }[] | null;

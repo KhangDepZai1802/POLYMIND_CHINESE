@@ -34,6 +34,11 @@ export const sessionReportFormSchema = z.object({
   topic: trimmed(500),
 
   // Mục 3
+  //
+  // `lesson_title` là chữ giáo viên TỰ GÕ (`TEACHER-REPORT-2`), không tra bảng
+  // `lessons`. Bản đầu bắt chọn từ giáo trình nên khoá chưa nhập giáo trình là
+  // mục 3 không bao giờ xong được và nút Gửi bị chặn vĩnh viễn.
+  lesson_title: trimmed(500),
   plan_completion: z.enum(valuesOf(PLAN_COMPLETIONS)).nullable().default(null),
   has_unfinished: z.boolean().default(false),
   unfinished_content: trimmed(2000),

@@ -64,3 +64,8 @@ yarn-error.log*
 # Cần nhập liệu thì để file ở máy, trích ra rồi ghi thẳng vào DB — đừng commit.
 DANH SÁCH HỌC TIÊNG HOA.docx
 *.docx
+# Mẫu báo cáo sau buổi dạy — bản gốc user gửi để dựng `TEACHER-REPORT-1`. Repo
+# này PUBLIC, mà bản mẫu có thể mang tên học viên/giáo viên thật. Câu chữ của
+# biểu mẫu đã được chép nguyên văn vào `domain/labels.ts` (nguồn sự thật duy
+# nhất), nên repo không cần chính file PDF.
+docs/BaoCao.pdf

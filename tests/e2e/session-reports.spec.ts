@@ -77,6 +77,8 @@ const ROSTER = sql(`
 const ABSENT_STUDENT = ROSTER[1] ?? "";
 const TOPIC = `Buổi ${SESSION_NUMBER} — Đàm phán lãi suất`;
 const ABSENCE_REASON = "Ốm, có báo trước";
+/** `TEACHER-REPORT-2` — chữ giáo viên tự gõ ở mục 3, không tra giáo trình. */
+const LESSON_TITLE = "Bài 11 — Đàm phán lãi suất vay doanh nghiệp";
 
 /**
  * Trả buổi về đúng trạng thái "vừa dạy xong, chưa ai đụng vào".
@@ -183,8 +185,9 @@ async function fillReport(page: Page) {
   await page.getByLabel(`Lý do của ${ABSENT_STUDENT}`).fill(ABSENCE_REASON);
 
   // --- Mục 3 -----------------------------------------------------------------
-  await page.locator("#lesson").click();
-  await page.getByRole("option").first().click();
+  // `TEACHER-REPORT-2`: ô gõ tay, KHÔNG còn dropdown tra giáo trình. Đây là
+  // chỗ từng khoá cứng nút Gửi khi khoá học chưa nhập bài học nào.
+  await page.locator("#lesson-title").fill(LESSON_TITLE);
   await page.getByRole("radio", { name: "90–100%" }).click();
   await page.locator("#lesson-log").fill("Ôn từ vựng bài trước; luyện mẫu câu thương lượng.");
 
@@ -218,9 +221,43 @@ async function fillReport(page: Page) {
   await page.getByRole("checkbox", { name: /^Tôi xác nhận thông tin báo cáo/ }).click();
 }
 
+/**
+ * Bấm Gửi và NÓI RÕ vì sao hỏng.
+ *
+ * Bản đầu chỉ `expect(…/Báo cáo đã gửi lúc/).toBeVisible()`, nên mọi kiểu hỏng
+ * đều ra cùng một câu *"element(s) not found"* — không phân biệt được "biểu mẫu
+ * còn thiếu mục" với "RPC ném lỗi". Hai đường hỏng đó có hai chỗ sửa khác hẳn
+ * nhau, nên bài kiểm phải phân biệt được.
+ */
 async function submitReport(page: Page) {
   await page.getByRole("button", { name: "Gửi báo cáo" }).click();
-  await expect(page.getByText(/Báo cáo đã gửi lúc/)).toBeVisible({ timeout: 30_000 });
+
+  const missingDialog = page.getByRole("dialog").filter({ hasText: "Chưa gửi được" });
+  const locked = page.getByText(/Báo cáo đã gửi lúc/);
+  const toast = page.locator("[data-sonner-toast]");
+
+  await expect
+    .poll(
+      async () => {
+        if (await locked.isVisible().catch(() => false)) return "sent";
+        if (await missingDialog.isVisible().catch(() => false)) {
+          return `THIẾU MỤC: ${await missingDialog.innerText()}`;
+        }
+        if (await toast.first().isVisible().catch(() => false)) {
+          const text = await toast.first().innerText();
+          if (!/Đã gửi báo cáo/.test(text)) return `LỖI: ${text}`;
+        }
+        const dbStatus = sql(`
+          select coalesce(status::text,'?') || ' | lesson_title=' || coalesce(lesson_title,'NULL')
+            || ' | confirmed=' || confirmed
+            || ' | att_done=' || app.session_attendance_complete(session_id)
+          from public.session_reports where session_id = '${SESSION_ID}';
+        `);
+        return `chờ (DB=${dbStatus || "chưa có hàng"})`;
+      },
+      { timeout: 30_000, message: "kết quả bấm Gửi báo cáo" },
+    )
+    .toBe("sent");
 }
 
 test.beforeAll(() => {
@@ -281,6 +318,22 @@ test("điểm danh → báo cáo → gửi → giáo vụ xem → tải DOCX", a
   await expect(section7Link.getByRole("img")).toHaveAttribute("aria-label", "Chưa điền");
   await expect(rail).toContainText("0/9");
 
+  /*
+   * 🔴 `TEACHER-REPORT-2` — mục 3 KHÔNG còn phụ thuộc giáo trình.
+   *
+   * Bản đầu là dropdown tra bảng `lessons`; khoá chưa nhập giáo trình thì ô đó
+   * chỉ hiện được câu *"Khóa học chưa có bài học"* và `lesson_id` không bao giờ
+   * set được ⇒ mục 3 mãi "chưa xong" ⇒ nút Gửi bị chặn vĩnh viễn (user gặp trên
+   * production 2026-08-13). Bài này ghim: ô là INPUT gõ tay, và câu chặn cũ
+   * KHÔNG được xuất hiện dù dữ liệu giáo trình có hay không.
+   */
+  const section3 = page.locator('[data-section="3"]');
+  await expect(section3.locator("#lesson-title")).toBeEditable();
+  await expect(section3.getByRole("combobox")).toHaveCount(0);
+  await expect(
+    page.getByText("Khóa học chưa có bài học", { exact: false }),
+  ).toHaveCount(0);
+
   // Mục 2 lấy thẳng từ điểm danh — 1 có mặt, 1 vắng, không ô nào gõ lại số.
   const section2 = page.locator('[data-section="2"]');
   await expect(section2).toContainText("Lấy từ điểm danh");
@@ -305,6 +358,19 @@ test("điểm danh → báo cáo → gửi → giáo vụ xem → tải DOCX", a
     `),
     "chuyên cần được chụp lại lúc gửi",
   ).toBe("1/1/2");
+  // Chữ gõ tay ở mục 3 đi trọn vòng: RPC `save_session_report` ghi vào cột mới.
+  expect(
+    sql(
+      `select lesson_title from public.session_reports where session_id = '${SESSION_ID}';`,
+    ),
+    "lesson_title lưu đúng chữ giáo viên gõ",
+  ).toBe(LESSON_TITLE);
+  // Và KHÔNG lén ghi vào cột liên kết giáo trình.
+  expect(
+    sql(`select coalesce(lesson_id::text, 'null') from public.class_sessions where id = '${SESSION_ID}';`),
+    "biểu mẫu báo cáo không ghi vào class_sessions.lesson_id",
+  ).toBe("null");
+
   // Gửi báo cáo = hoàn tất buổi, đi qua đúng `save_session_log` (`BUG_M10_01`).
   expect(
     sql(`select status from public.class_sessions where id = '${SESSION_ID}';`),
@@ -328,6 +394,8 @@ test("điểm danh → báo cáo → gửi → giáo vụ xem → tải DOCX", a
   // Đủ 9 mục, không thiếu mục nào.
   await expect(page.getByRole("heading", { level: 2 })).toHaveCount(9);
   await expect(page.getByText(ABSENCE_REASON)).toBeVisible();
+  // Bản xem của giáo vụ đọc đúng chữ giáo viên gõ, không tra lại bảng `lessons`.
+  await expect(page.getByText(LESSON_TITLE)).toBeVisible();
 
   // === 7. Tải DOCX — bắt sự kiện tải THẬT ===================================
   const [download] = await Promise.all([
