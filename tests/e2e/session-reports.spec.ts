@@ -2,6 +2,8 @@ import { readFileSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 import { expect, test, type Page } from "@playwright/test";
+import JSZip from "jszip";
+import sharp from "sharp";
 
 /**
  * `TEACHER-REPORT-1` — đo bằng TRÌNH DUYỆT THẬT.
@@ -79,6 +81,35 @@ const TOPIC = `Buổi ${SESSION_NUMBER} — Đàm phán lãi suất`;
 const ABSENCE_REASON = "Ốm, có báo trước";
 /** `TEACHER-REPORT-2` — chữ giáo viên tự gõ ở mục 3, không tra giáo trình. */
 const LESSON_TITLE = "Bài 11 — Đàm phán lãi suất vay doanh nghiệp";
+
+/**
+ * Ảnh minh chứng của bài kiểm mục 8 (`TEACHER-REPORT-3`).
+ *
+ * 🔴 **1400px là con số CÓ Ý NGHĨA, đừng thu nhỏ cho nhanh.** Cạnh dài vượt
+ * `FLASHCARD_IMAGE_MAX_EDGE` (1280) nên bộ nén ở trình duyệt buộc phải chạy, và
+ * nó mã hoá ra **WebP** — đúng thứ mà một tấm ảnh chụp bảng từ điện thoại sẽ
+ * thành sau khi tải lên. WebP chính là gốc của lỗi user báo: `docx` KHÔNG nhận
+ * định dạng đó, nên nhét thẳng vào là file Word ra ô ảnh vỡ.
+ *
+ * Ảnh 8×8 thì đi thẳng không qua nén, vẫn là PNG, và bài kiểm sẽ xanh mà **bỏ
+ * lọt đúng đường code hỏng**.
+ */
+const EVIDENCE_FILE_STEM = "bang-giang";
+const EVIDENCE_FILE_NAME = `${EVIDENCE_FILE_STEM}.png`;
+
+/** Ảnh thật, giải mã được — `createImageBitmap` của trình duyệt đọc nó. */
+async function evidencePng(): Promise<Buffer> {
+  return sharp({
+    create: {
+      width: 1400,
+      height: 1000,
+      channels: 3,
+      background: { r: 15, g: 90, b: 168 },
+    },
+  })
+    .png()
+    .toBuffer();
+}
 
 /**
  * Trả buổi về đúng trạng thái "vừa dạy xong, chưa ai đụng vào".
@@ -175,14 +206,22 @@ function scale(page: Page, legend: string, option: string | RegExp) {
     .getByRole("radio", { name: option });
 }
 
-/** Điền đủ 9 mục rồi tick xác nhận. KHÔNG bấm Gửi — để bài gọi tự quyết. */
-async function fillReport(page: Page) {
+/**
+ * Điền đủ 9 mục rồi tick xác nhận. KHÔNG bấm Gửi — để bài gọi tự quyết.
+ *
+ * `absenceReason: false` bỏ trống ô lý do vắng — dùng cho bài ghim
+ * `TEACHER-REPORT-3`.
+ */
+async function fillReport(page: Page, { absenceReason = true } = {}) {
   // --- Mục 1 -----------------------------------------------------------------
   await page.getByRole("radio", { name: "Offline" }).click();
   await page.locator("#topic").fill(TOPIC);
 
-  // --- Mục 2: chỉ lý do vắng. KHÔNG có ô nào để gõ lại sĩ số (`D-43` điểm 2) --
-  await page.getByLabel(`Lý do của ${ABSENT_STUDENT}`).fill(ABSENCE_REASON);
+  // --- Mục 2: chỉ lý do vắng, và lý do là TUỲ CHỌN (`TEACHER-REPORT-3`).
+  // KHÔNG có ô nào để gõ lại sĩ số (`D-43` điểm 2).
+  if (absenceReason) {
+    await page.getByLabel(`Lý do của ${ABSENT_STUDENT}`).fill(ABSENCE_REASON);
+  }
 
   // --- Mục 3 -----------------------------------------------------------------
   // `TEACHER-REPORT-2`: ô gõ tay, KHÔNG còn dropdown tra giáo trình. Đây là
@@ -316,7 +355,10 @@ test("điểm danh → báo cáo → gửi → giáo vụ xem → tải DOCX", a
   await expect(page.locator('[data-section="7"]')).toBeInViewport();
   // Đã cuộn tới nơi, đã là mục đang xem — mà trạng thái vẫn phải là "Chưa điền".
   await expect(section7Link.getByRole("img")).toHaveAttribute("aria-label", "Chưa điền");
-  await expect(rail).toContainText("0/9");
+  // `1/9` chứ không phải `0/9`: mục 2 xanh sẵn vì nó KHÔNG có ô nào để giáo viên
+  // điền — số liệu đọc thẳng từ điểm danh và lý do vắng là tuỳ chọn
+  // (`TEACHER-REPORT-3`). Tám mục còn lại vẫn phải trắng.
+  await expect(rail).toContainText("1/9");
 
   /*
    * 🔴 `TEACHER-REPORT-2` — mục 3 KHÔNG còn phụ thuộc giáo trình.
@@ -433,6 +475,181 @@ test("điểm danh → báo cáo → gửi → giáo vụ xem → tải DOCX", a
     `),
     "ảnh chụp chuyên cần KHÔNG đổi sau khi sửa điểm danh",
   ).toBe("1/1");
+});
+
+/**
+ * 🔴 `TEACHER-REPORT-3`, vế 1 — user báo 2026-08-14: *"phần 2 chuyên cần học
+ * viên, vắng không cần phải có lí do, đừng ràng buộc cái này dẫn đến không thể
+ * gửi báo cáo"*.
+ *
+ * Bài này điền đủ tám mục còn lại nhưng **để trống hẳn ô lý do**, rồi bấm Gửi
+ * bằng trình duyệt thật. Nó đỏ ngay nếu ai đó nối lại mục 2 với lý do vắng —
+ * kể cả khi nối ở tầng giao diện chứ không ở `domain/completion.ts`.
+ */
+test("bỏ trống lý do vắng vẫn gửi được báo cáo", async ({ page }) => {
+  await login(page, "gv.a@polymind.test");
+  await markAttendance(page);
+  await page.goto(`/teacher/reports/${SESSION_ID}`);
+  await expect(page.locator('[data-section="1"]')).toBeVisible();
+
+  // Ô lý do CÓ mặt (giáo viên vẫn ghi được khi biết) nhưng nhãn nói rõ là tuỳ
+  // chọn — hệ quả phải được nói TRƯỚC khi người dùng loay hoay đi tìm.
+  const section2 = page.locator('[data-section="2"]');
+  await expect(section2).toContainText("không bắt buộc");
+  await expect(page.getByLabel(`Lý do của ${ABSENT_STUDENT}`)).toHaveValue("");
+
+  await fillReport(page, { absenceReason: false });
+
+  // Mục lục phải báo 9/9 dù ô lý do trống — cùng luật với nút Gửi (`D-43` điểm 6).
+  await expect(page.getByRole("navigation", { name: "Mục lục báo cáo" })).toContainText(
+    "9/9",
+  );
+  await submitReport(page);
+
+  expect(
+    sql(`select status from public.session_reports where session_id = '${SESSION_ID}';`),
+    "gửi được dù không có lý do vắng nào",
+  ).toBe("submitted");
+  // Và ghi chú điểm danh vẫn trống — không có chỗ nào tự bịa một lý do vào hồ sơ.
+  expect(
+    sql(`
+      select count(*) from public.attendance_records
+      where session_id = '${SESSION_ID}' and coalesce(btrim(note), '') <> '';
+    `),
+    "không lý do nào bị bịa ra để lách cổng",
+  ).toBe("0");
+});
+
+/**
+ * 🔴 `TEACHER-REPORT-3`, vế 2 — user báo 2026-08-14: *"phần 8 minh chứng buổi
+ * học khi xuất file docx hay in báo cáo ra không hiển thị 3 tệp đính kèm mà giáo
+ * viên đã gửi lên"*.
+ *
+ * Bài này tải ảnh THẬT lên qua giao diện rồi đo hai bề mặt user nhắc tới:
+ *
+ *  • bản của giáo vụ (cũng chính là bản in) — `<img>` phải **tải được thật**,
+ *    đo bằng `naturalWidth > 0` chứ không phải "thẻ img có tồn tại": URL ký hỏng
+ *    thì thẻ vẫn còn đó mà ô ảnh trống trơn;
+ *  • file DOCX — mở zip ra đếm `word/media`. Đây là chỗ lỗi gốc nằm.
+ */
+test("mục 8: ảnh minh chứng có thật trong bản của giáo vụ và trong file DOCX", async ({
+  page,
+}) => {
+  await login(page, "gv.a@polymind.test");
+  await markAttendance(page);
+  await page.goto(`/teacher/reports/${SESSION_ID}`);
+  await expect(page.locator('[data-section="1"]')).toBeVisible();
+
+  await fillReport(page);
+  // Ảnh chỉ gắn được vào một bản nháp ĐÃ tồn tại (`attachReportEvidenceAction`),
+  // nên phải đợi lượt tự lưu chạy xong trước khi tải lên.
+  await expect(page.getByText(/Đã lưu nháp/)).toBeVisible({ timeout: 15_000 });
+
+  const section8 = page.locator('[data-section="8"]');
+  await section8.locator('input[type="file"][multiple]').setInputFiles({
+    name: EVIDENCE_FILE_NAME,
+    mimeType: "image/png",
+    buffer: await evidencePng(),
+  });
+
+  /*
+   * 🔴 Ô ảnh phải hiện NGAY, không đợi tải lại trang.
+   *
+   * Đây là chỗ bài kiểm này bắt được một lỗi thật lúc viết: danh sách ảnh từng
+   * là `useState(data.report.evidence)`, mà `router.refresh()` cố ý giữ nguyên
+   * state của Client Component ⇒ ảnh nằm sẵn trong bucket còn màn hình vẫn báo
+   * "0/4 ảnh". Tên hiện ra cũng phải là tên tệp gốc, không phải chuỗi uuid.
+   */
+  await expect(section8.getByText(EVIDENCE_FILE_STEM)).toBeVisible({ timeout: 20_000 });
+  await expect(section8).toContainText("1/4 ảnh");
+
+  const storedPath = await expect
+    .poll(
+      () => sql(`
+        select coalesce(max(ev.storage_path), 'chưa có') from public.session_report_evidence ev
+        join public.session_reports r on r.id = ev.report_id
+        where r.session_id = '${SESSION_ID}';
+      `),
+      { message: "hàng minh chứng đã ghi vào DB" },
+    )
+    .not.toBe("chưa có")
+    .then(() =>
+      sql(`
+        select ev.storage_path from public.session_report_evidence ev
+        join public.session_reports r on r.id = ev.report_id
+        where r.session_id = '${SESSION_ID}';
+      `),
+    );
+
+  // 🔴 Vế quan trọng nhất của fixture: bộ nén ở trình duyệt đã đổi PNG → WebP.
+  // Nếu một ngày nào đó nó thôi đổi, bài kiểm dưới đây không còn canh đúng lỗi
+  // gốc nữa — nên phải đỏ ở ĐÂY chứ không âm thầm xanh.
+  expect(storedPath, "ảnh tải lên là WebP — đúng định dạng docx KHÔNG nhận").toMatch(
+    /\.webp$/,
+  );
+
+  await submitReport(page);
+
+  const reportId = sql(
+    `select id from public.session_reports where session_id = '${SESSION_ID}';`,
+  );
+
+  // === Bản của giáo vụ = bản in ==============================================
+  await login(page, "gv.vu@polymind.test");
+  await page.goto(`/admin/reports/bao-cao/${reportId}`);
+
+  const shot = page.locator("[data-report-evidence] img");
+  await expect(shot).toHaveCount(1);
+  await expect
+    .poll(
+      () => shot.first().evaluate((img: HTMLImageElement) => img.naturalWidth),
+      { message: "ảnh minh chứng tải được thật, không phải ô trống" },
+    )
+    .toBeGreaterThan(0);
+  await expect(page.locator("[data-report-evidence]")).toContainText(EVIDENCE_FILE_STEM);
+  // Và dòng chữ của mục 8 nêu đích danh tệp, không chỉ đếm.
+  await expect(page.getByText(/1 tệp đính kèm/)).toBeVisible();
+
+  // === BẢN IN — user nói rõ "in báo cáo ra", không phải chỉ xem trên màn =====
+  //
+  // Đo bằng `emulateMedia({ media: "print" })` để `@media print` thật sự có hiệu
+  // lực: một quy tắc in sai (ẩn ảnh, hoặc để ảnh cao hơn một trang A4) chỉ lộ ra
+  // ở đây, còn bản trên màn hình vẫn đẹp như thường.
+  await page.emulateMedia({ media: "print" });
+  await expect(shot).toBeVisible();
+  const printBox = await shot.first().boundingBox();
+  expect(printBox!.height, "ảnh minh chứng có mặt trên bản in").toBeGreaterThan(0);
+  // Trần 8cm ≈ 302px @96dpi — không có trần thì một tấm ảnh dọc chiếm trọn trang.
+  expect(printBox!.height, "ảnh không chiếm trọn một trang giấy").toBeLessThanOrEqual(
+    310,
+  );
+  // Và phần chrome của dashboard phải biến mất khỏi bản in.
+  await expect(page.getByRole("link", { name: "Tải DOCX" })).toBeHidden();
+  await page.emulateMedia({ media: "screen" });
+
+  // === File DOCX =============================================================
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 30_000 }),
+    page.getByRole("link", { name: "Tải DOCX" }).click(),
+  ]);
+
+  const zip = await JSZip.loadAsync(readFileSync(await download.path()));
+  const media = Object.entries(zip.files).filter(
+    ([name, entry]) => !entry.dir && name.startsWith("word/media/"),
+  );
+  expect(media, "ảnh minh chứng nằm THẬT trong file Word").toHaveLength(1);
+
+  // Và nó là ảnh Word ĐỌC ĐƯỢC, không phải WebP đổi tên: đọc ngược header bằng
+  // sharp. Kiểm mỗi "có một tệp trong word/media" thì một buffer rác cũng lọt.
+  const embedded = await sharp(await zip.files[media[0]![0]]!.async("nodebuffer"))
+    .metadata();
+  expect(
+    ["jpeg", "png"],
+    `ảnh nhúng phải là định dạng docx nhận, đang là ${embedded.format}`,
+  ).toContain(embedded.format);
+  expect(embedded.width, "ảnh nhúng còn nguyên nội dung, không phải 1px").toBeGreaterThan(
+    100,
+  );
 });
 
 /**

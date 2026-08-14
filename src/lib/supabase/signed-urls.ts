@@ -19,7 +19,11 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 export async function signPaths(
   supabase: Supabase,
   bucket:
-    "question-media" | "answer-media" | "course-materials" | "flashcard-media",
+    | "question-media"
+    | "answer-media"
+    | "course-materials"
+    | "flashcard-media"
+    | "session-report-evidence",
   paths: ReadonlyArray<string | null | undefined>,
   expiresIn: number,
 ): Promise<Map<string, string>> {

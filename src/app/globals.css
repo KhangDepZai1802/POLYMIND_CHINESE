@@ -664,4 +664,19 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
   thead {
     display: table-header-group;
   }
+
+  /*
+   * Ảnh minh chứng mục 8 (`TEACHER-REPORT-3`).
+   *
+   * Trần 8cm: ảnh chụp bảng theo chiều dọc mà để nguyên thì một tấm chiếm trọn
+   * một trang A4, và bản in 3 tấm thành 3 trang toàn ảnh. `break-inside` giữ ảnh
+   * cùng phần chú thích tên tệp của nó trên một trang — tách ra thì trang sau
+   * còn mỗi dòng tên tệp không rõ nói về tấm nào.
+   */
+  [data-report-evidence] li {
+    break-inside: avoid;
+  }
+  [data-report-evidence] img {
+    max-height: 8cm;
+  }
 }

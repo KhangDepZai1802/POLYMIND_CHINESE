@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PrintButton } from "@/features/reports/components/print-button";
+import { formatEvidenceBytes } from "@/features/session-reports/domain/evidence";
 import { BLANK, buildReportSections } from "@/features/session-reports/domain/render";
 import { getReportForRender } from "@/features/session-reports/server/queries";
 import { requireManager } from "@/lib/auth/session";
@@ -106,6 +107,45 @@ export default async function AdminSessionReportDetailPage({
                   </div>
                 ))}
               </dl>
+
+              {/*
+                Mục 8 — ẢNH THẬT ngay dưới dòng "Tải file/hình ảnh"
+                (`TEACHER-REPORT-3`). Bản trước chỉ có con số đếm, nên bản in
+                gửi cấp trên không mang theo minh chứng nào.
+              */}
+              {section.images && section.images.length > 0 && (
+                <ul
+                  data-report-evidence
+                  className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"
+                >
+                  {section.images.map((item) => (
+                    <li key={item.id} className="grid gap-1">
+                      {item.url ? (
+                        /*
+                          `<img>` trần, KHÔNG `next/image`: bản in mới là bề mặt
+                          chính của trang này, mà `next/image` tải lười — bấm
+                          Ctrl+P lúc ảnh chưa vào khung nhìn là in ra ô trắng.
+                          `loading="eager"` buộc tải xong trước khi in.
+                        */
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.url}
+                          alt={`Minh chứng buổi học — ${item.fileName}`}
+                          loading="eager"
+                          className="bg-surface-sunken w-full rounded-lg border object-contain"
+                        />
+                      ) : (
+                        <span className="text-muted-foreground bg-surface-sunken grid aspect-[4/3] place-items-center rounded-lg border px-2 text-center text-xs">
+                          Không mở được ảnh
+                        </span>
+                      )}
+                      <span className="text-muted-foreground truncate text-xs">
+                        {item.fileName} · {formatEvidenceBytes(item.bytes)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
         ))}

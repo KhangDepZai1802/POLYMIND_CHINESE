@@ -20,6 +20,10 @@
  * **Không thêm:** không sinh thêm trường nào ngoài mẫu, không tự bình luận,
  * không chèn biểu đồ.
  *
+ * ⚠️ Ảnh minh chứng của mục 8 KHÔNG phải là "thêm": mẫu có sẵn dòng *"Tải
+ * file/hình ảnh"*, và một bản báo cáo in ra mà chỉ ghi *"3 tệp đính kèm"* rồi
+ * không cho xem ba tệp đó là **bớt** — người đọc mất đúng phần minh chứng.
+ *
  * **Trình bày thì thiết kế lại:** mẫu Word in cả 5 dòng ☐ rồi tick một dòng.
  * Ở đây chỉ in *dòng được chọn* kèm nguyên văn mô tả của nó. Chữ nghĩa không
  * mất chữ nào; bốn dòng thừa thì mất.
@@ -53,10 +57,37 @@ export type RenderLine = {
   scale?: { value: number; max: number } | null;
 };
 
+/**
+ * Một tệp minh chứng của mục 8, đã sẵn sàng để HIỆN chứ không chỉ để đếm.
+ *
+ * 🔴 Vì sao có `url` lẫn `storagePath`: bản xem và bản in nhúng thẳng `url` (URL
+ * ký hạn ngắn) vào `<img>`; bản DOCX thì phải TẢI NHỊ PHÂN về nhét vào file
+ * Word, và nó tải theo `storagePath` qua chính client đã bị RLS thu hẹp — không
+ * đi vòng qua URL ký, để một URL hết hạn giữa chừng không làm rỗng file Word.
+ */
+export type RenderEvidence = {
+  id: string;
+  /** Tên tệp gốc, đã bỏ tiền tố uuid — thứ con người đọc được. */
+  fileName: string;
+  bytes: number;
+  storagePath: string;
+  /** Null khi Storage không ký được — bề mặt tự quyết hiển thị gì thay thế. */
+  url: string | null;
+};
+
 export type RenderSection = {
   number: number;
   title: string;
   lines: RenderLine[];
+  /**
+   * Ảnh đính kèm của mục (chỉ mục 8 có).
+   *
+   * Nằm TRONG mục chứ không nằm rời bên ngoài: ba bề mặt cùng lặp qua
+   * `buildReportSections()`, nên ảnh gắn vào đúng mục là ba bề mặt cùng có ảnh.
+   * Bản trước chỉ đưa ra con số "3 tệp đính kèm" — đọc bản in xong vẫn không
+   * biết ba tệp đó là gì (user báo 2026-08-14).
+   */
+  images?: RenderEvidence[];
 };
 
 export type ReportSnapshotStudent = {
@@ -81,7 +112,7 @@ export type ReportForRender = {
   };
   report: Record<string, unknown>;
   students: { category: string; fullName: string; note: string | null }[];
-  evidenceCount: number;
+  evidence: RenderEvidence[];
   /** Ảnh chụp chuyên cần lúc gửi. */
   snapshot: {
     roster_size?: number;
@@ -271,10 +302,19 @@ export function buildReportSections(data: ReportForRender): RenderSection[] {
             : BLANK,
         },
         {
+          // Con số ĐI KÈM tên từng tệp, không đứng một mình. Bản in đen trắng
+          // gửi cấp trên phải nói được "ba tệp đó tên gì", còn chính ảnh thì
+          // nằm ở `images` ngay dưới.
           label: "Tải file/hình ảnh",
-          value: data.evidenceCount > 0 ? `${data.evidenceCount} tệp đính kèm` : BLANK,
+          value:
+            data.evidence.length > 0
+              ? `${data.evidence.length} tệp đính kèm: ${data.evidence
+                  .map((item) => item.fileName)
+                  .join(", ")}`
+              : BLANK,
         },
       ],
+      images: data.evidence,
     },
     {
       number: 9,

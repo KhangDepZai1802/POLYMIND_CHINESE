@@ -3,6 +3,7 @@ import "server-only";
 import { OPEN_ENROLLMENT_STATUSES } from "@/lib/domain/enrollment";
 import { formatDate, formatTime } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
+import { signPaths } from "@/lib/supabase/signed-urls";
 
 import {
   emptySessionReportForm,
@@ -10,6 +11,11 @@ import {
   type ReportStudentEntry,
   type SessionReportForm,
 } from "../domain/completion";
+import {
+  EVIDENCE_BUCKET,
+  EVIDENCE_URL_TTL_SECONDS,
+  evidenceFileName,
+} from "../domain/evidence";
 import type { ReportForRender } from "../domain/render";
 import type { TeacherReportFilters } from "../schema";
 
@@ -401,10 +407,6 @@ export function completionOf(data: SessionReportEditorData) {
   return getReportCompletion({
     form: data.report.form,
     lesson: { lessonLog: data.session.lessonLog },
-    attendance: {
-      needingReason: data.attendance.lines.length,
-      withReason: data.attendance.lines.filter((line) => line.note.trim()).length,
-    },
     students: data.report.students,
     evidenceCount: data.report.evidence.length,
   });
@@ -658,7 +660,7 @@ export async function getReportsForExport(
     .select(
       `*,
        students:session_report_students (category, enrollment_id, note),
-       evidence:session_report_evidence (id),
+       evidence:session_report_evidence (id, storage_path, bytes),
        session:class_sessions (
          session_number, starts_at, ends_at, lesson_log, teacher_note,
          lesson:lessons (title),
@@ -706,6 +708,21 @@ export async function getReportsForExport(
 
   const teacherName = await resolveTeacherNames(supabase, inPeriod);
 
+  /*
+   * Ký URL ảnh minh chứng cho CẢ LÔ trong một request (`signPaths`).
+   *
+   * 🔴 Ký ở đây chứ không ở từng bề mặt: bản xem, bản in và bản DOCX cùng đi qua
+   * hàm này, nên ký một chỗ là ba nơi cùng có ảnh. Path nào ký hỏng thì rơi khỏi
+   * Map và `url` thành `null` — bề mặt hiện tên tệp thay cho ảnh, chứ không phát
+   * ra một `<img src="">` gãy.
+   */
+  const evidenceUrls = await signPaths(
+    supabase,
+    EVIDENCE_BUCKET,
+    inPeriod.flatMap((row) => (row.evidence ?? []).map((item) => item.storage_path)),
+    EVIDENCE_URL_TTL_SECONDS,
+  );
+
   return inPeriod.map((row) => ({
     session: {
       classCode: row.session?.class?.code ?? "—",
@@ -729,7 +746,13 @@ export async function getReportsForExport(
       fullName: nameByEnrollment.get(item.enrollment_id) ?? "Học viên",
       note: item.note,
     })),
-    evidenceCount: (row.evidence ?? []).length,
+    evidence: (row.evidence ?? []).map((item) => ({
+      id: item.id,
+      fileName: evidenceFileName(item.storage_path),
+      bytes: item.bytes,
+      storagePath: item.storage_path,
+      url: evidenceUrls.get(item.storage_path) ?? null,
+    })),
     snapshot: row.attendance_snapshot ?? null,
   }));
 }
@@ -741,7 +764,7 @@ type ExportRow = {
   lesson_title: string | null;
   attendance_snapshot: ReportForRender["snapshot"];
   students: { category: string; enrollment_id: string; note: string | null }[] | null;
-  evidence: { id: string }[] | null;
+  evidence: { id: string; storage_path: string; bytes: number }[] | null;
   session: {
     session_number: number;
     starts_at: string;

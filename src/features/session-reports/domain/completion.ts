@@ -108,13 +108,14 @@ export type ReportStudentEntry = {
  * - `lesson.lessonLog` — "Nội dung đã giảng" sống ở `class_sessions` (một đường
  *   ghi, xem `D-43` điểm 1). ⚠️ KHÔNG còn `lessonId`: từ `TEACHER-REPORT-2`,
  *   "Bài học đã dạy" là `form.lesson_title` do giáo viên tự gõ.
- * - `attendance` — mục 2 lấy từ điểm danh, giáo viên chỉ điền lý do
  * - `evidenceCount` — mục 8 đếm file đã tải lên
+ *
+ * ⛔ KHÔNG có `attendance` ở đây nữa (`TEACHER-REPORT-3`). Mục 2 đọc thẳng từ
+ * điểm danh và không còn điều kiện nào để "xong" — xem khối mục 2 bên dưới.
  */
 export type CompletionInput = {
   form: SessionReportForm;
   lesson: { lessonLog: string };
-  attendance: { needingReason: number; withReason: number };
   students: ReportStudentEntry[];
   evidenceCount: number;
 };
@@ -149,7 +150,7 @@ function resolve(ok: boolean, touched: boolean): SectionState {
 }
 
 export function getSectionStatuses(input: CompletionInput): SectionStatus[] {
-  const { form, lesson, attendance, students, evidenceCount } = input;
+  const { form, lesson, students, evidenceCount } = input;
 
   const statuses: Omit<SectionStatus, "title">[] = [];
 
@@ -171,19 +172,24 @@ export function getSectionStatuses(input: CompletionInput): SectionStatus[] {
   }
 
   // --- Mục 2 ----------------------------------------------------------------
-  // Số liệu đọc từ điểm danh nên không có gì để "điền". Thứ duy nhất giáo viên
-  // phải làm là ghi lý do cho người vắng / đi trễ / về sớm. Lớp đi đủ 100% thì
-  // mục này xong ngay, không bắt bấm gì thêm.
+  //
+  // 🔴 LUÔN `done` — LÝ DO VẮNG LÀ TUỲ CHỌN (`TEACHER-REPORT-3`, user chốt
+  // 2026-08-14: *"vắng không cần phải có lí do, đừng ràng buộc cái này dẫn đến
+  // không thể gửi báo cáo"*).
+  //
+  // Bản trước đòi mỗi người vắng / đi trễ phải có một dòng lý do thì mục 2 mới
+  // xong. Đó là cổng đặt SAI CHỖ, đúng hình dạng đã mắc ở `TEACHER-REPORT-2`:
+  // giáo viên thường không biết vì sao học viên vắng — người biết là bộ phận
+  // tuyển sinh, và có khi mấy hôm sau mới biết. Bắt gõ lý do mới cho gửi tức là
+  // hoặc chặn báo cáo vô thời hạn, hoặc ép bịa một lý do vào hồ sơ học viên.
+  //
+  // Mục này KHÔNG còn điều kiện nào vì đúng là chẳng còn gì để điền: sĩ số /
+  // có mặt / vắng đọc thẳng từ điểm danh (`D-43` điểm 2, không có ô gõ tay), mà
+  // ĐIỂM DANH ĐỦ thì đã là cổng cứng ở ba tầng — trang biểu mẫu không dựng lên
+  // khi chưa điểm danh xong, và RPC `submit_session_report` chặn lần cuối. Ô lý
+  // do vẫn còn để giáo viên ghi khi có biết, chỉ là không ai bị chặn vì nó.
   {
-    const missing = attendance.needingReason - attendance.withReason;
-    const ok = missing <= 0;
-    statuses.push({
-      number: 2,
-      state: resolve(ok, attendance.withReason > 0),
-      hint: ok
-        ? null
-        : `${missing} học viên vắng / đi trễ chưa có lý do`,
-    });
+    statuses.push({ number: 2, state: "done", hint: null });
   }
 
   // --- Mục 3 ----------------------------------------------------------------

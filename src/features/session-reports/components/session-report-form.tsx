@@ -40,6 +40,12 @@ import {
   type SessionReportForm,
 } from "../domain/completion";
 import {
+  EVIDENCE_BUCKET,
+  MAX_EVIDENCE,
+  evidenceFileName,
+  formatEvidenceBytes,
+} from "../domain/evidence";
+import {
   COMPREHENSION_LEVELS,
   CONFIRMATION_TEXT,
   EVIDENCE_KINDS,
@@ -73,9 +79,6 @@ import {
 import { ReportSectionPicker, ReportSectionRail } from "./report-section-nav";
 import { StudentCategoryField } from "./report-student-picker";
 
-const EVIDENCE_BUCKET = "session-report-evidence";
-const MAX_EVIDENCE = 4;
-
 export function SessionReportFormView({
   data,
   userId,
@@ -103,7 +106,23 @@ export function SessionReportFormView({
   const [reasons, setReasons] = useState<Record<string, string>>(() =>
     Object.fromEntries(data.attendance.lines.map((line) => [line.enrollmentId, line.note])),
   );
-  const [evidence, setEvidence] = useState(data.report.evidence);
+  /*
+   * 🔴 ĐỌC THẲNG TỪ PROP, KHÔNG `useState` (`TEACHER-REPORT-3`, bắt được bằng
+   * E2E 2026-08-14).
+   *
+   * Bản trước là `useState(data.report.evidence)`. Tải ảnh xong thì Server
+   * Action `revalidatePath` + `router.refresh()` dựng lại đúng cây RSC với dữ
+   * liệu mới — nhưng `router.refresh()` **cố ý giữ nguyên state của Client
+   * Component**, mà giá trị khởi tạo của `useState` chỉ dùng ở lần mount đầu.
+   * Kết quả: ảnh nằm sẵn trong bucket và trong bảng, còn màn hình vẫn báo
+   * "0/4 ảnh" cho tới khi giáo viên tải lại trang bằng tay. Ai tick "Hình ảnh
+   * lớp học" (loại đòi file) thì mục 8 kẹt ở "chưa xong" và nút Gửi bị chặn —
+   * lại đúng hình dạng cổng-chặn-nhầm của `TEACHER-REPORT-2`.
+   *
+   * Danh sách ảnh là dữ liệu của MÁY CHỦ. Giữ một bản sao ở client là tạo ra
+   * nguồn sự thật thứ hai, và nó lệch ngay lần ghi đầu tiên (`BUG_M10_01`).
+   */
+  const evidence = data.report.evidence;
 
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -122,14 +141,10 @@ export function SessionReportFormView({
       getReportCompletion({
         form,
         lesson: { lessonLog },
-        attendance: {
-          needingReason: data.attendance.lines.length,
-          withReason: Object.values(reasons).filter((note) => note.trim()).length,
-        },
         students,
         evidenceCount: evidence.length,
       }),
-    [form, lessonLog, reasons, students, evidence.length, data.attendance.lines.length],
+    [form, lessonLog, students, evidence.length],
   );
 
   // --- Tự lưu nháp -----------------------------------------------------------
@@ -283,7 +298,7 @@ export function SessionReportFormView({
       toast.success(
         compressed.keptOriginal
           ? "Đã thêm ảnh minh chứng."
-          : `Đã thêm ảnh · nén từ ${formatBytes(compressed.originalBytes)} xuống ${formatBytes(compressed.bytes)}.`,
+          : `Đã thêm ảnh · nén từ ${formatEvidenceBytes(compressed.originalBytes)} xuống ${formatEvidenceBytes(compressed.bytes)}.`,
       );
     }
 
@@ -299,7 +314,9 @@ export function SessionReportFormView({
       toast.error(result.error);
       return;
     }
-    setEvidence((prev) => prev.filter((item) => item.id !== id));
+    // Cùng một đường cập nhật với lúc tải lên: hỏi lại máy chủ. Tự cắt phần tử
+    // khỏi một mảng ở client là chỗ hai nguồn sự thật bắt đầu lệch nhau.
+    router.refresh();
   }
 
   // --- Gửi -------------------------------------------------------------------
@@ -436,7 +453,19 @@ export function SessionReportFormView({
             </p>
           ) : (
             <div className="grid gap-2">
-              <p className="text-sm font-semibold">Lý do vắng / đi trễ / về sớm</p>
+              {/*
+                🔴 "KHÔNG BẮT BUỘC" nói ngay ở nhãn, không giấu dưới chân khối
+                (`TEACHER-REPORT-3`). Bản trước đòi đủ lý do mới cho gửi báo cáo;
+                giáo viên thường không biết vì sao học viên vắng, nên cổng đó chỉ
+                tạo ra hai kết cục: báo cáo kẹt vô thời hạn, hoặc một lý do bịa
+                được ghi vào hồ sơ học viên.
+              */}
+              <p className="text-sm font-semibold">
+                Lý do vắng / đi trễ / về sớm{" "}
+                <span className="text-muted-foreground font-normal">
+                  (không bắt buộc)
+                </span>
+              </p>
               <ul className="grid gap-2">
                 {data.attendance.lines.map((line) => (
                   <li
@@ -473,7 +502,7 @@ export function SessionReportFormView({
               </ul>
               <p className="text-muted-foreground text-xs">
                 Chỉ hiện học viên vắng, đi trễ hoặc về sớm. Ghi ở đây cũng cập
-                nhật luôn ghi chú điểm danh.
+                nhật luôn ghi chú điểm danh. Bỏ trống vẫn gửi được báo cáo.
               </p>
             </div>
           )}
@@ -905,7 +934,10 @@ export function SessionReportFormView({
                   className="bg-surface-sunken relative grid aspect-[4/3] place-items-center rounded-lg border"
                 >
                   <span className="text-muted-foreground px-2 text-center text-xs break-all">
-                    {item.storagePath.split("/").pop()}
+                    {evidenceFileName(item.storagePath)}
+                    <span className="mt-0.5 block">
+                      {formatEvidenceBytes(item.bytes)}
+                    </span>
                   </span>
                   {!locked && (
                     <Button
@@ -1134,10 +1166,4 @@ function Stat({
       </dd>
     </div>
   );
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

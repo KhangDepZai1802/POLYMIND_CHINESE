@@ -11,15 +11,14 @@ import {
 /**
  * Đầu vào của một buổi CHƯA ai đụng tới.
  *
- * `needingReason: 2` chứ không phải 0 — đây là buổi có 2 học viên vắng mà chưa
- * ai ghi lý do. Để 0 thì mục 2 xong ngay (đúng luật: lớp đi đủ thì không có gì
- * để điền), và fixture "chưa đụng gì" lại có sẵn một mục xanh.
+ * ⛔ KHÔNG còn khoá `attendance` (`TEACHER-REPORT-3`). Chuyên cần đọc thẳng từ
+ * điểm danh và không còn điều kiện nào để "xong", nên hàm tính cũng không nhận
+ * nó nữa — thêm lại khoá đó vào đây là typecheck đỏ ngay.
  */
 function blank(overrides: Partial<CompletionInput> = {}): CompletionInput {
   return {
     form: emptySessionReportForm(),
     lesson: { lessonLog: "" },
-    attendance: { needingReason: 2, withReason: 0 },
     students: [],
     evidenceCount: 0,
     ...overrides,
@@ -51,8 +50,6 @@ function complete(overrides: Partial<CompletionInput> = {}): CompletionInput {
   return blank({
     form: completeForm(),
     lesson: { lessonLog: "Đã dạy xong" },
-    // Hai người vắng, cả hai đã có lý do.
-    attendance: { needingReason: 2, withReason: 2 },
     ...overrides,
   });
 }
@@ -62,13 +59,16 @@ function stateOf(input: CompletionInput, sectionNumber: number) {
 }
 
 describe("mục lục báo cáo — trạng thái tính từ NỘI DUNG, không từ việc ghé qua", () => {
-  it("biểu mẫu trắng: cả 9 mục đều 'chưa điền', không mục nào tự xanh", () => {
+  it("biểu mẫu trắng: 8 mục giáo viên phải điền đều 'chưa điền', không mục nào tự xanh", () => {
     const { sections, doneCount, isComplete } = getReportCompletion(blank());
 
     expect(sections).toHaveLength(9);
-    expect(doneCount).toBe(0);
+    // Chỉ mục 2 xanh sẵn — nó KHÔNG có ô nào để giáo viên điền, số liệu đọc
+    // thẳng từ điểm danh (`TEACHER-REPORT-3`). Tám mục còn lại phải trắng.
+    expect(doneCount).toBe(1);
     expect(isComplete).toBe(false);
-    expect(sections.every((s) => s.state === "empty")).toBe(true);
+    expect(sections.filter((s) => s.state === "empty")).toHaveLength(8);
+    expect(sections.find((s) => s.number === 2)?.state).toBe("done");
   });
 
   it("🔴 hàm tính KHÔNG nhận tham số nào về 'đã mở mục' — mở ra rồi vuốt đi vẫn là chưa điền", () => {
@@ -160,23 +160,32 @@ describe("phân biệt 'đang dở' với 'chưa điền'", () => {
   });
 });
 
-describe("mục 2 — chuyên cần", () => {
-  it("lớp đi đủ (không ai vắng/trễ) ⇒ xong ngay, không bắt bấm gì thêm", () => {
-    const input = complete({ attendance: { needingReason: 0, withReason: 0 } });
-    expect(stateOf(input, 2)).toBe("done");
+/**
+ * 🔴 `TEACHER-REPORT-3` — ghim lại cổng thứ HAI đã khoá nút Gửi trên production.
+ *
+ * User báo 2026-08-14: *"phần 2 chuyên cần học viên, vắng không cần phải có lí
+ * do, đừng ràng buộc cái này dẫn đến không thể gửi báo cáo"*.
+ *
+ * Bản trước tính mục 2 xong hay chưa bằng số dòng lý do đã ghi. Giáo viên thường
+ * KHÔNG biết vì sao học viên vắng, nên cổng đó hoặc chặn báo cáo vô thời hạn,
+ * hoặc ép bịa một lý do vào hồ sơ học viên — cùng hình dạng sai với
+ * `TEACHER-REPORT-2` (chặn người dùng vì thứ họ không kiểm soát được).
+ *
+ * Bài này đỏ ngay nếu ai đó nối lại mục 2 với lý do vắng.
+ */
+describe("mục 2 — chuyên cần: LÝ DO VẮNG LÀ TUỲ CHỌN", () => {
+  it("🔴 mục 2 luôn xong — không có đầu vào nào làm nó đỏ được", () => {
+    // Không có cách nào nói với hàm này rằng "còn 3 người vắng chưa ghi lý do":
+    // `CompletionInput` không còn khoá `attendance`. Đó chính là điều cần ghim.
+    expect(stateOf(blank(), 2)).toBe("done");
+    expect(stateOf(complete(), 2)).toBe("done");
   });
 
-  it("còn người vắng chưa có lý do ⇒ chưa xong, đếm đúng số người", () => {
-    const input = complete({ attendance: { needingReason: 3, withReason: 1 } });
-    const section = getSectionStatuses(input).find((s) => s.number === 2);
+  it("🔴 biểu mẫu đủ 9 mục vẫn gửi được khi KHÔNG một lý do vắng nào được ghi", () => {
+    const result = getReportCompletion(complete());
 
-    expect(section?.state).toBe("partial");
-    expect(section?.hint).toContain("2 học viên");
-  });
-
-  it("mọi người vắng đều đã có lý do ⇒ xong", () => {
-    const input = complete({ attendance: { needingReason: 3, withReason: 3 } });
-    expect(stateOf(input, 2)).toBe("done");
+    expect(result.isComplete).toBe(true);
+    expect(result.missing.map((s) => s.number)).not.toContain(2);
   });
 });
 
@@ -292,7 +301,7 @@ describe("mục lục và nút Gửi dùng CHUNG một luật", () => {
       complete(),
       complete({ form: { ...completeForm(), overall_rating: null } }),
       complete({ form: { ...completeForm(), has_issue: null } }),
-      complete({ attendance: { needingReason: 2, withReason: 0 } }),
+      complete({ form: { ...completeForm(), lesson_title: "" } }),
       complete({ lesson: { lessonLog: "" } }),
     ];
 

@@ -21,6 +21,7 @@ import {
   getLearningStudentRows,
 } from "@/features/reports/server/learning-queries";
 import { parseTeacherReportFilters } from "@/features/session-reports/schema";
+import { loadEvidenceImages } from "@/features/session-reports/server/evidence-images";
 import { buildSessionReportDocx } from "@/features/session-reports/server/export-docx";
 import { getReportsForExport } from "@/features/session-reports/server/queries";
 import { todayISO } from "@/lib/dates";
@@ -107,10 +108,22 @@ export async function GET(request: Request) {
       to: period.to ?? undefined,
     });
 
-    const buffer = await buildSessionReportDocx(reports, {
-      periodLabel: period.label,
-      generatedAt: new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }),
-    });
+    // Mục 8 phải mang theo ẢNH THẬT, không chỉ dòng chữ "3 tệp đính kèm"
+    // (`TEACHER-REPORT-3`). Tải ở đây chứ không trong `getReportsForExport`:
+    // bản xem/bản in đọc ảnh qua URL ký, chỉ file Word mới cần nhị phân, và
+    // kéo vài MB ảnh cho mỗi lượt mở trang là phí.
+    const evidenceImages = await loadEvidenceImages(reports);
+
+    const buffer = await buildSessionReportDocx(
+      reports,
+      {
+        periodLabel: period.label,
+        generatedAt: new Date().toLocaleString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+        }),
+      },
+      evidenceImages,
+    );
 
     return new Response(buffer as BodyInit, {
       headers: {

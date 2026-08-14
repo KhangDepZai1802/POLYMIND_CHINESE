@@ -6,6 +6,7 @@ import { dbErrorToMessage, zodToActionState, type ActionState } from "@/lib/acti
 import { requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
+import { EVIDENCE_BUCKET } from "../domain/evidence";
 import {
   saveSessionReportSchema,
   type SaveSessionReportInput,
@@ -217,7 +218,7 @@ export async function removeReportEvidenceAction(
   // báo cáo trỏ tới một file không tồn tại; còn theo thứ tự này, xấu nhất là
   // một file mồ côi trong bucket — không ai thấy, và dọn được.
   const { error: storageError } = await supabase.storage
-    .from("session-report-evidence")
+    .from(EVIDENCE_BUCKET)
     .remove([row.storage_path]);
 
   if (storageError) {
