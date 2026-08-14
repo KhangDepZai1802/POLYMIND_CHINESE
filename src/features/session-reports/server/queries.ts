@@ -729,6 +729,9 @@ export async function getReportsForExport(
       className: row.session?.class?.name ?? "—",
       teacherName: teacherName.get(row.submitted_by ?? "") ?? "—",
       startsAt: formatDate(row.session?.starts_at ?? null),
+      // `formatTime` chứ KHÔNG `formatDate`: dòng "Thời gian" của mục 1 cần giờ
+      // bắt đầu, không phải ngày (xem chú thích ở `ReportForRender.startTime`).
+      startTime: formatTime(row.session?.starts_at ?? null),
       endsAt: formatTime(row.session?.ends_at ?? null),
       sessionNumber: row.session?.session_number ?? 0,
       // `TEACHER-REPORT-2`: "Bài học đã dạy" đọc từ chữ giáo viên gõ trong

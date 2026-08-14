@@ -679,4 +679,48 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
   [data-report-evidence] img {
     max-height: 8cm;
   }
+
+  /* -------------------------------------------------------------------------
+   * CỠ CHỮ BẢN IN BÁO CÁO BUỔI DẠY (`TEACHER-REPORT-3`, user báo 2026-08-14:
+   * *"file pdf xuất ra thì bị chữ nhỏ xíu khó đọc quá"*).
+   *
+   * 🔴 Đã ĐO trước khi sửa, không đoán: ở đúng bề ngang A4 (794px CSS) bản in
+   * **không hề tràn** (`documentElement.scrollWidth` = 794) và chữ nội dung là
+   * **14px = 10,5pt** — tức một cỡ chữ tài liệu bình thường, không phải bug.
+   * Chữ nhỏ vì đang đọc **nguyên một trang A4 trên màn điện thoại 6 inch**;
+   * phần đó là vật lý, CSS không xoá được.
+   *
+   * Phần CSS xoá được là khoảng trắng: nới cỡ chữ lên **11,5pt** cho giá trị và
+   * **10pt** cho nhãn, đồng thời **thu bớt lề dọc** của thẻ để số trang không
+   * phình ra. Dùng `pt` chứ không `rem`: đơn vị in là đơn vị vật lý, còn `rem`
+   * bám theo cỡ chữ gốc của trình duyệt — thứ không tồn tại trên giấy.
+   *
+   * Neo bằng `[data-report-print]` để CHỈ trang báo cáo buổi dạy đổi; hai bản
+   * in còn lại (`/admin/reports` học phí + học tập) giữ nguyên.
+   * ---------------------------------------------------------------------- */
+  [data-report-print] {
+    gap: 0.5rem;
+  }
+  [data-report-print] h2 {
+    font-size: 11.5pt;
+    margin-bottom: 0.35rem;
+  }
+  [data-report-print] dl {
+    gap: 0.25rem;
+  }
+  [data-report-print] dt {
+    font-size: 10pt;
+  }
+  [data-report-print] dd {
+    font-size: 11.5pt;
+  }
+  [data-report-print] [data-slot="card-content"] {
+    padding-block: 0.6rem;
+  }
+  /* Nhãn hẹp lại một chút để phần giá trị — thứ người ta thật sự đọc — rộng ra. */
+  @media (min-width: 640px) {
+    [data-report-print] dl > div {
+      grid-template-columns: 13rem minmax(0, 1fr);
+    }
+  }
 }

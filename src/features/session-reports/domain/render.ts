@@ -103,7 +103,18 @@ export type ReportForRender = {
     classCode: string;
     className: string;
     teacherName: string;
+    /** NGÀY học, đã định dạng — `10/08/2026`. */
     startsAt: string;
+    /**
+     * GIỜ bắt đầu, đã định dạng — `08:00`.
+     *
+     * 🔴 Tách riêng khỏi `startsAt` vì dòng *"Thời gian"* từng in ra
+     * `10/08/2026 – 09:30`: nó ghép NGÀY bắt đầu với GIỜ kết thúc, do cả hai
+     * cùng đọc từ một trường đã định dạng sẵn thành ngày (user báo kèm ảnh
+     * 2026-08-14, thấy trên cả bản DOCX lẫn bản in).
+     */
+    startTime: string;
+    /** GIỜ kết thúc, đã định dạng — `09:30`. */
     endsAt: string;
     sessionNumber: number;
     lessonTitle: string | null;
@@ -169,7 +180,7 @@ export function buildReportSections(data: ReportForRender): RenderSection[] {
         { label: "Tên lớp", value: `${data.session.classCode} — ${data.session.className}` },
         { label: "Giáo viên", value: text(data.session.teacherName) },
         { label: "Ngày học", value: data.session.startsAt },
-        { label: "Thời gian", value: `${data.session.startsAt} – ${data.session.endsAt}` },
+        { label: "Thời gian", value: `${data.session.startTime} – ${data.session.endsAt}` },
         { label: "Buổi số", value: String(data.session.sessionNumber) },
         { label: "Hình thức", value: modeLabel(r.mode as string) ?? BLANK },
         { label: "Bài/Chủ đề giảng dạy", value: text(r.topic) },

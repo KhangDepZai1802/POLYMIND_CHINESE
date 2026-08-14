@@ -13,6 +13,7 @@ import {
   Paragraph,
   Table,
   TableCell,
+  TableLayoutType,
   TableRow,
   TextRun,
   WidthType,
@@ -32,6 +33,39 @@ const BRAND = "1A5FA8";
 const INK = "10243F";
 const MUTED = "5B6B80";
 const LINE = "DDE5EE";
+
+/**
+ * =============================================================================
+ * 🔴 BỀ NGANG BẢNG PHẢI TÍNH BẰNG TWIP, KHÔNG BAO GIỜ BẰNG PHẦN TRĂM
+ * =============================================================================
+ *
+ * User báo 2026-08-14 kèm ảnh: file DOCX mở ra thì cả bảng co lại thành một dải
+ * hẹp ở mép trái, *"LOP-03 — VCB — Tiếng Trung ngân hàng (Lớp 03)"* xuống **năm
+ * dòng**, còn 70% bề ngang trang thì bỏ trắng.
+ *
+ * Nguyên nhân đọc được thẳng trong `word/document.xml` của file sinh ra:
+ *
+ *   <w:tblGrid><w:gridCol w:w="100"/><w:gridCol w:w="100"/></w:tblGrid>
+ *   <w:tblW w:type="pct" w:w="100%"/>
+ *
+ * `w:tblGrid` là thứ Word DỰNG BẢNG THEO, và nó đang khai mỗi cột **100 twip
+ * ≈ 0,18 cm** — cả bảng 0,35 cm. `docx` sinh ra con số đó vì ta không truyền
+ * `columnWidths`, nên nó không có gì để suy ra bề ngang thật. Vế `w:tblW` khai
+ * `"100%"` cũng sai kiểu: `w:w` của `pct` phải là **số nguyên phần-năm-mươi của
+ * một phần trăm** (5000 = 100%), chuỗi `"100%"` chỉ vài trình đọc chấp nhận —
+ * Word trên điện thoại thì không.
+ *
+ * Nên: khai bề ngang **tuyệt đối bằng twip** cho cả bảng lẫn từng ô, kèm
+ * `layout: FIXED` để Word dựng đúng con số đã khai thay vì tự co giãn theo nội
+ * dung. Phần trăm ở đây không có gì để bám vào, còn twip thì có: khổ giấy.
+ */
+
+/** A4 rộng 210mm, lề 20mm mỗi bên ⇒ lòng trang 170mm. 1mm = 56,7 twip. */
+const CONTENT_WIDTH = Math.round(170 * 56.7); // 9639
+
+/** Cột nhãn 38% · cột giá trị 62% — đúng tỉ lệ bản xem trên web. */
+const LABEL_WIDTH = Math.round(CONTENT_WIDTH * 0.38);
+const VALUE_WIDTH = CONTENT_WIDTH - LABEL_WIDTH;
 
 /**
  * Bản xuất DOCX của báo cáo buổi dạy (`D-43` điểm 3).
@@ -161,7 +195,9 @@ function renderOne(
         keepNext: true,
       }),
       new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
+        width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+        columnWidths: [LABEL_WIDTH, VALUE_WIDTH],
+        layout: TableLayoutType.FIXED,
         borders: {
           top: { style: BorderStyle.SINGLE, size: 2, color: LINE },
           bottom: { style: BorderStyle.SINGLE, size: 2, color: LINE },
@@ -175,7 +211,7 @@ function renderOne(
             new TableRow({
               children: [
                 new TableCell({
-                  width: { size: 38, type: WidthType.PERCENTAGE },
+                  width: { size: LABEL_WIDTH, type: WidthType.DXA },
                   margins: { top: 60, bottom: 60, left: 80, right: 80 },
                   children: [
                     new Paragraph({
@@ -186,7 +222,7 @@ function renderOne(
                   ],
                 }),
                 new TableCell({
-                  width: { size: 62, type: WidthType.PERCENTAGE },
+                  width: { size: VALUE_WIDTH, type: WidthType.DXA },
                   margins: { top: 60, bottom: 60, left: 80, right: 80 },
                   children: [
                     new Paragraph({
@@ -275,6 +311,9 @@ function renderOne(
 /** Hai ảnh một hàng: bốn ảnh khổ trang thì báo cáo nào cũng dài thêm 4 trang. */
 const EVIDENCE_COLUMNS = 2;
 
+/** Cùng luật twip với bảng nhãn/giá trị — xem khối chú thích ở đầu file. */
+const EVIDENCE_COLUMN_WIDTH = Math.floor(CONTENT_WIDTH / EVIDENCE_COLUMNS);
+
 /**
  * Khung tối đa cho mỗi ảnh, tính bằng pixel ở 96 DPI — đúng đơn vị mà
  * `transformation` của `docx` nhận.
@@ -311,10 +350,7 @@ function renderEvidence(
         children: Array.from({ length: EVIDENCE_COLUMNS }, (_, column) => {
           const item = slice[column];
           return new TableCell({
-            width: {
-              size: Math.round(100 / EVIDENCE_COLUMNS),
-              type: WidthType.PERCENTAGE,
-            },
+            width: { size: EVIDENCE_COLUMN_WIDTH, type: WidthType.DXA },
             margins: { top: 80, bottom: 80, left: 80, right: 80 },
             // Ô trống khi lô lẻ — bảng vẫn phải đủ cột, thiếu ô là Word vẽ lệch.
             children: item
@@ -335,7 +371,9 @@ function renderEvidence(
       keepNext: true,
     }),
     new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
+      width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+      columnWidths: Array.from({ length: EVIDENCE_COLUMNS }, () => EVIDENCE_COLUMN_WIDTH),
+      layout: TableLayoutType.FIXED,
       borders: {
         top: { style: BorderStyle.NONE, size: 0, color: LINE },
         bottom: { style: BorderStyle.NONE, size: 0, color: LINE },

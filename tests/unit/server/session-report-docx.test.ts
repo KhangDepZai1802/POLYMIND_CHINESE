@@ -31,6 +31,7 @@ function report(evidence: ReportForRender["evidence"]): ReportForRender {
       className: "Sơ cấp 2",
       teacherName: "Cô Lan",
       startsAt: "14/08/2026",
+      startTime: "18:00",
       endsAt: "19:30",
       sessionNumber: 12,
       lessonTitle: "Bài 11",
@@ -82,6 +83,62 @@ async function mediaEntries(buffer: Buffer): Promise<string[]> {
     .filter(([name, entry]) => !entry.dir && name.startsWith("word/media/"))
     .map(([name]) => name);
 }
+
+async function documentXml(buffer: Buffer): Promise<string> {
+  const zip = await JSZip.loadAsync(buffer);
+  return zip.files["word/document.xml"]!.async("string");
+}
+
+/**
+ * 🔴 `TEACHER-REPORT-4` — user báo 2026-08-14 kèm ảnh: mở file DOCX ra thì cả
+ * bảng co lại thành một dải hẹp ở mép trái, tên lớp xuống **năm dòng**, còn 70%
+ * bề ngang trang bỏ trắng.
+ *
+ * Nguyên nhân đọc được thẳng trong `word/document.xml`:
+ *
+ *   <w:tblGrid><w:gridCol w:w="100"/><w:gridCol w:w="100"/></w:tblGrid>
+ *
+ * `w:tblGrid` là thứ Word DỰNG BẢNG THEO, và nó khai mỗi cột **100 twip
+ * ≈ 0,18 cm**. `docx` sinh ra con số đó vì bảng chỉ khai bề ngang bằng phần
+ * trăm, không truyền `columnWidths` — nên thư viện không có gì để suy ra bề
+ * ngang thật.
+ *
+ * Bài này đọc thẳng XML chứ không đọc lại hằng số trong source: hằng số đúng mà
+ * `docx` serialize sai thì bản in vẫn hỏng, và đó chính xác là chuyện đã xảy ra.
+ */
+describe("DOCX — bề ngang bảng phải là twip thật, không phải phần trăm", () => {
+  it("🔴 tblGrid khai đúng lòng trang A4, không phải 100 twip", async () => {
+    const xml = await documentXml(await buildSessionReportDocx([report([])], META));
+
+    const grids = [...xml.matchAll(/<w:tblGrid>(.*?)<\/w:tblGrid>/g)];
+    expect(grids.length, "có bảng trong file").toBeGreaterThan(0);
+
+    for (const [, grid] of grids) {
+      const cols = [...grid!.matchAll(/<w:gridCol w:w="(\d+)"\/>/g)].map((m) =>
+        Number(m[1]),
+      );
+      expect(cols.length).toBeGreaterThan(0);
+
+      // A4 210mm − lề 20mm × 2 = 170mm × 56,7 twip/mm = 9639.
+      const total = cols.reduce((sum, value) => sum + value, 0);
+      expect(total, `tổng bề ngang cột = ${total} twip`).toBe(9639);
+
+      // Và không cột nào hẹp đến mức chữ phải xuống dòng từng từ. 1000 twip
+      // ≈ 1,76cm — con số 100 của bản hỏng thua xa ngưỡng này.
+      for (const width of cols) {
+        expect(width, "một cột bị co lại thành dải hẹp").toBeGreaterThan(1000);
+      }
+    }
+  });
+
+  it("🔴 khai layout FIXED — thiếu vế này Word tự co giãn theo nội dung", async () => {
+    const xml = await documentXml(await buildSessionReportDocx([report([])], META));
+    expect(xml).toContain('<w:tblLayout w:type="fixed"/>');
+    // Và KHÔNG còn vế phần trăm nào: `w:w="100%"` sai kiểu với `ST_TblWidth`
+    // (phải là số nguyên phần-năm-mươi của một phần trăm), vài trình đọc bỏ qua.
+    expect(xml).not.toContain('w:type="pct"');
+  });
+});
 
 describe("DOCX mục 8 — ảnh minh chứng nằm THẬT trong file Word", () => {
   it("🔴 ba tệp đính kèm ⇒ ba ảnh trong word/media", async () => {

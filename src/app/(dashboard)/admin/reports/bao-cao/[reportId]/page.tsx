@@ -67,7 +67,13 @@ export default async function AdminSessionReportDetailPage({
         }
       />
 
-      <div className="grid gap-4">
+      {/*
+        `data-report-print` là neo cho khối cỡ chữ bản in trong `globals.css`.
+        Neo bằng data-attribute chứ không bằng class Tailwind: đây là thứ CHỈ
+        bản in ghi đè, và nếu neo theo cấu trúc DOM thì hỏng ngay lần ai đó bọc
+        thêm một lớp div.
+      */}
+      <div data-report-print className="grid gap-4">
         {sections.map((section) => (
           <Card key={section.number}>
             <CardContent className="py-4">
