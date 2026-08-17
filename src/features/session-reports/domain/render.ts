@@ -106,6 +106,16 @@ export type ReportForRender = {
     /** NGÀY học, đã định dạng — `10/08/2026`. */
     startsAt: string;
     /**
+     * MỐC THẬT của buổi học (ISO từ `class_sessions.starts_at`), chưa định dạng.
+     *
+     * 🔴 Có mặt để TÊN FILE PDF (`domain/file-name.ts`) không phải bóc ngược
+     * chuỗi `10/08/2026` ra lại. Ba trường ngày/giờ ở trên đều là chuỗi để HIỆN;
+     * đây là trường duy nhất còn giữ mốc để TÍNH. Trộn hai loại đó vào một
+     * trường là đúng cái đã sinh ra `TEACHER-REPORT-4b` (*"Thời gian"* in
+     * `10/08/2026 – 09:30`).
+     */
+    startsAtISO: string | null;
+    /**
      * GIỜ bắt đầu, đã định dạng — `08:00`.
      *
      * 🔴 Tách riêng khỏi `startsAt` vì dòng *"Thời gian"* từng in ra

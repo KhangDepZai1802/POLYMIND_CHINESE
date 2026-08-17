@@ -118,8 +118,14 @@ select is(
   -- `bulk_set_flashcard_section_status`. Cả ba chỉ cấp cho `authenticated` +
   -- `service_role` và tự kiểm quyền fail-closed bên trong; bề mặt `anon` KHÔNG
   -- đổi — bài ngay dưới vẫn ghim đúng một tên.
-  83,
-  'catalog có đúng 83 RPC public đã review'
+  -- 83 → 84: `TEACHER-REPORT-5` thêm `set_session_report_waiver` — giáo vụ đánh
+  -- dấu một buổi là KHÔNG CẦN báo cáo. Chỉ cấp cho `authenticated` +
+  -- `service_role`, tự kiểm `app.is_manager()` fail-closed bên trong (giáo viên
+  -- của chính lớp đó gọi thẳng RPC cũng bị chặn — `session_report_waiver`
+  -- bài 1 ghim), idempotent nên bấm nhiều lần không sinh thêm audit. Bề mặt
+  -- `anon` KHÔNG đổi — bài ngay dưới vẫn ghim đúng một tên.
+  84,
+  'catalog có đúng 84 RPC public đã review'
 );
 /*
  * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở

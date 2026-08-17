@@ -385,6 +385,9 @@ export type Database = {
           lesson_id: string | null
           lesson_log: string | null
           original_session_id: string | null
+          report_waive_reason: string | null
+          report_waived_at: string | null
+          report_waived_by: string | null
           schedule_id: string | null
           session_number: number
           starts_at: string
@@ -404,6 +407,9 @@ export type Database = {
           lesson_id?: string | null
           lesson_log?: string | null
           original_session_id?: string | null
+          report_waive_reason?: string | null
+          report_waived_at?: string | null
+          report_waived_by?: string | null
           schedule_id?: string | null
           session_number: number
           starts_at: string
@@ -423,6 +429,9 @@ export type Database = {
           lesson_id?: string | null
           lesson_log?: string | null
           original_session_id?: string | null
+          report_waive_reason?: string | null
+          report_waived_at?: string | null
+          report_waived_by?: string | null
           schedule_id?: string | null
           session_number?: number
           starts_at?: string
@@ -4388,6 +4397,10 @@ export type Database = {
       set_flashcard_star: {
         Args: { p_page_id: string; p_starred: boolean }
         Returns: undefined
+      }
+      set_session_report_waiver: {
+        Args: { p_reason?: string; p_session_id: string; p_waived: boolean }
+        Returns: boolean
       }
       share_question: {
         Args: {

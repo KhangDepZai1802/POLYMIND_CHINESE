@@ -22,6 +22,8 @@ function report(overrides: Partial<ReportForRender["session"]> = {}): ReportForR
       className: "VCB — Tiếng Trung ngân hàng (Lớp 03)",
       teacherName: "Phạm Nguyễn Cao Sơn",
       startsAt: "10/08/2026",
+      // Cùng một buổi với hai dòng trên: 01:00Z = 08:00 giờ VN ngày 10/08.
+      startsAtISO: "2026-08-10T01:00:00Z",
       startTime: "08:00",
       endsAt: "09:30",
       sessionNumber: 3,

@@ -717,6 +717,32 @@ html[data-flashcard-focus="true"] [data-dashboard-main] {
   [data-report-print] [data-slot="card-content"] {
     padding-block: 0.6rem;
   }
+
+  /* -------------------------------------------------------------------------
+   * SỐ ĐỀ MỤC 1–9 (`TEACHER-REPORT-5`, user báo kèm ảnh 2026-08-17:
+   * *"các đề mục số 1 2 3 4 5 6 7 8 9, cái màu của số đang bị chìm quá"*).
+   *
+   * 🔴 GỐC: trên màn hình con số là `bg-primary text-primary-foreground` — chữ
+   * TRẮNG trên nền xanh đậm. Nhưng trình duyệt **bỏ màu nền khi in** (mặc định
+   * của Chrome là tắt "Background graphics"), nên trên giấy chỉ còn **chữ trắng
+   * trên giấy trắng** — cái user thấy là mấy vệt xám do khử răng cưa, không phải
+   * một màu "hơi nhạt".
+   *
+   * ⛔ KHÔNG chữa bằng `print-color-adjust: exact` để ép in cái nền. Cách đó bắt
+   * bản in phụ thuộc vào một cờ mà trình duyệt được phép bỏ qua: trình duyệt nào
+   * không tôn trọng nó là con số **biến mất hoàn toàn** — hỏng nặng hơn hiện tại.
+   * Đảo thành **chữ đậm màu mực + viền** thì đúng ở cả hai đường: viền và màu
+   * chữ luôn được in, không tính là "background graphics".
+   * ---------------------------------------------------------------------- */
+  [data-report-print] [data-report-number] {
+    background: transparent;
+    /* `--brand-navy` (#0d3f78), đậm hơn `--primary` một bậc để chữ 8pt trong ô
+       5mm vẫn rõ trên máy in đen trắng. Ghi thẳng mã màu chứ không dùng biến:
+       biến còn phụ thuộc chủ đề sáng/tối, mà giấy thì luôn trắng. */
+    color: #0d3f78;
+    border: 1pt solid #0d3f78;
+    font-weight: 700;
+  }
   /* Nhãn hẹp lại một chút để phần giá trị — thứ người ta thật sự đọc — rộng ra. */
   @media (min-width: 640px) {
     [data-report-print] dl > div {

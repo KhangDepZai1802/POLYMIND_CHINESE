@@ -47,12 +47,27 @@ export type ReportQueueItem = {
   draftDone: number | null;
   /** Số ngày kể từ lúc dạy xong; dùng để tô "quá hạn". */
   daysSince: number;
+  /**
+   * Giáo vụ đã đánh dấu buổi này KHÔNG CẦN báo cáo (`TEACHER-REPORT-5`).
+   *
+   * Nút bấm chỉ ở trang giáo vụ, nhưng cờ phải tới ĐƯỢC hàng đợi của giáo viên:
+   * không thì ba buổi user vừa miễn vẫn nằm đó với nhãn *"quá hạn 13 ngày"*, tức
+   * cái nút không làm được đúng việc nó nói.
+   */
+  reportWaived: boolean;
+  /** Lý do miễn, để giáo viên biết vì sao buổi rời khỏi việc phải làm. */
+  waiveReason: string | null;
 };
 
 const OVERDUE_DAYS = 2;
 
 export function isOverdue(item: ReportQueueItem): boolean {
-  return item.reportStatus !== "submitted" && item.daysSince >= OVERDUE_DAYS;
+  return (
+    item.reportStatus !== "submitted" &&
+    // Buổi đã miễn KHÔNG bao giờ quá hạn — không còn hạn nào để quá.
+    !item.reportWaived &&
+    item.daysSince >= OVERDUE_DAYS
+  );
 }
 
 /**
@@ -69,6 +84,7 @@ export async function getTeacherReportQueue(): Promise<ReportQueueItem[]> {
     .from("class_sessions")
     .select(
       `id, session_number, starts_at, ends_at, class_id,
+       report_waived_at, report_waive_reason,
        class:classes (id, code, name)`,
     )
     .lt("starts_at", before)
@@ -90,6 +106,9 @@ type RawSession = {
   starts_at: string;
   ends_at: string;
   class_id: string;
+  /** `TEACHER-REPORT-5` — null = vẫn cần báo cáo. */
+  report_waived_at?: string | null;
+  report_waive_reason?: string | null;
   class: { id: string; code: string; name: string } | null;
 };
 
@@ -163,6 +182,8 @@ async function buildQueue(
       reportStatus: status === "submitted" ? "submitted" : status === "draft" ? "draft" : "none",
       draftDone: null,
       daysSince: Math.floor((now - new Date(session.ends_at).getTime()) / 86_400_000),
+      reportWaived: Boolean(session.report_waived_at),
+      waiveReason: session.report_waive_reason ?? null,
     };
   });
 }
@@ -432,11 +453,19 @@ export type AdminReportRow = {
   hasIssue: boolean | null;
   issueSeverity: string | null;
   overallRating: string | null;
-  status: "submitted" | "missing";
+  /**
+   * `waived` = giáo vụ đã đánh dấu KHÔNG CẦN báo cáo (`TEACHER-REPORT-5`).
+   *
+   * Là trạng thái thứ BA chứ không phải một biến thể của `missing`: buổi đã miễn
+   * không được đếm vào nợ, không lên khối cảnh báo đỏ, và không bị nhắc.
+   */
+  status: "submitted" | "missing" | "waived";
   attendanceDone: boolean;
   marked: number;
   expected: number;
   daysSince: number;
+  /** Lý do miễn — hiện ngay trên hàng để giáo vụ khác biết vì sao. */
+  waiveReason: string | null;
 };
 
 export type AdminTeacherReportData = {
@@ -445,6 +474,8 @@ export type AdminTeacherReportData = {
     taught: number;
     submitted: number;
     missing: number;
+    /** Số buổi đã miễn trong kỳ — mẫu số của tỉ lệ "đã có báo cáo" phải trừ ra. */
+    waived: number;
     avgComprehension: number | null;
   };
   attention: AdminReportRow[];
@@ -465,6 +496,7 @@ export async function getAdminTeacherReports(
     .from("class_sessions")
     .select(
       `id, session_number, starts_at, ends_at, class_id,
+       report_waived_at, report_waive_reason,
        class:classes (id, code, name),
        report:session_reports (
          id, status, topic, comprehension_level, interaction_level, focus_level,
@@ -564,11 +596,15 @@ export async function getAdminTeacherReports(
       hasIssue: submitted ? ((report?.has_issue as boolean) ?? null) : null,
       issueSeverity: submitted ? ((report?.issue_severity as string) ?? null) : null,
       overallRating: submitted ? ((report?.overall_rating as string) ?? null) : null,
-      status: submitted ? "submitted" : "missing",
+      // Thứ tự CÓ CHỦ ĐÍCH: báo cáo đã gửi thắng cờ miễn. Một buổi vừa có báo cáo
+      // đã ký vừa mang nhãn "không cần báo cáo" thì bản đã ký mới là sự thật —
+      // RPC cũng chặn chiều còn lại (không miễn được buổi đã gửi).
+      status: submitted ? "submitted" : session.report_waived_at ? "waived" : "missing",
       attendanceDone: expected > 0 && marked >= expected,
       marked,
       expected,
       daysSince: Math.floor((now - new Date(session.ends_at).getTime()) / 86_400_000),
+      waiveReason: session.report_waive_reason ?? null,
     };
   });
 
@@ -592,6 +628,7 @@ export async function getAdminTeacherReports(
 
   if (filters.state === "submitted") rows = rows.filter((r) => r.status === "submitted");
   if (filters.state === "missing") rows = rows.filter((r) => r.status === "missing");
+  if (filters.state === "waived") rows = rows.filter((r) => r.status === "waived");
   if (filters.state === "attention") rows = attention;
 
   const submittedRows = rows.filter((r) => r.status === "submitted");
@@ -605,6 +642,7 @@ export async function getAdminTeacherReports(
       taught: rows.length,
       submitted: submittedRows.length,
       missing: rows.filter((r) => r.status === "missing").length,
+      waived: rows.filter((r) => r.status === "waived").length,
       avgComprehension: scores.length
         ? scores.reduce((sum, value) => sum + value, 0) / scores.length
         : null,
@@ -628,6 +666,10 @@ export async function getMissingReportCount(): Promise<number> {
     .select("id, report:session_reports (status)")
     .lt("starts_at", new Date().toISOString())
     .neq("status", "cancelled")
+    // Buổi đã miễn KHÔNG còn là nợ ⇒ không nằm trong con số đỏ trên tab
+    // (`TEACHER-REPORT-5`). Lọc ở DB chứ không ở app: `limit(200)` cắt trước khi
+    // app kịp lọc, nên lọc muộn là badge đếm thiếu ở trung tâm nhiều buổi.
+    .is("report_waived_at", null)
     .limit(200);
 
   if (error) {
@@ -729,6 +771,8 @@ export async function getReportsForExport(
       className: row.session?.class?.name ?? "—",
       teacherName: teacherName.get(row.submitted_by ?? "") ?? "—",
       startsAt: formatDate(row.session?.starts_at ?? null),
+      // Mốc THẬT đi cùng ba chuỗi đã định dạng — tên file PDF đọc từ đây.
+      startsAtISO: row.session?.starts_at ?? null,
       // `formatTime` chứ KHÔNG `formatDate`: dòng "Thời gian" của mục 1 cần giờ
       // bắt đầu, không phải ngày (xem chú thích ở `ReportForRender.startTime`).
       startTime: formatTime(row.session?.starts_at ?? null),
@@ -806,4 +850,33 @@ export async function getReportForRender(
 
   const all = await getReportsForExport({ class: data.class_id });
   return all.find((item) => (item.report as { id?: string }).id === reportId) ?? null;
+}
+
+/**
+ * Một báo cáo ĐÃ GỬI, tra theo buổi học — cho bản in của GIÁO VIÊN
+ * (`TEACHER-REPORT-5`, nút *"Xuất báo cáo"*).
+ *
+ * 🔴 Tra theo `session_id` chứ không `report_id` vì mọi URL bên giáo viên đã đi
+ * theo buổi (`/teacher/reports/[sessionId]`); bắt trang đó tự đi tìm `reportId`
+ * trước là thêm một vòng truy vấn và một đường 404 nữa cho cùng một thứ.
+ *
+ * ⛔ Chỉ trả báo cáo **đã gửi**. Bản nháp không phải tài liệu để xuất ra ngoài —
+ * in một bản nháp rồi gửi phụ huynh là chuyện không có đường lùi. Không kiểm
+ * "buổi này của tôi không" ở đây: RLS lo (`app.can_read_session_report`).
+ */
+export async function getReportForRenderBySession(
+  sessionId: string,
+): Promise<ReportForRender | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("session_reports")
+    .select("id, class_id, status")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Không tải được báo cáo: ${error.message}`);
+  if (!data || data.status !== "submitted") return null;
+
+  const all = await getReportsForExport({ class: data.class_id });
+  return all.find((item) => (item.report as { id?: string }).id === data.id) ?? null;
 }

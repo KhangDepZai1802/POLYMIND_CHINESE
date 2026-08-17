@@ -38,6 +38,7 @@ function report(overrides: Partial<ReportForRender> = {}): ReportForRender {
       className: "Sơ cấp 2",
       teacherName: "Cô Lan",
       startsAt: "14/08/2026",
+      startsAtISO: "2026-08-14T11:00:00Z",
       startTime: "18:00",
       endsAt: "19:30",
       sessionNumber: 12,

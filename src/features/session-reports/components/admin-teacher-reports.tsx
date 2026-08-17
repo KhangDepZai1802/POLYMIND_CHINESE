@@ -21,6 +21,7 @@ import { issueSeverityOption, overallRatingOption } from "../domain/labels";
 import type { AdminReportRow, AdminTeacherReportData } from "../server/queries";
 import { teacherReportSearchParams, type TeacherReportFilters } from "../schema";
 import { RemindTeacherButton } from "./remind-teacher-button";
+import { WaiveReportButton } from "./waive-report-button";
 
 /**
  * Tab "Báo cáo của giáo viên" ở `/admin/reports` (`TEACHER-REPORT-1`).
@@ -87,9 +88,17 @@ export function AdminTeacherReportsTab({
                     Buổi chưa điểm danh xong thì KHÔNG hiện nút nhắc gửi báo
                     cáo — giáo viên chưa làm được, nhắc chỉ tạo nhiễu. Nói đúng
                     việc đang chặn thay vì giục một việc bất khả thi.
+
+                    🔴 "Không cần báo cáo" (`TEACHER-REPORT-5`) đứng CẠNH nút
+                    nhắc và cùng điều kiện `attendanceDone` — đúng chỗ user chỉ
+                    trong ảnh, và đúng lúc: giáo vụ vừa nhìn thấy buổi bị nhắc
+                    mới quyết được là buổi đó có cần báo cáo hay không.
                   */}
                   {row.attendanceDone ? (
-                    <RemindTeacherButton sessionId={row.sessionId} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RemindTeacherButton sessionId={row.sessionId} />
+                      <WaiveReportButton sessionId={row.sessionId} waived={false} />
+                    </div>
                   ) : (
                     <StatusBadge label="Chờ điểm danh" tone="warning" />
                   )}
@@ -145,15 +154,28 @@ export function AdminTeacherReportsTab({
             icon: ClipboardList,
             label: "Đã có báo cáo",
             value: String(data.stats.submitted),
-            hint: data.stats.taught
-              ? formatPercent(data.stats.submitted / data.stats.taught)
-              : "—",
+            /*
+              Mẫu số TRỪ buổi đã miễn (`TEACHER-REPORT-5`). Giữ nguyên `taught`
+              thì miễn ba buổi xong tỉ lệ tụt xuống — giáo vụ vừa dọn đúng ba
+              buổi không cần báo cáo mà con số lại xấu đi, đọc như bị phạt.
+            */
+            hint: (() => {
+              const required = data.stats.taught - data.stats.waived;
+              return required > 0
+                ? formatPercent(data.stats.submitted / required)
+                : "—";
+            })(),
           },
           {
             icon: AlertTriangle,
             label: "Chưa gửi",
             value: String(data.stats.missing),
-            hint: "tính cả buổi chưa điểm danh",
+            // Buổi đã miễn KHÔNG nằm trong con số này; nói ra để giáo vụ không
+            // phải đoán vì sao "đã dạy 7" mà "đã gửi 4 + chưa gửi 0".
+            hint:
+              data.stats.waived > 0
+                ? `tính cả buổi chưa điểm danh · ${data.stats.waived} buổi không cần báo cáo`
+                : "tính cả buổi chưa điểm danh",
             tone: data.stats.missing > 0 ? "warning" : "default",
           },
           {
@@ -233,11 +255,7 @@ export function AdminTeacherReportsTab({
                         <IssueChip row={row} />
                       </td>
                       <td className="px-3 py-2">
-                        {row.status === "submitted" ? (
-                          <StatusBadge label="Đã gửi" tone="success" />
-                        ) : (
-                          <StatusBadge label="Chưa gửi" tone="danger" />
-                        )}
+                        <ReportStateBadge row={row} />
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         {row.reportId ? (
@@ -248,8 +266,21 @@ export function AdminTeacherReportsTab({
                             <FileText className="size-4" aria-hidden />
                             Xem
                           </Link>
+                        ) : row.status === "waived" ? (
+                          <WaiveReportButton
+                            sessionId={row.sessionId}
+                            waived
+                            label="Cần lại"
+                          />
                         ) : row.attendanceDone ? (
-                          <RemindTeacherButton sessionId={row.sessionId} label="Nhắc" />
+                          <span className="inline-flex flex-wrap justify-end gap-1.5">
+                            <RemindTeacherButton sessionId={row.sessionId} label="Nhắc" />
+                            <WaiveReportButton
+                              sessionId={row.sessionId}
+                              waived={false}
+                              label="Không cần"
+                            />
+                          </span>
                         ) : null}
                       </td>
                     </tr>
@@ -278,11 +309,7 @@ export function AdminTeacherReportsTab({
                           {formatDate(row.startsAt)} · {row.teacherName}
                         </p>
                       </div>
-                      {row.status === "submitted" ? (
-                        <StatusBadge label="Đã gửi" tone="success" />
-                      ) : (
-                        <StatusBadge label="Chưa gửi" tone="danger" />
-                      )}
+                      <ReportStateBadge row={row} />
                     </div>
 
                     {row.topic && <p className="text-sm">{row.topic}</p>}
@@ -294,6 +321,12 @@ export function AdminTeacherReportsTab({
                         <ScoreChip value={row.focus} label="Tập trung" />
                         <IssueChip row={row} />
                       </div>
+                    ) : row.status === "waived" ? (
+                      <p className="text-text-secondary text-xs">
+                        {row.waiveReason
+                          ? `Không cần báo cáo — ${row.waiveReason}`
+                          : "Giáo vụ đã đánh dấu không cần báo cáo"}
+                      </p>
                     ) : (
                       <p className="text-text-secondary text-xs">
                         {row.attendanceDone
@@ -302,7 +335,7 @@ export function AdminTeacherReportsTab({
                       </p>
                     )}
 
-                    <div className="flex justify-end">
+                    <div className="flex flex-wrap justify-end gap-2">
                       {row.reportId ? (
                         <Link
                           href={`/admin/reports/bao-cao/${row.reportId}`}
@@ -311,8 +344,13 @@ export function AdminTeacherReportsTab({
                           <FileText className="size-4" aria-hidden />
                           Xem báo cáo
                         </Link>
+                      ) : row.status === "waived" ? (
+                        <WaiveReportButton sessionId={row.sessionId} waived />
                       ) : row.attendanceDone ? (
-                        <RemindTeacherButton sessionId={row.sessionId} />
+                        <>
+                          <RemindTeacherButton sessionId={row.sessionId} />
+                          <WaiveReportButton sessionId={row.sessionId} waived={false} />
+                        </>
                       ) : null}
                     </div>
                   </CardContent>
@@ -324,6 +362,21 @@ export function AdminTeacherReportsTab({
       )}
     </>
   );
+}
+
+/**
+ * Trạng thái báo cáo của một buổi — BA giá trị, không phải hai.
+ *
+ * Dùng chung cho bảng ≥768px và danh sách thẻ ở màn hẹp: hai chỗ tự viết lấy là
+ * có ngày bảng hiện "Chưa gửi" đỏ cho đúng buổi mà thẻ hiện "Không cần báo cáo".
+ */
+function ReportStateBadge({ row }: { row: AdminReportRow }) {
+  if (row.status === "submitted") return <StatusBadge label="Đã gửi" tone="success" />;
+  // `neutral` chứ không `danger`: buổi đã miễn là việc ĐÃ XỬ LÝ, không phải nợ.
+  if (row.status === "waived") {
+    return <StatusBadge label="Không cần báo cáo" tone="neutral" />;
+  }
+  return <StatusBadge label="Chưa gửi" tone="danger" />;
 }
 
 /** Điểm 1–5 — màu đi kèm con số, không bao giờ thay con số. */

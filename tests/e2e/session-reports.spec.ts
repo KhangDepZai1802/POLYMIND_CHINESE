@@ -117,6 +117,12 @@ async function evidencePng(): Promise<Buffer> {
  * ⚠️ Phải trả cả `class_sessions.status` về `scheduled`: gửi báo cáo gọi
  * `save_session_log(..., p_complete => true)` nên buổi chuyển sang `completed`.
  * Không trả lại thì lần chạy thứ hai đo một buổi đã hoàn tất — khác hình dạng.
+ *
+ * 🔴 Và phải trả cả BA CỘT CỜ MIỄN BÁO CÁO (`TEACHER-REPORT-5`). Bản đầu của hàm
+ * này không dọn chúng, nên một lượt chạy hỏng giữa chừng để buổi ở trạng thái
+ * *"không cần báo cáo"* và làm **đỏ hai bài khác** ở lượt sau — với câu lỗi
+ * *"không thấy nút Làm báo cáo"*, chẳng liên quan gì tới chỗ thật sự sai. Luật:
+ * fixture phải trả lại MỌI cột nó chạm vào, kể cả cột do một bài khác ghi.
  */
 function purgeFixture() {
   sql(`
@@ -128,7 +134,8 @@ function purgeFixture() {
     delete from public.session_reports where session_id = '${SESSION_ID}';
     delete from public.attendance_records where session_id = '${SESSION_ID}';
     update public.class_sessions
-      set status = 'scheduled', lesson_id = null, lesson_log = null, completed_at = null
+      set status = 'scheduled', lesson_id = null, lesson_log = null, completed_at = null,
+          report_waived_at = null, report_waived_by = null, report_waive_reason = null
       where id = '${SESSION_ID}';
     set session_replication_role = origin;
   `);
@@ -433,8 +440,17 @@ test("điểm danh → báo cáo → gửi → giáo vụ xem → tải DOCX", a
   await expect(
     page.getByRole("heading", { name: `Báo cáo · Buổi ${SESSION_NUMBER}`, level: 1 }),
   ).toBeVisible();
-  // Đủ 9 mục, không thiếu mục nào.
-  await expect(page.getByRole("heading", { level: 2 })).toHaveCount(9);
+  /*
+   * Đủ 9 mục, không thiếu mục nào — CỘNG khối XÁC NHẬN = 10 tiêu đề.
+   *
+   * 🔴 Con số này từng là 9 và bài kiểm đỏ khi `TEACHER-REPORT-5` tách bản in ra
+   * `SessionReportPrintable`: hoá ra bản in TỪNG THIẾU khối XÁC NHẬN trong khi
+   * bản DOCX vẫn có nó — một lỗ thật của "một nguồn cho ba bề mặt", chỉ lộ ra
+   * lúc gom hai bản in về một component. Ghim cả tên khối để lần sau ai bỏ nó đi
+   * thì bài đỏ với câu nói rõ thiếu cái gì, không phải chỉ ra một con số lệch.
+   */
+  await expect(page.getByRole("heading", { level: 2 })).toHaveCount(10);
+  await expect(page.getByRole("heading", { name: "XÁC NHẬN", level: 2 })).toBeVisible();
   await expect(page.getByText(ABSENCE_REASON)).toBeVisible();
   // Bản xem của giáo vụ đọc đúng chữ giáo viên gõ, không tra lại bảng `lessons`.
   await expect(page.getByText(LESSON_TITLE)).toBeVisible();
@@ -768,4 +784,432 @@ test("bốn bề rộng điện thoại: không màn nào phải vuốt ngang", 
     ).toBeVisible();
     await expectNoHorizontalScroll(page, `bản xem báo cáo @${width}px`);
   }
+});
+
+// =============================================================================
+// `TEACHER-REPORT-5` (user báo kèm 4 ảnh 2026-08-17)
+// =============================================================================
+
+/**
+ * Ngày buổi đang đo, theo giờ VN, dạng `dd-MM-yyyy` — đúng đoạn ngày mà tên file
+ * PDF phải có. Lấy từ DB bằng `at time zone` chứ không tính lại trong JS: mốc
+ * `starts_at` là UTC, và cả `TEACHER-REPORT-4b` lẫn bài unit của `file-name.ts`
+ * đều sinh ra từ đúng chỗ dễ lệch một ngày này.
+ */
+const SESSION_DAY_VN = sql(`
+  select to_char(starts_at at time zone 'Asia/Ho_Chi_Minh', 'DD-MM-YYYY')
+  from public.class_sessions where id = '${SESSION_ID}';
+`);
+
+const EXPECTED_PDF_STEM = `LOP-02_Buoi-${SESSION_NUMBER}_${SESSION_DAY_VN}`;
+
+type PrintCall = { title: string; imagesTotal: number; imagesComplete: number };
+
+/**
+ * Bắt `window.print()` thay vì để nó mở hộp thoại thật.
+ *
+ * 🔴 Playwright KHÔNG điều khiển được hộp thoại In của hệ điều hành, nên đây là
+ * cách duy nhất đo được thứ thật sự quan trọng: **`document.title` tại đúng thời
+ * điểm `print()` được gọi** (Chrome/Edge/Firefox lấy chính chuỗi đó làm tên file
+ * gợi ý rồi thêm `.pdf`), và **ảnh mục 8 đã tải xong hay chưa** tại thời điểm đó.
+ *
+ * Đo cái nút có tồn tại thì vô nghĩa: nút vẫn còn nguyên kể cả khi tên file sai.
+ */
+async function captureNextPrint(page: Page) {
+  await page.addInitScript(() => {
+    const store = window as unknown as { __printCalls: PrintCall[] };
+    store.__printCalls = [];
+    window.print = () => {
+      const images = [
+        ...document.querySelectorAll<HTMLImageElement>("[data-report-print] img"),
+      ];
+      store.__printCalls.push({
+        title: document.title,
+        imagesTotal: images.length,
+        imagesComplete: images.filter((image) => image.complete).length,
+      });
+      // Trình duyệt thật phát `afterprint` sau khi hộp thoại đóng; phát lại ở đây
+      // để đo được cả vế KHÔI PHỤC tiêu đề.
+      window.dispatchEvent(new Event("afterprint"));
+    };
+  });
+}
+
+async function printCalls(page: Page): Promise<PrintCall[]> {
+  return page.evaluate(
+    () => (window as unknown as { __printCalls?: PrintCall[] }).__printCalls ?? [],
+  );
+}
+
+/**
+ * Màu chữ + nền của số đề mục, đo Ở CHẾ ĐỘ IN.
+ *
+ * Trả cả độ sáng tương đối để bài kiểm nói được "chữ này chìm" bằng một con số,
+ * thay vì so chuỗi `rgb(...)` — so chuỗi thì đổi tông xanh một bậc là đỏ oan.
+ */
+async function measureSectionNumber(page: Page) {
+  return page.evaluate(() => {
+    const badge = document.querySelector<HTMLElement>("[data-report-number]");
+    if (!badge) return null;
+    const style = getComputedStyle(badge);
+
+    const channels = (value: string) =>
+      (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+    const luminance = (value: string) => {
+      const [r = 255, g = 255, b = 255] = channels(value);
+      return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    };
+
+    return {
+      color: style.color,
+      backgroundColor: style.backgroundColor,
+      borderTopWidth: style.borderTopWidth,
+      // Alpha 0 ⇒ nền trong suốt ⇒ trên giấy là màu giấy.
+      backgroundAlpha: Number((style.backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1),
+      textLuminance: luminance(style.color),
+    };
+  });
+}
+
+/**
+ * (a) SỐ ĐỀ MỤC 1–9 TRÊN BẢN IN — user: *"cái màu của số đang bị chìm quá"*.
+ *
+ * Gốc lỗi: trên màn hình số là chữ TRẮNG trên nền xanh; trình duyệt bỏ màu nền
+ * khi in ⇒ còn chữ trắng trên giấy trắng. Bài này đo ở `media: "print"` và ghim
+ * hai vế: nền phải trong suốt, và **độ sáng chữ phải thấp** (mực đậm). Ghim độ
+ * sáng chứ không ghim mã màu để bài không đỏ oan khi đổi tông thương hiệu.
+ *
+ * Đo ở CẢ HAI bề mặt — bản in của giáo viên và bản xem của giáo vụ — vì user chỉ
+ * nhìn thấy một bản, nhưng cả hai đều dùng `SessionReportPrintable`.
+ */
+test("bản in: số đề mục 1–9 không còn chìm vào giấy", async ({ page }) => {
+  await login(page, "gv.a@polymind.test");
+  await markAttendance(page);
+  await page.goto(`/teacher/reports/${SESSION_ID}`);
+  await expect(page.locator('[data-section="1"]')).toBeVisible();
+  await fillReport(page);
+  await submitReport(page);
+
+  const reportId = sql(
+    `select id from public.session_reports where session_id = '${SESSION_ID}';`,
+  );
+
+  await page.emulateMedia({ media: "print" });
+  await page.goto(`/teacher/reports/${SESSION_ID}/ban-in`);
+  await expect(page.locator("[data-report-number]").first()).toBeVisible();
+  await assertInkOnPaper(page, "bản in của giáo viên");
+
+  await page.emulateMedia({ media: null });
+  await login(page, "gv.vu@polymind.test");
+  await page.emulateMedia({ media: "print" });
+  await page.goto(`/admin/reports/bao-cao/${reportId}`);
+  await expect(page.locator("[data-report-number]").first()).toBeVisible();
+  await assertInkOnPaper(page, "bản xem của giáo vụ");
+
+  /*
+   * Vế ngược: TRÊN MÀN HÌNH số vẫn phải là chữ sáng trên nền đậm. Không có vế
+   * này thì "sửa" bản in bằng cách làm hỏng bản xem cũng xanh.
+   */
+  await page.emulateMedia({ media: null });
+  await page.goto(`/admin/reports/bao-cao/${reportId}`);
+  await expect(page.locator("[data-report-number]").first()).toBeVisible();
+  const onScreen = await measureSectionNumber(page);
+  expect(onScreen!.backgroundAlpha, "trên màn hình nền số vẫn đậm").toBeGreaterThan(0);
+  expect(onScreen!.textLuminance, "trên màn hình chữ số vẫn sáng").toBeGreaterThan(0.8);
+});
+
+async function assertInkOnPaper(page: Page, label: string) {
+  const badge = await measureSectionNumber(page);
+  expect(badge, `${label} — tìm được số đề mục`).not.toBeNull();
+
+  expect(
+    badge!.backgroundAlpha,
+    `${label} — nền số đề mục phải trong suốt khi in, không dựa vào việc trình duyệt có in nền hay không`,
+  ).toBe(0);
+
+  expect(
+    badge!.textLuminance,
+    `${label} — chữ số phải là mực đậm, đang là ${badge!.color}`,
+  ).toBeLessThan(0.4);
+
+  expect(
+    parseFloat(badge!.borderTopWidth),
+    `${label} — có viền để ô số vẫn thành hình trên giấy`,
+  ).toBeGreaterThan(0);
+}
+
+/**
+ * (c) + (d) NÚT "XUẤT BÁO CÁO" CỦA GIÁO VIÊN VÀ TÊN FILE PDF.
+ *
+ * Ghim bốn vế, mỗi vế là một cách hỏng khác nhau:
+ *   1. nút đứng CẠNH "Xem báo cáo" và chỉ ở buổi ĐÃ GỬI;
+ *   2. `document.title` tại thời điểm `print()` = `lớp_buổi_ngày`, KHÔNG kèm
+ *      `.pdf` (kèm là Chrome ra `....pdf.pdf`);
+ *   3. ảnh mục 8 đã tải xong TRƯỚC khi in — in sớm là PDF ra ô trắng;
+ *   4. tiêu đề tab được khôi phục sau khi in, không bị bỏ lại thành tên file.
+ */
+test("giáo viên xuất báo cáo: tên file lớp_buổi_ngày và ảnh mục 8 đã tải xong", async ({
+  page,
+}) => {
+  await captureNextPrint(page);
+  await login(page, "gv.a@polymind.test");
+  await markAttendance(page);
+  await page.goto(`/teacher/reports/${SESSION_ID}`);
+  await expect(page.locator('[data-section="1"]')).toBeVisible();
+
+  await fillReport(page);
+  await expect(page.getByText(/Đã lưu nháp/)).toBeVisible({ timeout: 15_000 });
+
+  // Ảnh THẬT ở mục 8: không có ảnh thì vế "chờ ảnh xong mới in" không đo được gì.
+  const section8 = page.locator('[data-section="8"]');
+  await section8.locator('input[type="file"][multiple]').setInputFiles({
+    name: EVIDENCE_FILE_NAME,
+    mimeType: "image/png",
+    buffer: await evidencePng(),
+  });
+  await expect(section8.getByText(EVIDENCE_FILE_STEM)).toBeVisible({ timeout: 20_000 });
+
+  await submitReport(page);
+
+  // --- 1. Nút ở đúng chỗ, đúng lúc ------------------------------------------
+  await page.goto("/teacher/reports");
+  const submittedRow = page
+    .locator("li")
+    .filter({ hasText: `Buổi ${SESSION_NUMBER}` })
+    .filter({ hasText: "Đã gửi" })
+    .first();
+  await expect(submittedRow.getByRole("link", { name: "Xem báo cáo" })).toBeVisible();
+  await expect(submittedRow.getByRole("link", { name: "Xuất báo cáo" })).toBeVisible();
+
+  /*
+   * 🔴 LÀM CHẬM CHÍNH REQUEST ẢNH — không làm vậy thì bài kiểm vô nghĩa.
+   *
+   * Đã thử: gỡ hẳn `await waitForReportImages()` khỏi `printWithFileName()` mà
+   * bài này **vẫn xanh**, vì Storage local trả tấm ảnh nhanh hơn cả nhịp `useEffect`
+   * đầu tiên nên `img.complete` đã là `true` lúc `print()` chạy. Đúng cái bẫy
+   * `UX-MOBILE-3` đã ghi lại: máy local nhanh quá thì phép đo không đo gì cả.
+   *
+   * `{ times: 1 }` chứ KHÔNG `page.unroute`: `unroute` cắt ngang handler đang ngủ,
+   * nó tỉnh dậy gọi `route.continue()` trên route đã xử lý xong ⇒ *"Route is
+   * already handled!"* làm đỏ bài ở tận cuối (bẫy đã ghi ở `UX-MOBILE-3`).
+   */
+  await page.route(
+    "**/session-report-evidence/**",
+    async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      await route.continue();
+    },
+    { times: 1 },
+  );
+
+  // --- 2 + 3. Bấm nút và đọc lại đúng lúc print() được gọi -------------------
+  await submittedRow.getByRole("link", { name: "Xuất báo cáo" }).click();
+  await page.waitForURL(`**/teacher/reports/${SESSION_ID}/ban-in`);
+
+  await expect
+    .poll(async () => (await printCalls(page)).length, {
+      timeout: 30_000,
+      message: "trang bản in đã gọi window.print()",
+    })
+    .toBe(1);
+
+  const teacherCall = (await printCalls(page))[0]!;
+
+  expect(teacherCall.title, "tên file gợi ý = lớp_buổi_ngày").toBe(EXPECTED_PDF_STEM);
+  expect(teacherCall.title, "KHÔNG kèm .pdf — Chrome tự thêm").not.toContain(".pdf");
+
+  expect(teacherCall.imagesTotal, "bản in có ảnh minh chứng để mà chờ").toBeGreaterThan(0);
+  expect(
+    teacherCall.imagesComplete,
+    "mọi ảnh mục 8 đã tải xong TRƯỚC khi in — in sớm là PDF ra ô trắng",
+  ).toBe(teacherCall.imagesTotal);
+
+  // --- 4. Tiêu đề tab trả về nguyên trạng sau khi in -------------------------
+  await expect
+    .poll(() => page.title(), { message: "tiêu đề tab được khôi phục sau khi in" })
+    .not.toBe(EXPECTED_PDF_STEM);
+
+  // --- Bản của giáo vụ dùng ĐÚNG cái tên đó ---------------------------------
+  const reportId = sql(
+    `select id from public.session_reports where session_id = '${SESSION_ID}';`,
+  );
+  await login(page, "gv.vu@polymind.test");
+  await page.goto(`/admin/reports/bao-cao/${reportId}`);
+  await page.getByRole("button", { name: "Xuất báo cáo" }).click();
+
+  await expect
+    .poll(async () => (await printCalls(page)).at(-1)?.title, {
+      timeout: 30_000,
+      message: "giáo vụ và giáo viên xuất ra CÙNG một tên file (user yêu cầu)",
+    })
+    .toBe(EXPECTED_PDF_STEM);
+});
+
+/**
+ * Giá trị của một ô số trên trang hàng đợi giáo viên (`Tile`).
+ *
+ * Thẻ có ba dòng `<p>`: nhãn · con số · chú thích. Đọc theo thứ tự đó chứ không
+ * bằng regex trên cả thẻ — *"Cần báo cáo · 3 · đã dạy, chưa gửi"* có hai con số.
+ */
+async function teacherTileValue(page: Page, label: string): Promise<number> {
+  const tile = page
+    .locator('[data-slot="card-content"]')
+    .filter({ hasText: label })
+    .first();
+  const raw = await tile.locator("p").nth(1).innerText();
+  return Number(raw.replace(/\D/g, "") || 0);
+}
+
+/**
+ * (b) "KHÔNG CẦN BÁO CÁO" — nút của giáo vụ, hiệu lực tới hàng đợi giáo viên.
+ *
+ * 🔴 Vế đắt nhất là vế cuối: cờ đặt ở trang giáo vụ phải làm buổi đó RỜI khỏi
+ * danh sách việc-cần-làm của GIÁO VIÊN. Chỉ đo phía giáo vụ thì một cái nút chỉ
+ * đổi màu chữ tại chỗ cũng xanh, trong khi giáo viên vẫn thấy "Quá hạn N ngày".
+ */
+test("giáo vụ đánh dấu không cần báo cáo: rời khỏi nợ ở CẢ HAI phía", async ({
+  page,
+}) => {
+  // Buổi đã điểm danh xong nhưng CHƯA có báo cáo — đúng ba buổi trong ảnh user.
+  await login(page, "gv.a@polymind.test");
+  await markAttendance(page);
+
+  await page.goto("/teacher/reports");
+  const beforeRow = page
+    .locator("li")
+    .filter({ hasText: `Buổi ${SESSION_NUMBER}` })
+    .first();
+  await expect(
+    beforeRow.getByRole("link", { name: /Làm báo cáo|Viết tiếp/ }),
+    "trước khi miễn: giáo viên còn việc phải làm",
+  ).toBeVisible();
+
+  const needReportBefore = await teacherTileValue(page, "Cần báo cáo");
+  expect(needReportBefore, "trước khi miễn: ô 'Cần báo cáo' đang đếm buổi này").toBeGreaterThan(0);
+
+  // --- Giáo vụ bấm nút ------------------------------------------------------
+  await login(page, "gv.vu@polymind.test");
+  await page.goto("/admin/reports?tab=bao-cao-gv&range=all");
+
+  const badgeBefore = Number(
+    (await page.getByLabel(/buổi chưa có báo cáo/).innerText()).replace(/\D/g, "") || 0,
+  );
+  expect(badgeBefore, "trước khi miễn: tab đang đếm nợ").toBeGreaterThan(0);
+
+  await page
+    .locator("li")
+    .filter({ hasText: `Buổi ${SESSION_NUMBER}` })
+    .filter({ has: page.getByRole("button", { name: "Không cần báo cáo" }) })
+    .first()
+    .getByRole("button", { name: "Không cần báo cáo" })
+    .click();
+
+  await expect(page.locator("[data-sonner-toast]").first()).toContainText(
+    /Đã đánh dấu buổi này không cần báo cáo/,
+  );
+
+  await expect
+    .poll(
+      () =>
+        sql(
+          `select coalesce(report_waived_by::text, 'NULL') from public.class_sessions where id = '${SESSION_ID}';`,
+        ),
+      { message: "cờ miễn đã ghi vào DB kèm người bấm" },
+    )
+    .not.toBe("NULL");
+
+  // Con số đỏ trên tab phải giảm — đây là chỗ user nhìn để biết còn nợ bao nhiêu.
+  await page.goto("/admin/reports?tab=bao-cao-gv&range=all");
+  const badgeAfter = Number(
+    (await page
+      .getByLabel(/buổi chưa có báo cáo/)
+      .innerText()
+      .catch(() => "0")).replace(/\D/g, "") || 0,
+  );
+  expect(badgeAfter, `con số nợ trên tab giảm sau khi miễn (trước: ${badgeBefore})`).toBe(
+    badgeBefore - 1,
+  );
+
+  // --- Phía GIÁO VIÊN: rời khỏi việc cần làm, không còn "quá hạn" -----------
+  await login(page, "gv.a@polymind.test");
+  await page.goto("/teacher/reports");
+
+  const waivedSection = page
+    .locator("section")
+    .filter({ hasText: "Không cần báo cáo" })
+    .first();
+  await expect(waivedSection, "buổi được xếp vào nhóm 'Không cần báo cáo'").toContainText(
+    `Buổi ${SESSION_NUMBER}`,
+  );
+
+  const waivedRow = waivedSection
+    .locator("li")
+    .filter({ hasText: `Buổi ${SESSION_NUMBER}` })
+    .first();
+  await expect(
+    waivedRow.getByRole("link", { name: /Làm báo cáo|Viết tiếp|Điểm danh trước/ }),
+    "không còn nút mời làm đúng việc vừa được miễn",
+  ).toHaveCount(0);
+  await expect(waivedRow).not.toContainText("quá hạn");
+
+  /*
+   * 🔴 HAI PHÉP ĐO NÀY MỚI LÀ THỨ BẮT ĐƯỢC LỖI.
+   *
+   * Đã thử kiểm ngược: gỡ vế `!item.reportWaived` khỏi nhóm `pending` mà mấy
+   * assertion ở trên **vẫn xanh** — buổi đã miễn hiện ở CẢ hai nhóm, và hàng
+   * trong nhóm "Không cần báo cáo" vẫn đúng hình dạng. Cái hỏng thật là hàng bị
+   * NHÂN ĐÔI và ô "Cần báo cáo" vẫn đếm nó, tức giáo viên vẫn thấy một việc đã
+   * được miễn nằm trong danh sách việc phải làm.
+   */
+  await expect(
+    page.locator("li").filter({ hasText: "LOP-02" }).filter({
+      hasText: `Buổi ${SESSION_NUMBER}`,
+    }),
+    "buổi đã miễn xuất hiện ĐÚNG MỘT lần, không nằm cả ở nhóm việc cần làm",
+  ).toHaveCount(1);
+
+  expect(
+    await teacherTileValue(page, "Cần báo cáo"),
+    "ô 'Cần báo cáo' thôi đếm buổi đã miễn",
+  ).toBe(needReportBefore - 1);
+
+  // --- Đường lùi: bỏ đánh dấu, buổi trở lại danh sách cần báo cáo -----------
+  await login(page, "gv.vu@polymind.test");
+  await page.goto("/admin/reports?tab=bao-cao-gv&range=all&state=waived");
+
+  /*
+   * `state=waived` lọc bảng còn ĐÚNG những buổi đã miễn, nên đếm nút là một phép
+   * đo thật: đúng 1 nghĩa là bộ lọc thấy đúng một buổi vừa miễn.
+   *
+   * Nhãn nhận cả hai dạng: bảng ≥768px viết gọn *"Cần lại"* cho vừa cột, danh
+   * sách thẻ ở màn hẹp viết đủ *"Cần báo cáo lại"*. Bài kiểm chạy trên cả hai
+   * project (chromium + Pixel 7) nên không được ghim một dạng.
+   */
+  const undoButton = page.getByRole("button", { name: /^Cần (báo cáo )?lại$/ });
+  await expect(
+    undoButton,
+    "bộ lọc state=waived hiện đúng một buổi đã miễn",
+  ).toHaveCount(1);
+  await undoButton.click();
+
+  await expect
+    .poll(
+      () =>
+        sql(
+          `select coalesce(report_waived_at::text, 'NULL') from public.class_sessions where id = '${SESSION_ID}';`,
+        ),
+      { message: "bỏ đánh dấu đã ghi vào DB" },
+    )
+    .toBe("NULL");
+
+  await login(page, "gv.a@polymind.test");
+  await page.goto("/teacher/reports");
+  await expect(
+    page
+      .locator("li")
+      .filter({ hasText: `Buổi ${SESSION_NUMBER}` })
+      .first()
+      .getByRole("link", { name: /Làm báo cáo|Viết tiếp/ }),
+    "sau khi bỏ đánh dấu: việc quay lại hàng đợi của giáo viên",
+  ).toBeVisible();
 });

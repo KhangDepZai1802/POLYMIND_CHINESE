@@ -304,3 +304,65 @@ export async function remindTeacherReportAction(
 
   return { success: `Đã nhắc ${recipients.length} giáo viên.` };
 }
+
+/**
+ * Đánh dấu / bỏ đánh dấu "buổi này không cần báo cáo" — nút của giáo vụ
+ * (`TEACHER-REPORT-5`, user chốt 2026-08-17).
+ *
+ * 🔴 Toàn bộ luật nằm ở RPC `set_session_report_waiver`, action này KHÔNG kiểm
+ * lại gì ngoài hình dạng tham số. Kiểm quyền hay kiểm "đã gửi báo cáo chưa" ở
+ * đây nữa là dựng luật thứ hai cho cùng một việc, rồi có ngày hai luật lệch
+ * nhau — `BUG_M10_01`. `requireManager()` ở đầu chỉ để trả 403 sớm cho người
+ * không phận sự, không phải chốt chặn.
+ *
+ * `revalidatePath("/teacher/reports")` là vế BẮT BUỘC, không phải cho gọn: cờ
+ * miễn đổi hàng đợi của GIÁO VIÊN, mà giáo viên không phải người bấm nút.
+ */
+export async function setSessionReportWaiverAction(
+  formData: FormData,
+): Promise<ActionState> {
+  const { requireManager } = await import("@/lib/auth/session");
+  await requireManager();
+
+  const sessionId = String(formData.get("session_id") ?? "");
+  if (!sessionId) return { error: "Buổi học không hợp lệ." };
+
+  const waived = String(formData.get("waived") ?? "") === "true";
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("set_session_report_waiver", {
+    p_session_id: sessionId,
+    p_waived: waived,
+    p_reason: reason || undefined,
+  });
+
+  if (error) {
+    return {
+      error: dbErrorToMessage(
+        error,
+        waived
+          ? "Không đánh dấu được buổi không cần báo cáo."
+          : "Không bỏ được đánh dấu.",
+      ),
+    };
+  }
+
+  revalidateReports();
+
+  // RPC trả `false` khi trạng thái đã đúng sẵn. Đó KHÔNG phải lỗi — nói đúng
+  // chuyện đã xảy ra thay vì báo "đã lưu" cho một lần bấm không ghi gì.
+  if (data === false) {
+    return {
+      success: waived
+        ? "Buổi này đã được đánh dấu trước đó."
+        : "Buổi này vốn đang cần báo cáo.",
+    };
+  }
+
+  return {
+    success: waived
+      ? "Đã đánh dấu buổi này không cần báo cáo."
+      : "Đã đưa buổi này trở lại danh sách cần báo cáo.",
+  };
+}

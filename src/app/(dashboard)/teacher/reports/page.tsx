@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  CalendarX2,
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
   FileText,
+  Printer,
   TriangleAlert,
 } from "lucide-react";
 
@@ -36,7 +38,21 @@ export default async function TeacherReportsPage() {
   await requireTeaching("super_admin");
   const queue = await getTeacherReportQueue();
 
-  const pending = queue.filter((item) => item.reportStatus !== "submitted");
+  /*
+   * BA nhóm, không phải hai (`TEACHER-REPORT-5`).
+   *
+   * 🔴 Buổi giáo vụ đã đánh dấu *"không cần báo cáo"* phải RỜI khỏi nhóm việc
+   * cần làm — để lại là giáo viên vẫn thấy "Quá hạn 13 ngày" cho một việc vừa
+   * được miễn, tức cái nút bên giáo vụ không làm được đúng việc nó nói. Nhưng
+   * cũng KHÔNG xoá khỏi màn hình: buổi tự bốc hơi thì giáo viên không có cách
+   * nào biết vì sao, mà họ không phải người bấm nút.
+   */
+  const waived = queue.filter(
+    (item) => item.reportWaived && item.reportStatus !== "submitted",
+  );
+  const pending = queue.filter(
+    (item) => item.reportStatus !== "submitted" && !item.reportWaived,
+  );
   const submitted = queue.filter((item) => item.reportStatus === "submitted");
   const overdue = pending.filter(isOverdue);
   const drafts = pending.filter((item) => item.reportStatus === "draft");
@@ -101,6 +117,27 @@ export default async function TeacherReportsPage() {
           </Card>
         </section>
       )}
+
+      {waived.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+            <CalendarX2 className="size-4" aria-hidden />
+            Không cần báo cáo
+            <span className="text-muted-foreground ml-1 font-normal">
+              {waived.length} buổi · giáo vụ đã đánh dấu
+            </span>
+          </h2>
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <ul className="divide-y">
+                {waived.map((item) => (
+                  <QueueRow key={item.sessionId} item={item} />
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </section>
+      )}
     </>
   );
 }
@@ -108,13 +145,14 @@ export default async function TeacherReportsPage() {
 function QueueRow({ item }: { item: ReportQueueItem }) {
   const late = isOverdue(item);
   const done = item.reportStatus === "submitted";
-  const blocked = !item.attendanceDone && !done;
+  const waived = item.reportWaived && !done;
+  const blocked = !item.attendanceDone && !done && !waived;
 
   return (
     <li
       className={cn(
         "border-l-4",
-        done
+        done || waived
           ? "border-l-transparent"
           : late
             ? "border-l-destructive"
@@ -148,12 +186,20 @@ function QueueRow({ item }: { item: ReportQueueItem }) {
                 </span>
               </>
             )}
+            {waived && item.waiveReason && (
+              <>
+                {" · "}
+                <span className="text-text-secondary">{item.waiveReason}</span>
+              </>
+            )}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {done ? (
             <StatusBadge label="Đã gửi" tone="success" />
+          ) : waived ? (
+            <StatusBadge label="Không cần báo cáo" tone="neutral" />
           ) : blocked ? (
             <StatusBadge label="Chờ điểm danh" tone="warning" />
           ) : item.reportStatus === "draft" ? (
@@ -166,9 +212,11 @@ function QueueRow({ item }: { item: ReportQueueItem }) {
 
           {/*
             Nút dẫn đi ĐÚNG việc kế tiếp: chưa điểm danh xong thì sang điểm
-            danh, xong rồi mới vào biểu mẫu.
+            danh, xong rồi mới vào biểu mẫu. Buổi đã miễn thì KHÔNG có nút nào —
+            không còn việc gì để làm, và bày một nút "Làm báo cáo" ở đó là mời
+            giáo viên làm đúng cái việc vừa được miễn.
           */}
-          {blocked ? (
+          {waived ? null : blocked ? (
             <Link
               href={`/teacher/attendance?session=${item.sessionId}`}
               className={buttonVariants({ variant: "outline", size: "sm" })}
@@ -190,6 +238,22 @@ function QueueRow({ item }: { item: ReportQueueItem }) {
                 : item.reportStatus === "draft"
                   ? "Viết tiếp"
                   : "Làm báo cáo"}
+            </Link>
+          )}
+
+          {/*
+            "Xuất báo cáo" (`TEACHER-REPORT-5`, user yêu cầu 2026-08-17) — CHỈ ở
+            buổi đã gửi, đứng ngay cạnh "Xem báo cáo" đúng như ảnh user gửi.
+            Buổi chưa gửi không có gì để xuất ngoài một bản nháp dở, và trang
+            bản in cũng trả 404 cho bản nháp.
+          */}
+          {done && (
+            <Link
+              href={`/teacher/reports/${item.sessionId}/ban-in`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <Printer className="size-4" aria-hidden />
+              Xuất báo cáo
             </Link>
           )}
         </div>

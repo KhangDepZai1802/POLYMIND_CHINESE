@@ -63,6 +63,23 @@ export function dateKeyInVN(value: string | Date): string {
   return formatInTimeZone(date, APP_TIMEZONE, "yyyy-MM-dd");
 }
 
+/**
+ * Ngày dùng trong TÊN FILE: `17-08-2026`.
+ *
+ * Gạch nối chứ không gạch chéo — `/` là ký tự phân cách đường dẫn, đưa vào tên
+ * file thì Windows từ chối và `Content-Disposition` bị cắt. Trả `null` khi
+ * không có mốc thời gian để bên gọi tự quyết bỏ đoạn ngày, thay vì nhồi chuỗi
+ * `"—"` của `formatDate` vào tên file.
+ */
+export function formatDateForFileName(
+  value: string | Date | null | undefined,
+): string | null {
+  if (!value) return null;
+  const date = typeof value === "string" ? parseISO(value) : value;
+  if (Number.isNaN(date.getTime())) return null;
+  return formatInTimeZone(date, APP_TIMEZONE, "dd-MM-yyyy");
+}
+
 /** Giờ trong cột `time` của Postgres ("08:00:00") → "08:00". Không đổi múi giờ. */
 export function formatClock(value: string | null | undefined): string {
   if (!value) return "—";

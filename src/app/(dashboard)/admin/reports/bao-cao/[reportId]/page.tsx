@@ -5,10 +5,9 @@ import { ArrowLeft, Download } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { PrintButton } from "@/features/reports/components/print-button";
-import { formatEvidenceBytes } from "@/features/session-reports/domain/evidence";
-import { BLANK, buildReportSections } from "@/features/session-reports/domain/render";
+import { sessionReportFileBase } from "@/features/session-reports/domain/file-name";
+import { ExportReportPdfButton } from "@/features/session-reports/components/report-print";
+import { SessionReportPrintable } from "@/features/session-reports/components/session-report-printable";
 import { getReportForRender } from "@/features/session-reports/server/queries";
 import { requireManager } from "@/lib/auth/session";
 
@@ -17,11 +16,12 @@ export const metadata: Metadata = { title: "Báo cáo buổi dạy" };
 /**
  * Bản xem một báo cáo — cũng CHÍNH LÀ bản in PDF.
  *
- * Không dựng thêm một trang in riêng: `PrintButton` + print stylesheet của
- * module báo cáo đã có sẵn, và `data-noprint` gỡ phần chrome khi in. Một trang,
- * hai công dụng — bản in không bao giờ lệch bản xem.
+ * Không dựng thêm một trang in riêng: print stylesheet của module báo cáo đã có
+ * sẵn, và `data-noprint` gỡ phần chrome khi in. Một trang, hai công dụng — bản
+ * in không bao giờ lệch bản xem.
  *
- * Nội dung đi qua `buildReportSections()`, đúng hàm mà bản DOCX dùng.
+ * Nội dung nằm ở `SessionReportPrintable`, dùng CHUNG với bản in của giáo viên
+ * (`/teacher/reports/[sessionId]/ban-in`) — hai trang, một cách dựng nội dung.
  */
 export default async function AdminSessionReportDetailPage({
   params,
@@ -34,7 +34,13 @@ export default async function AdminSessionReportDetailPage({
   const data = await getReportForRender(reportId);
   if (!data) notFound();
 
-  const sections = buildReportSections(data);
+  // Cùng một hàm với trang giáo viên ⇒ hai bề mặt xuất ra file CÙNG TÊN, đúng
+  // yêu cầu của user 2026-08-17.
+  const fileName = sessionReportFileBase({
+    classCode: data.session.classCode,
+    sessionNumber: data.session.sessionNumber,
+    startsAt: data.session.startsAtISO,
+  });
 
   return (
     <>
@@ -52,7 +58,7 @@ export default async function AdminSessionReportDetailPage({
         description={`${data.session.classCode} — ${data.session.className} · ${data.session.teacherName} · ${data.session.startsAt}`}
         action={
           <div data-noprint className="flex flex-wrap gap-2">
-            <PrintButton />
+            <ExportReportPdfButton fileName={fileName} />
             <Button asChild variant="outline">
               <a
                 href={`/api/export/reports?report=teacher-reports&format=docx&class=${
@@ -67,95 +73,7 @@ export default async function AdminSessionReportDetailPage({
         }
       />
 
-      {/*
-        `data-report-print` là neo cho khối cỡ chữ bản in trong `globals.css`.
-        Neo bằng data-attribute chứ không bằng class Tailwind: đây là thứ CHỈ
-        bản in ghi đè, và nếu neo theo cấu trúc DOM thì hỏng ngay lần ai đó bọc
-        thêm một lớp div.
-      */}
-      <div data-report-print className="grid gap-4">
-        {sections.map((section) => (
-          <Card key={section.number}>
-            <CardContent className="py-4">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-bold tracking-wide uppercase">
-                <span className="bg-primary text-primary-foreground grid size-5 place-items-center rounded font-mono text-xs">
-                  {section.number}
-                </span>
-                {section.title}
-              </h2>
-
-              <dl className="grid gap-2">
-                {section.lines.map((line) => (
-                  <div
-                    key={line.label}
-                    className="grid gap-0.5 border-t pt-2 first:border-t-0 first:pt-0 sm:grid-cols-[16rem_minmax(0,1fr)] sm:gap-3"
-                  >
-                    <dt className="text-text-secondary text-sm">{line.label}</dt>
-                    <dd
-                      className={
-                        line.value === BLANK
-                          ? "text-muted-foreground text-sm"
-                          : "text-sm font-medium"
-                      }
-                    >
-                      {/* Dãy chấm chỉ vị trí trên thang — thay 5 dòng ☐ của mẫu Word. */}
-                      {line.scale && (
-                        <span
-                          className="text-primary mr-2 font-mono tracking-widest"
-                          aria-hidden
-                        >
-                          {"●".repeat(line.scale.value)}
-                          {"○".repeat(line.scale.max - line.scale.value)}
-                        </span>
-                      )}
-                      <span className="whitespace-pre-wrap">{line.value}</span>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-
-              {/*
-                Mục 8 — ẢNH THẬT ngay dưới dòng "Tải file/hình ảnh"
-                (`TEACHER-REPORT-3`). Bản trước chỉ có con số đếm, nên bản in
-                gửi cấp trên không mang theo minh chứng nào.
-              */}
-              {section.images && section.images.length > 0 && (
-                <ul
-                  data-report-evidence
-                  className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"
-                >
-                  {section.images.map((item) => (
-                    <li key={item.id} className="grid gap-1">
-                      {item.url ? (
-                        /*
-                          `<img>` trần, KHÔNG `next/image`: bản in mới là bề mặt
-                          chính của trang này, mà `next/image` tải lười — bấm
-                          Ctrl+P lúc ảnh chưa vào khung nhìn là in ra ô trắng.
-                          `loading="eager"` buộc tải xong trước khi in.
-                        */
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.url}
-                          alt={`Minh chứng buổi học — ${item.fileName}`}
-                          loading="eager"
-                          className="bg-surface-sunken w-full rounded-lg border object-contain"
-                        />
-                      ) : (
-                        <span className="text-muted-foreground bg-surface-sunken grid aspect-[4/3] place-items-center rounded-lg border px-2 text-center text-xs">
-                          Không mở được ảnh
-                        </span>
-                      )}
-                      <span className="text-muted-foreground truncate text-xs">
-                        {item.fileName} · {formatEvidenceBytes(item.bytes)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <SessionReportPrintable data={data} />
     </>
   );
 }

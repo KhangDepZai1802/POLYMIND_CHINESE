@@ -132,7 +132,8 @@ export const teacherReportFilterSchema = z.object({
   range: z.literal("all").optional(),
   class: z.uuid().optional(),
   teacher: z.uuid().optional(),
-  state: z.enum(["all", "submitted", "missing", "attention"]).optional(),
+  // `waived` = buổi giáo vụ đã đánh dấu KHÔNG CẦN báo cáo (`TEACHER-REPORT-5`).
+  state: z.enum(["all", "submitted", "missing", "waived", "attention"]).optional(),
 });
 
 export type TeacherReportFilters = z.infer<typeof teacherReportFilterSchema>;
