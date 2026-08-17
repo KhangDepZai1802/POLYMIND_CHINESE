@@ -988,7 +988,7 @@ Bản thiết kế user duyệt: <https://claude.ai/code/artifact/ef31d801-b47f-
 
 **Cổng đã chạy thật (phiên 109):** lint **0** · typecheck **0** · Vitest **632/632** (626 → +6) · build **exit 0** · pgTAP **763/763** (748 → +15) trên DB sạch · Playwright `session-reports` **8/8** trên Chromium (5/5 → +3).
 
-🔴 **Thứ tự release (`D-37`):** `…094` **thêm cột** ⇒ `db push` **TRƯỚC**, `git push` sau. Đảo lại thì `getTeacherReportQueue()`/`getAdminTeacherReports()` hỏi PostgREST một cột chưa tồn tại ⇒ trang *Báo cáo buổi dạy* của giáo viên và tab *Báo cáo của giáo viên* của giáo vụ **cùng ném lỗi trên production**. ⛔ `db push` đang bị cổng quyền chặn — xem `BLK-10` trong `WORKLOG.md`.
+🔴 **Thứ tự release (`D-37`):** `…094` **thêm cột** ⇒ `db push` **TRƯỚC**, `git push` sau. Đảo lại thì `getTeacherReportQueue()`/`getAdminTeacherReports()` hỏi PostgREST một cột chưa tồn tại ⇒ trang *Báo cáo buổi dạy* của giáo viên và tab *Báo cáo của giáo viên* của giáo vụ **cùng ném lỗi trên production**. ✅ **ĐÃ ÁP CLOUD 2026-08-17** rồi mới push code, xác minh bằng `psql` trong `BEGIN READ ONLY` (`đỉnh schema_migrations = 20260817000094` · 3 cột mới · RPC = 1 · `anon` EXECUTE = 0). ⚠️ Output của `db push` **không in dòng "Applying migration" nào** — đừng tin CLI, đo bằng `psql`.
 
 📌 **Luật rút ra, dán cạnh bài học `UX-MOBILE-3`: một assertion bất đồng bộ chạy trên máy local nhanh thì KHÔNG đo gì cả.** Viết xong phải gỡ thử phần sửa; không đỏ thì bài kiểm sai, không phải code đúng. Phiên này hai trong ba kiểm ngược rơi vào đúng bẫy đó.
 
