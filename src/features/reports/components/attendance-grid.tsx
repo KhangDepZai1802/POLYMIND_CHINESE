@@ -3,6 +3,12 @@ import { CalendarCheck } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ATTENDANCE_CELL,
+  ATTENDANCE_STATUSES,
+  UNMARKED_LABEL,
+  UNMARKED_SYMBOL,
+} from "@/features/attendance/status-display";
 import { formatDate, formatPercent } from "@/lib/dates";
 
 import type { AttendanceStatus, AttendanceSummary } from "../learning";
@@ -16,29 +22,12 @@ import type { PeriodSession } from "../server/learning-queries";
  *
  * Mỗi ô là ký hiệu chữ + màu (`color-not-only`): ✓ có mặt · M muộn · V vắng ·
  * P có phép · — chưa điểm danh. Trình đọc màn hình đọc nhãn đầy đủ qua sr-only.
+ *
+ * ⚠️ Bảng ký hiệu KHÔNG còn nằm trong file này — nó ở
+ * `@/features/attendance/status-display` để lưới SỬA ĐƯỢC của tab Điểm danh
+ * (`ADMIN-ATTENDANCE-1`) dùng chung. Hai bảng ký hiệu cho cùng một khái niệm là
+ * đường ngắn nhất tới chuyện "vắng" đọc ra hai kiểu ở hai tab.
  */
-
-const CELL: Record<
-  AttendanceStatus,
-  { symbol: string; label: string; className: string }
-> = {
-  present: {
-    symbol: "✓",
-    label: "Có mặt",
-    className: "bg-success/10 text-success",
-  },
-  late: { symbol: "M", label: "Đi muộn", className: "bg-warning/10 text-warning" },
-  absent: {
-    symbol: "V",
-    label: "Vắng",
-    className: "bg-destructive/10 text-danger-ink",
-  },
-  excused: {
-    symbol: "P",
-    label: "Có phép",
-    className: "bg-muted text-text-secondary",
-  },
-};
 
 export type AttendanceGridRow = {
   enrollmentId: string;
@@ -71,22 +60,22 @@ export function AttendanceGrid({
         {/* Chú giải đứng TRÊN lưới và không cuộn theo — người đọc không phải
             nhớ ký hiệu khi đã cuộn tới cột thứ 30. */}
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {(Object.keys(CELL) as AttendanceStatus[]).map((status) => (
+          {ATTENDANCE_STATUSES.map((status) => (
             <li key={status} className="flex items-center gap-1.5">
               <span
                 aria-hidden
-                className={`grid size-5 shrink-0 place-items-center rounded-full text-xs font-semibold ${CELL[status].className}`}
+                className={`grid size-5 shrink-0 place-items-center rounded-full text-xs font-semibold ${ATTENDANCE_CELL[status].className}`}
               >
-                {CELL[status].symbol}
+                {ATTENDANCE_CELL[status].symbol}
               </span>
-              {CELL[status].label}
+              {ATTENDANCE_CELL[status].label}
             </li>
           ))}
           <li className="text-muted-foreground flex items-center gap-1.5">
             <span aria-hidden className="grid size-5 shrink-0 place-items-center">
-              —
+              {UNMARKED_SYMBOL}
             </span>
-            Chưa điểm danh
+            {UNMARKED_LABEL}
           </li>
         </ul>
       </CardHeader>
@@ -178,13 +167,13 @@ export function AttendanceGrid({
                         return (
                           <td key={session.id} className="px-1 py-2 text-center">
                             <span aria-hidden className="text-muted-foreground">
-                              —
+                              {UNMARKED_SYMBOL}
                             </span>
-                            <span className="sr-only">Chưa điểm danh</span>
+                            <span className="sr-only">{UNMARKED_LABEL}</span>
                           </td>
                         );
                       }
-                      const style = CELL[cell.status];
+                      const style = ATTENDANCE_CELL[cell.status];
                       return (
                         <td
                           key={session.id}

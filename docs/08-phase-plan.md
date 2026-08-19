@@ -996,6 +996,31 @@ Bản thiết kế user duyệt: <https://claude.ai/code/artifact/ef31d801-b47f-
 
 ⚠️ **pgTAP chạy trên DB sạch, e2e chạy trên DB đã seed — hai lượt, không chung một trạng thái DB.** Chạy `supabase test db` sau `npm run db:seed:dev` thì đỏ 5 bài ở `announcement_workflow`/`flashcard_*` vì dữ liệu seed phá fixture, không phải lỗi sản phẩm.
 
+### Tab thứ tư "Điểm danh" ở `/admin/reports` — `ADMIN-ATTENDANCE-1` (user chốt 2026-08-19 qua `AskUserQuestion` → `D-45`)
+
+**Nguyên văn user:** *"module báo cáo của trang admin … thêm 1 tab điểm danh. tab này dùng để admin coi lại các điểm danh của tất cả các lớp của tất cả các buổi (chia theo từng lớp cho dễ nhìn). ở đây admin có thể chỉnh sửa điểm danh của giáo viên khi họ đã điểm danh xong"*.
+
+Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổi×học viên, sửa thẳng trong ô · (2) **cập nhật luôn bản chụp trong báo cáo đã gửi** · (3) ghi vết bằng `audit_logs`, không thêm cột · (4) **chỉ `super_admin` sửa, giáo vụ chỉ xem**.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| ADMIN-ATTENDANCE-1a | **Hai cổng quyền, MỘT đường ghi** | Phần ghi vào bảng tách ra `app.upsert_attendance_records()`; `bulk_mark_attendance` (giáo viên/giáo vụ, **cổng cũ không đổi**) và `admin_override_attendance` (**chỉ `app.is_super_admin()`**) đều gọi đúng hàm đó. ⛔ KHÔNG siết `bulk_mark_attendance` (chặn luôn giáo viên) và KHÔNG thêm cờ `p_as_admin` (cổng quyền phụ thuộc giá trị client gửi = hết fail-closed) | ☑ **DONE** (phiên 110) — kiểm ngược (a) nới cổng về `is_manager()` ⇒ **đỏ đúng bài 2** |
+| ADMIN-ATTENDANCE-1b | **Bản chụp báo cáo đã ký được dựng lại** (`D-45` vế 2, **đảo `D-43` (c)**) | `app.build_attendance_snapshot()` tách ra để `submit_session_report` và đường sửa của admin dùng **chung một cách dựng**. Bản chụp mới mang `revised_at/by/reason` + `revised_from` giữ **con số LÚC KÝ** (không trôi theo lần sửa liền trước). Báo cáo còn **nháp** thì không đụng tới | ☑ **DONE** (phiên 110) — kiểm ngược (d) gỡ `coalesce` ⇒ **đỏ đúng bài 22** |
+| ADMIN-ATTENDANCE-1c | **Idempotent + dấu vết đủ** | So `before = after` **SAU khi ghi** (vì `marked_by`/`marked_at` bị ghi đè mỗi lượt upsert) ⇒ gửi lại y nguyên: 0 buổi bị chạm, **không** dòng audit thứ hai, **không** đóng thêm dấu "đã sửa" lên báo cáo (`BUG_M09_01`). `audit_logs.before` là chỗ **duy nhất** còn giữ được giáo viên điểm danh gốc sau khi `marked_by` bị ghi đè | ☑ **DONE** (phiên 110) — kiểm ngược (c) gỡ phép so ⇒ **đỏ đúng bài 14 và 15** |
+| ADMIN-ATTENDANCE-1d | **Cả lô cùng sống cùng chết** | RPC nhận **nhiều buổi** trong một lượt ⇒ một transaction. ⛔ Cố ý KHÔNG dùng khuôn "bỏ qua buổi hỏng, báo rõ buổi nào" của `D-43` điểm 4: ở đó mỗi buổi có điều kiện hợp lệ riêng, còn ở đây mọi phép kiểm đều tất định cho cả lô — lưu nửa vời một bảng điểm danh tệ hơn không lưu | ☑ **DONE** (phiên 110) — kiểm ngược (e) bọc mỗi vòng lặp trong `begin/exception` riêng ⇒ **đỏ đúng bài 26 và 27** |
+| ADMIN-ATTENDANCE-1e | **Lưới sửa được, gom theo lớp** | Mỗi lớp một mục **thu gọn sẵn**; ô là nút 44×44px mở popover 4 trạng thái + ghi chú; sửa **không ghi ngay** mà gom lại, thanh lưu **dính đáy** hiện khi có thay đổi; ô chưa lưu mang **viền** (không phải màu thứ năm); cột buổi có báo cáo đã ký mang biểu tượng riêng và popover cảnh báo **trước khi bấm**. Bảng ký hiệu ✓/M/V/P gom về `status-display.ts` dùng chung với lưới chỉ-đọc của tab Học tập | ☑ **DONE** (phiên 110) |
+| ADMIN-ATTENDANCE-1f | **Bàn phím: một điểm dừng Tab cho cả lưới** | 26 HV × 35 buổi = 910 ô; mỗi ô một điểm dừng Tab là "có hỗ trợ bàn phím" trên giấy tờ nhưng là cái bẫy trên thực tế. Roving tabindex + phím mũi tên/Home/End, tìm nút theo `data-cell` toạ độ chứ không giữ mảng ref (bảng dựng lại mỗi lần đổi kỳ) | ☑ **DONE** (phiên 110) |
+| ADMIN-ATTENDANCE-1g | **Kỳ mặc định = Toàn khóa** | Khác ba tab kia (tháng này) vì nguyên văn user là *"tất cả các buổi"*. Link của tab mang sẵn `range=all` — không thì bấm sang từ tab Học tập sẽ tha theo `from`/`to` của tháng | ☑ **DONE** (phiên 110) |
+
+**Cổng đã chạy thật (phiên 110):** lint **0** · typecheck **0** · Vitest **662/662** (632 → +30) · build **exit 0** · pgTAP **790/790** (763 → +27) trên DB sạch · Playwright `admin-attendance` **5/5** trên Chromium **và 5/5** trên project `mobile` (Pixel 7).
+
+🔴 **HAI KHẲNG ĐỊNH CỦA CHÍNH TÔI BỊ KIỂM NGƯỢC BÁC BỎ — ghi lại vì đây là phần đáng giá nhất của phiên:**
+
+1. **"`attendance_records` không ràng buộc ghi danh phải thuộc lớp của buổi"** — SAI. `trg_attendance_class_match` (migration `…005`) đã chặn ở **từng hàng, mọi đường ghi**. Phép kiểm tôi thêm vào RPC là **thừa** (đúng hình dạng `BUG_M10_01`), đã gỡ; bài kiểm nay ghim câu lỗi của **trigger thật**. Phát hiện được vì kiểm ngược gỡ phép kiểm ra mà bài vẫn đỏ — **bằng một câu lỗi khác**.
+2. **"27/27 xanh nghĩa là bộ kiểm tốt"** — SAI. Dưới một đột biến, cả lượt chạy **chết ở bài 11** (subquery một-hàng nổ *"more than one row"* ⇒ transaction hỏng) và **20 bài sau im lặng không chạy**, trong đó có toàn bộ phần nguyên tử. `Result: FAIL` vẫn hiện nên nhìn qua tưởng ổn. Đã thêm `order by created_at limit 1` cho ba subquery đọc audit. 📌 **Luật: kiểm ngược phải đếm SỐ BÀI ĐÃ CHẠY, không chỉ đọc PASS/FAIL.**
+
+⚠️ **Thứ tự release (`D-37`):** `…095` **thuần mở rộng** (3 hàm mới, 2 hàm `create or replace` giữ nguyên chữ ký) ⇒ vẫn đẩy **DB trước, code sau**: `admin_override_attendance` chưa tồn tại trên cloud thì nút Lưu của tab mới ném lỗi *"hàm không tồn tại"*.
+
 ---
 
 ## Bản đồ module ↔ phase (dùng cho QA board)

@@ -3959,6 +3959,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_override_attendance: {
+        Args: { p_changes: Json; p_reason?: string }
+        Returns: Json
+      }
       archive_flashcard_deck_sections: {
         Args: { p_deck_id: string }
         Returns: {

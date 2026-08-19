@@ -40,7 +40,7 @@ export type PeriodSession = {
   topic: string | null;
 };
 
-type PeriodAttendanceRow = {
+export type PeriodAttendanceRow = {
   session_id: string;
   enrollment_id: string;
   status: AttendanceStatus;
@@ -49,7 +49,7 @@ type PeriodAttendanceRow = {
 
 const SESSION_STATUSES = ["scheduled", "completed"] as const;
 
-async function getPeriodSessions(
+export async function getPeriodSessions(
   supabase: Supabase,
   period: LearningPeriod,
   classId?: string,
@@ -76,7 +76,7 @@ async function getPeriodSessions(
  * (≈100 buổi × ≈55 học viên) vượt mức đó, nên phân trang tường minh thay vì
  * âm thầm mất dữ liệu.
  */
-async function getAttendanceForSessions(
+export async function getAttendanceForSessions(
   supabase: Supabase,
   sessionIds: readonly string[],
   enrollmentId?: string,

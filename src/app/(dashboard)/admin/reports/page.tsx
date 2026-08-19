@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { AlertTriangle, CalendarCheck, Download, GraduationCap, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarCheck,
+  ClipboardCheck,
+  Download,
+  FileCheck2,
+  GraduationCap,
+  Users,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { AdminAttendanceBoard } from "@/features/attendance/components/admin-attendance-board";
+import { getAdminAttendanceBoard } from "@/features/attendance/server/admin-queries";
 import { AtRiskPanel } from "@/features/reports/components/at-risk-panel";
 import { ClassOverviewCards } from "@/features/reports/components/class-overview-cards";
 import { PrintButton } from "@/features/reports/components/print-button";
@@ -40,17 +50,24 @@ type Props = {
 };
 
 /**
- * `/admin/reports` (`REPORT-REDESIGN-1`) — hai tab trên URL:
+ * `/admin/reports` (`REPORT-REDESIGN-1`) — bốn tab trên URL:
  *
  *   • `tab=hoc-tap` (MẶC ĐỊNH) — tiến độ học tập + điểm danh, tầng 1 của cấu
  *     trúc Trung tâm → Lớp → Học viên (D3).
  *   • `tab=hoc-phi` — nguyên màn báo cáo học phí cũ (D1), không đổi nghiệp vụ.
+ *   • `tab=bao-cao-gv` — báo cáo sau buổi dạy của giáo viên (`TEACHER-REPORT-1`).
+ *   • `tab=diem-danh` — sổ điểm danh mọi lớp/mọi buổi, SỬA ĐƯỢC
+ *     (`ADMIN-ATTENDANCE-1`, `D-45`).
  *
  * Tab là LINK chứ không phải state client: kỳ lọc + tab sống trên URL để
  * deep-link/Back/export cùng nhìn một nguồn sự thật.
+ *
+ * ⚠️ Trang gác bằng `requireManager()` = super_admin ∪ academic_manager, và cả
+ * hai role đều trỏ `/admin/reports` trong `navigation.ts`. Thêm tab một lần là
+ * CẢ HAI cùng thấy — không có "module báo cáo của admin" riêng để clone.
  */
 export default async function AdminReportsPage({ searchParams }: Props) {
-  await requireManager();
+  const currentUser = await requireManager();
   const params = await searchParams;
   const rawTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const tab =
@@ -58,7 +75,9 @@ export default async function AdminReportsPage({ searchParams }: Props) {
       ? "hoc-phi"
       : rawTab === "bao-cao-gv"
         ? "bao-cao-gv"
-        : "hoc-tap";
+        : rawTab === "diem-danh"
+          ? "diem-danh"
+          : "hoc-tap";
 
   /*
    * 🔴 Con số đỏ đếm TOÀN BỘ nợ, KHÔNG theo kỳ đang lọc.
@@ -77,6 +96,15 @@ export default async function AdminReportsPage({ searchParams }: Props) {
       label: "Báo cáo của giáo viên",
       href: "/admin/reports?tab=bao-cao-gv",
       badge: missingReports,
+    },
+    // Kỳ mặc định của tab này là TOÀN KHÓA, nên link phải mang sẵn `range=all`:
+    // đang đứng ở tab Học tập (tháng này) mà bấm sang thì `from`/`to` của tháng
+    // còn nguyên trên URL và tab mới mở ra chỉ thấy một tháng — trong khi việc
+    // của nó đúng là "coi lại tất cả các buổi".
+    {
+      key: "diem-danh",
+      label: "Điểm danh",
+      href: "/admin/reports?tab=diem-danh&range=all",
     },
   ] as const;
 
@@ -134,9 +162,94 @@ export default async function AdminReportsPage({ searchParams }: Props) {
         <TuitionTab params={params} />
       ) : tab === "bao-cao-gv" ? (
         <TeacherReportsTab params={params} />
+      ) : tab === "diem-danh" ? (
+        <AttendanceTab params={params} role={currentUser.role} />
       ) : (
         <LearningTab params={params} />
       )}
+    </>
+  );
+}
+
+/**
+ * Tab "Điểm danh" (`ADMIN-ATTENDANCE-1`, user chốt 2026-08-19 → `D-45`).
+ *
+ * 🔴 KỲ MẶC ĐỊNH LÀ **TOÀN KHÓA**, khác ba tab kia (tháng này). Nguyên văn yêu
+ * cầu của user là *"coi lại các điểm danh của tất cả các lớp của tất cả các
+ * buổi"* — mở ra chỉ thấy tháng hiện tại là thiếu đúng thứ họ cần. Lưới không
+ * phình theo vì mỗi lớp là một mục THU GỌN sẵn.
+ */
+async function AttendanceTab({
+  params,
+  role,
+}: {
+  params: Record<string, string | string[] | undefined>;
+  role: string;
+}) {
+  const parsed = parseLearningReportFilters(params);
+  const filters = parsed.success ? parsed.data : {};
+  const period = resolveLearningPeriod(filters, todayISO(), "all");
+  const board = await getAdminAttendanceBoard(period);
+
+  return (
+    <>
+      <ReportPrintHeader
+        title="Sổ điểm danh toàn trung tâm"
+        periodLabel={period.label}
+      />
+      <ReportPeriodFilter
+        basePath="/admin/reports"
+        filters={filters}
+        period={period}
+        hiddenParams={{ tab: "diem-danh" }}
+        errorMessage={parsed.success ? undefined : parsed.error.issues[0]?.message}
+      />
+
+      <StatTiles
+        tiles={[
+          {
+            icon: CalendarCheck,
+            label: "Buổi đã diễn ra",
+            value: String(board.totals.sessions),
+            hint: `trên ${board.classes.length} lớp`,
+          },
+          {
+            icon: ClipboardCheck,
+            label: "Ô đã điểm danh",
+            value: `${board.totals.marked}/${board.totals.expected}`,
+            hint:
+              board.totals.expected > 0
+                ? formatPercent(board.totals.marked / board.totals.expected)
+                : "—",
+          },
+          {
+            icon: AlertTriangle,
+            label: "Ô còn trống",
+            value: String(board.totals.expected - board.totals.marked),
+            // Ô trống CHẶN giáo viên gửi báo cáo — nói ra hậu quả, không chỉ nói
+            // con số, vì đó mới là lý do giáo vụ phải quan tâm tới nó.
+            hint: "buổi thiếu ô nào thì giáo viên chưa gửi được báo cáo",
+            tone:
+              board.totals.expected - board.totals.marked > 0
+                ? "warning"
+                : "default",
+          },
+          {
+            icon: FileCheck2,
+            label: "Buổi đã có báo cáo ký",
+            value: String(board.totals.sessionsWithSubmittedReport),
+            hint: "sửa điểm danh sẽ cập nhật lại số trong báo cáo",
+          },
+        ]}
+      />
+
+      {/*
+        🔴 `canEdit` do ROLE quyết, và đây KHÔNG phải chốt chặn — chốt chặn là
+        `app.is_super_admin()` trong RPC `admin_override_attendance` (có pgTAP
+        ghim: giáo vụ gọi thẳng RPC vẫn bị chặn). Ẩn nút chỉ để giáo vụ không
+        bấm vào một thứ chắc chắn sẽ báo lỗi.
+      */}
+      <AdminAttendanceBoard board={board} canEdit={role === "super_admin"} />
     </>
   );
 }

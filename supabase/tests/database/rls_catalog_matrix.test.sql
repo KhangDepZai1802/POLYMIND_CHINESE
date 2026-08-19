@@ -124,8 +124,16 @@ select is(
   -- của chính lớp đó gọi thẳng RPC cũng bị chặn — `session_report_waiver`
   -- bài 1 ghim), idempotent nên bấm nhiều lần không sinh thêm audit. Bề mặt
   -- `anon` KHÔNG đổi — bài ngay dưới vẫn ghim đúng một tên.
-  84,
-  'catalog có đúng 84 RPC public đã review'
+  -- 84 → 85: `ADMIN-ATTENDANCE-1`/`D-45` thêm `admin_override_attendance` —
+  -- admin sửa lại điểm danh giáo viên đã chốt. Chỉ cấp cho `authenticated`, và
+  -- là RPC nghiệp vụ DUY NHẤT tự kiểm `app.is_super_admin()` thay vì
+  -- `app.is_manager()`: giáo vụ bị chặn kể cả khi đang dạy chính lớp đó
+  -- (`admin_attendance_override` bài 2 ghim). Bề mặt `anon` KHÔNG đổi.
+  -- ⚠️ Cùng migration còn thêm HAI hàm nữa nhưng nằm ở schema `app`
+  -- (`upsert_attendance_records`, `build_attendance_snapshot`) nên KHÔNG vào
+  -- con số này — chúng bị revoke khỏi `authenticated`, không phải bề mặt gọi được.
+  85,
+  'catalog có đúng 85 RPC public đã review'
 );
 /*
  * ⚠️ Bài này TỪNG là `count = 0`. Đổi thành DANH SÁCH TRẮNG THEO TÊN khi mở
