@@ -1368,7 +1368,7 @@ function DeleteAllSessionsButton({ classId }: { classId: string }) {
   const confirmDeleteAll = useConfirmSubmit({
     title: "Xóa tất cả buổi chưa dạy?",
     description:
-      "Buổi đã dạy hoặc đã điểm danh sẽ được giữ lại. Các buổi chưa dạy sẽ bị xóa.",
+      "Buổi đã dạy, đã điểm danh, hoặc đã từng xếp lịch bù sẽ được giữ lại. Các buổi chưa dạy sẽ bị xóa.",
     confirmLabel: "Xóa tất cả",
     variant: "destructive",
   });

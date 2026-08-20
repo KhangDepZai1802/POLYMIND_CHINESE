@@ -996,6 +996,22 @@ Bản thiết kế user duyệt: <https://claude.ai/code/artifact/ef31d801-b47f-
 
 ⚠️ **pgTAP chạy trên DB sạch, e2e chạy trên DB đã seed — hai lượt, không chung một trạng thái DB.** Chạy `supabase test db` sau `npm run db:seed:dev` thì đỏ 5 bài ở `announcement_workflow`/`flashcard_*` vì dữ liệu seed phá fixture, không phải lỗi sản phẩm.
 
+### Dời khai giảng `LOP-01` + nút "Xóa tất cả" chết cả mẻ — `DATA-SCHED-LOP01-2` (user chốt 2026-08-20 qua `AskUserQuestion` → `D-46`)
+
+**Nguyên văn user:** *"tôi ko thể xóa tất cả buổi học của lớp 1 - đàm phán tài chính (ban giám đốc) … lớp giám đốc bị dời học trễ hơn, dự kiến khai giảng 7/9 … giúp tôi xóa hết và sinh lại buổi học y chang … chỉ khác cái là khai giảng 7/9"*.
+
+| ID | Việc | Definition of Done | Trạng thái |
+|---|---|---|---|
+| DATA-SCHED-LOP01-2a | **Nút "Xóa tất cả" không chết cả mẻ vì một buổi vướng** | `deleteAllSessionsAction` lọc trước **cả hai** lý do giữ lại: buổi đã có điểm danh (trigger `prevent_session_delete_with_history`) **và** buổi là `source_session_id` của `class_session_schedule_changes` (FK `on delete restrict`, migration `…091`). Thông báo **đếm riêng hai lý do**, không gộp một con số; buổi dính cả hai chỉ đếm một lần | ☑ **DONE** (phiên 111) — kiểm ngược gỡ vế lịch bù ⇒ **đỏ 3/5 bài**, cả 5 bài vẫn chạy hết |
+| DATA-SCHED-LOP01-2b | **Script sửa dữ liệu production, dời tại chỗ** | `scripts/data-fixes/2026-08-20-doi-khai-giang-lop-01-07-09.sql`: cổng an toàn fail-closed (đúng 35 buổi, không buổi `completed`, 0 điểm danh, 0 báo cáo, lịch lặp đúng T2+T4 14:00–15:30) · nới `effective_to`/`expected_end_date` → 04/01/2027 · `start_date` → 07/09/2026 · nắn 35 buổi theo **đúng logic của `generate_class_sessions`** · kiểm chứng trong giao dịch (buổi đầu 07/09/2026, buổi cuối 04/01/2027, không trùng mốc, không buổi nào mất `schedule_id`) · audit `class.schedule.data_fix` với `actor_id` NULL có chủ ý (`BUG_M06_01`) · `-v apply=false` tự `rollback` | ◐ **VIẾT XONG, CHƯA CHẠY** (phiên 111) — `BLK-13`: phiên không kết nối được production |
+| DATA-SCHED-LOP01-2c | **Xác nhận nguyên nhân trên dữ liệu thật** | Phần xem trước in bảng vết "Nghỉ học / xếp lịch bù" của `LOP-01`. **Có dòng** ⇒ đúng là FK lịch bù chặn nút Xóa tất cả. **Rỗng** ⇒ giả thuyết sai, dừng lại truy tiếp chứ không chạy `apply=true` | ☐ **CHƯA** — cần user chạy lượt `-v apply=false` |
+
+🔴 **Con số phải tính tay, đừng tin cảm giác.** Từ T2 07/09/2026, hai buổi/tuần (T2+T4), tới 23/12/2026 chỉ được **32** buổi; buổi 33 = T2 28/12, 34 = T4 30/12, 35 = T2 04/01/2027. Giữ nguyên `effective_to = 23/12` thì `generate_class_sessions` **dừng ở 32 buổi và trả về bình thường** — không lỗi, không cảnh báo, lớp thiếu 3 buổi mà không ai thấy.
+
+🔴 **Vì sao dời tại chỗ chứ không xoá-sinh-lại, dù user hỏi nguyên văn là "xóa hết và sinh lại".** Kết quả trên màn hình giống hệt nhau. Khác nhau ở chỗ không thấy: giữ `class_sessions.id` ⇒ không phải xoá vết lịch sử đổi lịch chỉ để dời được ngày; giữ `session_number` ⇒ giữ nguyên ánh xạ `video_items` và liên kết QR flashcard, vốn bám **số buổi** chứ không bám ngày. Cùng cách đã dùng cho `LOP-02`/`LOP-03` ở `DATA-SCHED-1`.
+
+**Cổng đã chạy thật (phiên 111):** lint **0** · typecheck **0** · Vitest **652/652** (647 → +5) · build **exit 0**. ⚠️ **Không** chạy pgTAP/Playwright và **không** chạy thử được script SQL — Docker Desktop không chạy trên máy phiên này. **Không có migration.**
+
 ### Tab thứ tư "Điểm danh" ở `/admin/reports` — `ADMIN-ATTENDANCE-1` (user chốt 2026-08-19 qua `AskUserQuestion` → `D-45`)
 
 **Nguyên văn user:** *"module báo cáo của trang admin … thêm 1 tab điểm danh. tab này dùng để admin coi lại các điểm danh của tất cả các lớp của tất cả các buổi (chia theo từng lớp cho dễ nhìn). ở đây admin có thể chỉnh sửa điểm danh của giáo viên khi họ đã điểm danh xong"*.

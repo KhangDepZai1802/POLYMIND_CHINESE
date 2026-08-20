@@ -294,6 +294,13 @@ export async function rescheduleSessionWithMakeupAction(
  * điểm danh được GIỮ LẠI. Ta lọc sẵn danh sách xóa được ở app để lệnh delete
  * không bị trigger `prevent_session_delete_with_history` (migration 22) làm hỏng
  * cả mẻ (delete là một câu lệnh — một buổi vướng lịch sử thì cả mẻ rollback).
+ *
+ * 🔴 Cùng lý do đó, phải lọc thêm buổi từng là GỐC của một lần "Nghỉ học / xếp
+ * lịch bù": `class_session_schedule_changes.source_session_id` là FK
+ * **ON DELETE RESTRICT** (migration 91). Bản đầu chỉ phòng cho trigger nên một
+ * buổi vướng lịch bù làm rollback cả 35 buổi còn lại, và người dùng chỉ thấy
+ * "Không thể thực hiện vì dữ liệu đang được sử dụng ở nơi khác" — không có cách
+ * nào biết buổi nào vướng. Đo thật trên LOP-01 ngày 2026-08-20.
  */
 export async function deleteAllSessionsAction(
   _prev: ActionState,
@@ -319,20 +326,51 @@ export async function deleteAllSessionsAction(
     return { success: "Không có buổi nào chưa dạy để xóa." };
   }
 
-  // Trong số đó, bỏ ra các buổi đã có điểm danh (giữ lại lịch sử).
-  const { data: attended, error: attendedError } = await supabase
-    .from("attendance_records")
-    .select("session_id")
-    .in("session_id", candidateIds);
-  if (attendedError) return { error: dbErrorToMessage(attendedError) };
+  // Trong số đó, bỏ ra hai nhóm phải giữ lại — mỗi nhóm vì một ràng buộc khác
+  // nhau ở DB, nên đếm riêng để nói đúng lý do cho người dùng.
+  const [attendedResult, rescheduledResult] = await Promise.all([
+    supabase
+      .from("attendance_records")
+      .select("session_id")
+      .in("session_id", candidateIds),
+    supabase
+      .from("class_session_schedule_changes")
+      .select("source_session_id")
+      .in("source_session_id", candidateIds),
+  ]);
 
-  const keepIds = new Set((attended ?? []).map((a) => a.session_id));
-  const deletableIds = candidateIds.filter((id) => !keepIds.has(id));
+  if (attendedResult.error) {
+    return { error: dbErrorToMessage(attendedResult.error) };
+  }
+  if (rescheduledResult.error) {
+    return { error: dbErrorToMessage(rescheduledResult.error) };
+  }
+
+  const attendedIds = new Set(
+    (attendedResult.data ?? []).map((a) => a.session_id),
+  );
+  const rescheduledIds = new Set(
+    (rescheduledResult.data ?? [])
+      .map((h) => h.source_session_id)
+      .filter((id) => !attendedIds.has(id)),
+  );
+
+  const deletableIds = candidateIds.filter(
+    (id) => !attendedIds.has(id) && !rescheduledIds.has(id),
+  );
+
+  const keptNote = [
+    attendedIds.size > 0
+      ? ` Giữ lại ${attendedIds.size} buổi đã có điểm danh.`
+      : "",
+    rescheduledIds.size > 0
+      ? ` Giữ lại ${rescheduledIds.size} buổi có vết xếp lịch bù (xóa sẽ mất lịch sử đổi lịch — hãy hủy buổi thay vì xóa).`
+      : "",
+  ].join("");
 
   if (deletableIds.length === 0) {
     return {
-      success:
-        "Mọi buổi chưa dạy đều đã có điểm danh — giữ lại toàn bộ, không xóa buổi nào.",
+      success: `Không xóa buổi nào — mọi buổi chưa dạy đều đang giữ lịch sử.${keptNote}`,
     };
   }
 
@@ -346,12 +384,14 @@ export async function deleteAllSessionsAction(
     action: "class.session.delete_all",
     resourceType: "class",
     resourceId: classId,
-    after: { deleted: deletableIds.length, kept: keepIds.size },
+    after: {
+      deleted: deletableIds.length,
+      kept_attendance: attendedIds.size,
+      kept_reschedule: rescheduledIds.size,
+    },
   });
 
   revalidateClass(classId);
-  const keptNote =
-    keepIds.size > 0 ? ` Giữ lại ${keepIds.size} buổi đã có điểm danh.` : "";
   return { success: `Đã xóa ${deletableIds.length} buổi chưa dạy.${keptNote}` };
 }
 
