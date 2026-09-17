@@ -35,6 +35,24 @@ function createSupabaseMock(claims: unknown) {
 describe("updateSession JWT verification", () => {
   beforeEach(() => createServerClient.mockReset());
 
+  it("để landing page công khai đi thẳng, không dựng Supabase client", async () => {
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
+  it("để các trang giới thiệu công khai đi thẳng, không dựng Supabase client", async () => {
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/gioi-thieu"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
   it("dùng getClaims thay vì gọi Auth server bằng getUser", async () => {
     const supabase = createSupabaseMock({
       data: { claims: { sub: USER_ID, email: "admin@polymind.test" } },

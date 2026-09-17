@@ -10,11 +10,13 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.polymind.vn"),
   title: {
     default: "POLYMIND CHINESE",
     template: "%s · POLYMIND CHINESE",
   },
-  description: "Hệ thống quản lý học viên tiếng Trung",
+  description:
+    "POLYMIND CHINESE — tiếng Trung thực tiễn cho học tập, công việc và những cơ hội rộng mở.",
 };
 
 /**

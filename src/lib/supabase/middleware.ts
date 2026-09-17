@@ -8,6 +8,7 @@ import type { Database } from "@/types/database";
 import { isUserRole } from "@/types/roles";
 
 const PUBLIC_PATHS = [
+  "/",
   "/login",
   "/forgot-password",
   "/reset-password",
@@ -31,6 +32,22 @@ function isPublicFlashcardPath(pathname: string) {
   return pathname === "/t" || pathname.startsWith("/t/");
 }
 
+function isPublicMarketingPath(pathname: string) {
+  const marketingPaths = [
+    "/",
+    "/gioi-thieu",
+    "/chuong-trinh",
+    "/blog",
+    "/tuyen-dung",
+    "/cac-co-so",
+  ];
+
+  return marketingPaths.some(
+    (path) =>
+      pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)),
+  );
+}
+
 /**
  * Refresh session + chặn sớm anonymous.
  *
@@ -40,6 +57,13 @@ function isPublicFlashcardPath(pathname: string) {
  * trùng việc vừa buộc thêm một network round-trip tuần tự.
  */
 export async function updateSession(request: NextRequest) {
+  // Landing page không cần biết người xem đã đăng nhập hay chưa. Bỏ toàn bộ
+  // round-trip xác minh phiên để trang marketing luôn nhanh và người đã đăng
+  // nhập vẫn có thể quay lại xem website; nút /login mới là cửa vào hệ thống.
+  if (isPublicMarketingPath(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
   // Trang flashcard công khai không có phiên để làm mới: nó đọc bằng client mù
   // cookie (`public-client.ts`). Dựng Supabase client và verify JWT ở đây là
   // việc thừa nằm ngay trên đường nóng của mã QR.
@@ -99,8 +123,8 @@ export async function updateSession(request: NextRequest) {
   // mọi lần chuyển trang: việc đó tạo thêm một network round-trip nối tiếp trên
   // critical path nhưng không tăng quyền bảo mật (middleware chỉ là lớp UX).
   //
-  // Riêng / và /login cần biết role để đưa user đã đăng nhập về đúng trang chủ.
-  if (pathname !== "/" && pathname !== "/login") {
+  // Riêng /login cần biết role để đưa user đã đăng nhập về đúng trang chủ.
+  if (pathname !== "/login") {
     return supabaseResponse;
   }
 

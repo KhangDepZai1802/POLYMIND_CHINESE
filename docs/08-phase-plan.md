@@ -1067,3 +1067,11 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 | M20    | Security & Deployment              | P7              |
 | M21    | Student Class Portal               | P14             |
 | M22    | Flashcards & Wrong-answer Review   | P14             |
+# MARKETING-HOME-1 — Website giới thiệu công khai
+
+- [x] Trang chủ responsive với header, hero, định hướng chương trình, phương pháp và CTA.
+- [x] Trang Giới thiệu, Tuyển dụng và Hệ thống cơ sở dùng chung khung marketing.
+- [x] Trang chờ Chương trình học và Blog để điều hướng không trả về 404.
+- [x] Giữ cổng đào tạo hiện có tại `/login`; không thay đổi nghiệp vụ hoặc cơ sở dữ liệu.
+- [x] Các trang marketing công khai không khởi tạo Supabase client ở middleware.
+- [x] Metadata, robots và sitemap cho các trang đã có nội dung.
