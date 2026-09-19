@@ -5,8 +5,24 @@ import { Logo } from "@/components/shared/logo";
 
 const navigation = [
   { label: "Giới thiệu", href: "/gioi-thieu" },
-  { label: "Chương trình học", href: "/chuong-trinh", pending: true },
-  { label: "Blog", href: "/blog", pending: true },
+  {
+    label: "Chương trình học",
+    href: "/chuong-trinh",
+    children: [
+      { label: "Tiếng Trung giao tiếp", href: "/chuong-trinh#giao-tiep" },
+      {
+        label: "Tiếng Trung cho người mới bắt đầu",
+        href: "/chuong-trinh#nguoi-moi",
+      },
+      { label: "Luyện thi chứng chỉ HSK", href: "/chuong-trinh#hsk" },
+      { label: "Tiếng Trung doanh nghiệp", href: "/chuong-trinh#doanh-nghiep" },
+      {
+        label: "Tiếng Trung đàm phán – tài chính",
+        href: "/chuong-trinh#chuyen-nganh",
+      },
+    ],
+  },
+  { label: "Blog", href: "/blog" },
   { label: "Tuyển dụng", href: "/tuyen-dung" },
   { label: "Hệ thống cơ sở", href: "/cac-co-so" },
 ];
@@ -41,16 +57,38 @@ export function MarketingHeader() {
           className="hidden items-center gap-8 xl:flex"
         >
           {navigation.map((item) => (
-            <Link
+            <div
               key={item.href}
-              href={item.href}
-              className="group hover:text-primary inline-flex items-center gap-1 text-base font-semibold text-[#3a3a3a] transition"
+              className="group/nav relative flex h-[112px] items-center"
             >
-              {item.label}
-              {item.pending && (
-                <ChevronDown className="size-3.5 text-[#8494a8]" aria-hidden />
+              <Link
+                href={item.href}
+                className="hover:text-primary inline-flex items-center gap-1 text-base font-semibold text-[#3a3a3a] transition"
+              >
+                {item.label}
+                {item.children && (
+                  <ChevronDown
+                    className="size-4 text-[#8494a8] transition group-hover/nav:rotate-180"
+                    aria-hidden
+                  />
+                )}
+              </Link>
+              {item.children && (
+                <div className="invisible absolute top-[96px] left-1/2 z-50 w-[470px] -translate-x-1/2 translate-y-2 pt-4 opacity-0 transition duration-200 group-focus-within/nav:visible group-focus-within/nav:translate-y-0 group-focus-within/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 group-hover/nav:opacity-100">
+                  <div className="relative rounded-[20px] border border-[#dedede] bg-white px-9 py-6 shadow-[0_12px_35px_rgba(0,0,0,.14)] before:absolute before:-top-2.5 before:left-1/2 before:size-5 before:-translate-x-1/2 before:rotate-45 before:border-t before:border-l before:border-[#dedede] before:bg-white">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="relative block border-b border-[#e5e5e5] py-3.5 text-[19px] font-normal text-[#6b6b6b] transition last:border-0 hover:pl-2 hover:text-[#215cac]"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               )}
-            </Link>
+            </div>
           ))}
         </nav>
 
@@ -76,18 +114,28 @@ export function MarketingHeader() {
           </summary>
           <div className="absolute top-14 right-0 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-[#dde5ee] bg-white p-3 shadow-2xl">
             {navigation.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="hover:bg-primary-50 flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold"
-              >
-                {item.label}
-                {item.pending && (
-                  <span className="text-[10px] font-bold text-[#8494a8] uppercase">
-                    Sắp có
-                  </span>
+              <div key={item.href}>
+                <Link
+                  href={item.href}
+                  className="hover:bg-primary-50 flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold"
+                >
+                  {item.label}
+                  {item.children && <ChevronDown className="size-4" />}
+                </Link>
+                {item.children && (
+                  <div className="ml-3 border-l border-[#dfe7f0] pl-3">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="block py-2 text-xs text-[#66778d]"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 )}
-              </Link>
+              </div>
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[#edf1f7] pt-3">
               <Link
@@ -144,12 +192,6 @@ export function MarketingFooter() {
           <p className="mt-4 text-sm leading-6 text-white/65">
             Dành cho học viên, giáo viên và đội ngũ quản lý.
           </p>
-          <Link
-            href="/login"
-            className="mt-4 inline-flex items-center gap-2 font-bold text-[#91bbe8] hover:text-white"
-          >
-            Đăng nhập <LogIn className="size-4" aria-hidden />
-          </Link>
         </div>
       </div>
       <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/50">

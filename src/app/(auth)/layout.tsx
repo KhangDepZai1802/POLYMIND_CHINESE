@@ -1,5 +1,5 @@
-import { SiteFooter } from "@/components/layout/site-footer";
 import { Logo } from "@/components/shared/logo";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -7,42 +7,40 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="from-brand-navy to-primary flex min-h-screen flex-col items-center justify-center bg-gradient-to-br p-4">
-      <div className="mb-8 flex flex-col items-center text-center">
-        {/* Nền gradient tối nên phải dùng `plate`: file logo có nền trắng đặc,
-            đặt trần lên gradient sẽ ra một mảng trắng lởm chởm. `alt=""` vì
-            tên thương hiệu đã nằm ngay dưới dạng chữ đọc được. */}
-        <Logo
-          height={52}
-          variant="plate"
-          alt=""
-          radius="rounded-2xl"
+    <div className="flex h-screen max-h-screen w-full overflow-hidden bg-white">
+      {/* Cột trái: Ảnh banner thiết kế sẵn (anhbentrai.png) vừa khít chiều cao màn hình */}
+      <div className="relative hidden h-full w-1/2 overflow-hidden bg-slate-100 lg:block">
+        <Image
+          src="/anhbentrai.png"
+          alt="POLYMIND - Cùng bạn kiến tạo tương lai"
+          fill
           priority
-          className="mb-4"
+          className="object-cover object-center"
+          sizes="50vw"
         />
-        {/* Cố ý là <p> chứ không phải <h1>.
-         *
-         * Bản cũ đặt <h1>POLYMIND CHINESE</h1> ở layout, nên đo được: cả 4 màn
-         * auth có ĐÚNG MỘT heading và cả 4 mang cùng một chữ. Người dùng trình
-         * đọc màn hình điều hướng bằng danh sách heading sẽ nghe y hệt nhau ở
-         * /login, /forgot-password, /reset-password và /accept-invite — không
-         * có cách nào biết mình đang ở màn nào. Tên màn thật ("Đăng nhập"…)
-         * lại là <div> vì `CardTitle` mặc định là <div>.
-         *
-         * Nay <h1> chuyển xuống chính tiêu đề card của từng trang; khối này giữ
-         * nguyên hình thức, chỉ đổi thẻ. */}
-        <p className="text-2xl font-bold tracking-tight text-white">
-          POLYMIND CHINESE
-        </p>
-        <p className="text-sm text-white/70">Quản lý học viên tiếng Trung</p>
       </div>
 
-      {/* Bản cũ không có landmark nào bọc form: đo được `main: 0` ở cả 4 màn,
-          và thẻ <form> nằm ngoài mọi landmark. Khu đã đăng nhập
-          (`(dashboard)/layout.tsx`) thì có <main> — auth bị bỏ sót. */}
-      <main className="w-full max-w-md">{children}</main>
+      {/* Cột phải: Nền xám xanh nhẹ để làm nổi bật khung viền trắng của form */}
+      <div className="relative flex h-full w-full flex-col justify-between overflow-y-auto bg-[#f4f7fb] px-4 py-4 sm:px-8 sm:py-6 lg:w-1/2 lg:overflow-hidden xl:px-16">
+        {/* Thanh trên cùng: Chỉ hiện Logo trên mobile */}
+        <div className="flex shrink-0 items-center justify-center pt-2 lg:hidden">
+          <Logo height={32} variant="bare" />
+        </div>
+        <div className="hidden h-2 shrink-0 lg:block" />
 
-      <SiteFooter variant="onDark" className="mt-8" />
+        {/* Khối giữa: Form nằm giữa không gian màn hình */}
+        <div className="my-auto flex w-full max-w-[440px] shrink-0 flex-col justify-center self-center py-2">
+          <main className="w-full">{children}</main>
+        </div>
+
+        {/* Chân trang dưới cùng */}
+        <footer className="shrink-0 py-1 text-center text-xs text-slate-400">
+          <p>
+            © {new Date().getFullYear()} Bản quyền thuộc về POLYMIND · Đồng Hành
+            Cùng Bạn Vươn Xa
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

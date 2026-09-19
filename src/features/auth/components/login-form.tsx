@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Headset, Lock } from "lucide-react";
 
 import { loginAction, type ActionState } from "@/features/auth/server/actions";
 import { AuthFormFeedback } from "@/features/auth/components/auth-form-feedback";
@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ERROR_ID = "login-error";
 
@@ -26,114 +27,142 @@ export function LoginForm({ initialError }: { initialError?: string }) {
     { error: initialError },
   );
 
-  // Câu lỗi của `loginAction` cố ý gộp hai khả năng ("Tên đăng nhập hoặc mật
-  // khẩu không đúng") để không lộ tài khoản nào có thật. Vì nó nói về CẢ HAI ô
-  // nên đánh dấu cả hai là `aria-invalid` mới đúng sự thật — server không cho
-  // biết ô nào sai, và đoán bừa một ô là nói sai với người dùng.
   const invalid = state.error ? { "aria-invalid": true as const } : {};
-
-  // Ô có điều khiển (`value` + `onChange`) chứ không để trình duyệt tự giữ.
-  //
-  // React 19 gọi `form.reset()` sau khi mỗi form action chạy xong, nên gõ sai
-  // mật khẩu một lần là MẤT LUÔN tên đăng nhập vừa gõ. Đo được: sau khi báo
-  // sai, `#identifier` có giá trị `""`. Đã kiểm chứng ngược bằng `git stash`
-  // trên code gốc — cũng ra `""`, tức lỗi có sẵn chứ không phải do đợt này.
-  // Với tên đăng nhập do trung tâm cấp kiểu `gv.an` thì bắt gõ lại từ đầu sau
-  // mỗi lần sai mật khẩu là phiền vô cớ.
-  //
-  // Cố ý CHỈ giữ tên đăng nhập, không giữ mật khẩu: giữ mật khẩu trong state
-  // của React là kéo dài vòng đời của nó trong bộ nhớ trang mà không đổi lại
-  // được gì — trình quản lý mật khẩu của trình duyệt đã điền hộ rồi.
   const [identifier, setIdentifier] = useState("");
 
   return (
-    <Card>
-      <CardHeader>
-        {/* `asChild` → <h1>: đây là tiêu đề thật của trang. Xem ghi chú ở
-            `(auth)/layout.tsx` về việc 4 màn từng dùng chung một heading. */}
-        <CardTitle asChild>
-          <h1 className="text-lg">Đăng nhập</h1>
-        </CardTitle>
-        <CardDescription>
-          Dùng tên đăng nhập và mật khẩu được trung tâm cấp.
-        </CardDescription>
+    <Card className="rounded-[1.75rem] border border-white/90 bg-white p-6 shadow-[0_15px_40px_-12px_rgba(16,36,63,0.1)] sm:p-8">
+      <CardHeader className="p-0 pb-5">
+        <div>
+          <CardTitle asChild>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Đăng nhập
+            </h1>
+          </CardTitle>
+          <CardDescription className="mt-1.5 text-sm leading-normal text-slate-500">
+            Chào mừng bạn quay trở lại!
+            <br />
+            Đăng nhập để tiếp tục sử dụng hệ thống.
+          </CardDescription>
+        </div>
       </CardHeader>
 
-      <CardContent>
-        <form action={formAction} className="space-y-4">
+      <CardContent className="p-0">
+        <form action={formAction} className="space-y-3.5">
           <AuthFormFeedback
             isPending={isPending}
             error={state.error}
             errorId={ERROR_ID}
           />
 
-          <div className="space-y-2">
-            <Label htmlFor="identifier">Tên đăng nhập</Label>
-            <Input
-              id="identifier"
-              name="identifier"
-              type="text"
-              autoComplete="username"
-              // Bàn phím di động viết hoa chữ đầu theo mặc định, biến "gv.an"
-              // thành "Gv.an" ngay trước mắt người dùng. Máy chủ đã
-              // `.toLowerCase()` (`loginIdentifierToEmail`) nên đăng nhập vẫn
-              // chạy — nhưng người dùng nhìn thấy chữ hoa lại tưởng mình gõ sai
-              // và xoá đi gõ lại.
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-              placeholder="Ví dụ: gv.an"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              {...invalid}
-              aria-describedby={state.error ? ERROR_ID : undefined}
-            />
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="identifier"
+              className="text-xs font-semibold text-slate-700"
+            >
+              Tên đăng nhập
+            </Label>
+            <div className="relative">
+              <User className="absolute top-1/2 left-3.5 size-4.5 -translate-y-1/2 text-slate-400" />
+              <Input
+                id="identifier"
+                name="identifier"
+                type="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                placeholder="Nhập tên đăng nhập của bạn"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                {...invalid}
+                aria-describedby={state.error ? ERROR_ID : undefined}
+                className="focus-visible:ring-primary-500 h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm placeholder:text-slate-400"
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="password">Mật khẩu</Label>
-              {/* Bản cũ đo được 111×20px trên desktop — hụt ngưỡng 24px của
-                  WCAG 2.5.8 (`DS-034`).
-                  ⚠️ Nới bằng `py-1` chứ KHÔNG bằng `min-h-6`. Đã thử `min-h-6`
-                  và đo lại thì trên Pixel 7 link tụt từ 44px xuống 24px: khối
-                  `@media (pointer: coarse)` của `globals.css` nằm trong
-                  `@layer base`, còn class Tailwind nằm ở `@layer utilities` —
-                  layer sau thắng bất kể độ đặc hiệu, nên `min-h-6` xoá sạch
-                  luật 44px. Padding không đụng `min-height` nên `globals.css`
-                  vẫn là NƠI DUY NHẤT ép 44px, đúng kiến trúc `DS-013`.
-                  Kết quả: chuột 20+8 = 28px, cảm ứng vẫn 44px. */}
+              <Label
+                htmlFor="password"
+                className="text-xs font-semibold text-slate-700"
+              >
+                Mật khẩu
+              </Label>
               <Link
                 href="/forgot-password"
-                className="text-primary focus-visible:ring-ring/50 inline-flex items-center rounded-sm py-1 text-sm hover:underline focus-visible:ring-[3px] focus-visible:outline-none"
+                className="text-primary-600 hover:text-primary-700 text-xs font-semibold hover:underline"
               >
                 Quên mật khẩu?
               </Link>
             </div>
-            <PasswordInput
-              id="password"
-              name="password"
-              fieldLabel="mật khẩu"
-              autoComplete="current-password"
-              required
-              {...invalid}
-              aria-describedby={state.error ? ERROR_ID : undefined}
-            />
+            <div className="relative">
+              <Lock className="absolute top-1/2 left-3.5 z-10 size-4.5 -translate-y-1/2 text-slate-400" />
+              <PasswordInput
+                id="password"
+                name="password"
+                fieldLabel="mật khẩu"
+                autoComplete="current-password"
+                required
+                placeholder="Nhập mật khẩu"
+                {...invalid}
+                aria-describedby={state.error ? ERROR_ID : undefined}
+                className="focus-visible:ring-primary-500 h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm placeholder:text-slate-400"
+              />
+            </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <div className="flex items-center space-x-2 py-0.5">
+            <Checkbox
+              id="remember"
+              name="remember"
+              className="data-[state=checked]:border-primary-600 data-[state=checked]:bg-primary-600 size-4 rounded border-slate-300"
+            />
+            <label
+              htmlFor="remember"
+              className="cursor-pointer text-xs font-medium text-slate-700 select-none"
+            >
+              Ghi nhớ đăng nhập
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            className="bg-primary-600 shadow-primary-600/20 hover:bg-primary-700 h-11 w-full rounded-xl text-sm font-bold text-white shadow-md transition"
+            disabled={isPending}
+          >
             {isPending && (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
             )}
             {isPending ? "Đang đăng nhập…" : "Đăng nhập"}
           </Button>
 
-          {/* `text-sm` chứ không `text-xs`: đây là lối thoát duy nhất cho người
-              chưa có tài khoản, đo được 12px ở bản cũ. */}
-          <p className="text-muted-foreground text-center text-sm">
-            Chưa có tài khoản? Liên hệ quản trị viên của trung tâm để được cấp.
-          </p>
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-100" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-3 text-[11px] font-medium text-slate-400">
+                Hoặc liên hệ hỗ trợ
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-2xl border border-sky-100/60 bg-sky-50/50 p-3">
+            <div className="text-primary-600 flex size-9 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-white shadow-xs">
+              <Headset className="size-4.5" />
+            </div>
+            <div>
+              <h2 className="text-primary-700 text-xs font-bold">
+                Chưa có tài khoản?
+              </h2>
+              <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+                Liên hệ quản trị viên của trung tâm để được cấp.
+              </p>
+            </div>
+          </div>
         </form>
       </CardContent>
     </Card>

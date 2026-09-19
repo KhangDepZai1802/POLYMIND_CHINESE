@@ -3,14 +3,14 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * Tỉ lệ THẬT của file logo (640×292 sau khi cắt hết lề trắng thừa).
+ * Tỉ lệ THẬT của file logo (1:1 cho file logopolymind.png mới).
  *
  * Phải giữ đúng con số này: bản trước gọi logo theo `size` vuông, nên chữ ký
  * thương hiệu vốn nằm ngang bị `object-contain` thu về đúng 1/2,19 chiều cao ô
  * — ô 40px chỉ vẽ ra chữ cao ~16px. Sinh bề rộng từ chiều cao là cách duy nhất
  * để mọi bề mặt gọi cùng một chiều cao mà không ai phải tự tính lại.
  */
-const LOGO_ASPECT = 640 / 292;
+const LOGO_ASPECT = 1;
 
 /** Lề trắng quanh logo khi dùng `plate`, tính theo phần chiều cao logo. */
 const PLATE_PADDING_RATIO = 0.22;
@@ -60,10 +60,14 @@ export function Logo({
         plated && ["bg-white shadow-sm ring-1 ring-black/5", radius],
         className,
       )}
-      style={plated ? { padding: Math.round(height * PLATE_PADDING_RATIO) } : undefined}
+      style={
+        plated
+          ? { padding: Math.round(height * PLATE_PADDING_RATIO) }
+          : undefined
+      }
     >
       <Image
-        src="/polymind-lockup.png"
+        src="/logopolymind.png"
         alt={alt}
         width={width}
         height={height}
