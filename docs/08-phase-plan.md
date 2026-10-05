@@ -1075,3 +1075,12 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 - [x] Giữ cổng đào tạo hiện có tại `/login`; không thay đổi nghiệp vụ hoặc cơ sở dữ liệu.
 - [x] Các trang marketing công khai không khởi tạo Supabase client ở middleware.
 - [x] Metadata, robots và sitemap cho các trang đã có nội dung.
+
+# PUBLIC-AUDIO-B3-1 — Bộ nghe Bài 3 công khai
+
+- [x] Đối chiếu PDF và đổi tên đủ 22 file audio theo bảng được giao, giữ nguyên đuôi gốc.
+- [x] Dữ liệu audio tập trung theo trang, tiêu đề và đường dẫn.
+- [x] `/nghe` và `/nghe/trang-[số]` công khai, mobile-first, đồng bộ phong cách website.
+- [x] Trình phát có tốc độ 0.75x / 1x / 1.25x và tự dừng audio khác.
+- [x] Trang không có audio hiện thông báo và liên kết quay lại `/nghe`.
+- [x] Kiểm tra lint, typecheck, unit test, build và danh sách URL dùng tạo QR.

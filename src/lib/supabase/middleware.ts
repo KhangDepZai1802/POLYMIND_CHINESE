@@ -32,6 +32,10 @@ function isPublicFlashcardPath(pathname: string) {
   return pathname === "/t" || pathname.startsWith("/t/");
 }
 
+function isPublicListeningMediaPath(pathname: string) {
+  return pathname.startsWith("/audio/bai-3/");
+}
+
 function isPublicMarketingPath(pathname: string) {
   const marketingPaths = [
     "/",
@@ -40,6 +44,7 @@ function isPublicMarketingPath(pathname: string) {
     "/blog",
     "/tuyen-dung",
     "/cac-co-so",
+    "/nghe",
   ];
 
   return marketingPaths.some(
@@ -61,6 +66,13 @@ export async function updateSession(request: NextRequest) {
   // round-trip xác minh phiên để trang marketing luôn nhanh và người đã đăng
   // nhập vẫn có thể quay lại xem website; nút /login mới là cửa vào hệ thống.
   if (isPublicMarketingPath(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
+  // Audio được phát từ các trang `/nghe` công khai. Cho file tĩnh đi thẳng để
+  // request Range của trình phát không bị chuyển hướng sang `/login` và cũng
+  // không tốn một lượt xác minh phiên Supabase cho mỗi lần tua/phát.
+  if (isPublicListeningMediaPath(request.nextUrl.pathname)) {
     return NextResponse.next({ request });
   }
 

@@ -53,6 +53,24 @@ describe("updateSession JWT verification", () => {
     expect(createServerClient).not.toHaveBeenCalled();
   });
 
+  it("để trang nghe và trang theo số sách đi thẳng, không cần đăng nhập", async () => {
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/nghe/trang-12"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
+  it("để file audio công khai đi thẳng, không dựng Supabase client", async () => {
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/audio/bai-3/trang-12-phan-1.m4a"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
   it("dùng getClaims thay vì gọi Auth server bằng getUser", async () => {
     const supabase = createSupabaseMock({
       data: { claims: { sub: USER_ID, email: "admin@polymind.test" } },
