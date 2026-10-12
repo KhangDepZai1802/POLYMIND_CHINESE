@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -11,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { getNotificationBellData } from "@/features/notifications/server/queries";
 import { hasAssignedClasses, requireUser } from "@/lib/auth/session";
+import { isManagerRole } from "@/types/roles";
 
 /**
  * Trang đã đăng nhập KHÔNG được cache/ISR.
@@ -67,6 +69,7 @@ export default async function DashboardLayout({
                 role={user.role}
                 hasAssignedClasses={showAssignedClassesBranch}
               />
+              {isManagerRole(user.role) && <ModuleSwitcher />}
               <Logo height={28} priority />
             </div>
 

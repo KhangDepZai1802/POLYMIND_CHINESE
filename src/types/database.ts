@@ -524,6 +524,344 @@ export type Database = {
           },
         ]
       }
+      b2c_programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      b2c_classes: {
+        Row: {
+          campus: string | null
+          capacity: number
+          code: string
+          created_at: string
+          created_by: string | null
+          delivery_mode: string
+          enrolled_count: number
+          id: string
+          level_name: string | null
+          name: string
+          notes: string | null
+          program_slug: string
+          source_key: string | null
+          time_text: string | null
+          start_date: string | null
+          status: string
+          teacher_name: string | null
+          updated_at: string
+          weekdays_text: string | null
+        }
+        Insert: {
+          campus?: string | null
+          capacity?: number
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_mode?: string
+          enrolled_count?: number
+          id?: string
+          level_name?: string | null
+          name: string
+          notes?: string | null
+          program_slug: string
+          source_key?: string | null
+          time_text?: string | null
+          start_date?: string | null
+          status?: string
+          teacher_name?: string | null
+          updated_at?: string
+          weekdays_text?: string | null
+        }
+        Update: {
+          campus?: string | null
+          capacity?: number
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_mode?: string
+          enrolled_count?: number
+          id?: string
+          level_name?: string | null
+          name?: string
+          notes?: string | null
+          program_slug?: string
+          source_key?: string | null
+          time_text?: string | null
+          start_date?: string | null
+          status?: string
+          teacher_name?: string | null
+          updated_at?: string
+          weekdays_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2c_classes_program_slug_fkey"
+            columns: ["program_slug"]
+            isOneToOne: false
+            referencedRelation: "b2c_programs"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
+      b2c_students: {
+        Row: {
+          address: string | null
+          birth_year: number | null
+          created_at: string
+          date_of_birth: string | null
+          email: string | null
+          full_name: string
+          guardian_name: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          source_key: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          birth_year?: number | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          full_name: string
+          guardian_name?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          source_key: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          birth_year?: number | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          full_name?: string
+          guardian_name?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          source_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      b2c_enrollments: {
+        Row: {
+          class_id: string
+          created_at: string
+          enrollment_date: string | null
+          id: string
+          learning_start_date: string | null
+          notes: string | null
+          payment_date: string | null
+          registered_sessions: number | null
+          salesperson: string | null
+          sessions_per_week: number | null
+          source_file: string | null
+          source_key: string
+          source_row: number | null
+          source_sheet: string | null
+          student_id: string
+          tuition_end_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          enrollment_date?: string | null
+          id?: string
+          learning_start_date?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          registered_sessions?: number | null
+          salesperson?: string | null
+          sessions_per_week?: number | null
+          source_file?: string | null
+          source_key: string
+          source_row?: number | null
+          source_sheet?: string | null
+          student_id: string
+          tuition_end_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          enrollment_date?: string | null
+          id?: string
+          learning_start_date?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          registered_sessions?: number | null
+          salesperson?: string | null
+          sessions_per_week?: number | null
+          source_file?: string | null
+          source_key?: string
+          source_row?: number | null
+          source_sheet?: string | null
+          student_id?: string
+          tuition_end_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2c_enrollments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "b2c_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2c_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "b2c_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2c_monthly_reports: {
+        Row: {
+          advertising_cost: number
+          created_at: string
+          created_by: string | null
+          electricity_cost: number
+          id: string
+          internet_cost: number
+          marketing_cost: number
+          notes: string | null
+          other_cost: number
+          payroll_cost: number
+          rent_cost: number
+          report_month: number
+          report_year: number
+          revenue: number
+          updated_at: string
+          updated_by: string | null
+          water_cost: number
+        }
+        Insert: {
+          advertising_cost?: number
+          created_at?: string
+          created_by?: string | null
+          electricity_cost?: number
+          id?: string
+          internet_cost?: number
+          marketing_cost?: number
+          notes?: string | null
+          other_cost?: number
+          payroll_cost?: number
+          rent_cost?: number
+          report_month: number
+          report_year: number
+          revenue?: number
+          updated_at?: string
+          updated_by?: string | null
+          water_cost?: number
+        }
+        Update: {
+          advertising_cost?: number
+          created_at?: string
+          created_by?: string | null
+          electricity_cost?: number
+          id?: string
+          internet_cost?: number
+          marketing_cost?: number
+          notes?: string | null
+          other_cost?: number
+          payroll_cost?: number
+          rent_cost?: number
+          report_month?: number
+          report_year?: number
+          revenue?: number
+          updated_at?: string
+          updated_by?: string | null
+          water_cost?: number
+        }
+        Relationships: []
+      }
+      b2c_monthly_program_metrics: {
+        Row: {
+          created_at: string
+          departed_students: number
+          id: string
+          lessons_paid: number
+          lessons_taught: number
+          new_students: number
+          opening_students: number
+          program_slug: string
+          report_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          departed_students?: number
+          id?: string
+          lessons_paid?: number
+          lessons_taught?: number
+          new_students?: number
+          opening_students?: number
+          program_slug: string
+          report_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          departed_students?: number
+          id?: string
+          lessons_paid?: number
+          lessons_taught?: number
+          new_students?: number
+          opening_students?: number
+          program_slug?: string
+          report_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2c_monthly_program_metrics_program_slug_fkey"
+            columns: ["program_slug"]
+            isOneToOne: false
+            referencedRelation: "b2c_programs"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "b2c_monthly_program_metrics_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "b2c_monthly_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           address: string | null
@@ -3959,6 +4297,17 @@ export type Database = {
       }
     }
     Functions: {
+      save_b2c_monthly_report: {
+        Args: {
+          p_costs: Json
+          p_metrics: Json
+          p_month: number
+          p_notes?: string
+          p_revenue: number
+          p_year: number
+        }
+        Returns: string
+      }
       admin_override_attendance: {
         Args: { p_changes: Json; p_reason?: string }
         Returns: Json

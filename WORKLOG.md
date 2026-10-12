@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> 🟢 **`B2C-REPORT-1` — hoàn thành — Codex — 2026-10-12.** Đã tích hợp báo cáo hoạt động tháng từ file `Copy of Bao_cao_thang 1.xlsx` vào module B2C: số học viên/số tiết theo chương trình, doanh thu, đủ 8 nhóm chi phí và lợi nhuận; thêm biểu mẫu quản trị và trang `/admin/b2c/reports`. Dữ liệu nằm riêng trong `b2c_monthly_*`, không tham chiếu lớp doanh nghiệp. Đã áp trực tiếp lên CSDL hiện tại và nhập tháng 8–9/2026: 2 báo cáo, 10 dòng chỉ số. Lint/typecheck 0 · Vitest 666/666 · build exit 0.
+
 > 🟢 **`PUBLIC-AUDIO-B3-1` — hoàn thành — Codex — 2026-10-05.** Đã đối chiếu PDF, đổi tên và tích hợp đủ 22 file nghe Bài 3 cho lớp Ban Giám đốc; thêm dữ liệu tập trung, `/nghe`, `/nghe/trang-[số]`, truy cập công khai không cần đăng nhập, ba tốc độ và chỉ phát một audio tại một thời điểm. Đã gắn đủ 22 ảnh mới ngay dưới đúng 22 audio; chuẩn hóa hai tên ảnh `trang15-phan-iii.png` và `trang17-tu-vung.png`. Kiểm tra thật: lint 0 · typecheck 0 · Vitest 662/662 · build exit 0 · đủ 13 trang HTTP 200 trên Edge headless 360px, không ảnh hỏng và không tràn ngang.
 
 > 🟢 **`MARKETING-HOME-1` — hoàn thành — Codex — 2026-09-17.** Đã tạo website công khai gồm `/`, `/gioi-thieu`, `/tuyen-dung`, `/cac-co-so`; thêm trang chờ `/chuong-trinh`, `/blog`; giữ nguyên `/login`, `/admin`, `/teacher`, `/student`. Các trang marketing bỏ qua Supabase middleware, có SEO/robots/sitemap, responsive và không tự bịa thông tin liên hệ/cơ sở/tuyển dụng. Kiểm tra thật: lint 0 · typecheck 0 · Vitest 654/654 · build exit 0.
@@ -676,6 +678,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**➡️ `B2C-REPORT-1-REVIEW` — việc của user:** mở `/admin/b2c/reports`, đối chiếu tháng 8 và 9 với file Excel rồi thử sửa một kỳ bằng biểu mẫu. CLI Supabase chưa ghi được lịch sử migration vì tài khoản hiện tại không có quyền Management API; xem blocker mới ở mục `BLOCKERS`.
+
 **➡️ `PUBLIC-AUDIO-B3-1-DEPLOY` — việc của user:** review rồi commit/deploy; sau deploy mở `/nghe`, thử ít nhất một M4A và file MP3 trang 9 trên điện thoại thật, sau đó dùng 13 URL đã bàn giao để tạo QR.
 
 **✅ ~~ƯU TIÊN 0 — chạy `scripts/data-fixes/2026-08-20-doi-khai-giang-lop-01-07-09.sql`~~ — XONG 2026-08-20**, đã `COMMIT` và xác minh bằng kết nối read-only mới; số đo ở `TRẠNG THÁI HIỆN TẠI`. Còn lại một lượt **nhìn bằng mắt**: mở `/admin/classes/<LOP-01>` xem khối "Lịch lặp" có đúng _"Áp dụng 07/09/2026 → 04/01/2027"_ và khối "Sinh buổi học" có đúng _"Đã sinh 35/35 buổi"_ — SQL xanh không chứng minh được giao diện đọc ra đúng như vậy.
@@ -950,6 +954,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 > App đã deploy và qua smoke public/anonymous; **P7-T7 vẫn chưa hoàn thành** cho tới khi smoke có đăng nhập qua đủ Definition of Done.
 
+> ⚠️ **`BLK-B2C-MIGRATION-HISTORY` — 2026-10-12.** Repo ban đầu vẫn link project cũ `jmrftblsmsusulzwzvtv`; lệnh link sang `ivazufwfkgvptuvgdare` bị Supabase trả `LegacyLinkProjectStatusError` vì tài khoản không có quyền Management API. Migration `…004` và dữ liệu đã được áp thành công qua `SUPABASE_DB_URL`, nhưng `supabase_migrations.schema_migrations` chưa ghi các migration B2C `…001–…004`. Cần chủ sở hữu project cấp quyền rồi chạy `supabase migration repair --status applied` cho bốn version sau khi đối chiếu schema; không được chạy `db push` mù vì ba bảng B2C trước đã tồn tại.
+
 ---
 
 ## 🔒 QUYẾT ĐỊNH ĐÃ CHỐT (không tự đổi — vướng thì hỏi user)
@@ -1031,6 +1037,16 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-10-12] Phiên 113 — Codex — `B2C-REPORT-1`: báo cáo hoạt động tháng B2C
+
+- **Làm được:** đọc 6 sheet Excel; tạo trang báo cáo B2C có bộ chọn kỳ, 4 KPI, bảng chương trình, cơ cấu chi phí và biểu mẫu thêm/sửa; thêm menu riêng trong module B2C.
+- **File thay đổi:** `src/app/(dashboard)/admin/b2c/reports/page.tsx`, `src/features/b2c/{components,server,schema.ts}`, navigation/types, migration/test/data-fix và tài liệu phối hợp.
+- **Migration/data impact:** tạo `b2c_monthly_reports`, `b2c_monthly_program_metrics`, RPC lưu nguyên tử + RLS manager-only; nhập 2 báo cáo và 10 metric tháng 8–9/2026. Không đụng `classes`, `students`, `enrollments` doanh nghiệp.
+- **Đã test:** lint 0 · typecheck 0 · Vitest **666/666** · build exit 0; DB xác nhận tháng 8 chi phí 80.079.560đ/lợi nhuận -22.039.560đ, tháng 9 chi phí 69.419.970đ/lợi nhuận -34.734.970đ.
+- **Quyết định mới:** tổng chi phí lấy đủ 8 cột từ sheet `Chi phí`; không dùng công thức thiếu Internet và Lương ở sheet `Tổng hợp`.
+- **Blocker/rủi ro:** browser tích hợp không khả dụng; Docker local không chạy nên pgTAP chưa chạy local. Supabase Management API không cho link project mới, nên migration history B2C chưa đồng bộ dù schema/data đã áp trực tiếp thành công.
+- **Next action:** user mở `/admin/b2c/reports` kiểm bằng mắt; sau khi cấp quyền Management API thì repair migration history `…001–…004`.
 
 ### [2026-10-05] Phiên 112 — Codex — `PUBLIC-AUDIO-B3-1`: bộ nghe Bài 3 công khai cho lớp Ban Giám đốc
 

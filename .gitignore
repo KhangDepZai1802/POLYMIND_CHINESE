@@ -69,3 +69,8 @@ DANH SÁCH HỌC TIÊNG HOA.docx
 # biểu mẫu đã được chép nguyên văn vào `domain/labels.ts` (nguồn sự thật duy
 # nhất), nên repo không cần chính file PDF.
 docs/BaoCao.pdf
+
+# Dữ liệu B2C nhập từ Excel có thông tin cá nhân học viên; chỉ giữ ở máy/DB.
+.tmp/
+scripts/data-fixes/2026-10-12-import-b2c-excel.sql
+scripts/data-fixes/2026-10-12-setup-and-import-b2c-excel.sql

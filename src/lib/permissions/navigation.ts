@@ -73,7 +73,11 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     // Đứng ngay sau Điểm danh vì đó là thứ tự làm việc thật: điểm danh xong mới
     // báo cáo được. Giáo vụ có đứng lớp cũng thấy mục này — nhánh "Lớp được
     // phân công" dùng chung đúng danh sách `NAVIGATION.teacher` (`D-2`).
-    { label: "Báo cáo buổi dạy", href: "/teacher/reports", icon: ClipboardList },
+    {
+      label: "Báo cáo buổi dạy",
+      href: "/teacher/reports",
+      icon: ClipboardList,
+    },
     { label: "Bài tập", href: "/teacher/exercises", icon: FileText },
     { label: "Kiểm tra / Thi", href: "/teacher/exams", icon: GraduationCap },
     {
@@ -120,6 +124,13 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
   ],
 };
 
+/** Menu riêng của module trung tâm; không được trỏ sang dữ liệu doanh nghiệp. */
+export const B2C_NAVIGATION: NavItem[] = [
+  { label: "Lớp học B2C", href: "/admin/b2c", icon: School },
+  { label: "Học viên B2C", href: "/admin/b2c/students", icon: Users },
+  { label: "Báo cáo B2C", href: "/admin/b2c/reports", icon: BarChart3 },
+];
+
 export function getNavigation(role: UserRole): NavItem[] {
   return NAVIGATION[role];
 }
@@ -163,6 +174,7 @@ export function getNavigationGroups(
  * thì `/admin` sẽ luôn sáng đèn kể cả khi đang ở `/admin/students`.
  */
 export function isNavItemActive(item: NavItem, pathname: string): boolean {
+  if (item.href === "/admin/b2c") return pathname === item.href;
   const segments = item.href.split("/").filter(Boolean);
   const isRoleRoot = segments.length === 1;
 

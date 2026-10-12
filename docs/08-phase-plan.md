@@ -23,6 +23,12 @@
 
 **Ký hiệu trạng thái:** `☐` chưa làm · `◐` đang dở · `☑` xong (đã chạy DoD) · `⛔` blocked
 
+## B2C-REPORT-1 — Báo cáo hoạt động tháng trung tâm
+
+| ID | Task | Definition of Done | Trạng thái |
+| --- | --- | --- | --- |
+| B2C-REPORT-1 | Tích hợp báo cáo Excel vào module B2C | Trang admin xem/nhập học viên, số tiết, doanh thu, đủ 8 nhóm chi phí và lợi nhuận theo tháng; RLS; dữ liệu tách khỏi doanh nghiệp; có test và build xanh | ☑ |
+
 ---
 
 ## Phase 0 — Khảo sát & đặc tả

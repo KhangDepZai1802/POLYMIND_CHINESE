@@ -1,9 +1,15 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
 import { Logo } from "@/components/shared/logo";
 import { NavGroups } from "@/components/layout/nav-links";
-import { getNavigationGroups } from "@/lib/permissions/navigation";
-import { ROLE_LABELS, type UserRole } from "@/types/roles";
+import { ModuleSwitcher } from "@/components/layout/module-switcher";
+import {
+  B2C_NAVIGATION,
+  getNavigationGroups,
+} from "@/lib/permissions/navigation";
+import { isManagerRole, ROLE_LABELS, type UserRole } from "@/types/roles";
 
 // Client island: `getNavigation` trả về NavItem có `icon` là component
 // (forwardRef). Nếu SidebarNav là Server Component thì việc truyền `items` sang
@@ -16,7 +22,11 @@ export function SidebarNav({
   role: UserRole;
   hasAssignedClasses?: boolean;
 }) {
-  const groups = getNavigationGroups(role, { hasAssignedClasses });
+  const pathname = usePathname();
+  const groups =
+    isManagerRole(role) && pathname.startsWith("/admin/b2c")
+      ? [{ label: "Lớp trung tâm", items: B2C_NAVIGATION }]
+      : getNavigationGroups(role, { hasAssignedClasses });
 
   return (
     <aside className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col self-start border-r md:flex">
@@ -25,7 +35,10 @@ export function SidebarNav({
           đúng thứ đang làm nó khó nhìn. Chữ "POLYMIND" rời đã bỏ vì bản thân
           logo đã là chữ đó. */}
       <div className="flex flex-col gap-2 border-b px-5 py-4">
-        <Logo height={36} priority />
+        <div className="flex items-center gap-2">
+          {isManagerRole(role) && <ModuleSwitcher />}
+          <Logo height={36} priority />
+        </div>
         <div className="flex items-center gap-2">
           {/* Điểm nhấn cam thương hiệu — dùng tiết chế bên cạnh xanh chủ đạo. */}
           <span
@@ -38,7 +51,10 @@ export function SidebarNav({
         </div>
       </div>
 
-      <nav aria-label="Điều hướng chính" className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav
+        aria-label="Điều hướng chính"
+        className="flex-1 space-y-1 overflow-y-auto p-3"
+      >
         <NavGroups groups={groups} />
       </nav>
     </aside>

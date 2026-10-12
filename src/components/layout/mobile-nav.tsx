@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 
 import { NavGroups } from "@/components/layout/nav-links";
@@ -13,8 +14,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { getNavigationGroups } from "@/lib/permissions/navigation";
-import { ROLE_LABELS, type UserRole } from "@/types/roles";
+import {
+  B2C_NAVIGATION,
+  getNavigationGroups,
+} from "@/lib/permissions/navigation";
+import { isManagerRole, ROLE_LABELS, type UserRole } from "@/types/roles";
 
 /**
  * Điều hướng trên di động: nút hamburger ở header mở drawer chứa TOÀN BỘ module
@@ -28,7 +32,11 @@ export function MobileNav({
   hasAssignedClasses?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const groups = getNavigationGroups(role, { hasAssignedClasses });
+  const pathname = usePathname();
+  const groups =
+    isManagerRole(role) && pathname.startsWith("/admin/b2c")
+      ? [{ label: "Lớp trung tâm", items: B2C_NAVIGATION }]
+      : getNavigationGroups(role, { hasAssignedClasses });
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
