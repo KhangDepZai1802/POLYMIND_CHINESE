@@ -1,6 +1,110 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { B2C_PROGRAMS } from "@/features/b2c/domain/programs";
+
+export async function getB2COverview() {
+  const supabase = await createClient();
+
+  const [classesResult, studentsResult, enrollmentsResult, reportResult] =
+    await Promise.all([
+      supabase
+        .from("b2c_classes")
+        .select(
+          "id, code, name, program_slug, teacher_name, weekdays_text, time_text, capacity, enrolled_count, status",
+        )
+        .order("code"),
+      supabase
+        .from("b2c_students")
+        .select("id", { count: "exact", head: true }),
+      supabase.from("b2c_enrollments").select("class_id, student_id"),
+      supabase
+        .from("b2c_monthly_reports")
+        .select(
+          "id, report_year, report_month, revenue, electricity_cost, water_cost, internet_cost, payroll_cost, rent_cost, marketing_cost, advertising_cost, other_cost",
+        )
+        .order("report_year", { ascending: false })
+        .order("report_month", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  const firstError = [
+    classesResult.error,
+    studentsResult.error,
+    enrollmentsResult.error,
+    reportResult.error,
+  ].find(Boolean);
+  if (firstError) {
+    throw new Error(`Không tải được tổng quan B2C: ${firstError.message}`);
+  }
+
+  const classes = classesResult.data ?? [];
+  const enrollments = enrollmentsResult.data ?? [];
+  const enrollmentCountByClass = new Map<string, number>();
+  for (const enrollment of enrollments) {
+    enrollmentCountByClass.set(
+      enrollment.class_id,
+      (enrollmentCountByClass.get(enrollment.class_id) ?? 0) + 1,
+    );
+  }
+
+  const programs = B2C_PROGRAMS.map((program) => {
+    const programClasses = classes.filter(
+      (item) => item.program_slug === program.slug,
+    );
+    return {
+      slug: program.slug,
+      title: program.title,
+      classCount: programClasses.length,
+      activeClassCount: programClasses.filter((item) => item.status === "active")
+        .length,
+      enrollmentCount: programClasses.reduce(
+        (total, item) =>
+          total +
+          (enrollmentCountByClass.get(item.id) ?? item.enrolled_count ?? 0),
+        0,
+      ),
+      capacity: programClasses.reduce(
+        (total, item) => total + (item.capacity ?? 0),
+        0,
+      ),
+    };
+  });
+
+  const latestReport = reportResult.data;
+  const totalCost = latestReport
+    ? Number(latestReport.electricity_cost) +
+      Number(latestReport.water_cost) +
+      Number(latestReport.internet_cost) +
+      Number(latestReport.payroll_cost) +
+      Number(latestReport.rent_cost) +
+      Number(latestReport.marketing_cost) +
+      Number(latestReport.advertising_cost) +
+      Number(latestReport.other_cost)
+    : 0;
+
+  return {
+    studentCount: studentsResult.count ?? 0,
+    enrollmentCount: enrollments.length,
+    activeClassCount: classes.filter((item) => item.status === "active").length,
+    programCount: programs.filter((item) => item.classCount > 0).length,
+    programs,
+    classes: classes.map((item) => ({
+      ...item,
+      actualEnrollmentCount:
+        enrollmentCountByClass.get(item.id) ?? item.enrolled_count ?? 0,
+    })),
+    latestReport: latestReport
+      ? {
+          ...latestReport,
+          revenue: Number(latestReport.revenue),
+          totalCost,
+          balance: Number(latestReport.revenue) - totalCost,
+        }
+      : null,
+  };
+}
 
 export async function getB2CClasses(programSlug: string) {
   const supabase = await createClient();

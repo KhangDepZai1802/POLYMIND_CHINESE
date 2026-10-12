@@ -126,6 +126,7 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
 
 /** Menu riêng của module trung tâm; không được trỏ sang dữ liệu doanh nghiệp. */
 export const B2C_NAVIGATION: NavItem[] = [
+  { label: "Tổng quan", href: "/admin/b2c/overview", icon: LayoutDashboard },
   { label: "Lớp học B2C", href: "/admin/b2c", icon: School },
   { label: "Học viên B2C", href: "/admin/b2c/students", icon: Users },
   { label: "Báo cáo B2C", href: "/admin/b2c/reports", icon: BarChart3 },
