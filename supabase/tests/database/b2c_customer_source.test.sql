@@ -1,0 +1,11 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(5);
+insert into public.b2c_students(source_key,full_name) values ('test-b2c-source','Kiểm tra');
+select is((select customer_source from public.b2c_students where source_key='test-b2c-source'), null::text, 'Dữ liệu cũ/chưa nhập không tự gán nguồn');
+select throws_ok($$update public.b2c_students set customer_source='invalid' where source_key='test-b2c-source'$$,'23514',null,'Chặn nguồn ngoài danh sách');
+select throws_ok($$update public.b2c_students set customer_source='referral' where source_key='test-b2c-source'$$,'23514',null,'Giới thiệu bắt buộc tên');
+select lives_ok($$update public.b2c_students set customer_source='referral',referrer_name='Lan' where source_key='test-b2c-source'$$,'Lưu nguồn giới thiệu và tên');
+select throws_ok($$update public.b2c_students set customer_source='facebook' where source_key='test-b2c-source'$$,'23514',null,'Đổi nguồn phải xóa tên người giới thiệu');
+select * from finish();
+rollback;

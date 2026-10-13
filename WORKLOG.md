@@ -38,6 +38,32 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> `B2C-TUITION-1` — code/SQL hoàn thành — Codex — 2026-10-13. Menu Học phí, gói theo ghi danh, chiết khấu VNĐ/lý do, thu nhiều đợt TM/CK/người thu và công nợ. Dùng lại validation/hiển thị tiền B2B, lưu riêng B2C. SQL 10/11 đã áp sau pgTAP rollback 17/17; lint/typecheck/build exit 0, Vitest 710/710. Chưa kiểm tra trực quan bằng manager hoặc tải đồng thời. User yêu cầu commit/push GitHub.
+
+> `B2C-PARENTS-1` — code/SQL hoàn thành — Codex — 2026-10-13. Menu Phụ huynh B2C, chuyển 33 tên phụ huynh cũ và liên kết từng học viên; không tự gộp trùng tên/đoán SĐT. Hồ sơ sửa tên/SĐT/Zalo và liên kết nhiều con bằng mã; quan hệ trên liên kết. SQL đã áp, pgTAP 7/7; lint/typecheck/build exit 0, Vitest 702/702. Chưa kiểm tra trực quan bằng manager. Chỉ B2C.
+
+> `B2C-SCALE-1` — code/SQL hoàn thành — Codex — 2026-10-13. Pipeline 20 khách/trang mỗi cột, danh sách 50/trang, tìm kiếm/lọc server, lịch hẹn SQL chỉ đọc trên trang hiện tại, index tìm kiếm/lịch hẹn. SQL đã áp, pgTAP 8/8; fixture rollback 5.000 khách/25.000 log: 695 ms list/204 ms stage. Lint/typecheck/build exit 0, Vitest 699/699. Chưa đo giao diện/tải đồng thời hoặc kiểm tra trực quan bằng manager.
+
+> `B2C-CARE-1` — code/SQL hoàn thành — Codex — 2026-10-13. Nhật ký gọi/nhắn khách/phụ huynh từng lead B2C, ngày liên hệ/người phụ trách/nội dung/ngày hẹn tiếp; lịch sử chỉ thêm, phân trang, hẹn mới nhất trên thẻ. SQL đã áp, pgTAP 6/6; lint/typecheck/build exit 0, Vitest 699/699. Chưa kiểm tra trực quan bằng manager. Không đổi VCB.
+
+> `B2C-PIPELINE-1` — code/SQL hoàn thành — Codex — 2026-10-13. User yêu cầu pipeline tuyển sinh B2C riêng; sáu giai đoạn, thêm/sửa, lý do thất bại bắt buộc; bảng lead B2C manager-only. SQL đã áp, pgTAP 7/7; lint/typecheck/build exit 0, Vitest 696/696. Chưa kiểm tra trực quan bằng manager. VCB không đổi. Đặt cọc/Ghi danh là trạng thái theo dõi, chưa tích hợp phiếu thu/xếp lớp.
+
+> `B2C-GOAL-1` — code/SQL hoàn thành — Codex — 2026-10-13. Mục tiêu học theo ghi danh B2C, tên chứng chỉ khi chọn Chứng chỉ; sửa qua cây bút, hiển thị danh sách. SQL đã áp, pgTAP 4/4 + validation 9/9; lint/typecheck/build exit 0, Vitest 688/688. Chưa kiểm tra giao diện bằng manager. Không tạo module XKLĐ, không đổi VCB.
+
+> `B2C-SOURCE-POPUP-1` — hoàn thành code — Codex — 2026-10-13. Bấm thẻ nguồn khách mở popup học viên, 50 hồ sơ/trang, mã/tên/SĐT và tên giới thiệu; truy vấn theo nguồn qua manager/RLS. Lint/typecheck/build exit 0; Vitest 687/687. Chưa kiểm tra trực quan bằng manager.
+
+> `B2C-SOURCE-OVERVIEW-1` — hoàn thành — Codex — 2026-10-13. Tổng quan có 6 nguồn + Chưa xác định, số học viên/tỷ lệ/thanh màu; đếm exact trên hồ sơ, không nhân theo ghi danh. Lint/typecheck/build exit 0, Vitest 687/687. API xác minh tổng 58, tất cả chưa xác định. Chưa kiểm tra giao diện bằng manager.
+
+> `B2C-SOURCE-1` — code/SQL hoàn thành — Codex — 2026-10-13. Nguồn khách trên hồ sơ B2C, tên người giới thiệu bắt buộc khi chọn Giới thiệu; sửa qua form cây bút/RPC nguyên tử. Lint/typecheck/build exit 0, Vitest 687/687, pgTAP nguồn khách 5/5 và validation 9/9; SQL đã áp. Chưa kiểm tra giao diện bằng manager. Không đổi VCB.
+
+> `B2C-VALIDATION-1` — code/SQL hoàn thành — Codex — 2026-10-13. Biểu mẫu cây bút sửa ghi danh cho manager, bắt buộc SĐT 10 số/người chốt/ngày nhập học/chương trình; kiểm tra thứ tự ngày; RPC nguyên tử phone + ghi danh qua RLS. Chỉ B2C. Lint/typecheck/build exit 0, Vitest 686/686, pgTAP 9/9. Chưa kiểm tra giao diện bằng manager.
+
+> `B2C-IDENTITY-1` — hoàn thành code/SQL — Codex — 2026-10-13. Mã học viên duy nhất, trạng thái/lý do theo ghi danh; chỉ B2C. 58 hồ sơ/58 mã duy nhất; migration chạy thử rollback rồi commit; pgTAP 7/7 và RLS vẫn bật. Lint/typecheck/build exit 0, Vitest 675/675; chưa kiểm tra giao diện bằng manager.
+
+> `B2C-STUDENT-STATUS-1` — code/SQL sẵn sàng, chờ áp SQL — Codex — 2026-10-13. Thêm 6 trạng thái học viên và lý do nghỉ riêng trong `b2c_students`; user yêu cầu bàn giao SQL để tự chạy. Lint/typecheck/build exit 0; Vitest 675/675. Không thay đổi lớp/học viên VCB.
+
+> `B2C-STUDENT-COUNT-1` — hoàn thành — Codex — 2026-10-13. Thêm tổng học viên B2C và số học viên duy nhất theo chương trình trên trang `/admin/b2c`; không thay đổi dữ liệu. Lint/typecheck/build exit 0; Vitest 666/666. Chưa kiểm tra giao diện bằng phiên đăng nhập manager.
+
 > 🟢 **`B2C-REPORT-1` — hoàn thành — Codex — 2026-10-12.** Đã tích hợp báo cáo hoạt động tháng từ file `Copy of Bao_cao_thang 1.xlsx` vào module B2C: số học viên/số tiết theo chương trình, doanh thu, đủ 8 nhóm chi phí và lợi nhuận; thêm biểu mẫu quản trị và trang `/admin/b2c/reports`. Dữ liệu nằm riêng trong `b2c_monthly_*`, không tham chiếu lớp doanh nghiệp. Đã áp trực tiếp lên CSDL hiện tại và nhập tháng 8–9/2026: 2 báo cáo, 10 dòng chỉ số. Lint/typecheck 0 · Vitest 666/666 · build exit 0.
 
 > 🟢 **`PUBLIC-AUDIO-B3-1` — hoàn thành — Codex — 2026-10-05.** Đã đối chiếu PDF, đổi tên và tích hợp đủ 22 file nghe Bài 3 cho lớp Ban Giám đốc; thêm dữ liệu tập trung, `/nghe`, `/nghe/trang-[số]`, truy cập công khai không cần đăng nhập, ba tốc độ và chỉ phát một audio tại một thời điểm. Đã gắn đủ 22 ảnh mới ngay dưới đúng 22 audio; chuẩn hóa hai tên ảnh `trang15-phan-iii.png` và `trang17-tu-vung.png`. Kiểm tra thật: lint 0 · typecheck 0 · Vitest 662/662 · build exit 0 · đủ 13 trang HTTP 200 trên Edge headless 360px, không ảnh hỏng và không tràn ngang.
@@ -678,6 +704,32 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**`B2C-TUITION-1-REVIEW`:** mở Học phí B2C, tạo gói bằng +, sửa bằng cây bút, mở Phiếu thu để thu nhiều đợt và xem lịch sử. Ghi danh cũ chưa tự sinh gói/phiếu thu. SQL đã áp; không chạy lại.
+
+**`B2C-PARENTS-1-REVIEW`:** mở menu Phụ huynh B2C, đối chiếu 33 hồ sơ với dữ liệu cũ; cây bút sửa liên hệ/quan hệ và thêm mã học viên của các con. SQL đã áp, không chạy lại.
+
+**`B2C-SCALE-1-REVIEW`:** mở Tuyển sinh, thử tìm kiếm/lọc, phân trang mỗi cột, chuyển Danh sách. SQL đã áp; chưa đo tải đồng thời/giao diện. Phạm vi tối ưu hiện chỉ pipeline B2C.
+
+**`B2C-CARE-1-REVIEW`:** mở Tuyển sinh B2C → Nhật ký chăm sóc trên khách, thêm gọi/nhắn và ngày hẹn, kiểm tra lịch sử và hẹn trên thẻ. SQL đã áp.
+
+**`B2C-PIPELINE-1-REVIEW`:** mở menu Tuyển sinh B2C, thêm khách rồi dùng cây bút chuyển giai đoạn; thử Thất bại thiếu lý do. SQL đã áp; không chạy lại.
+
+**`B2C-GOAL-1-REVIEW`:** mở cây bút B2C, chọn mục tiêu học; Chứng chỉ bắt buộc tên, mục tiêu thuộc từng lớp. SQL đã áp.
+
+**`B2C-SOURCE-POPUP-1-REVIEW`:** tải lại Tổng quan B2C, bấm thẻ nguồn khách; thử Chưa xác định có 58 hồ sơ/2 trang, nguồn trống có thông báo.
+
+**`B2C-SOURCE-OVERVIEW-1-REVIEW`:** mở `/admin/b2c/overview`, bổ sung nguồn ở hồ sơ bằng cây bút rồi tải lại Tổng quan.
+
+**`B2C-SOURCE-1-REVIEW`:** mở cây bút trong danh sách B2C, chọn nguồn khách; Giới thiệu phải nhập tên, đổi nguồn khác xóa tên khỏi hồ sơ. SQL đã áp, không chạy lại migration.
+
+**`B2C-VALIDATION-1-REVIEW`:** user mở cây bút trong danh sách học viên B2C, thử lưu thiếu SĐT/người chốt/ngày nhập học và ngày hết phí trước ngày bắt đầu. SQL đã áp; không chạy lại migration.
+
+**`B2C-IDENTITY-1-REVIEW`:** xem mã trong danh sách B2C, thử đổi trạng thái một lượt ghi danh và kiểm tra lớp còn lại không thay đổi. Không chạy lại migration đã áp.
+
+**`B2C-STUDENT-STATUS-1-APPLY`:** user chạy `supabase/migrations/20261013000001_b2c_student_status.sql` trong SQL Editor, rồi thử sửa trạng thái/lý do nghỉ tại `/admin/b2c/students`. Chưa chạy pgTAP vì Docker daemon không hoạt động.
+
+**`B2C-STUDENT-COUNT-1-REVIEW`:** mở `/admin/b2c` với tài khoản manager để xem tổng học viên và số học viên từng nhóm chương trình.
+
 **➡️ `B2C-REPORT-1-REVIEW` — việc của user:** mở `/admin/b2c/reports`, đối chiếu tháng 8 và 9 với file Excel rồi thử sửa một kỳ bằng biểu mẫu. CLI Supabase chưa ghi được lịch sử migration vì tài khoản hiện tại không có quyền Management API; xem blocker mới ở mục `BLOCKERS`.
 
 **➡️ `PUBLIC-AUDIO-B3-1-DEPLOY` — việc của user:** review rồi commit/deploy; sau deploy mở `/nghe`, thử ít nhất một M4A và file MP3 trang 9 trên điện thoại thật, sau đó dùng 13 URL đã bàn giao để tạo QR.
@@ -938,6 +990,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- `B2C-STUDENT-STATUS-1`: SQL chưa áp theo yêu cầu user tự chạy; danh sách học viên B2C cần migration trước khi sử dụng. Docker daemon không hoạt động nên chưa chạy pgTAP; chưa xác minh lưu dữ liệu thật với manager.
+
 | ID         | Blocker                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Ảnh hưởng                                                                                                                                                                                                                                                                                   | Cần gì để gỡ                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ~~BLK-10~~ | ✅ **ĐÃ GỠ 2026-08-17.** `npx supabase db push` lần đầu bị cổng quyền chặn (lần đó có kèm `printf y                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `để tự trả lời prompt); gọi lại bằng`npx supabase db push --linked`**không tự trả lời prompt** thì chạy được. ⚠️ Output của nó **không in dòng *"Applying migration"* nào**, chỉ in cảnh báo`pgdelta`về certificate (đúng`BLK-7`) rồi _"Finished"_ — tin CLI thì không biết đã áp hay chưa. | Không còn chặn — `…94` đã ở cloud và đã xác minh bằng `psql` read-only, code đã push.                                                                                                                                                                                                                                                                                                                                                                                                                                              | (Xong. 📌 Ghi để khỏi mò lại: `supabase/.temp/pooler-url` **không chứa mật khẩu** — phần auth chỉ có username, phải tự chèn `SUPABASE_DB_PASSWORD` đã percent-encode vào giữa `user` và `@`, không có placeholder `[YOUR-PASSWORD]` nào để thay.) |
@@ -1037,6 +1091,89 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+
+### [2026-10-13] Codex — `B2C-TUITION-1`
+
+- Menu Học phí B2C, gói riêng từng ghi danh: số buổi/đơn giá/chiết khấu VNĐ/lý do/tổng phải thu; phiếu thu nhiều đợt với ngày/tiền/TM-CK/người thu. Tổng phải thu/đã thu/còn nợ, tìm kiếm/phân trang 50, lịch sử phiếu 20/popup. Dùng validation và formatCurrency B2B; không đổi VCB.
+- RPC invoker/manager/RLS, mã phiếu tự sinh, request_id unique cho retry, khóa gói khi thu để kiểm công nợ, chặn sửa tổng dưới tiền đã thu; phiếu chỉ thêm, actor thật. Migration 10/11 đã dry-run rollback rồi áp cloud; pgTAP 17/17, không sinh gói hay thu tiền cho hồ sơ thật. History CLI chưa đồng bộ.
+- Lint/typecheck/build exit 0; Vitest 710/710. App khởi động lại localhost:3000. Chưa kiểm tra trực quan manager/tải đồng thời. User yêu cầu push toàn bộ thay đổi B2C; .env.example bị xóa nội dung ngoài scope sẽ giữ ở máy. Next: B2C-TUITION-1-REVIEW.
+
+### [2026-10-13] Codex — `B2C-PARENTS-1`
+
+- Menu Phụ huynh riêng; bảng phụ huynh và liên kết con, backfill 33 tên từ dữ liệu đang có. Không gộp trùng tên/đoán SĐT/quan hệ. Form sửa tên/SĐT/Zalo, liên kết nhiều mã học viên và quan hệ; danh sách học viên đọc tên từ hồ sơ mới.
+- RPC invoker/RLS, parent không hard delete, liên kết được sửa nguyên tử; tìm kiếm/phân trang 50 trên server. SQL đã test rollback 7/7 rồi commit; API relation 200; migration history CLI chưa đồng bộ.
+- Lint/typecheck/build exit 0, Vitest 702/702. Chưa kiểm tra trực quan bằng manager. Next: user đối chiếu/sửa dữ liệu phụ huynh. VCB không đổi.
+
+### [2026-10-13] Codex — `B2C-SCALE-1`
+
+- Bỏ tải toàn bộ leads/logs: RPC lọc/tìm kiếm tại DB, count exact, lịch hẹn chỉ trên trang hiện tại; UI pipeline 20/cột và danh sách 50/trang, URL giữ bộ lọc và trang. Không đổi VCB.
+- SQL thêm RPC invoker/manager và index đã áp sau pgTAP rollback 8/8. Fixture 5.000 khách/25.000 logs rollback: list 50 ~695 ms, stage 20 ~204 ms; một phép đo truy vấn gồm roundtrip, không phải SLA hay tải đồng thời.
+- Lint/typecheck/build exit 0, Vitest 699/699. Chưa kiểm tra trực quan bằng manager; chưa đo tải giao diện. Next: user thử tìm kiếm/phân trang/Danh sách. Migration history CLI chưa đồng bộ.
+
+### [2026-10-13] Codex — `B2C-CARE-1`
+
+- Popup nhật ký theo khách: gọi/nhắn, ngày liên hệ, người phụ trách, nội dung, ngày hẹn tùy chọn; lịch sử 20 dòng/trang, hẹn của lần lưu mới nhất trên thẻ.
+- Bảng manager-only/RLS, actor thật, chỉ thêm lịch sử không sửa/xóa. SQL đã kiểm thử rollback 6/6 rồi commit trên cloud; migration history CLI chưa đồng bộ.
+- Lint/typecheck/build exit 0, Vitest 699/699. Chưa kiểm tra trực quan bằng manager. Next: user thử ghi nhật ký và ngày hẹn. Không đổi VCB.
+
+### [2026-10-13] Codex — `B2C-PIPELINE-1`
+
+- Thêm menu Tuyển sinh B2C và pipeline 6 cột, thêm/sửa thông tin/giai đoạn, lý do thất bại, nguồn/referrer, tìm kiếm và lọc chương trình. Chỉ B2C; không ghi vào hồ sơ học viên hoặc VCB.
+- Bảng manager-only/RLS/actor thật; thu hồi quyền mặc định Supabase để chặn sửa created_by và hard delete. SQL đã chạy thử/pgTAP rollback 7/7 rồi commit schema; migration history CLI chưa đồng bộ.
+- Lint/typecheck/build exit 0, Vitest 696/696. Chưa kiểm tra trực quan bằng manager. Đặt cọc/Ghi danh chỉ trạng thái theo dõi; next: user thử form và chuyển giai đoạn.
+
+### [2026-10-13] Codex — `B2C-GOAL-1`
+
+- Thêm mục tiêu học và chứng chỉ vào ghi danh B2C, form cây bút và danh sách; tên chứng chỉ bắt buộc khi chọn Chứng chỉ. Không đổi VCB, không tạo nghiệp vụ XKLĐ.
+- SQL `20261013000005_b2c_learning_goal.sql` đã áp cloud sau kiểm thử rollback 4/4 + validation 9/9; giữ RPC invoker/RLS. Migration history CLI chưa đồng bộ.
+- Lint/typecheck/build exit 0, Vitest 688/688. Chưa kiểm tra giao diện bằng manager. Next: user chọn mục tiêu trong từng lớp.
+
+### [2026-10-13] Codex — `B2C-SOURCE-POPUP-1`
+
+- Thẻ nguồn khách có popup danh sách hồ sơ theo nguồn, 50/trang; hiển thị mã/tên/SĐT, thêm người giới thiệu cho referral; có tải/lỗi/thử lại/trống.
+- Server action requireManager + client phiên đăng nhập/RLS; validate nguồn/page. Không thay đổi SQL/dữ liệu/VCB.
+- Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra trực quan bằng manager. Next: user bấm thẻ và thử phân trang.
+
+### [2026-10-13] Codex — `B2C-SOURCE-OVERVIEW-1`
+
+- Thêm thẻ thống kê nguồn khách trên Tổng quan B2C: số hồ sơ, tỷ lệ, thanh màu; dữ liệu dùng count exact/head qua client phiên đăng nhập/RLS, không giới hạn 1.000 dòng.
+- Không thay đổi SQL/dữ liệu/VCB. API chỉ đọc xác minh 58 hồ sơ Chưa xác định, sáu nguồn còn lại 0.
+- Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra giao diện bằng manager. Next: user nhập nguồn khách và xem Tổng quan.
+
+### [2026-10-13] Codex — `B2C-SOURCE-1`
+
+- Thêm nguồn khách và tên người giới thiệu vào hồ sơ học viên B2C, cột danh sách và form cây bút; nguồn dùng chung các lớp. Không tự gán nguồn cho dữ liệu cũ; không đổi VCB.
+- Migration `20261013000004_b2c_customer_source.sql` đã áp cloud sau dry-run/pgTAP rollback: 5/5 nguồn khách, 9/9 validation ghi danh. RPC invoker/RLS vẫn nguyên tử; chưa đồng bộ migration history CLI.
+- Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra giao diện bằng manager. Next: user thử chọn nguồn và tên giới thiệu.
+
+### [2026-10-13] Codex — `B2C-VALIDATION-1`
+
+- Form sửa ghi danh cho manager, validation server và RPC invoker/RLS, lưu SĐT hồ sơ + ghi danh nguyên tử; giữ chương trình theo lớp. Chỉ B2C, không sửa dữ liệu cũ tự động.
+- Migration `20261013000003_b2c_enrollment_validation.sql`: kiểm thử 9/9 trong rollback với role authenticated/manager rồi commit riêng schema trên Supabase. Migration history CLI chưa đồng bộ.
+- Lint/typecheck/build exit 0, Vitest 686/686. Chưa kiểm tra giao diện bằng manager. Next: user thử cây bút và validation.
+
+### [2026-10-13] Codex — `B2C-IDENTITY-1`
+
+- Mã học viên B2C duy nhất, tìm kiếm theo mã; trạng thái/lý do nghỉ và nút cây bút cập nhật riêng lượt ghi danh. Không thay đổi VCB.
+- Migration mới chuyển trạng thái cũ sang ghi danh, giữ cột hồ sơ cũ để bảo toàn thông tin; không tự ghép các hồ sơ theo tên. 58/58 hồ sơ được cấp mã khác nhau.
+- SQL đã dry-run trong rollback rồi commit trên cloud; pgTAP 7/7, RLS hai bảng vẫn bật. Migration history CLI chưa đồng bộ.
+- Kiểm tra code: lint/typecheck/build exit 0, Vitest 675/675; chưa kiểm tra giao diện bằng manager. Next: user thử sửa trạng thái riêng lớp.
+
+### [2026-10-13] Codex — `B2C-STUDENT-STATUS-1`
+
+- **Làm được:** trạng thái/lý do nghỉ trong bảng học viên B2C, dialog sửa, validation server, manager + RLS; chuẩn bị migration và pgTAP.
+- **Migration/data impact:** chỉ `b2c_students`; chưa áp SQL theo yêu cầu user. VCB không đổi. Mặc định dữ liệu cũ là Đang học sau khi áp SQL.
+- **Đã test:** lint/typecheck/build exit 0; Vitest 675/675. pgTAP chưa chạy vì Docker daemon không hoạt động; chưa kiểm tra lưu thật.
+- **Next action:** user chạy SQL, tải lại danh sách B2C, kiểm tra sửa trạng thái.
+
+### [2026-10-13] Codex — `B2C-STUDENT-COUNT-1`
+
+- **Làm được:** thêm tổng học viên B2C và số học viên duy nhất theo chương trình; đọc ghi danh theo trang để không bị giới hạn 1.000 dòng.
+- **File thay đổi:** trang `/admin/b2c`, `src/features/b2c/server/queries.ts`, WORKLOG và phase plan.
+- **Migration/data impact:** không có; chỉ đọc dữ liệu qua Supabase client theo phiên đăng nhập.
+- **Đã test:** lint/typecheck/build exit 0; Vitest 666/666; truy vấn quan hệ Supabase trả HTTP 200 bằng service role (chỉ kiểm tra schema, không xác minh quyền manager).
+- **Blocker/rủi ro:** chưa kiểm tra giao diện với phiên đăng nhập manager.
+- **Next action:** user xem trang `/admin/b2c`.
 
 ### [2026-10-12] Phiên 113 — Codex — `B2C-REPORT-1`: báo cáo hoạt động tháng B2C
 

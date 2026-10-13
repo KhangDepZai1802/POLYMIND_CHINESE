@@ -1,3 +1,4 @@
+import { CustomerSourceCard } from "@/features/b2c/components/customer-source-card";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -19,16 +20,17 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getB2COverview } from "@/features/b2c/server/queries";
+import { getB2COverview, getB2CCustomerSourceOverview } from "@/features/b2c/server/queries";
 import { requireManager } from "@/lib/auth/session";
 import { formatCurrency } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Tổng quan B2C" };
 
 export default async function B2COverviewPage() {
-  const [user, overview] = await Promise.all([
+  const [user, overview, customerSources] = await Promise.all([
     requireManager(),
     getB2COverview(),
+    getB2CCustomerSourceOverview(),
   ]);
   const report = overview.latestReport;
 
@@ -78,6 +80,24 @@ export default async function B2COverviewPage() {
           />
         </div>
       </section>
+
+      <Card className="mt-4 gap-4 py-4">
+        <CardHeader className="px-4">
+          <CardTitle asChild className="text-base"><h2>Nguồn khách</h2></CardTitle>
+          <p className="text-muted-foreground text-sm">
+            {customerSources.total.toLocaleString("vi-VN")} học viên · Mỗi học viên tính một lần, dù học nhiều lớp.
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-3 px-4 sm:grid-cols-2 xl:grid-cols-4">
+          {customerSources.rows.map((row, index) => {
+            const percent = customerSources.total ? row.count / customerSources.total * 100 : 0;
+            const colors = ["bg-blue-500", "bg-cyan-500", "bg-violet-500", "bg-amber-500", "bg-emerald-500", "bg-rose-500", "bg-slate-400"];
+            return (
+              <CustomerSourceCard key={row.source ?? "unknown"} source={row.source} label={row.label} count={row.count} percent={percent} color={colors[index] ?? "bg-slate-400"} />
+            );
+          })}
+        </CardContent>
+      </Card>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.62fr)]">
         <Card className="min-w-0 gap-4 py-4">

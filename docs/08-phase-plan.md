@@ -1,5 +1,45 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TUITION-1 — Học phí và phiếu thu
+
+- [x] Gói theo ghi danh: số buổi, đơn giá, chiết khấu VNĐ/lý do, tổng phải thu. Phiếu thu nhiều đợt: ngày/tiền/TM-CK/người thu; công nợ, idempotency DB, chặn thu vượt và giảm tổng dưới số đã thu. Manager/RLS, tìm kiếm/phân trang, dùng lại validation và tiền tệ B2B. SQL 10/11 đã áp, pgTAP 17/17; lint/typecheck/build exit 0, Vitest 710/710. Chưa kiểm tra trực quan bằng manager/tải đồng thời.
+
+## B2C-PARENTS-1 — Menu quản lý phụ huynh
+
+- [x] Menu Phụ huynh riêng B2C, backfill tên/quan hệ với con từ dữ liệu cũ, tên/SĐT/Zalo/quan hệ, một phụ huynh nhiều con; thêm/sửa nguyên tử manager/RLS, tìm kiếm/phân trang server; học viên đọc phụ huynh từ liên kết mới. SQL đã áp (33 hồ sơ), pgTAP 7/7, API relation 200; lint/typecheck/build exit 0, Vitest 702/702. Chưa kiểm tra trực quan bằng manager. Không đổi VCB.
+
+## B2C-SCALE-1 — Pipeline dữ liệu lớn
+
+- [x] Phân trang DB 20/cột, chế độ danh sách 50/trang; lọc/tìm kiếm server; lịch hẹn latest cho trang hiện tại; RLS/manager; index. SQL đã áp, pgTAP 8/8; fixture rollback 5.000 lead/25.000 log đã đo 695 ms list/204 ms stage. Lint/typecheck/build exit 0, Vitest 699/699. Chỉ pipeline B2C, chưa đo giao diện/tải đồng thời.
+
+## B2C-CARE-1 — Nhật ký chăm sóc tuyển sinh
+
+- [x] Nút trên lead mở popup lịch sử và thêm gọi/nhắn, ngày liên hệ/người phụ trách/nội dung/ngày hẹn; phân trang 20; hẹn mới nhất trên thẻ; manager/RLS/actor thật, không ghi đè/xóa lịch sử. SQL đã áp, pgTAP 6/6; lint/typecheck/build exit 0, Vitest 699/699. Chưa kiểm tra trực quan bằng manager. Chỉ B2C.
+
+## B2C-PIPELINE-1 — Pipeline tuyển sinh trung tâm
+
+- [x] Menu Tuyển sinh; pipeline 6 giai đoạn, thêm/sửa khách, tìm kiếm/lọc chương trình, lý do thất bại bắt buộc; manager/RLS/attribution; chỉ B2C. SQL đã áp, pgTAP 7/7; lint/typecheck/build exit 0, Vitest 696/696. Chưa kiểm tra trực quan bằng manager. Đặt cọc/Ghi danh là trạng thái theo dõi, chưa tích hợp thu tiền/xếp lớp.
+
+## B2C-GOAL-1 — Mục tiêu học
+
+- [x] Mục tiêu học theo ghi danh B2C, chứng chỉ có tên/cấp độ bắt buộc; form cây bút, cột danh sách, server/DB validation. SQL đã áp; pgTAP 4/4 + 9/9; lint/typecheck/build exit 0, Vitest 688/688. Chưa kiểm tra giao diện bằng manager. Không đổi VCB.
+
+## B2C-SOURCE-POPUP-1 — Danh sách theo nguồn
+
+- [x] Thẻ nguồn khách mở popup danh sách học viên duy nhất theo nguồn; mã/tên/SĐT/tên giới thiệu; phân trang 50; xử lý tải/lỗi/trống; quyền manager và RLS. Không đổi SQL/VCB. Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra trực quan bằng manager.
+
+## B2C-SOURCE-OVERVIEW-1 — Tổng quan nguồn khách
+
+- [x] Tổng quan B2C hiển thị số hồ sơ/tỷ lệ của sáu nguồn và Chưa xác định; mỗi học viên một lần, count exact trên hồ sơ. Không đổi SQL/VCB. Lint/typecheck/build exit 0, Vitest 687/687; API tổng 58. Chưa kiểm tra giao diện bằng manager.
+
+## B2C-SOURCE-1 — Nguồn khách
+
+- [x] Sáu nguồn khách trên hồ sơ B2C, tên giới thiệu bắt buộc khi chọn Giới thiệu; cột danh sách và form cây bút; server/DB validation; nguồn cũ chưa xác định; VCB không đổi. SQL đã áp, pgTAP 5/5 + 9/9, lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra giao diện bằng manager.
+
+## B2C-VALIDATION-1 — Kiểm tra ghi danh admin/giáo vụ
+
+- [x] Form cây bút sửa ghi danh yêu cầu SĐT 10 số, người chốt, ngày nhập học, chương trình; kiểm tra thứ tự ngày học phí; server + RPC manager/RLS, lưu nguyên tử. SQL đã áp, pgTAP 9/9; lint/typecheck/build exit 0, Vitest 686/686. Chưa kiểm tra giao diện bằng manager. Không đổi VCB.
+
 > **Sổ cái công việc — nguồn sự thật về "còn phải làm gì".**
 > File này **gần như bất biến**: task chỉ được thêm, không xóa. Trạng thái động (ai đang làm, làm tới đâu) nằm ở [`WORKLOG.md`](../WORKLOG.md).
 >
@@ -22,6 +62,18 @@
 - ❌ Ghi đè thay đổi của agent kia ở file ngoài scope task của mình.
 
 **Ký hiệu trạng thái:** `☐` chưa làm · `◐` đang dở · `☑` xong (đã chạy DoD) · `⛔` blocked
+
+## B2C-STUDENT-COUNT-1 — Số học viên trên trang nhóm chương trình
+
+### B2C-IDENTITY-1 — Mã học viên và trạng thái theo ghi danh
+
+- [x] Mã học viên B2C duy nhất, không đổi mã, hiện/tìm kiếm trên danh sách; trạng thái/lý do theo ghi danh, giữ thông tin cũ; không đổi VCB. SQL đã commit; pgTAP 7/7; lint/typecheck/build exit 0, Vitest 675/675. Chưa kiểm tra giao diện bằng manager.
+
+- [x] Trang `/admin/b2c` hiển thị tổng số học viên từ `b2c_students` và số học viên duy nhất theo chương trình từ ghi danh; không đếm trùng nhiều lớp trong cùng chương trình; lint/typecheck/build exit 0, Vitest 666/666.
+
+## B2C-STUDENT-STATUS-1 — Trạng thái học viên trung tâm
+
+- [ ] ◐ Code và SQL sẵn sàng: bảng học viên B2C có 6 trạng thái và lý do nghỉ tùy chọn, sửa bởi manager qua RLS; đồng bộ các lớp của học viên. Lint/typecheck/build exit 0, Vitest 675/675. Chờ user chạy SQL và kiểm tra giao diện; pgTAP chưa chạy vì Docker không hoạt động. Không thay đổi VCB.
 
 ## B2C-REPORT-1 — Báo cáo hoạt động tháng trung tâm
 

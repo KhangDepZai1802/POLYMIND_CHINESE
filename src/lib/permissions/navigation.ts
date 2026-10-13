@@ -127,9 +127,12 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
 /** Menu riêng của module trung tâm; không được trỏ sang dữ liệu doanh nghiệp. */
 export const B2C_NAVIGATION: NavItem[] = [
   { label: "Tổng quan", href: "/admin/b2c/overview", icon: LayoutDashboard },
-  { label: "Lớp học B2C", href: "/admin/b2c", icon: School },
-  { label: "Học viên B2C", href: "/admin/b2c/students", icon: Users },
-  { label: "Báo cáo B2C", href: "/admin/b2c/reports", icon: BarChart3 },
+  { label: "Tuyển sinh", href: "/admin/b2c/admissions", icon: TrendingUp },
+  { label: "Lớp học", href: "/admin/b2c", icon: School },
+  { label: "Học viên", href: "/admin/b2c/students", icon: Users },
+  { label: "Phụ huynh", href: "/admin/b2c/parents", icon: UserCircle },
+  { label: "Học phí", href: "/admin/b2c/tuition", icon: Wallet },
+  { label: "Báo cáo", href: "/admin/b2c/reports", icon: BarChart3 },
 ];
 
 export function getNavigation(role: UserRole): NavItem[] {

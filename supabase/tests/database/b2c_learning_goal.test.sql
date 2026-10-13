@@ -1,0 +1,12 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(4);
+insert into public.b2c_students(id,source_key,full_name) values ('42000000-0000-4000-8000-000000000001','test-b2c-goal','Kiểm tra');
+insert into public.b2c_classes(id,program_slug,name) values ('42000000-0000-4000-8000-000000000002','tieng-trung','Lớp kiểm tra');
+insert into public.b2c_enrollments(id,source_key,class_id,student_id) values ('42000000-0000-4000-8000-000000000003','test-b2c-goal','42000000-0000-4000-8000-000000000002','42000000-0000-4000-8000-000000000001');
+select throws_ok($$update public.b2c_enrollments set learning_goal='invalid' where source_key='test-b2c-goal'$$,'23514',null,'Chặn mục tiêu sai');
+select throws_ok($$update public.b2c_enrollments set learning_goal='certificate' where source_key='test-b2c-goal'$$,'23514',null,'Chứng chỉ bắt buộc tên');
+select lives_ok($$update public.b2c_enrollments set learning_goal='certificate',certificate_goal='HSK 3' where source_key='test-b2c-goal'$$,'Lưu chứng chỉ mục tiêu');
+select throws_ok($$update public.b2c_enrollments set learning_goal='communication' where source_key='test-b2c-goal'$$,'23514',null,'Đổi mục tiêu phải xóa chứng chỉ');
+select * from finish();
+rollback;

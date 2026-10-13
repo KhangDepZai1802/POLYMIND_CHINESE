@@ -2,6 +2,64 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { B2C_PROGRAMS } from "@/features/b2c/domain/programs";
+import { B2C_CUSTOMER_SOURCES, B2C_CUSTOMER_SOURCE_LABELS } from "@/features/b2c/domain/customer-source";
+
+export async function getB2CAdmissionsPage(stage: string | null, program: string, query: string, page = 0, limit = 20) {
+  const { data, error } = await (await createClient()).rpc("get_b2c_admissions_page", {
+    p_stage: stage ?? undefined, p_program: program || undefined, p_query: query, p_page: page, p_limit: limit,
+  });
+  if (error) throw new Error("Không tải được danh sách tuyển sinh B2C. Vui lòng thử lại.");
+  return data as unknown as { leads: import("@/features/b2c/domain/admissions").AdmissionLead[]; total: number };
+}
+
+export async function getB2CCustomerSourceOverview() {
+  const supabase = await createClient();
+  const sources = [...B2C_CUSTOMER_SOURCES, null];
+  const rows = await Promise.all(sources.map(async (source) => {
+    const query = supabase.from("b2c_students").select("id", { count: "exact", head: true });
+    const { count, error } = await (source === null
+      ? query.is("customer_source", null)
+      : query.eq("customer_source", source));
+    if (error) throw new Error(`Không tải được thống kê nguồn khách: ${error.message}`);
+    return { source, label: source ? B2C_CUSTOMER_SOURCE_LABELS[source] ?? source : "Chưa xác định", count: count ?? 0 };
+  }));
+  return { rows, total: rows.reduce((total, row) => total + row.count, 0) };
+}
+
+export async function getB2CStudentCounts() {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("b2c_students")
+    .select("id", { count: "exact", head: true });
+  if (error) throw new Error(`Không tải được số học viên B2C: ${error.message}`);
+
+  const studentsByProgram = new Map<string, Set<string>>();
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error: enrollmentError } = await supabase
+      .from("b2c_enrollments")
+      .select("id, student_id, b2c_classes!inner(program_slug)")
+      .order("id")
+      .range(offset, offset + pageSize - 1);
+    if (enrollmentError) {
+      throw new Error(`Không tải được số học viên B2C: ${enrollmentError.message}`);
+    }
+    for (const enrollment of data ?? []) {
+      const slug = enrollment.b2c_classes.program_slug;
+      const students = studentsByProgram.get(slug) ?? new Set<string>();
+      students.add(enrollment.student_id);
+      studentsByProgram.set(slug, students);
+    }
+    if (!data || data.length < pageSize) break;
+  }
+
+  return {
+    total: count ?? 0,
+    byProgram: Object.fromEntries(
+      B2C_PROGRAMS.map(({ slug }) => [slug, studentsByProgram.get(slug)?.size ?? 0]),
+    ),
+  };
+}
 
 export async function getB2COverview() {
   const supabase = await createClient();
@@ -143,9 +201,10 @@ export async function getB2CStudentRows(programSlug?: string) {
   const { data, error } = await supabase
     .from("b2c_enrollments")
     .select(
-      `id, class_id, enrollment_date, payment_date, learning_start_date,
+      `id, class_id, status, withdrawal_reason, learning_goal, certificate_goal, enrollment_date, payment_date, learning_start_date,
        tuition_end_date, registered_sessions, sessions_per_week, salesperson, notes,
-       student:b2c_students (id, full_name, date_of_birth, birth_year, guardian_name, email, address, phone)`,
+       student:b2c_students (id, code, full_name, date_of_birth, birth_year, email, address, phone, customer_source, referrer_name,
+         parentLinks:b2c_student_parents (parent:b2c_parents (full_name)))`,
     )
     .in(
       "class_id",
@@ -159,7 +218,7 @@ export async function getB2CStudentRows(programSlug?: string) {
       message: error.message,
       programSlug,
     });
-    return [];
+    throw new Error("Không tải được học viên B2C. Kiểm tra kết nối và migration trạng thái học viên.");
   }
 
   return (data ?? []).flatMap((item) => {
@@ -168,13 +227,21 @@ export async function getB2CStudentRows(programSlug?: string) {
     return [
       {
         id: item.id,
+        studentId: item.student.id,
+        studentCode: item.student.code,
+        customerSource: item.student.customer_source,
+        referrerName: item.student.referrer_name,
+        studentStatus: item.status,
+        withdrawalReason: item.withdrawal_reason,
+        learningGoal: item.learning_goal,
+        certificateGoal: item.certificate_goal,
         classCode: classRecord?.code ?? "",
         className: classRecord?.name ?? "",
         programSlug: classRecord?.program_slug ?? "",
         fullName: item.student.full_name,
         dateOfBirth: item.student.date_of_birth,
         birthYear: item.student.birth_year,
-        guardianName: item.student.guardian_name,
+        guardianName: item.student.parentLinks.map((link) => link.parent?.full_name).filter(Boolean).join(", ") || null,
         email: item.student.email,
         address: item.student.address,
         phone: item.student.phone,

@@ -14,6 +14,10 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { B2CClassFormDialog } from "@/features/b2c/components/class-form-dialog";
 import { cn } from "@/lib/utils";
+import { B2CStudentStatusDialog } from "@/features/b2c/components/student-status-dialog";
+import { B2C_CUSTOMER_SOURCE_LABELS } from "@/features/b2c/domain/customer-source";
+import { B2C_LEARNING_GOAL_LABELS } from "@/features/b2c/domain/learning-goal";
+import { B2C_STUDENT_STATUS_LABELS, B2C_STUDENT_STATUS_COLORS, type B2CStudentStatus } from "@/features/b2c/domain/student-status";
 
 type ProgramSummary = {
   slug: string;
@@ -41,6 +45,14 @@ type ClassRow = {
 
 type StudentRow = {
   id: string;
+  studentId: string;
+  studentCode: string;
+  customerSource: string | null;
+  referrerName: string | null;
+  learningGoal: string | null;
+  certificateGoal: string | null;
+  studentStatus: B2CStudentStatus;
+  withdrawalReason: string | null;
   classCode: string;
   className: string;
   programSlug: string;
@@ -198,6 +210,7 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
     ? students.filter((item) =>
         [
           item.fullName,
+          item.studentCode,
           item.guardianName,
           item.phone,
           item.email,
@@ -222,7 +235,7 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Tìm tên học viên, phụ huynh, số điện thoại, email hoặc lớp..."
+          placeholder="Tìm mã, tên học viên, phụ huynh, số điện thoại, email hoặc lớp..."
           className="border-input bg-background h-10 w-full rounded-md border pr-3 pl-9 text-sm"
         />
       </label>
@@ -233,7 +246,10 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
             <tr>
               {[
                 "#",
+                "Mã học viên",
                 "Học viên",
+                "Trạng thái HV",
+                "Lý do nghỉ",
                 "Lớp",
                 "Ngày sinh",
                 "Phụ huynh",
@@ -247,8 +263,13 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
                 "Số buổi",
                 "Người chốt",
                 "Ghi chú",
+                "Nguồn khách",
+                "Người giới thiệu",
+                "Mục tiêu học",
+                "Chứng chỉ mục tiêu",
+                "Thao tác",
               ].map((heading) => (
-                <th key={heading} className="border-b px-3 py-2.5 font-medium">
+                <th key={heading} className={cn("border-b px-3 py-2.5 font-medium", heading === "Thao tác" && "bg-muted sticky right-0 z-20 w-16 text-right shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.2)]")}>
                   {heading}
                 </th>
               ))}
@@ -258,7 +279,7 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
             {visibleStudents.length === 0 ? (
               <tr>
                 <td
-                  colSpan={15}
+                  colSpan={23}
                   className="text-muted-foreground px-4 py-12 text-center"
                 >
                   {query
@@ -273,7 +294,14 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
                   className="border-b align-top last:border-b-0"
                 >
                   <td className="px-3 py-3">{index + 1}</td>
+                  <td className="px-3 py-3 font-mono whitespace-nowrap">{item.studentCode}</td>
                   <td className="px-3 py-3 font-medium">{item.fullName}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-medium", B2C_STUDENT_STATUS_COLORS[item.studentStatus])}>
+                      {B2C_STUDENT_STATUS_LABELS[item.studentStatus]}
+                    </span>
+                  </td>
+                  <td className="max-w-64 px-3 py-3 whitespace-pre-wrap break-words">{item.withdrawalReason ?? "—"}</td>
                   <td className="px-3 py-3">
                     <span className="font-medium">{item.className}</span>
                     <div className="text-muted-foreground font-mono text-xs">
@@ -309,6 +337,15 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
                   <td className="px-3 py-3">{item.salesperson ?? "—"}</td>
                   <td className="max-w-80 px-3 py-3 whitespace-normal">
                     {item.notes ?? "—"}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap">{item.customerSource ? B2C_CUSTOMER_SOURCE_LABELS[item.customerSource] : "Chưa xác định"}</td>
+                  <td className="px-3 py-3">{item.referrerName ?? "—"}</td>
+                  <td className="px-3 py-3">{item.learningGoal ? B2C_LEARNING_GOAL_LABELS[item.learningGoal] : "Chưa xác định"}</td>
+                  <td className="px-3 py-3">{item.certificateGoal ?? "—"}</td>
+                  <td className="bg-card sticky right-0 z-10 px-3 py-3 text-right shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.2)]">
+                    <B2CStudentStatusDialog enrollmentId={item.id} fullName={item.fullName} className={item.className} status={item.studentStatus} reason={item.withdrawalReason}
+                      programSlug={item.programSlug} phone={item.phone} salesperson={item.salesperson} enrollmentDate={item.enrollmentDate}
+                      learningStartDate={item.learningStartDate} tuitionEndDate={item.tuitionEndDate} customerSource={item.customerSource} referrerName={item.referrerName} learningGoal={item.learningGoal} certificateGoal={item.certificateGoal} />
                   </td>
                 </tr>
               ))

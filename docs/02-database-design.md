@@ -1,5 +1,48 @@
 # 02 — Thiết kế Database
 
+## Học phí B2C (2026-10-13)
+
+`b2c_tuition_packages` có một gói trên mỗi ghi danh (unique enrollment_id), số buổi/đơn giá/chiết khấu VNĐ và lý do khi giảm > 0; total_due generated = sessions × unit_price − discount. `b2c_tuition_receipts` chỉ thêm, ngày/tiền nguyên VNĐ/TM-CK/người thu, mã phiếu sequence riêng, actor auth.uid(), request_id unique. RPC record khóa gói trước khi kiểm tổng đã thu, retry cùng dữ liệu trả phiếu cũ; vượt công nợ bị chặn. Trigger chặn sửa gói xuống dưới số đã thu. Không cho authenticated xóa/sửa phiếu, đổi actor hay liên kết gói; manager-only RLS/invoker. Hai hàm trigger không cấp execute cho anon. Chưa có hủy phiếu/hoàn tiền trong phạm vi B1/B2.
+
+Trang `/admin/b2c/tuition` tìm kiếm server/phân trang 50 ghi danh, tổng tiền theo bộ lọc; popup lịch sử phiếu 20/trang. Dùng lại validation đơn giá/thanh toán và formatCurrency từ module B2B, không dùng chung bảng hay công nợ. Không tự tạo gói/phiếu từ dữ liệu cũ hoặc trạng thái Đặt cọc của pipeline. Migrations `20261013000010_b2c_tuition.sql` và `20261013000011_b2c_tuition_trigger_permissions.sql` đã áp trực tiếp cloud sau test rollback 17/17; lịch sử CLI chưa đồng bộ. Lint/typecheck/build exit 0, Vitest 710/710; chưa kiểm tra trực quan manager/tải đồng thời.
+
+## Phụ huynh B2C (2026-10-13)
+
+`b2c_parents` lưu tên/SĐT/Zalo; `b2c_student_parents` lưu quan hệ với từng con, unique(parent_id,student_id), hỗ trợ một phụ huynh nhiều con và nhiều người liên hệ trên một học viên. Backfill 33 tên `guardian_name` cũ, mỗi student một hồ sơ ban đầu; không gộp tên, không suy đoán SĐT/Zalo/quan hệ, giữ nguyên cột cũ để đối chiếu. Quan hệ nhập cũ là unknown. Danh sách học viên đọc tên từ liên kết mới. Trang menu `/admin/b2c/parents` phân trang 50/search server, form thêm/sửa qua RPC invoker/RLS nguyên tử; danh sách mã học viên và quan hệ chung được lưu lên liên kết. Parent không hard delete; người dùng có thể thay danh sách liên kết con. Migration `20261013000009_b2c_parents.sql` đã áp, pgTAP 7/7; API relation HTTP 200. Chỉ B2C, không đổi VCB.
+
+## Pipeline B2C cho dữ liệu lớn (2026-10-13)
+
+RPC invoker `get_b2c_admissions_page`: manager-only, lọc chương trình/giai đoạn/tên/SĐT/phụ trách tại DB, tìm kiếm literal (escape %, _, backslash); giới hạn 1–50 hồ sơ/trang, trả tổng exact và hồ sơ đã phân trang. Lịch hẹn mới nhất chỉ đọc cho khách trong trang bằng index lead_id/created_at/id, giữ null của nhật ký mới nhất. Pipeline 20/cột, danh sách 50/trang, URL lưu bộ lọc/trang; không tải toàn bộ leads/logs về trình duyệt. Index trigram tìm kiếm, index chương trình/giai đoạn/thứ tự và latest care. Migration `20261013000008_b2c_admissions_pagination.sql` đã áp, pgTAP 8/8. Fixture rollback 5.000 lead/25.000 logs: list 50 khoảng 695 ms, stage 20 khoảng 204 ms (một phép đo truy vấn, gồm roundtrip; chưa đo giao diện hoặc tải đồng thời). Các bảng học viên/tổng quan ngoài pipeline chưa được tối ưu trong task này.
+
+## Nhật ký chăm sóc tuyển sinh B2C (2026-10-13)
+
+`b2c_admission_care_logs` liên kết lead B2C; mỗi lần liên hệ lưu `channel` (call/message), ngày liên hệ, người phụ trách, nội dung và ngày hẹn tiếp theo tùy chọn (không trước ngày liên hệ). `created_by` là actor thật qua auth.uid/server session, ngày tạo UTC. RLS manager-only, authenticated chỉ select/insert, không update/delete lịch sử. Popup 20 dòng/trang, ngày theo Việt Nam; thẻ lead dùng lịch hẹn từ bản ghi mới nhất, null nghĩa không hẹn tiếp. Không có nhắc tự động. Migration `20261013000007_b2c_care_logs.sql` đã áp; pgTAP 6/6. VCB không đổi.
+
+## Pipeline tuyển sinh B2C (2026-10-13)
+
+`b2c_admission_leads` lưu khách tuyển sinh riêng trung tâm: tên, SĐT 10 số, chương trình B2C, người phụ trách, nguồn/tên giới thiệu, ghi chú. Sáu giai đoạn `lead`, `consulted`, `trial`, `deposit`, `enrolled`, `lost`; `lost` bắt buộc lý do 1–1.000 ký tự. RLS manager-only; insert attribution `created_by=auth.uid()`, không cho authenticated sửa người tạo hoặc hard delete. Chỉ thêm/sửa qua client phiên đăng nhập; không dùng service role. Trang `/admin/b2c/admissions` hiển thị pipeline, tìm kiếm/lọc, form chuyển giai đoạn. Đặt cọc/Ghi danh là trạng thái theo dõi, chưa tạo phiếu thu/ghi danh lớp; khách tiềm năng không nằm trong tổng hồ sơ học viên. Migration `20261013000006_b2c_admissions_pipeline.sql` đã áp, pgTAP 7/7. Không thay đổi VCB hoặc tạo nghiệp vụ XKLĐ.
+
+## Mục tiêu học B2C (2026-10-13)
+
+`b2c_enrollments.learning_goal` tùy chọn: `certificate` (Chứng chỉ), `school` (Học trên trường), `communication` (Giao tiếp), `work` (Đi làm/XKLĐ). `certificate_goal` bắt buộc 1–200 ký tự khi mục tiêu Chứng chỉ, null với các mục tiêu khác; hỗ trợ tên/cấp độ tùy biến như Starters, YCT 2, HSK 3. Theo từng ghi danh; dữ liệu cũ để null. Cập nhật qua RPC invoker/RLS hiện có; migration `20261013000005_b2c_learning_goal.sql` đã áp, pgTAP 4/4 và validation 9/9. VCB không đổi; không tạo domain XKLĐ.
+
+## Nguồn khách B2C (2026-10-13)
+
+`b2c_students.customer_source`: tùy chọn, giá trị `facebook`, `zalo`, `referral`, `walk_in`, `school`, `other`; null = Chưa xác định. `referrer_name` bắt buộc khi nguồn `referral`, dài 1–200 ký tự sau trim; các nguồn khác phải null. Nguồn thuộc hồ sơ học viên, dùng chung nhiều ghi danh. Form cây bút của manager cập nhật qua `update_b2c_enrollment` nguyên tử; giữ validation/RLS cũ. Cột mới null cho dữ liệu cũ, không tự suy đoán nguồn. Migration `20261013000004_b2c_customer_source.sql` đã áp; pgTAP 5/5 và kiểm lại validation 9/9. VCB không thay đổi.
+
+## Validation ghi danh B2C (2026-10-13)
+
+`update_b2c_enrollment` là RPC security invoker, kiểm tra manager + RLS, cập nhật SĐT hồ sơ và ghi danh nguyên tử. Bắt buộc SĐT đúng 10 chữ số, người chốt (1–200 ký tự sau trim), ngày nhập học và chương trình trùng với lớp. Khi có ngày hết phí, bắt buộc ngày bắt đầu học và ngày hết phí ≥ ngày bắt đầu. Form cây bút của admin/giáo vụ áp dụng cùng validation tại server. Không tự sửa dữ liệu cũ, không đổi VCB. SQL đã áp trực tiếp cloud; pgTAP 9/9 trong rollback. Không áp ràng buộc mới cho mọi bản ghi cũ/bulk SQL; validation này nằm trong luồng sửa ghi danh và RPC.
+
+## Trạng thái học viên B2C (2026-10-13)
+
+**Cập nhật `B2C-IDENTITY-1`:** nguồn trạng thái/lý do nghỉ hiện là `b2c_enrollments.status` và `b2c_enrollments.withdrawal_reason`, áp dụng riêng từng lớp. Migration `20261013000002_b2c_student_codes_enrollment_status.sql` đã chuyển giá trị cũ từ hồ sơ sang các ghi danh; cột cũ trên hồ sơ chỉ giữ để bảo toàn dữ liệu, ứng dụng không đọc/ghi nữa. `b2c_students.code` là mã duy nhất dạng `B2C-HV000001`, DB cấp bằng sequence, unique constraint và trigger bảo vệ không đổi mã. Quan hệ vẫn dùng UUID `student_id`; không tự ghép hồ sơ theo tên/điện thoại. RLS manager-only giữ nguyên; VCB không đổi. Đã áp trực tiếp cloud và chạy pgTAP 7/7, rollback dữ liệu test.
+
+- Chỉ bảng `b2c_students` có `status` (bắt buộc, mặc định `studying`) và `withdrawal_reason` (tùy chọn, tối đa 1.000 ký tự, chỉ lưu khi `withdrawn`).
+- Các giá trị: `studying` = Đang học; `on_hold` = Bảo lưu; `awaiting_renewal` = Chờ tái phí; `overdue` = Nợ phí; `withdrawn` = Nghỉ; `completed` = Hoàn thành.
+- Trạng thái thuộc hồ sơ học viên, áp dụng đồng bộ các ghi danh B2C. Manager cập nhật bằng client phiên đăng nhập và RLS manager-only hiện có; không dùng service role.
+- Không đổi `students`, `enrollments`, `classes` của VCB. User tự chạy migration `20261013000001_b2c_student_status.sql` theo yêu cầu; chưa áp lên cloud.
+
 > Nguồn sự thật về **yêu cầu schema**. Khi đã có migration, **migration là nguồn sự thật về implementation** — nếu lệch, sửa cho khớp và cập nhật file này trong cùng bộ thay đổi để user commit cùng nhau.
 
 ---

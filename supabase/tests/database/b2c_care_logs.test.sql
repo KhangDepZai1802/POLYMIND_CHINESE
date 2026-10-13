@@ -1,0 +1,15 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(6);
+select ok((select relrowsecurity from pg_class where oid='public.b2c_admission_care_logs'::regclass),'RLS bật');
+select set_config('request.jwt.claims',json_build_object('sub',(select id from public.profiles where role in ('super_admin','academic_manager') and is_active limit 1),'role','authenticated')::text,true);
+set local role authenticated;
+insert into public.b2c_admission_leads(id,full_name,phone,program_slug,salesperson) values ('44000000-0000-4000-8000-000000000001','Khách kiểm tra','0912345678','tieng-anh','Giáo vụ');
+select lives_ok($$insert into public.b2c_admission_care_logs(lead_id,channel,contact_date,caretaker_name,content,next_followup_date) values ('44000000-0000-4000-8000-000000000001','call','2026-10-13','Giáo vụ','Trao đổi lịch học','2026-10-15')$$,'Manager lưu lần gọi');
+select throws_ok($$insert into public.b2c_admission_care_logs(lead_id,channel,contact_date,caretaker_name,content,next_followup_date) values ('44000000-0000-4000-8000-000000000001','message','2026-10-13','Giáo vụ','Nhắn phụ huynh','2026-10-12')$$,'23514',null,'Chặn hẹn trước ngày gọi');
+select throws_ok($$update public.b2c_admission_care_logs set content='Đổi lịch sử' where lead_id='44000000-0000-4000-8000-000000000001'$$,'42501',null,'Không ghi đè lịch sử');
+select throws_ok($$delete from public.b2c_admission_care_logs where lead_id='44000000-0000-4000-8000-000000000001'$$,'42501',null,'Không xóa lịch sử');
+select set_config('request.jwt.claims','{"role":"authenticated"}',true);
+select is((select count(*)::integer from public.b2c_admission_care_logs where lead_id='44000000-0000-4000-8000-000000000001'),0,'Không có quyền manager không đọc được');
+select * from finish();
+rollback;

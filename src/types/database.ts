@@ -15,6 +15,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+
       graphql: {
         Args: {
           extensions?: Json
@@ -628,8 +629,52 @@ export type Database = {
           },
         ]
       }
+      b2c_admission_care_logs: {
+        Row: { id: string; lead_id: string; channel: string; contact_date: string; caretaker_name: string; content: string; next_followup_date: string | null; created_by: string; created_at: string };
+        Insert: { id?: string; lead_id: string; channel: string; contact_date: string; caretaker_name: string; content: string; next_followup_date?: string | null; created_by?: string; created_at?: string };
+        Update: { id?: string; lead_id?: string; channel?: string; contact_date?: string; caretaker_name?: string; content?: string; next_followup_date?: string | null; created_by?: string; created_at?: string };
+        Relationships: [];
+      };
+      b2c_admission_leads: {
+        Row: { id: string; full_name: string; phone: string; program_slug: string; salesperson: string; stage: string; customer_source: string | null; referrer_name: string | null; notes: string | null; failure_reason: string | null; created_by: string; created_at: string; updated_at: string; };
+        Insert: { id?: string; full_name: string; phone: string; program_slug: string; salesperson: string; stage?: string; customer_source?: string | null; referrer_name?: string | null; notes?: string | null; failure_reason?: string | null; created_by?: string; created_at?: string; updated_at?: string };
+        Update: { id?: string; full_name?: string; phone?: string; program_slug?: string; salesperson?: string; stage?: string; customer_source?: string | null; referrer_name?: string | null; notes?: string | null; failure_reason?: string | null; created_by?: string; created_at?: string; updated_at?: string };
+        Relationships: [];
+      };
+      b2c_tuition_packages: {
+        Row: { id: string; enrollment_id: string; sessions: number; unit_price: number; discount: number; discount_reason: string | null; total_due: number; created_by: string; created_at: string; updated_at: string };
+        Insert: { id?: string; enrollment_id: string; sessions: number; unit_price: number; discount?: number; discount_reason?: string | null; created_by?: string };
+        Update: { sessions?: number; unit_price?: number; discount?: number; discount_reason?: string | null };
+        Relationships: [];
+      };
+      b2c_tuition_receipts: {
+        Row: { id: string; code: string; package_id: string; request_id: string; paid_date: string; amount: number; method: string; collector_name: string; created_by: string; created_at: string };
+        Insert: { package_id: string; request_id: string; paid_date: string; amount: number; method: string; collector_name: string; created_by?: string };
+        Update: never;
+        Relationships: [];
+      };
+      b2c_parents: {
+        Row: { id: string; full_name: string; phone: string | null; zalo: string | null; source_student_id: string | null; created_by: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; full_name: string; phone?: string | null; zalo?: string | null; source_student_id?: string | null; created_by?: string | null };
+        Update: { full_name?: string; phone?: string | null; zalo?: string | null };
+        Relationships: [];
+      };
+      b2c_student_parents: {
+        Row: { parent_id: string; student_id: string; relationship: string };
+        Insert: { parent_id: string; student_id: string; relationship?: string };
+        Update: { relationship?: string };
+        Relationships: [
+          { foreignKeyName: "b2c_student_parents_parent_id_fkey"; columns: ["parent_id"]; isOneToOne: false; referencedRelation: "b2c_parents"; referencedColumns: ["id"] },
+          { foreignKeyName: "b2c_student_parents_student_id_fkey"; columns: ["student_id"]; isOneToOne: false; referencedRelation: "b2c_students"; referencedColumns: ["id"] }
+        ];
+      };
       b2c_students: {
         Row: {
+          customer_source: string | null
+          referrer_name: string | null
+          code: string
+          status: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          withdrawal_reason: string | null
           address: string | null
           birth_year: number | null
           created_at: string
@@ -644,6 +689,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          customer_source?: string | null
+          referrer_name?: string | null
+          code?: string
+          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          withdrawal_reason?: string | null
           address?: string | null
           birth_year?: number | null
           created_at?: string
@@ -658,6 +708,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          customer_source?: string | null
+          referrer_name?: string | null
+          code?: string
+          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          withdrawal_reason?: string | null
           address?: string | null
           birth_year?: number | null
           created_at?: string
@@ -675,6 +730,10 @@ export type Database = {
       }
       b2c_enrollments: {
         Row: {
+          learning_goal: string | null
+          certificate_goal: string | null
+          status: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          withdrawal_reason: string | null
           class_id: string
           created_at: string
           enrollment_date: string | null
@@ -694,6 +753,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          learning_goal?: string | null
+          certificate_goal?: string | null
+          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          withdrawal_reason?: string | null
           class_id: string
           created_at?: string
           enrollment_date?: string | null
@@ -713,6 +776,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          learning_goal?: string | null
+          certificate_goal?: string | null
+          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          withdrawal_reason?: string | null
           class_id?: string
           created_at?: string
           enrollment_date?: string | null
@@ -4297,6 +4364,16 @@ export type Database = {
       }
     }
     Functions: {
+      save_b2c_parent: { Args: { p_id: string | null; p_name: string; p_phone: string; p_zalo: string; p_student_codes: string[]; p_relationship: string }; Returns: string };
+      get_b2c_tuition_page: { Args: { p_query?: string; p_page?: number }; Returns: Json };
+      save_b2c_tuition_package: { Args: { p_enrollment_id: string; p_sessions: number; p_unit_price: number; p_discount: number; p_discount_reason: string }; Returns: string };
+      record_b2c_tuition_receipt: { Args: { p_package_id: string; p_request_id: string; p_paid_date: string; p_amount: number; p_method: string; p_collector_name: string }; Returns: string };
+      get_b2c_parents_page: { Args: { p_query?: string; p_page?: number }; Returns: Json };
+      get_b2c_admissions_page: { Args: { p_stage?: string; p_program?: string; p_query?: string; p_page?: number; p_limit?: number }; Returns: Json };
+      update_b2c_enrollment: {
+        Args: { p_enrollment_id: string; p_phone: string; p_salesperson: string; p_enrollment_date: string; p_program_slug: string; p_status: string; p_learning_start_date?: string; p_tuition_end_date?: string; p_withdrawal_reason?: string; p_customer_source?: string; p_referrer_name?: string; p_learning_goal?: string; p_certificate_goal?: string };
+        Returns: undefined;
+      }
       save_b2c_monthly_report: {
         Args: {
           p_costs: Json

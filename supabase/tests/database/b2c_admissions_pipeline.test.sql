@@ -1,0 +1,15 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(7);
+select ok((select relrowsecurity from pg_class where oid='public.b2c_admission_leads'::regclass), 'RLS bật');
+select set_config('request.jwt.claims', json_build_object('sub',(select id from public.profiles where role in ('super_admin','academic_manager') and is_active limit 1),'role','authenticated')::text,true);
+set local role authenticated;
+select lives_ok($$insert into public.b2c_admission_leads(id,full_name,phone,program_slug,salesperson) values ('43000000-0000-4000-8000-000000000001','Khách kiểm tra','0912345678','tieng-anh','Sale')$$,'Manager thêm khách');
+select throws_ok($$update public.b2c_admission_leads set stage='lost' where id='43000000-0000-4000-8000-000000000001'$$,'23514',null,'Thất bại cần lý do');
+select lives_ok($$update public.b2c_admission_leads set stage='lost',failure_reason='Không phù hợp lịch' where id='43000000-0000-4000-8000-000000000001'$$,'Lưu thất bại và lý do');
+select throws_ok($$update public.b2c_admission_leads set phone='123' where id='43000000-0000-4000-8000-000000000001'$$,'23514',null,'Chặn SĐT sai');
+select throws_ok($$update public.b2c_admission_leads set created_by='43000000-0000-4000-8000-000000000099' where id='43000000-0000-4000-8000-000000000001'$$,'42501',null,'Không đổi người tạo');
+select set_config('request.jwt.claims','{"role":"authenticated"}',true);
+select is((select count(*)::integer from public.b2c_admission_leads where id='43000000-0000-4000-8000-000000000001'),0,'Không có quyền manager không đọc được');
+select * from finish();
+rollback;
