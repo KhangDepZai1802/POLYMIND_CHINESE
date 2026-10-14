@@ -1,5 +1,21 @@
 # 04 — Kiến trúc hệ thống
 
+## Nút trở lại chi tiết lớp (2026-10-14)
+
+Shared BackLink dùng Next Link (giữ semantic điều hướng), đích href tường minh. Icon ArrowLeft trong ô44×44px rounded-xl có nền/viền xanh, hover tương phản, focus outline và aria-label/title; nhãn điểm đến nằm cạnh nút. Dùng tại teacher B2C/B2B và admin B2C class detail. Không đổi quyền/dữ liệu hoặc thay bằng history.back không kiểm soát đích.
+
+
+## Dashboard giáo viên theo ảnh (2026-10-14)
+
+/teacher giữ server queries/requireTeaching/RLS và quy tắc actual meeting override weekly. Tách giao diện TeacherHomeDashboard server component nhận dữ liệu typed + now snapshot, định dạng ngày VN trên server tránh hydration mismatch. Bốn KPI đếm dữ liệu truy vấn hiện có (today buổi B2B/B2C; attendance/pending/risk là danh sách B2B có giới hạn, hiển thị scope rõ); không thêm so sánh hôm qua chưa có nguồn. Thẻ B2C compact4 cột desktop/2 tablet/1 phone; actual/cancelled/weekly vẫn giữ metadata và links.
+
+TeacherHeaderSearch client island dựa pathname, chỉ hiện desktop /teacher; GET /teacher/classes?q= lọc mã/tên trên dữ liệu được phân công đã đọc qua RLS, tối đa200 ký tự; form tại trang lớp hỗ trợ mobile. Route khác giữ header cũ. Nav teacher active xanh gradient; sidebar/mobile dùng chung. Không đổi Logo component hoặc /logopolymind.png, không thêm asset ngoài. UI nền sáng, pastel, bo góc/bóng nhẹ, dark variants/focus states và không tràn ở360/390.
+
+
+## Màu icon B2C/giáo viên (2026-10-14)
+
+NavLinks dùng cùng palette cho sidebar và mobile drawer, chỉ trong /admin/b2c và /teacher: xanh dương (lớp/tổng quan), ngọc (học viên/phụ huynh/học phí), tím (giáo viên/thi), cam (tuyển sinh/điểm danh). Ô icon nền pastel32px, SVG18px; active trắng/nền trắng15% trên primary. Có dark variant. KPI Tổng quan và thẻ lớp giáo viên có ô icon40–44px; các thao tác tìm/xem xanh, sửa amber, lịch sử tím. Giữ icon trắng ở nút/quick-action màu để tương phản. Không thay menu/quyền của B2B hoặc XKLĐ.
+
 > Mô tả kiến trúc **thật** của POLYMIND CHINESE. Không copy tài liệu legacy: ở đây **không có** .NET, Blazor, EF Core, NestJS, Hangfire, MinIO hay Docker Compose production.
 
 ---

@@ -33,7 +33,7 @@ export function B2CTeacherDialog({ teacher }: { teacher?: B2CTeacher }) {
             size="icon"
             aria-label={`Sửa hồ sơ ${teacher.full_name}`}
           >
-            <Pencil className="size-4" />
+            <Pencil className="size-4 text-amber-600 dark:text-amber-400" />
           </Button>
         ) : (
           <Button>

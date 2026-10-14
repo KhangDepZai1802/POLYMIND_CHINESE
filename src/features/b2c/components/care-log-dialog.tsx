@@ -29,7 +29,7 @@ export function CareLogDialog({ leadId, fullName, caretaker }: { leadId: string;
   const { state, formAction } = useFormAction(saveB2CCareLogAction, { onSuccess: () => { setFormKey((value) => value + 1); load(0); } });
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   return <Dialog onOpenChange={(open) => { if (open) { setLogs([]); load(0); setFormKey((value) => value + 1); } }}>
-    <DialogTrigger asChild><Button variant="outline" size="sm" className="mt-3 w-full"><History className="size-4" aria-hidden />Nhật ký chăm sóc</Button></DialogTrigger>
+    <DialogTrigger asChild><Button variant="outline" size="sm" className="mt-3 w-full"><History className="size-4 text-violet-600 dark:text-violet-400" aria-hidden />Nhật ký chăm sóc</Button></DialogTrigger>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader><DialogTitle>Nhật ký chăm sóc</DialogTitle><DialogDescription>{fullName} · {total} lần liên hệ</DialogDescription></DialogHeader>
       <form key={formKey} action={formAction} className="space-y-3 rounded-lg border p-4">

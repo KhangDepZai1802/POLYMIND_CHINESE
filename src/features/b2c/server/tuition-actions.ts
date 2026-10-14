@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import {
   b2cTuitionPackageSchema,
   b2cReceiptSchema,
@@ -33,6 +34,11 @@ export async function saveB2CTuitionPackageAction(
   });
   if (error) return { error: dbErrorToMessage(error) };
   revalidatePath("/admin/b2c/tuition");
+  revalidatePath("/admin/b2c/classes/[classId]", "page");
+  const classId = form.get("class_id");
+  if (typeof classId === "string" && z.uuid().safeParse(classId).success)
+    revalidatePath(`/admin/b2c/classes/${classId}`);
+  revalidatePath("/admin/b2c/history");
   return { success: "Đã lưu gói học phí." };
 }
 export async function recordB2CReceiptAction(
@@ -55,6 +61,11 @@ export async function recordB2CReceiptAction(
   });
   if (error) return { error: dbErrorToMessage(error) };
   revalidatePath("/admin/b2c/tuition");
+  revalidatePath("/admin/b2c/classes/[classId]", "page");
+  const classId = form.get("class_id");
+  if (typeof classId === "string" && z.uuid().safeParse(classId).success)
+    revalidatePath(`/admin/b2c/classes/${classId}`);
+  revalidatePath("/admin/b2c/history");
   return { success: "Đã lưu phiếu thu." };
 }
 export async function getB2CReceiptsAction(packageId: string, page: number) {

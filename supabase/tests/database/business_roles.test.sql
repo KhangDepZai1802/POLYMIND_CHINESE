@@ -1,0 +1,13 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(7);
+select ok(exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid join pg_namespace n on n.oid=t.typnamespace where n.nspname='public' and t.typname='user_role' and e.enumlabel='executive'), 'executive role exists');
+select ok(exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid join pg_namespace n on n.oid=t.typnamespace where n.nspname='public' and t.typname='user_role' and e.enumlabel='center_manager'), 'center manager role exists');
+select ok(exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid join pg_namespace n on n.oid=t.typnamespace where n.nspname='public' and t.typname='user_role' and e.enumlabel='consultant'), 'consultant role exists');
+select ok(exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid join pg_namespace n on n.oid=t.typnamespace where n.nspname='public' and t.typname='user_role' and e.enumlabel='xkld_staff'), 'xkld staff role exists');
+select ok((select relrowsecurity from pg_class where oid='public.profiles'::regclass), 'profile RLS remains enabled');
+select ok(position('executive' in pg_get_functiondef('app.is_manager()'::regprocedure))=0 and position('xkld_staff' in pg_get_functiondef('app.is_manager()'::regprocedure))=0 and position('center_manager' in pg_get_functiondef('app.is_manager()'::regprocedure))=0 and position('consultant' in pg_get_functiondef('app.is_manager()'::regprocedure))=0, 'no business role granted existing management');
+select ok(position('executive' in pg_get_functiondef('app.is_super_admin()'::regprocedure))=0 and position('xkld_staff' in pg_get_functiondef('app.is_super_admin()'::regprocedure))=0, 'business roles are not super admins');
+select * from finish();
+rollback;

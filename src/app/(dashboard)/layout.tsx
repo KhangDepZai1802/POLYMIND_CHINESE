@@ -5,6 +5,7 @@ import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { UserMenu } from "@/components/layout/user-menu";
+import { TeacherHeaderSearch } from "@/components/layout/teacher-header-search";
 import { Logo } from "@/components/shared/logo";
 import { NavProgress } from "@/components/shared/nav-progress";
 import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
@@ -13,6 +14,12 @@ import { NotificationBell } from "@/features/notifications/components/notificati
 import { getNotificationBellData } from "@/features/notifications/server/queries";
 import { hasAssignedClasses, requireUser } from "@/lib/auth/session";
 import { isManagerRole } from "@/types/roles";
+import type { UserRole } from "@/types/roles";
+
+async function DashboardNotificationBell({ role }: { role: UserRole }) {
+  const { unreadCount } = await getNotificationBellData();
+  return <NotificationBell role={role} unreadCount={unreadCount} />;
+}
 
 /**
  * Trang đã đăng nhập KHÔNG được cache/ISR.
@@ -27,10 +34,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, { unreadCount }] = await Promise.all([
-    requireUser(),
-    getNotificationBellData(),
-  ]);
+  const user = await requireUser();
 
   // Chỉ tốn round-trip với giáo vụ — hàm tự trả false ngay cho ba role kia.
   const showAssignedClassesBranch = await hasAssignedClasses(user);
@@ -69,14 +73,16 @@ export default async function DashboardLayout({
                 role={user.role}
                 hasAssignedClasses={showAssignedClassesBranch}
               />
-              {isManagerRole(user.role) && <ModuleSwitcher />}
+              {isManagerRole(user.role) && <ModuleSwitcher role={user.role} />}
               <Logo height={28} priority />
             </div>
 
-            <div className="hidden md:block" />
+            <TeacherHeaderSearch />
 
             <div className="flex items-center gap-1">
-              <NotificationBell role={user.role} unreadCount={unreadCount} />
+              <Suspense fallback={<span className="size-10 animate-pulse rounded-md bg-muted" aria-label="Đang tải thông báo" />}>
+                <DashboardNotificationBell role={user.role} />
+              </Suspense>
               <UserMenu
                 fullName={user.fullName}
                 email={user.email}

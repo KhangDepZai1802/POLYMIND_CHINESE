@@ -17,15 +17,22 @@ import {
   School,
   UserCircle,
   TrendingUp,
+  History,
   type LucideIcon,
 } from "lucide-react";
 
 import type { UserRole } from "@/types/roles";
+import { canReadXkld, CANDIDATES_PATH } from "@/features/xkld/domain/candidates";
+import { ORDERS_PATH } from "@/features/xkld/domain/orders";
+import { DOCUMENTS_PATH } from "@/features/xkld/domain/documents";
+import { FINANCE_PATH } from "@/features/xkld/domain/finance";
+import { PIPELINE_PATH } from "@/features/xkld/domain/pipeline";
 
 export type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
+  roles?: readonly UserRole[];
 };
 
 /**
@@ -47,6 +54,10 @@ export type NavGroup = {
  * được ai gõ thẳng URL. Phân quyền thật nằm ở middleware + server action + RLS.
  */
 export const NAVIGATION: Record<UserRole, NavItem[]> = {
+  executive: [{ label: "Tổng quan điều hành", href: "/workspace", icon: LayoutDashboard }, { label: "Ứng viên XKLĐ", href: CANDIDATES_PATH, icon: Users }, { label: "Thị trường & đơn hàng", href: ORDERS_PATH, icon: ClipboardList }, { label: "Pipeline XKLĐ", href: PIPELINE_PATH, icon: TrendingUp }, { label: "Hồ sơ giấy tờ", href: DOCUMENTS_PATH, icon: FileText }, { label: "Tài chính & công nợ", href: FINANCE_PATH, icon: Wallet }],
+  center_manager: [{ label: "Quản lý trung tâm", href: "/workspace", icon: School }],
+  consultant: [{ label: "Công việc hôm nay", href: "/workspace", icon: ClipboardList }],
+  xkld_staff: [{ label: "Xuất khẩu lao động", href: "/workspace", icon: LayoutDashboard }, { label: "Ứng viên", href: CANDIDATES_PATH, icon: Users }, { label: "Thị trường & đơn hàng", href: ORDERS_PATH, icon: ClipboardList }, { label: "Pipeline", href: PIPELINE_PATH, icon: TrendingUp }, { label: "Hồ sơ giấy tờ", href: DOCUMENTS_PATH, icon: FileText }, { label: "Tài chính & công nợ", href: FINANCE_PATH, icon: Wallet }],
   super_admin: [
     { label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
     { label: "Học viên", href: "/admin/students", icon: Users },
@@ -70,7 +81,11 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: "Hôm nay", href: "/teacher", icon: LayoutDashboard },
     { label: "Lớp của tôi", href: "/teacher/classes", icon: School },
     { label: "Điểm danh", href: "/teacher/attendance", icon: ClipboardCheck },
-    { label: "Chấm công B2C", href: "/teacher/b2c-teaching", icon: CalendarDays },
+    {
+      label: "Chấm công B2C",
+      href: "/teacher/b2c-teaching",
+      icon: CalendarDays,
+    },
     // Đứng ngay sau Điểm danh vì đó là thứ tự làm việc thật: điểm danh xong mới
     // báo cáo được. Giáo vụ có đứng lớp cũng thấy mục này — nhánh "Lớp được
     // phân công" dùng chung đúng danh sách `NAVIGATION.teacher` (`D-2`).
@@ -136,7 +151,24 @@ export const B2C_NAVIGATION: NavItem[] = [
   { label: "Phụ huynh", href: "/admin/b2c/parents", icon: UserCircle },
   { label: "Học phí", href: "/admin/b2c/tuition", icon: Wallet },
   { label: "Báo cáo", href: "/admin/b2c/reports", icon: BarChart3 },
+  {
+    label: "Nhật ký thay đổi",
+    href: "/admin/b2c/history",
+    icon: History,
+    roles: ["super_admin"],
+  },
 ];
+
+export function getB2CNavigation(role: UserRole): NavItem[] {
+  if (role !== "super_admin" && role !== "academic_manager") return [];
+  return B2C_NAVIGATION.filter(
+    (item) => !item.roles || item.roles.includes(role),
+  );
+}
+
+export function getXkldNavigation(role: UserRole): NavItem[] {
+  return canReadXkld(role) ? [{ label: "Ứng viên", href: CANDIDATES_PATH, icon: Users }, { label: "Thị trường & đơn hàng", href: ORDERS_PATH, icon: ClipboardList }, { label: "Pipeline", href: PIPELINE_PATH, icon: TrendingUp }, { label: "Hồ sơ giấy tờ", href: DOCUMENTS_PATH, icon: FileText }, { label: "Tài chính & công nợ", href: FINANCE_PATH, icon: Wallet }] : [];
+}
 
 export function getNavigation(role: UserRole): NavItem[] {
   return NAVIGATION[role];

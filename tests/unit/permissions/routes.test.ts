@@ -11,11 +11,12 @@ describe("homePathForRole", () => {
   // `D-2` (user chốt 2026-08-03) ĐẢO luật đó: giáo vụ dùng lại `/admin` và
   // `/teacher` thay vì có cây `/staff/*` riêng. Bài mới ghim đúng luật mới —
   // không xoá bài, vì mất bài này là mất cả chỗ canh "role mới quên khai home".
-  it("mọi role đều có trang chủ, và đó phải là một trong ba cây có thật", () => {
+  it("mọi role đều có trang chủ trong cây route được khai báo", () => {
     for (const role of USER_ROLES) {
-      expect(["/admin", "/teacher", "/student"]).toContain(
+      expect(["/admin", "/teacher", "/student", "/workspace"]).toContain(
         homePathForRole(role),
       );
+      expect(isRoleAllowedOnPath(role, homePathForRole(role))).toBe(true);
     }
   });
 

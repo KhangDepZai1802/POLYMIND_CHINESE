@@ -13,6 +13,7 @@ import {
 
 import { Card, CardContent } from "@/components/ui/card";
 import { B2CClassFormDialog } from "@/features/b2c/components/class-form-dialog";
+import { B2CClassDetailDialog } from "@/features/b2c/components/class-detail-dialog";
 import { cn } from "@/lib/utils";
 import { B2CStudentStatusDialog } from "@/features/b2c/components/student-status-dialog";
 import { B2C_CUSTOMER_SOURCE_LABELS } from "@/features/b2c/domain/customer-source";
@@ -25,7 +26,7 @@ type ProgramSummary = {
   description: string;
 };
 
-type ClassRow = {
+export type ClassRow = {
   id: string;
   code: string;
   program_slug: string;
@@ -43,7 +44,7 @@ type ClassRow = {
   notes: string | null;
 };
 
-type StudentRow = {
+export type StudentRow = {
   id: string;
   studentId: string;
   studentCode: string;
@@ -107,6 +108,7 @@ export function B2CProgramWorkspace({
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("classes");
   const [query, setQuery] = useState("");
+  const [selectedClass, setSelectedClass] = useState<ClassRow | null>(null);
   const normalizedQuery = query.trim().toLocaleLowerCase("vi");
   const visibleClasses = normalizedQuery
     ? classes.filter((item) =>
@@ -191,6 +193,7 @@ export function B2CProgramWorkspace({
               classes={visibleClasses}
               query={query}
               onQueryChange={setQuery}
+              onSelectClass={setSelectedClass}
             />
           ) : activeTab === "students" ? (
             <B2CStudentsTable students={students} />
@@ -199,6 +202,7 @@ export function B2CProgramWorkspace({
           )}
         </CardContent>
       </Card>
+      {selectedClass && <B2CClassDetailDialog key={selectedClass.id} classRow={selectedClass} programTitle={program.title} students={students.filter(student => student.classCode === selectedClass.code)} onClose={() => setSelectedClass(null)} />}
     </>
   );
 }
@@ -371,11 +375,13 @@ function ClassList({
   classes,
   query,
   onQueryChange,
+  onSelectClass,
 }: {
   programTitle: string;
   classes: ClassRow[];
   query: string;
   onQueryChange: (value: string) => void;
+  onSelectClass: (value: ClassRow) => void;
 }) {
   return (
     <>
@@ -453,7 +459,7 @@ function ClassList({
                   <tr key={item.id} className="border-b last:border-b-0">
                     <td className="px-3 py-3">{index + 1}</td>
                     <td className="px-3 py-3 font-mono text-xs">{item.code}</td>
-                    <td className="px-3 py-3 font-medium">{item.name}</td>
+                    <td className="px-3 py-3 font-medium"><button type="button" onClick={() => onSelectClass(item)} className="text-primary rounded text-left underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4">{item.name}</button></td>
                     <td className="px-3 py-3">{item.level_name ?? "—"}</td>
                     <td className="px-3 py-3">
                       {item.teacher_name ?? "Chưa phân công"}
@@ -473,12 +479,14 @@ function ClassList({
                       {STATUS_LABELS[item.status] ?? item.status}
                     </td>
                     <td className="px-3 py-3">
-                      <span
-                        className="text-primary inline-flex rounded p-1"
-                        aria-label={`Lớp ${item.name}`}
+                      <button
+                        type="button"
+                        onClick={() => onSelectClass(item)}
+                        className="text-primary hover:bg-primary/10 inline-flex size-10 items-center justify-center rounded focus-visible:outline-2"
+                        aria-label={`Xem chi tiết lớp ${item.name}`}
                       >
-                        <Eye className="size-4" aria-hidden />
-                      </span>
+                        <Eye className="size-4 text-blue-600 dark:text-blue-400" aria-hidden />
+                      </button>
                     </td>
                   </tr>
                 );

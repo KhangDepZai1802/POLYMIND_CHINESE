@@ -25,6 +25,10 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { ROLE_LABELS, USER_ROLES, type UserRole } from "@/types/roles";
 
 const ROLE_META: Record<UserRole, { icon: LucideIcon; hint: string }> = {
+  executive: { icon: ClipboardList, hint: "Dashboard điều hành; không có quyền quản trị tài khoản hoặc audit." },
+  center_manager: { icon: School, hint: "Dashboard vận hành trung tâm; không có quyền quản trị tài khoản hoặc audit." },
+  consultant: { icon: ClipboardList, hint: "Dashboard tư vấn và chăm sóc khách hàng." },
+  xkld_staff: { icon: ClipboardList, hint: "Xem toàn bộ ứng viên XKLĐ; chỉ đọc công nợ, không nhập hoặc sửa khoản thu." },
   super_admin: {
     icon: ShieldCheck,
     hint: "Toàn quyền hệ thống.",

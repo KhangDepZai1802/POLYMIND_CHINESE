@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowLeft,
   CalendarDays,
   ClipboardCheck,
   Clock3,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
 import { ResponsiveTabs } from "@/components/shared/responsive-tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -126,13 +126,7 @@ export default async function TeacherClassDetailPage({
 
   return (
     <>
-      <Link
-        href="/teacher/classes"
-        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring mb-4 inline-flex items-center gap-1 rounded-md text-sm focus-visible:ring-2 focus-visible:outline-none"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        Lớp của tôi
-      </Link>
+      <BackLink href="/teacher/classes" label="Lớp của tôi" />
 
       <PageHeader
         title={classRecord.name}
@@ -171,7 +165,10 @@ export default async function TeacherClassDetailPage({
           <div className="grid gap-5 xl:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle asChild className="flex items-center gap-2 text-base">
+                <CardTitle
+                  asChild
+                  className="flex items-center gap-2 text-base"
+                >
                   <h2>
                     <School className="size-4" aria-hidden />
                     Thông tin lớp
@@ -203,7 +200,10 @@ export default async function TeacherClassDetailPage({
 
             <Card>
               <CardHeader>
-                <CardTitle asChild className="flex items-center gap-2 text-base">
+                <CardTitle
+                  asChild
+                  className="flex items-center gap-2 text-base"
+                >
                   <h2>
                     <MapPin className="size-4" aria-hidden />
                     Địa điểm học
@@ -242,7 +242,10 @@ export default async function TeacherClassDetailPage({
 
             <Card className="xl:col-span-2">
               <CardHeader>
-                <CardTitle asChild className="flex items-center gap-2 text-base">
+                <CardTitle
+                  asChild
+                  className="flex items-center gap-2 text-base"
+                >
                   <h2>
                     <Users className="size-4" aria-hidden />
                     Đội ngũ giảng dạy
@@ -251,26 +254,27 @@ export default async function TeacherClassDetailPage({
               </CardHeader>
               <CardContent className="p-0">
                 <ul className="divide-y">
-                  {classRecord.class_teachers && [classRecord.class_teachers].map((assignment) => (
-                    <li
-                      key={assignment.id}
-                      className="flex items-center justify-between gap-3 px-5 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {assignment.teacher?.profile?.full_name ??
-                            "Giáo viên"}
-                        </p>
-                        <p className="text-text-secondary text-sm">
-                          {assignment.teacher?.teacher_code ?? "—"}
-                          {assignment.teacher?.specialization
-                            ? ` · ${assignment.teacher.specialization}`
-                            : ""}
-                        </p>
-                      </div>
-                      <StatusBadge label="Giáo viên phụ trách" tone="info" />
-                    </li>
-                  ))}
+                  {classRecord.class_teachers &&
+                    [classRecord.class_teachers].map((assignment) => (
+                      <li
+                        key={assignment.id}
+                        className="flex items-center justify-between gap-3 px-5 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {assignment.teacher?.profile?.full_name ??
+                              "Giáo viên"}
+                          </p>
+                          <p className="text-text-secondary text-sm">
+                            {assignment.teacher?.teacher_code ?? "—"}
+                            {assignment.teacher?.specialization
+                              ? ` · ${assignment.teacher.specialization}`
+                              : ""}
+                          </p>
+                        </div>
+                        <StatusBadge label="Giáo viên phụ trách" tone="info" />
+                      </li>
+                    ))}
                 </ul>
               </CardContent>
             </Card>
@@ -464,9 +468,7 @@ export default async function TeacherClassDetailPage({
         <TabsContent value="exercises" className="mt-4">
           <div className="mb-3 flex justify-end">
             <Button asChild size="sm">
-              <Link href="/teacher/exercises">
-                Quản lý bài tập
-              </Link>
+              <Link href="/teacher/exercises">Quản lý bài tập</Link>
             </Button>
           </div>
           {classRecord.exercise_deliveries.length === 0 ? (
@@ -490,7 +492,12 @@ export default async function TeacherClassDetailPage({
                         </p>
                         <p className="text-text-secondary text-sm">
                           Hạn {formatDateTime(assignment.due_at)} ·{" "}
-                          {assignment.attempts.filter((attempt) => attempt.submitted_at).length} bài nộp
+                          {
+                            assignment.attempts.filter(
+                              (attempt) => attempt.submitted_at,
+                            ).length
+                          }{" "}
+                          bài nộp
                         </p>
                       </div>
                       <StatusBadge
@@ -510,9 +517,7 @@ export default async function TeacherClassDetailPage({
         <TabsContent value="exams" className="mt-4">
           <div className="mb-3 flex justify-end">
             <Button asChild size="sm">
-              <Link href="/teacher/exams">
-                Quản lý bài kiểm tra
-              </Link>
+              <Link href="/teacher/exams">Quản lý bài kiểm tra</Link>
             </Button>
           </div>
           {classRecord.exam_deliveries.length === 0 ? (
@@ -537,7 +542,12 @@ export default async function TeacherClassDetailPage({
                         <p className="text-text-secondary text-sm">
                           {ASSESSMENT_TYPE_LABELS[assessment.exam_type]} ·{" "}
                           {formatDate(assessment.opens_at)} ·{" "}
-                          {assessment.attempts.filter((attempt) => attempt.graded_at).length} kết quả
+                          {
+                            assessment.attempts.filter(
+                              (attempt) => attempt.graded_at,
+                            ).length
+                          }{" "}
+                          kết quả
                         </p>
                       </div>
                       <StatusBadge

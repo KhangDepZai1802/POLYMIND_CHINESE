@@ -9,7 +9,8 @@ const validReport = {
   electricity: 1_164_197,
   water: 204_863,
   internet: 206_500,
-  payroll: 57_137_000,
+  teacher_payroll: 50_000_000,
+  office_payroll: 7_137_000,
   rent: 12_000_000,
   marketing: 0,
   advertising: 0,
@@ -28,6 +29,19 @@ const validReport = {
 };
 
 describe("b2cMonthlyReportSchema", () => {
+  it("requires explicit teacher/office payroll and marketing, accepting a deliberate zero", () => {
+    for (const field of ["teacher_payroll", "office_payroll", "marketing"]) {
+      for (const empty of ["", null, undefined])
+        expect(
+          b2cMonthlyReportSchema.safeParse({ ...validReport, [field]: empty })
+            .success,
+        ).toBe(false);
+      expect(
+        b2cMonthlyReportSchema.safeParse({ ...validReport, [field]: 0 })
+          .success,
+      ).toBe(true);
+    }
+  });
   it("nhận báo cáo hợp lệ từ file tháng", () => {
     expect(b2cMonthlyReportSchema.parse(validReport).revenue).toBe(58_040_000);
   });
@@ -41,7 +55,8 @@ describe("b2cMonthlyReportSchema", () => {
 
   it("không nhận chi phí âm", () => {
     expect(
-      b2cMonthlyReportSchema.safeParse({ ...validReport, payroll: -1 }).success,
+      b2cMonthlyReportSchema.safeParse({ ...validReport, teacher_payroll: -1 })
+        .success,
     ).toBe(false);
   });
 

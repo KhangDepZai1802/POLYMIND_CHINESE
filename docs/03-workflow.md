@@ -1,5 +1,17 @@
 # 03 — Workflow nghiệp vụ
 
+## Xếp lịch lặp và sinh buổi B2C (2026-10-14)
+
+Chi tiết lớp → Lịch học → Lịch lặp & sinh buổi → thứ/giờ/từ ngày/đến ngày/phòng tùy chọn → kiểm số buổi dự kiến → Lưu lịch & sinh buổi. Xem lịch đã lưu và các buổi có nhãn Sinh từ lịch lặp, phòng hoặc Chưa xếp phòng. Sinh lại cùng kế hoạch bỏ qua buổi đã có, không hồi sinh buổi hủy. Conflict lớp/phòng/khác buổi cũ hiển thị lỗi và không lưu phần nào. Tên phòng cần ghi cùng cơ sở, nhất quán.
+
+GV → Hôm nay/chi tiết lớp → lịch buổi thực tế kèm phòng, không lặp thêm dòng lịch tuần cũ. Hủy buổi cập nhật Hôm nay; không thay lương/chấm công. Buổi tự sinh giữ ngày/giờ gốc, hủy và thêm buổi bù khi thay đổi; không sửa đè lịch sử đã điểm danh.
+
+## Giáo viên mở lớp B2C (2026-10-14)
+
+Hôm nay → Lịch dạy hôm nay hiện thêm lớp B2C có thứ trùng ngày Việt Nam (active, đã khai giảng). Ví dụ Starter Hero T2-T4 hiện vào thứ Tư, kèm giờ18h-19h30 và nút Xem lịch lớp. Dòng Theo lịch tuần là dự kiến; lịch lớp vẫn giữ các buổi cụ thể do quản lý tạo. Không sinh chấm công/điểm danh/lương khi tải trang.
+
+Đăng nhập giáo viên → trang Hôm nay có thẻ Lớp trung tâm B2C → bấm lớp hoặc vào Lớp của tôi → xem Học viên / Lịch học / Nhận xét. Học viên tìm theo mã/tên, 25 dòng/trang. Lớp không phân công trả trang404 kể cả dán URL. Thiếu liên kết tài khoản, GV bị khóa/ngưng hoạt động hoặc tên phân công không khớp duy nhất thì không cấp quyền. B2B vẫn dùng luồng cũ. Không tạo lịch buổi tự động từ chuỗi lịch tuần; lịch trống khi quản lý chưa tạo buổi.
+
 > Mô tả các luồng thật của hệ thống, kèm **failure path**. Không có workflow XKLĐ, không có 17/20 bước, không có COE.
 
 ---
@@ -417,3 +429,43 @@ Học viên gặp audio nguồn trong Bài tập / Thi / Kết quả / Flashcard
 ```
 
 Bản ghi câu Nói do học viên tự thu không thuộc yêu cầu này. Nếu signed URL hết hạn hoặc audio lỗi, player báo lỗi/cho tải lại theo failure path hiện có; không tự chuyển sang URL hoặc object khác.
+
+
+## Ứng viên XKLĐ — yêu cầu mới 14/10/2026
+
+Nút module XKLĐ của super admin hoặc menu Ứng viên của nhân viên/điều hành → danh sách phân trang → Thêm ứng viên → nhập hồ sơ/chọn phụ trách → server validation → INSERT theo RLS, DB cấp mã và ghi actor thật → hiện hồ sơ. Sửa dùng updated_at từ lần đọc; nếu hồ sơ đã thay đổi thì báo tải lại thay vì ghi đè. Gửi lại cùng UUID tạo không sinh thêm hồ sơ. Executive chỉ đọc; role không được phép bị chuyển về trang chủ trước khi query. Đây là workflow XKLĐ đầu tiên theo phạm vi user mở rộng, thay thế mô tả loại toàn bộ XKLĐ ở đầu tài liệu đối với phần này.
+
+
+## Thị trường và đơn hàng XKLĐ
+
+Mở Thị trường & đơn hàng → chọn/thêm quốc gia và mã tiền tệ mặc định → Thêm đơn hàng → nhập chủ sử dụng/nghề/chỉ tiêu/lương/điều kiện/hạn/đối tác → server validation + RLS → DB cấp DH, ghi actor thật → danh sách. Chọn quốc gia mới gợi ý tiền tệ mặc định nhưng người dùng nhập rõ kỳ lương. Sửa giữ code, kiểm tra phiên bản updated_at; bản cũ báo tải lại. Gửi lại UUID tạo không sinh bản trùng. Ngừng thị trường giữ đơn cũ, không cho đơn mới; lỗi server giữ bản nhập để sửa. Executive chỉ xem. Không tự tạo gắn ứng viên, phiếu thu hoặc đổi trạng thái pipeline.
+
+
+## Pipeline XKLĐ
+
+Tạo ứng viên → Lead và event tiếp nhận → Tư vấn → Đăng ký/đặt cọc → chọn lớp B2C trước Đào tạo ngoại ngữ → Hoàn thiện hồ sơ → gắn đơn đang tuyển trước Phỏng vấn → Trúng tuyển → Visa/giấy phép → Xuất cảnh → Hậu xuất cảnh. Mỗi lần tiến một bước; quay lại bất kỳ bước trước phải nhập lý do. Chọn đơn/lớp và thay đổi bước được lưu atomically, kèm event người thao tác/từ-đến/links/ghi chú/time.
+
+Failure paths: lớp/đơn không còn nhận mới → báo lỗi giữ bản nhập; chưa có lớp/đơn tại bước bắt buộc → không chuyển; đã có người sửa → tải lại; retry UUID đã thành công không tạo event trùng hoặc đổi về bước cũ; lỗi ghi history rollback cả thay đổi. Lịch sử chỉ xem, không có nút sửa/xóa. Trạng thái Đặt cọc không tạo phiếu thu; link lớp không ghi danh/học phí.
+
+
+### XKLD-DOCUMENTS-1 — Checklist và tệp riêng tư
+
+Chọn thị trường → cấu hình checklist → mở hồ sơ ứng viên → chọn thị trường → nhập ngày nộp/hết hạn/ghi chú. Checklist/hồ sơ25/trang, files20/trang. Ngày nộp tương lai bị từ chối; cho lưu giấy tờ cũ đã hết hạn. Upload: prepare RPC tạo claim/path → browser upload bằng session qua Storage RLS (upsert:false) → server kiểm kích thước và signature PDF/PNG/JPG → RPC xác minh object metadata rồi finalize ready. Lỗi tải/kiểm tra: cleanup object pending và cancel claim; nếu Storage cleanup lỗi có thể còn object cancelled riêng tư, cần vận hành dọn riêng. Tải xuống qua route xác thực, không có public URL trong UI. Tệp giả định dạng bị từ chối; kiểm tra signature không thay antivirus hoặc thẩm định pháp lý. Tệp ready không có luồng sửa/xóa; bổ sung bản mới. Hết hạn tính theo giờ VN, sắp hết hạn trong30 ngày gồm ngày cuối.
+
+
+### XKLD-FINANCE-1 — Thu/chi và công nợ
+
+Tài chính & công nợ → chọn ứng viên → nhóm phí ứng viên/đối tác/hoa hồng → thêm đợt có số tiền và hạn → thu hoặc chi từng phần. Công nợ = phí hiện tại - (thu - hoàn); với hoa hồng = phải chi - đã chi. Quá hạn khi còn nợ và hạn trước hôm nay giờ VN. Overview tổng theo bộ lọc,25 ứng viên/trang; detail25 đợt/trang; phiếu/lịch sử20/trang. Hoàn bắt đầu từ phiếu thu gốc, chọn rõ giảm phí hoặc giữ phí; không tạo doanh thu/phiếu B2C hoặc tự chuyển pipeline. Sửa đợt lưu lịch sử và chặn stale update. Hủy phiếu giữ nội dung và lý do, tự tính lại công nợ; hủy hoàn có giảm phí khôi phục phí, hủy thu cần hủy các hoàn liên quan trước. Số tiền0/âm/lẻ hoặc ngày cash tương lai bị chặn. Retry tạo/phiếu/hủy không ghi trùng; yêu cầu cùng UUID khác nội dung bị từ chối. Hai giao dịch đồng thời khóa nghĩa vụ nên không cùng thu vượt. Server action revalidate root và pattern detail page để cập nhật số dư, không refresh client trùng.
+
+
+### B2C-CLASS-DETAIL-1
+
+Lớp trung tâm → chương trình → bấm tên lớp hoặc con mắt → popup thông tin và học viên đúng lớp → tìm/page20 → đóng về danh sách, giữ bộ tìm lớp/tab. Chuyển sang lớp khác khởi tạo lại bộ tìm/page. Danh sách rỗng có thông báo, trường chưa cập nhật dùng nhãn rõ hoặc dấu gạch. Chỉ đọc, không thêm mutation/DB query trong client.
+
+
+### B2C-CLASS-WORKSPACE-1
+
+Popup lớp → chọn một trong5 mục → trang chi tiết. Lịch → thêm/sửa buổi hoặc giữ buổi liên kết lịch dạy → Mở điểm danh → chọn trạng thái từng học viên và lưu → Nhận xét từ hàng học viên, gắn buổi khi đang điểm danh. Tab Nhận xét cho xem theo buổi hoặc tất cả; chọn học viên để thêm đi đúng buổi đang chọn. Học phí → tạo/sửa gói bằng flow cũ → Phiếu thu → lưu và cập nhật số dư/lịch sử. Mọi danh sách25/trang, tìm học viên server. Buổi tương lai/hủy chặn điểm danh; roster lớp khác hoặc buổi lớp khác bị RPC chặn; học phí chưa cấu hình không là0đ miễn phí. Calendar/attendance/comments lưu request+history nguyên tử, retry không lặp và stale không ghi đè. Sửa lịch có roll-call/comment không cho đổi giờ/hủy. Revalidation vào pattern detail page từ save meeting/attendance/comment/tuition và tạo buổi dạy.
+
+
+B2C-CLASS-WORKSPACE-1 cache: route force-dynamic/force-no-store cho dữ liệu riêng tư và kết quả RPC luôn mới; revalidate concrete class path sau lưu. Biểu mẫu học phí trong trang lớp truyền class_id chỉ phục vụ cache invalidation (không quyết định phân quyền/mutation); UUID được kiểm trước dùng path. Không refresh client trùng, tránh RSC cập nhật chồng.

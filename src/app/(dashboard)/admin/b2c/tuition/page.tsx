@@ -41,6 +41,13 @@ export default async function B2CTuitionPage({
       <PageHeader
         title="Học phí – công nợ"
         description="Gói học phí theo ghi danh và phiếu thu nhiều đợt."
+        action={
+          actor.role === "super_admin" ? (
+            <Button asChild variant="outline">
+              <Link href="/admin/b2c/history">Nhật ký thay đổi</Link>
+            </Button>
+          ) : undefined
+        }
       />
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         {[
@@ -136,6 +143,15 @@ export default async function B2CTuitionPage({
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       <TuitionPackageDialog row={row} />
+                      {actor.role === "super_admin" && (
+                        <Link
+                          href={`/admin/b2c/history?enrollment=${row.enrollment_id}`}
+                          className="text-primary rounded px-2 py-1 text-xs hover:underline"
+                          aria-label={`Nhật ký học phí ${row.full_name}`}
+                        >
+                          Nhật ký
+                        </Link>
+                      )}
                       <TuitionReceiptsDialog
                         row={row}
                         collector={actor.fullName}

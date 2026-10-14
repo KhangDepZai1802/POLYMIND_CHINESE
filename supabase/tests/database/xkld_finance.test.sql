@@ -1,0 +1,78 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select plan(43);
+insert into auth.users(id,aud,role,email,created_at,updated_at) values
+('74000000-0000-4000-8000-000000000001','authenticated','authenticated','finance-staff@example.test',now(),now()),
+('74000000-0000-4000-8000-000000000002','authenticated','authenticated','finance-exec@example.test',now(),now()),
+('74000000-0000-4000-8000-000000000003','authenticated','authenticated','finance-consultant@example.test',now(),now());
+insert into public.profiles(id,role,full_name,is_active) values
+('74000000-0000-4000-8000-000000000001','xkld_staff','TEST FINANCE STAFF',true),
+('74000000-0000-4000-8000-000000000002','executive','TEST FINANCE EXEC',true),
+('74000000-0000-4000-8000-000000000003','consultant','TEST FINANCE OTHER',true);
+create temp table finance_ctx(k text primary key,id uuid);
+grant all on finance_ctx to authenticated;
+select ok((select relrowsecurity from pg_class where oid='public.xkld_finance_installments'::regclass),'Installment RLS');
+select ok((select relrowsecurity from pg_class where oid='public.xkld_finance_transactions'::regclass),'Transaction RLS');
+select ok((select relrowsecurity from pg_class where oid='public.xkld_finance_history'::regclass),'History RLS');
+select ok(not has_table_privilege('authenticated','public.xkld_finance_transactions','UPDATE'),'No direct movement edits');
+select ok(not has_table_privilege('authenticated','public.xkld_finance_history','DELETE'),'No audit deletion');
+select ok(not has_function_privilege('anon','public.read_xkld_finance(text,jsonb)','EXECUTE'),'Anonymous cannot read RPC');
+select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+with c as (insert into public.xkld_candidates(create_request_id,full_name,date_of_birth,phone,hometown,education,occupation,health_status,source,assignee_id) values('74000000-0000-4000-8000-000000000030','TEST FINANCE CANDIDATE','2000-01-01','0901234567','TEST','TEST','TEST','passed','employee','74000000-0000-4000-8000-000000000001') returning id) insert into finance_ctx select 'candidate',id from c;
+reset role;
+select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+set local role authenticated;
+select ok(app.can_manage_xkld_finance(),'Executive can manage finance');
+insert into finance_ctx values('fee',public.write_xkld_finance('save_installment',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate'),'request_id','74000000-0000-4000-8000-000000000010','kind','candidate_fee','title','TEST FEE','counterparty','TEST PAYER','amount',1000,'due_date','2026-01-01','note','TEST')));
+select lives_ok($$select public.write_xkld_finance('save_installment',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate'),'request_id','74000000-0000-4000-8000-000000000010','kind','candidate_fee','title','TEST FEE','counterparty','TEST PAYER','amount',1000,'due_date','2026-01-01','note','TEST'))$$,'Create retry');
+select throws_ok($$select public.write_xkld_finance('save_installment',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate'),'request_id','74000000-0000-4000-8000-000000000010','kind','candidate_fee','title','TEST FEE','counterparty','TEST PAYER','amount',999,'due_date','2026-01-01','note','TEST'))$$,'P0001',null,'Retry changed payload rejected');
+select is((select count(*)::int from public.xkld_finance_installments where candidate_id=(select id from finance_ctx where k='candidate')),1,'No duplicate obligation');
+insert into finance_ctx values('commission',public.write_xkld_finance('save_installment',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate'),'request_id',gen_random_uuid(),'kind','commission','title','TEST COMMISSION','counterparty','TEST CTV','amount',300,'due_date','2026-01-01')));
+insert into finance_ctx values('partner',public.write_xkld_finance('save_installment',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate'),'request_id',gen_random_uuid(),'kind','partner_fee','title','TEST PARTNER','counterparty','TEST EMPLOYER','amount',800,'due_date','2026-01-01')));
+insert into finance_ctx values('receipt',public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id','74000000-0000-4000-8000-000000000020','kind','receipt','amount',600,'occurred_on','2026-01-01','method','cash')));
+select lives_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id','74000000-0000-4000-8000-000000000020','kind','receipt','amount',600,'occurred_on','2026-01-01','method','cash'))$$,'Receipt retry safe');
+select is((public.read_xkld_finance('detail',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate')))->'totals'->>'balance')::numeric,400::numeric,'Debt after partial receipt');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','receipt','amount',401,'occurred_on','2026-01-01','method','cash'))$$,'P0001',null,'Overcollection blocked');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','receipt','amount',0.5,'occurred_on','2026-01-01','method','cash'))$$,'P0001',null,'Fractional VND blocked');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','receipt','amount',1,'occurred_on','2099-01-01','method','cash'))$$,'P0001',null,'Future cash date blocked');
+insert into finance_ctx values('refund_keep',public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','refund','receipt_id',(select id from finance_ctx where k='receipt'),'amount',200,'reduce_fee',false,'occurred_on','2026-01-02','method','cash','note','TEST keep fee')));
+select is((public.read_xkld_finance('detail',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate')))->'totals'->>'balance')::numeric,600::numeric,'Refund keeping fee reopens debt');
+insert into finance_ctx values('refund_reduce',public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','refund','receipt_id',(select id from finance_ctx where k='receipt'),'amount',100,'reduce_fee',true,'occurred_on','2026-01-02','method','cash','note','TEST reduce fee')));
+select is((public.read_xkld_finance('detail',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate')))->'totals'->>'amount')::numeric,900::numeric,'Refund reduction decreases obligation');
+select is((public.read_xkld_finance('detail',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate')))->'totals'->>'balance')::numeric,600::numeric,'Reducing fee preserves debt');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','refund','receipt_id',(select id from finance_ctx where k='receipt'),'amount',301,'occurred_on','2026-01-02','method','cash','note','TEST'))$$,'P0001',null,'Over-refund blocked per original receipt');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='partner'),'request_id',gen_random_uuid(),'kind','refund','receipt_id',(select id from finance_ctx where k='receipt'),'amount',1,'occurred_on','2026-01-02','method','cash','note','TEST'))$$,'P0001',null,'Cross-installment receipt cannot refund');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','refund','receipt_id',(select id from finance_ctx where k='receipt'),'amount',1,'occurred_on','2026-01-02','method','cash','note',''))$$,'P0001',null,'Refund reason required');
+select throws_ok($$select public.write_xkld_finance('void_transaction',jsonb_build_object('id',(select id from finance_ctx where k='receipt'),'request_id',gen_random_uuid(),'reason','TEST'))$$,'P0001',null,'Original receipt with active refunds cannot void');
+select throws_ok($$select public.write_xkld_finance('save_installment',jsonb_build_object('id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'amount',299,'expected_updated_at',(select updated_at from public.xkld_finance_installments where id=(select id from finance_ctx where k='fee')),'title','TEST','counterparty','TEST','due_date','2026-01-01'))$$,'P0001',null,'Cannot reduce fee below net receipts');
+select throws_ok($$select public.write_xkld_finance('save_installment',jsonb_build_object('id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'amount',1000,'expected_updated_at','2000-01-01'))$$,'P0001',null,'Stale edit rejected');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee'),'request_id',gen_random_uuid(),'kind','commission_payment','amount',1,'occurred_on','2026-01-01','method','cash'))$$,'P0001',null,'Wrong movement kind blocked');
+select lives_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='commission'),'request_id',gen_random_uuid(),'kind','commission_payment','amount',200,'occurred_on','2026-01-01','method','bank_transfer'))$$,'Pay commission');
+select throws_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='commission'),'request_id',gen_random_uuid(),'kind','commission_payment','amount',101,'occurred_on','2026-01-01','method','cash'))$$,'P0001',null,'Commission overpayment blocked');
+select lives_ok($$select public.write_xkld_finance('record_transaction',jsonb_build_object('installment_id',(select id from finance_ctx where k='partner'),'request_id',gen_random_uuid(),'kind','receipt','amount',400,'occurred_on','2026-01-01','method','cash'))$$,'Receive partner fee');
+select lives_ok($$select public.write_xkld_finance('void_transaction',jsonb_build_object('id',(select id from finance_ctx where k='refund_reduce'),'request_id','74000000-0000-4000-8000-000000000040','reason','TEST wrong refund'))$$,'Void fee-reducing refund');
+select lives_ok($$select public.write_xkld_finance('void_transaction',jsonb_build_object('id',(select id from finance_ctx where k='refund_reduce'),'request_id','74000000-0000-4000-8000-000000000040','reason','TEST wrong refund'))$$,'Void retry safe');
+select is((select amount from public.xkld_finance_installments where id=(select id from finance_ctx where k='fee')),1000::numeric,'Voiding refund restores reduced fee');
+select is((select count(*)::int from public.xkld_finance_history where candidate_id=(select id from finance_ctx where k='candidate')),9,'Every successful mutation logged once');
+select is((select count(*)::int from public.xkld_finance_history where candidate_id=(select id from finance_ctx where k='candidate') and actor_id='74000000-0000-4000-8000-000000000002'),9,'Actual actor attributed');
+reset role;
+select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+select is((select count(*)::int from public.xkld_finance_transactions),0,'Staff cannot read raw receipts/partner/commission');
+select is((select count(*)::int from public.xkld_finance_installments),0,'Staff cannot read raw obligations');
+select is((public.read_xkld_finance('detail',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate'),'kind','commission'))->'totals'->>'amount')::numeric,1000::numeric,'Staff forged commission filter returns candidate debt only');
+select ok(not ((public.read_xkld_finance('detail',jsonb_build_object('candidate_id',(select id from finance_ctx where k='candidate')))->'rows'->0) ? 'counterparty'),'Staff projection excludes payee');
+select throws_ok($$select public.read_xkld_finance('transactions',jsonb_build_object('installment_id',(select id from finance_ctx where k='fee')))$$,'42501',null,'Staff cannot access movement RPC');
+select throws_ok($$select public.write_xkld_finance('save_installment','{}')$$,'42501',null,'Staff cannot write');
+select throws_ok($$select * from app.xkld_finance_balances$$,'42501',null,'Staff cannot access internal balance view');
+reset role;
+select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select public.read_xkld_finance('overview','{}')$$,'42501',null,'Consultant denied read RPC');
+select throws_ok($$select public.write_xkld_finance('save_installment','{}')$$,'42501',null,'Consultant denied write RPC');
+select is((select count(*)::int from public.xkld_finance_history),0,'Consultant denied history RLS');
+reset role;
+select * from finish();
+rollback;

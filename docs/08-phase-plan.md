@@ -1,5 +1,36 @@
 # 08 — Phase Plan & Task Ledger
 
+## RELEASE-20261014-B — Phát hành thay đổi đã hoàn thành
+
+- [ ] Theo yêu cầu user ngày14/10: kiểm tra lint/typecheck/full test/build, rà secret, commit/push main B2C/teacher/XKLĐ đã hoàn thành; giữ riêng .env.example bị xóa nội dung ngoài scope. Xác minh HEAD trùng origin/main và báo SHA trong chat; không suy ra deployment thành công từ git push.
+
+## CLASS-BACK-BUTTON-1 — Nút trở lại chi tiết lớp
+
+- [x] BackLink dùng chung: ô44×44px bo góc12px, nền xanh50/viền xanh200/shadow, hover xanh đậm-trắng, keyboard focus rõ/dark variants; nhãn điểm đến và aria-label. Áp teacher B2C/B2B class detail và admin B2C class detail, giữ href. Lint/typecheck/build exit0, Vitest832/832, Edge3121 mobile44×44 và back đúng danh sách; không DB/quyền mới, chưa phát hành online.
+
+
+## TEACHER-HOME-REDESIGN-1 — Dashboard theo ảnh, giữ logo cũ
+
+- [x] Hôm nay: nền xanh nhẹ, greeting/ngày VN,4 KPI dữ liệu thật,4 thẻ lớp B2C ngang ở desktop, timeline và panel công việc/empty states theo mẫu. Giữ logo/file logopolymind.png, quyền và nguồn dữ liệu. Nêu scope B2B cho các chỉ số chưa có nguồn B2C; không bịa delta. Header search hoạt động theo mã/tên lớp được phân công. Lint/typecheck/build exit0, Vitest832/832, Edge3120 desktop1672/mobile390/360/search/logo/nav đạt,0pageerror, fixtures dọn sạch. Chưa commit/push/deploy; chờ QA độc lập.
+
+
+## B2C-STRUCTURED-SCHEDULE-1 — Lịch có cấu trúc/sinh buổi
+
+- [x] Form nhiều thứ/giờ/phòng tùy chọn/date-range/preview, lưu rule+generate nguyên tử, unique retries/no resurrect, chặn class/room overlap kể cả concurrent, actor/history, RLS/server guards. Manager list+edit phòng/hủy, teacher room+actual-today/fallback suppression. SQL15 cloud/history, pgTAP98/98 gồm35 mới, Vitest830/830 (137files), lint/typecheck/build exit0. Edge3117 form/create4/repeat0skip4/room rollback/concurrent1winner/teacherToday+cancel/deny/mobile đạt,0pageerror; fixtures dọn sạch. Chưa phát hành online, chờ QA độc lập.
+
+
+## B2C-ICON-COLORS-1 — Màu icon B2C và giáo viên
+
+- [x] Menu desktop/mobile B2C và giáo viên có nền pastel theo nhóm chức năng; mục active icon trắng trên xanh. Tổng quan có KPI nhiều màu, lớp giáo viên thêm ô icon sách, icon tìm/xem/sửa/lịch sử có màu thống nhất xuyên B2C. Giữ icon trắng trên nút màu, không đổi quyền/dữ liệu. Lint/typecheck/build exit0, Vitest818/818; chưa phát hành online, chờ QA độc lập.
+
+## B2C-TEACHER-TODAY-1 — Lịch tuần trên Hôm nay
+
+- [x] Lấy lớp B2C đã được phân công qua RPC hiện hữu; lọc đúng thứ/ngày Việt Nam, active và ngày khai giảng. Hiện giờ/tên/mã/sĩ số/link lịch lớp trong Lịch dạy hôm nay, cộng vào tổng; nhãn lịch tuần dự kiến, không sinh attendance/payroll. Mỗi lớp một dòng dù chuỗi lặp thứ. Unit regression thứ Tư, ranh UTC, CN, ngày khai giảng/trạng thái và dữ liệu sai. Lint/typecheck/build exit0, Vitest818/818; không đổi DB/quyền. Edge production3114: đăng nhập, lịch hôm nay đúng1lần/giờ, link/roster/lịch/nhận xét, IDOR/mobile đạt,0pageerror; fixtures dọn sạch. Chưa phát hành online, chờ QA độc lập.
+
+## B2C-TEACHER-VISIBILITY-1 — Lớp B2C của giáo viên
+
+- [x] Sửa lớp giáo viên chỉ đọc B2B: phân công B2C theo FK tài khoản, backfill khớp duy nhất; hiện trên /teacher và /teacher/classes, mở roster/lịch/nhận xét, tìm/page25. Fail closed lớp khác/khóa tài khoản/teacher inactive, không cấp học phí hoặc raw-table access. SQL14 cloud; pgTAP23/23, Vitest813/813, lint/typecheck/build exit0. Edge login/roster/search/lịch/nhận xét/IDOR/mobile0overflow/0pageerror; dữ liệu thử dọn sạch. Cô Lê thực tế4 lớp/15 ghi danh đọc được dưới quyền thật. Chưa commit/push/deploy; QA độc lập chưa làm.
+
 ## B2C-TUITION-1 — Học phí và phiếu thu
 
 - [x] Gói theo ghi danh: số buổi, đơn giá, chiết khấu VNĐ/lý do, tổng phải thu. Phiếu thu nhiều đợt: ngày/tiền/TM-CK/người thu; công nợ, idempotency DB, chặn thu vượt và giảm tổng dưới số đã thu. Manager/RLS, tìm kiếm/phân trang, dùng lại validation và tiền tệ B2B. SQL 10/11 đã áp, pgTAP 17/17; lint/typecheck/build exit 0, Vitest 710/710. Chưa kiểm tra trực quan bằng manager/tải đồng thời.
@@ -78,6 +109,11 @@
 - [ ] ◐ Code và SQL sẵn sàng: bảng học viên B2C có 6 trạng thái và lý do nghỉ tùy chọn, sửa bởi manager qua RLS; đồng bộ các lớp của học viên. Lint/typecheck/build exit 0, Vitest 675/675. Chờ user chạy SQL và kiểm tra giao diện; pgTAP chưa chạy vì Docker không hoạt động. Không thay đổi VCB.
 
 ## B2C-REPORT-1 — Báo cáo hoạt động tháng trung tâm
+
+- [x] `B2C-CHANGE-HISTORY-1`: nhật ký tạo/sửa/xóa ghi danh/gói học phí/phiếu thu từ trigger DB, actor thật và snapshot trước/sau/context, không log trùng no-op/retry; app không sửa/xóa/giả log. Super-admin-only theo D-2, menu/link học viên/học phí, lọc và phân trang 30. SQL06 áp/history xác minh, pgTAP24/24; lint/typecheck/build exit0, Vitest760/760. Chưa kiểm tra trực quan bằng manager thật.
+
+- [x] `B2C-FINANCE-2`: tách lương GV/NV văn phòng, giữ tổng cũ không tự phân loại; Marketing nhập rõ; hòa vốn ước tính báo cáo tháng trên Tổng quan với lý do khi thiếu dữ liệu. Migration 05 áp cloud/history xác minh, pgTAP 14/14, lint/typecheck/build exit 0, Vitest 754/754.
+- [ ] `B2C-CAC-1`: chờ user chốt cách gộp Marketing/quảng cáo và mẫu số HV mới; chưa tính CAC. Chưa kiểm tra trực quan báo cáo/hòa vốn bằng manager.
 
 | ID | Task | Definition of Done | Trạng thái |
 | --- | --- | --- | --- |
@@ -1188,3 +1224,93 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 - [x] Trình phát có tốc độ 0.75x / 1x / 1.25x và tự dừng audio khác.
 - [x] Trang không có audio hiện thông báo và liên kết quay lại `/nghe`.
 - [x] Kiểm tra lint, typecheck, unit test, build và danh sách URL dùng tạo QR.
+
+
+## HYDRATION-PERF-1 — Hydration và tải dashboard
+
+- [x] Báo cáo B2C: hiển thị thời gian Asia/Ho_Chi_Minh; tháng/năm mặc định là snapshot từ server; regression SSR/hydrate qua giao năm.
+- [x] Dashboard: truy vấn số thông báo nằm trong Suspense riêng, không chặn khung và nội dung trang; giữ requireUser và RLS.
+- [ ] Tái hiện #418 đúng URL người dùng và đo nội dung thật dưới 2 giây trên production bằng phiên đăng nhập. Chưa có URL/phiên đo; không dùng TTFB/login thay số đo dashboard.
+
+
+## MODULE-XKLD-BUTTON-1 — Thẻ chọn module
+
+- [x] Thêm thẻ Xuất khẩu lao động bên cạnh B2B/B2C, responsive 1/2/3 cột; bấm báo Sắp triển khai, chờ yêu cầu chi tiết. Không đổi dữ liệu/phân quyền.
+
+
+## XKLD-FOUNDATION-1 — Yêu cầu xây mới từ ảnh 14/10/2026
+
+- [x] Chuẩn hóa sáu nhóm dữ liệu, mười giai đoạn và năm dashboard theo vai trò tại docs/09-xkld-requirements.md.
+- [ ] Chốt mapping vai trò/phạm vi ứng viên và tài chính (đã hỏi user).
+- [ ] Thiết kế schema/RLS, pgTAP; CRUD ứng viên/đơn hàng/pipeline; checklist private; tài chính; hậu xuất cảnh; dashboard theo nguồn dữ liệu thật. Chưa triển khai quyền khi chưa có mapping.
+
+
+## XKLD-ACCOUNTS-1 — Cấp tài khoản theo vai trò
+
+- [x] Bốn enum/label/home/menu mới, tài khoản riêng; không mở rộng app.is_manager/is_super_admin.
+- [x] Một tài khoản mỗi vai trò, mật khẩu khởi tạo 6 ký tự theo yêu cầu; schema mật khẩu chung giữ 8. Script chỉ tạo thiếu, không reset tài khoản có sẵn.
+- [x] SQL07 đã áp/history xác minh, pgTAP7/7; Vitest766/766, lint/typecheck/build exit0; Edge production local4/4 login/home/admin-denied/notifications, 0 pageerror; API xác minh cô lập dữ liệu4/4.
+- [ ] Phát hành code để website online nhận role mới; chưa commit/push.
+- [ ] XKLD-FOUNDATION-2: bảng/RLS ứng viên, đơn hàng, pipeline, hồ sơ private, công nợ read-only cho xkld_staff và dashboard dữ liệu thật. Hiện workspace là trang chờ có ghi rõ.
+
+
+## XKLD-CANDIDATES-1 — Hồ sơ ứng viên
+
+- [x] Đủ trường trong bảng user; thêm/sửa popup, mã UV DB, validation, tìm/lọc/phân trang server25, không xóa hoặc tự gộp người.
+- [x] Nút module dẫn trang thật, sidebar/mobile riêng; workspace có link. Super admin/staff sửa, executive đọc; role khác chặn server/RLS.
+- [x] SQL08 áp/history xác minh; pgTAP24/24; Vitest774/774, lint/typecheck/build exit0. Edge production local tạo/tìm/sửa/actor/stale-write/retry/mobile/read-only/deny đạt; dọn1 fixture mỗi lượt.
+- [ ] Phát hành code online (chưa commit/push). Tiếp: XKLD-ORDERS-1 — thị trường/đơn hàng; pipeline, giấy tờ, tài chính và hậu xuất cảnh vẫn chưa triển khai.
+
+
+## XKLD-ORDERS-1 — Thị trường & đơn hàng
+
+- [x] Thêm/sửa thị trường/quốc gia và đơn hàng đủ trường; lương có tiền tệ/kỳ, mã DH DB tự sinh, trạng thái/ngừng thị trường không xóa.
+- [x] Menu/sidebar/mobile/workspace; tìm/lọc/phân trang25; server/RLS cùng phạm vi ứng viên; actor thật/UUID retry/updated_at chống ghi đè.
+- [x] SQL09 áp/history xác minh, pgTAP31/31; Vitest785/785, lint/typecheck/build exit0. Edge production local tạo/sửa/ngừng thị trường, tạo/sửa/tìm đơn, lương/actor/stale-write/mobile/read-only/deny đạt,0pageerror; fixture dọn sạch.
+- [ ] Phát hành code online (chưa commit/push). Tiếp: XKLD-PIPELINE-1 — liên kết ứng viên/đơn hàng và quy trình theo docs/09.
+
+
+## XKLD-PIPELINE-1 — Pipeline10 bước
+
+- [x] Board10 cột theo user,20 thẻ/cột, chọn stage phân trang, tìm/lọc owner; popup chuyển bước và lịch sử, nav/workspace và link từ danh sách ứng viên.
+- [x] Tiến tuần tự, quay lại có lý do, gắn đơn/lớp đúng giai đoạn; lookup phân trang/metadata tối thiểu; không tự thu tiền hoặc ghi danh B2C.
+- [x] SQL10 áp/history xác minh; pgTAP43/43; Vitest794/794, lint/typecheck/build exit0. End-to-end production local bản cuối sau bỏ refresh trùng: đi10 bước, rollback/lịch sử11event, retry/stale/metadata B2C/mobile/quyền đạt; fixture dọn sạch.
+- [ ] Phát hành online: chưa commit/push/deploy. Tiếp XKLD-DOCUMENTS-1 — checklist giấy tờ private theo thị trường.
+
+
+## XKLD-DOCUMENTS-1 — Hồ sơ giấy tờ
+
+- [x] Checklist cấu hình theo thị trường; hồ sơ ứng viên có ngày nộp/hết hạn/ghi chú, cảnh báo30 ngày, giữ thị trường/checklist cũ, phân trang25.
+- [x] Upload PDF/PNG/JPG10 MB riêng tư, claim UUID/path DB, kiểm signature/object, append-only ready; download qua session không public URL; files20/trang.
+- [x] Server/RPC/RLS/Storage: staff/admin sửa, executive đọc, role khác deny; actor thật, chống stale-write/retry. SQL11 áp cloud/history xác minh, pgTAP28/28, Vitest798/798, lint/typecheck/build exit0.
+- [x] Edge production local: cấu hình/lưu hồ sơ/upload/download, invalid signature, private URL, overwrite/delete deny, executive read-only, consultant/anonymous deny, mobile/no pageerror; fixture dọn sạch.
+- [ ] Phát hành code online — chưa commit/push/deploy. Tiếp XKLD-FINANCE-1 theo yêu cầu tiếp theo của user.
+
+
+## MODULE-SWITCHER-CLOSE-1 — Đóng bảng chọn module
+
+- [x] Bọc cả ba liên kết B2B/B2C/XKLĐ bằng DialogClose asChild để đóng popup khi chọn, kể cả module hiện tại; giữ Next Link và điều hướng hiện hữu.
+- [x] Lint/typecheck/build exit0; Vitest801/801 gồm3 regression chọn từng module/đang sử dụng và mở lại popup.
+
+
+## XKLD-FINANCE-1 — Tài chính XKLĐ
+
+- [x] Phí ứng viên theo đợt, đã thu/còn nợ/hoàn phí; hoa hồng CTV phải chi/đã chi; phí đối tác/chủ sử dụng phải thu/đã thu. Chỉ VNĐ.
+- [x] Super admin/executive ghi; staff chỉ công nợ ứng viên. RPC/RLS, UUID, khóa chống thu/hoàn/chi vượt, chống stale update, lịch sử/hủy lý do.
+- [x] UI tìm kiếm/phân trang, SQL12 cloud/history, pgTAP43/43, lint/typecheck/build exit0, Vitest805/805. Edge production bản cuối3107 thu/hoàn/hủy/hoa hồng/đối tác/lịch sử/concurrency/quyền/mobile đạt,0pageerror, fixtures dọn sạch.
+- [ ] Phát hành code online — chưa commit/push/deploy.
+
+
+## B2C-CLASS-DETAIL-1 — Popup chi tiết lớp
+
+- [x] Tên lớp/con mắt mở chi tiết, thông tin lớp và roster đúng lớp, tìm kiếm/phân trang20; giữ requireManager/RLS, không schema/mutation mới.
+- [x] Lint/typecheck/build exit0; Vitest807/807 gồm2 regression.
+- [ ] QA độc lập/phiên manager thật; chưa commit/push/deploy.
+
+
+## B2C-CLASS-WORKSPACE-1 — Chi tiết lớp5 mục
+
+- [x] Trang riêng HV/lịch buổi/điểm danh/học phí/nhận xét, link từ popup, query/page25 và nguồn dữ liệu đúng lớp.
+- [x] Lịch học CRUD trạng thái/không xóa, liên kết lịch dạy; roll-call explicit/stale/actor/history/UUID; nhận xét chung hoặc theo buổi. Dùng gói/phiếu thu cũ, không tự trừ học phí hoặc đổi lương.
+- [x] SQL13 cloud/history, pgTAP40/40, Vitest811/811, lint/typecheck/build exit0. Edge production cuối3112 lịch/điểm danh save-edit/nhận xét/học phí1m-thu400k-còn600k/mirror1 nguồn/anonymous deny/mobile đạt,0pageerror; fixture và tài khoản thử dọn sạch.
+- [ ] QA độc lập/phiên manager thật; chưa commit/push/deploy.

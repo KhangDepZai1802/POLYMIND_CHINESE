@@ -22,7 +22,7 @@ export function LeadDialog({ lead }: { lead?: AdmissionLead }) {
   const fieldId = lead?.id ?? "new";
   const selectClass = "border-input bg-background h-10 w-full rounded-md border px-3 text-sm";
   return <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (value) { setStage(lead?.stage ?? "lead"); setSource(lead?.customer_source ?? ""); } }}>
-    <DialogTrigger asChild>{lead ? <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label={`Sửa khách ${lead.full_name}`}><Pencil className="size-4" aria-hidden /></Button> : <Button><Plus className="size-4" aria-hidden />Thêm khách</Button>}</DialogTrigger>
+    <DialogTrigger asChild>{lead ? <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label={`Sửa khách ${lead.full_name}`}><Pencil className="size-4 text-amber-600 dark:text-amber-400" aria-hidden /></Button> : <Button><Plus className="size-4" aria-hidden />Thêm khách</Button>}</DialogTrigger>
     <DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{lead ? "Cập nhật khách tuyển sinh" : "Thêm khách tuyển sinh"}</DialogTitle><DialogDescription>Chọn giai đoạn để chuyển khách trong pipeline.</DialogDescription></DialogHeader>
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="id" value={lead?.id ?? ""} />

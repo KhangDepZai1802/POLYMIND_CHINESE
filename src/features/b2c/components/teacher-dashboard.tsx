@@ -463,7 +463,7 @@ export function TeacherDashboard({
         </h2>
         <div className="mb-3 flex flex-wrap justify-between gap-3 print:hidden">
           <label className="relative w-full max-w-sm">
-            <Search className="absolute top-2.5 left-3 size-4 text-slate-400" />
+            <Search className="absolute top-2.5 left-3 size-4 text-blue-600 dark:text-blue-400" />
             <input
               aria-label="Tìm giáo viên"
               placeholder="Tìm giáo viên…"

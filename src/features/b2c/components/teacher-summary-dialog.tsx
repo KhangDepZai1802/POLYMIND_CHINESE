@@ -96,7 +96,7 @@ export function TeacherSummaryDialog({
           </DialogDescription>
         </DialogHeader>
         <label className="relative">
-          <Search className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+          <Search className="absolute top-2.5 left-3 size-4 text-blue-600 dark:text-blue-400" />
           <input
             autoComplete="off"
             aria-label={

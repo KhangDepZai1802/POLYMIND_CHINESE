@@ -23,13 +23,21 @@ import {
   getB2CReceiptsAction,
 } from "@/features/b2c/server/tuition-actions";
 
-export function TuitionPackageDialog({ row }: { row: B2CTuitionRow }) {
+export function TuitionPackageDialog({
+  row,
+  classId,
+}: {
+  row: B2CTuitionRow;
+  classId?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState(row.sessions ?? 1);
   const [price, setPrice] = useState(row.unit_price ?? 0);
   const [discount, setDiscount] = useState(row.discount ?? 0);
   const { state, formAction } = useFormAction(saveB2CTuitionPackageAction, {
-    onSuccess: () => setOpen(false),
+    onSuccess: () => {
+      setOpen(false);
+    },
   });
   const key = row.enrollment_id;
   return (
@@ -51,7 +59,7 @@ export function TuitionPackageDialog({ row }: { row: B2CTuitionRow }) {
           aria-label={`${row.package_id ? "Sửa" : "Thêm"} gói học phí ${row.full_name}`}
         >
           {row.package_id ? (
-            <Pencil className="size-4" />
+            <Pencil className="size-4 text-amber-600 dark:text-amber-400" />
           ) : (
             <Plus className="size-4" />
           )}
@@ -66,6 +74,7 @@ export function TuitionPackageDialog({ row }: { row: B2CTuitionRow }) {
         </DialogHeader>
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="enrollment_id" value={key} />
+          {classId && <input type="hidden" name="class_id" value={classId} />}
           <div className="space-y-2">
             <Label htmlFor={`sessions-${key}`}>Số buổi *</Label>
             <Input
@@ -150,10 +159,12 @@ export function TuitionReceiptsDialog({
   row,
   collector,
   today,
+  classId,
 }: {
   row: B2CTuitionRow;
   collector: string;
   today: string;
+  classId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [requestId, setRequestId] = useState("");
@@ -163,7 +174,9 @@ export function TuitionReceiptsDialog({
   > | null>(null);
   const [loading, setLoading] = useState(false);
   const { state, formAction } = useFormAction(recordB2CReceiptAction, {
-    onSuccess: () => setOpen(false),
+    onSuccess: () => {
+      setOpen(false);
+    },
   });
   async function load(next: number) {
     if (!row.package_id) return;
@@ -210,6 +223,7 @@ export function TuitionReceiptsDialog({
         </DialogHeader>
         {row.balance > 0 && (
           <form action={formAction} className="space-y-4 border-b pb-4">
+            {classId && <input type="hidden" name="class_id" value={classId} />}
             <input
               type="hidden"
               name="package_id"

@@ -1,5 +1,33 @@
 # 02 — Thiết kế Database
 
+## Lịch có cấu trúc B2C — SQL15
+
+b2c_class_schedules lưu class_id, weekdays ISO1..7[], start/end time, room_name (trống nếu chưa xếp), date_from/date_to, actor/time; RLS SELECT manager, không direct mutation. Unique class/days/time/room/range, RPC chuẩn hóa mảng thứ. b2c_class_meetings thêm schedule_id FK restrict, room_name và generated room_key trim/gom khoảng trắng/upper/nullif. btree_gist exclusion (room_key =, tstzrange &&) chỉ buổi không hủy, [start,end) cho phép hai buổi liền nhau, chống race xuyên lớp. Không áp giới hạn phòng khi chưa xếp.
+
+generate_b2c_class_schedule security definer search_path rỗng, manager guard; lock request + lớp, UUID/payload retry, class_requests/history actor thật; range bounded/đúng thứ/VN timezone, insert hoặc skip chính xác, rollback cả lượt nếu conflict. write_b2c_class_workspace forward replace giữ guards/history cũ, thêm phòng và giữ giờ gốc của generated meeting. read_my_b2c_classes chỉ thêm room/schedule projection trong tab lịch. read_my_b2c_today chỉ lớp assigned/active-account, rows cụ thể trong ngày VN + override_class_ids để UI không dùng fallback trùng, không lộ phí/lương.
+
+SQL20261014000015 đã áp cloud/history xác minh; pgTAP mới35/35, hồi quy class_workspace40/40 + teacher_classes23/23 (tổng98). CLI dry-run trước/sau vẫn vướng15 history gaps đã biết, không repair/replay SQL cũ. Không backfill lịch hoặc phòng từ chuỗi nguồn.
+
+## Phân công lớp B2C cho tài khoản giáo viên (SQL14)
+
+20261014000014 thêm b2c_classes.teacher_id FK b2c_teachers restrict + index. Backfill tên trim/lower chỉ khớp duy nhất; trigger resolve_b2c_class_teacher chạy insert/đổi teacher_name. Không dùng so tên trong truy vấn phân quyền sau backfill. app.teaches_b2c_class kiểm ID/source_teacher/user/profile role teacher|academic_manager và cả profiles.is_active/teachers.is_active.
+
+read_my_b2c_classes SECURITY DEFINER search_path rỗng kiểm role active, deny lớp khác, chỉ projection lớp/roster/lịch/nhận xét, không học phí/PII liên hệ/audit/payroll. Raw RLS và RPC manager cũ giữ nguyên. Chỉ authenticated execute; không cấp quyền helper app cho user. SQL14 đã áp cloud/history xác minh; pgTAP23/23 rollback. CLI dry-run vẫn chặn15 migration cũ thiếu history, không replay/repair SQL cũ.
+
+## Nhật ký B2C (2026-10-14)
+
+Migration `20261014000006_b2c_change_history.sql` thêm bảng `b2c_change_history` có RLS select app.is_super_admin(), chỉ grant SELECT cho authenticated, revoke toàn bộ quyền ghi user. Actor UUID/tên/vai trò, ngữ cảnh học viên/lớp và enrollment UUID được lưu snapshot, không FK cascade xóa lịch sử. before_data/after_data chỉ lưu whitelist nghiệp vụ, không nguồn import hoặc credential. Thời gian clock_timestamp() tại DB; index theo thời gian+id, ghi danh+thời gian, loại+thời gian; search_text generated dùng tìm kiếm không ghép biểu thức OR từ input.
+
+Hàm trigger app.capture_b2c_change() SECURITY DEFINER, search_path rỗng, revoke quyền gọi trực tiếp; gắn AFTER INSERT/UPDATE/DELETE vào b2c_enrollments/b2c_tuition_packages/b2c_tuition_receipts. So sánh payload whitelist, bỏ qua save không đổi; ghi log và nghiệp vụ chung transaction. Không dùng service-role cho user flow. Tách khỏi audit_logs hiện hữu để generic RPC log_audit không thể giả các event B2C này; quyền đọc audit hiện hữu giữ nguyên.
+
+SQL06 đã thử rollback pgTAP 24/24 rồi áp cloud, history xác minh qua kết nối mới, RLS bật; dữ liệu nguồn giữ nguyên, ban đầu 0 event do không backfill. Dry-run trước/sau vẫn bị 15 migration B2C cũ thiếu history chặn; không repair hoặc chạy lại ngoài scope, chưa khẳng định toàn bộ remote up-to-date.
+
+## Tách lương báo cáo B2C (2026-10-14)
+
+Migration `20261014000005_b2c_payroll_split.sql` thêm `teacher_payroll_cost`/`office_payroll_cost` bigint nullable không âm vào `b2c_monthly_reports`. Cả hai cùng null để giữ lương gộp cũ, hoặc cùng có giá trị và tổng bằng payroll_cost. RLS manager-only giữ nguyên. RPC lưu báo cáo giữ chữ ký, nhận teacher_payroll/office_payroll trong JSON, lưu nguyên tử. Payload cũ dùng payroll không xóa phân loại đã biết; tổng không khớp bị constraint chặn. UI/server mới bắt buộc hai lương và Marketing nhập rõ. Hòa vốn tính khi đọc, không lưu số tổng hợp.
+
+SQL thử rollback pgTAP 14/14 rồi áp cloud; history 20261014000005 xác minh bằng kết nối mới; 2 báo cáo cũ giữ nguyên doanh thu/tổng lương, còn chưa phân loại. Dry-run trước/sau còn chặn bởi 15 B2C migration cũ thiếu history; không repair/chạy lại ngoài scope, chưa xác nhận toàn bộ remote up-to-date.
+
 ## Chấm công giảng viên B2C (2026-10-14)
 
 Migration `20261014000004` tạo `b2c_teaching_sessions`, FK restrict tới lớp/hồ sơ B2C, giờ lịch/đơn giá snapshot, check-in/out thời gian/ảnh, generated teaching_hours/salary chỉ có giá trị khi hoàn tất. RLS chỉ quản lý hoặc người được phân công đang hoạt động đọc; authenticated không có quyền insert/update/delete trực tiếp. RPC definer search_path rỗng gác manager khi tạo lịch, khóa giáo viên để chặn lịch trùng; RPC checkpoint kiểm liên kết source_teacher_id → teachers.user_id, tài khoản hoạt động, đúng ngày Việt Nam, ảnh đã tồn tại/đúng namespace/dung lượng/MIME, khóa buổi và không cho ghi lại. Retry cùng ảnh idempotent. RPC danh sách tháng phân trang 50, tổng toàn tháng theo cùng quyền.
@@ -738,3 +766,54 @@ Thứ tự: `levels` (HSK 1–6) → `grading_scale_rules` → `courses` (catalo
 3. Mỗi migration đổi schema phải có test kèm (pgTAP cho RLS/constraint, hoặc integration test).
 4. `supabase db reset` phải chạy sạch từ đầu tới cuối, không lỗi, seed idempotent.
 5. Thêm cột NOT NULL vào bảng có dữ liệu → phải có DEFAULT hoặc backfill trong cùng migration.
+
+
+## Business roles — XKLD-ACCOUNTS-1 (2026-10-14)
+
+Migration 20261014000007_business_roles.sql thêm executive, center_manager, consultant, xkld_staff vào public.user_role; transaction riêng trước khi gán profiles. Giữ nguyên app.is_manager(), app.is_super_admin(), RLS và quyền ghi profiles/audit. Bốn role mới đọc hồ sơ chính mình qua policy có sẵn, không kế thừa quyền của academic_manager hoặc super_admin. Chưa tạo bảng nghiệp vụ XKLĐ hoặc mở policy truy cập B2C.
+
+Đã thử rollback pgTAP7/7 rồi áp cloud và xác minh migration history qua kết nối mới. Bốn tài khoản mới cấp qua Auth admin API (user đã yêu cầu); không đổi tài khoản có sẵn, không lưu mật khẩu trong repo. Auth sign-in từng tài khoản xác minh chỉ đọc được 1 profile (chính mình), audit 0 hàng và báo cáo tháng B2C 0 hàng. CLI dry-run vẫn chặn 15 migration B2C cũ thiếu history; không replay/repair chúng.
+
+
+## XKLD-CANDIDATES-1 — SQL08
+
+20261014000008_xkld_candidates.sql tạo xkld_candidates riêng có RLS, sequence + hàm sinh UV-000001 không cắt số khi vượt sáu chữ số. create_request_id UUID unique; created/updated_at và created/updated_by do trigger ghi, không cấp quyền ghi các cột actor/code cho authenticated. Grant SELECT, INSERT/UPDATE theo cột nghiệp vụ; không DELETE. can_read_xkld_candidates cho super_admin/executive/xkld_staff; can_edit_xkld_candidates chỉ super_admin/xkld_staff; helper dựa app.current_role() nên tài khoản khóa bị chặn. Không thay app.is_manager hoặc quyền dữ liệu đào tạo.
+
+RPC get_xkld_assignees security definer, search_path rỗng, không grant public/anon; chỉ trả id/tên/trạng thái của assignee hợp lệ hoặc đã gắn hồ sơ, không mở quyền đọc toàn bộ profiles. Candidate list dùng Supabase user client + RLS, range25/stable created_at/id/count exact. Trigger kiểm tra ngày sinh, role/trạng thái người phụ trách; giữ actor và code cũ khi update. Có index thời gian, nguồn và phụ trách.
+
+pgTAP24/24 rollback đạt, SQL08 đã áp cloud/history xác minh kết nối mới, giữ nguyên số profiles. Edge production local tạo/tìm/sửa/actor/chống stale-update/chống duplicate/mobile/read-only/chặn consultant đạt; chỉ fixture TEST riêng đã dọn sạch. Dry-run sau áp vẫn chặn15 migration B2C cũ thiếu history, không chạy lại/repair.
+
+
+## XKLD-ORDERS-1 — SQL09
+
+Migration20261014000009_xkld_markets_orders.sql tạo xkld_markets và xkld_orders đều bật RLS, dùng helper XKLĐ hiện có (đọc super_admin/executive/xkld_staff, ghi super_admin/xkld_staff). Grant SELECT và INSERT/UPDATE whitelist cột, không DELETE, không cho app ghi mã/actor/timestamp. Market có country_code unique và unique lower(trim(country_name)); order FK market restrict, UUID tạo unique, sequence sinh DH không cắt số. Lương numeric không typmod để CHECK phát hiện quá2 chữ số thay vì tự làm tròn; tiền tệ/kỳ lương lưu riêng.
+
+Trigger prepare_xkld_market_order giữ code/creator/token cũ, ghi actor/time thật; chặn chọn thị trường không hoạt động cho đơn mới hoặc chuyển thị trường, vẫn cho sửa đơn cũ. Index theo created_at/id, market và status/deadline. Ba thị trường tham chiếu seed không có actor giả; không seed đơn/lương. Các request nghiệp vụ dùng user client/RLS, không service role.
+
+SQL09 pgTAP31/31 rollback trước áp; đã áp cloud/history xác minh qua kết nối mới. Dry-run sau áp vẫn vướng15 migration B2C cũ thiếu history, không replay/repair. Giữ số profiles; sau smoke đã dọn đúng1 market TEST và1 order TEST, còn3 market tham chiếu và0 order.
+
+
+## XKLD-PIPELINE-1 — SQL10
+
+Migration20261014000010_xkld_pipeline.sql thêm stage/order_id/b2c_class_id vào xkld_candidates; CHECK10 stage và FK restrict. Không cấp INSERT/UPDATE trực tiếp các cột pipeline. RPC transition_xkld_candidate security definer/search_path rỗng kiểm can_edit_xkld_candidates, SELECT FOR UPDATE, UUID request/retry cùng payload/actor, expected_updated_at, quy tắc bước và liên kết trước mutation. Trigger record_xkld_progress AFTER INSERT/UPDATE ghi lịch sử chỉ khi có thay đổi stage/links; actor auth.uid và tên snapshot, không lấy từ input.
+
+Bảng xkld_pipeline_history RLS đọc theo can_read_xkld_candidates, revoke toàn bộ quyền ghi app; không FK cascade xóa lịch sử, label/order/class/actor snapshot giữ ngữ cảnh. Request_id unique, index candidate/time/id. Hàm ghi trigger không grant execute cho user. History lỗi thì cả chuyển bước rollback. Không backfill event cho hồ sơ trước migration.
+
+RPC get_xkld_pipeline trả10 nhóm/count chính xác và tối đa20 thẻ/cột trong một snapshot, không10 round-trip; chọn stage chỉ lấy thẻ cho stage đó. RPC search_xkld_b2c_classes chỉ id/code/name/program/status, search_xkld_pipeline_orders chỉ order labels, đều guard/quyền authenticated-only và phân trang20. B2C raw table/RLS không nới; lookup không tự tạo enrollment/thu tiền.
+
+SQL10 đã qua pgTAP43/43 rollback và áp cloud/history xác minh. Dry-run sau áp vẫn vướng15 migration B2C cũ thiếu history, không replay/repair. UI dùng revalidatePath từ server action để cập nhật bảng sau lưu, tránh refresh trùng; cập nhật ứng viên/đơn cũng invalidate pipeline.
+
+
+### XKLD-DOCUMENTS-1 — SQL20261014000011
+
+xkld_document_requirements unique(market_id,lower(trim(name))) và UUID create request; xkld_candidate_documents unique(candidate_id,requirement_id), optimistic updated_at; xkld_document_files UUID request unique, pending/ready/cancelled, actual auth.uid/path DB sinh. Cả3 bảng bật RLS, authenticated chỉ SELECT theo helper XKLĐ, không direct write/delete. RPC xkld_documents_command kiểm quyền từng thao tác; khóa candidate/document khi lưu, giữ metadata khi chuẩn bị upload. Storage xkld-documents private, 10 MB/PDF/PNG/JPEG, INSERT chỉ path pending của uploader, không UPDATE, DELETE chỉ pending/cancelled của uploader; ready giữ lịch sử. App không cấp public/signed download URL: route GET files/[id] kiểm session/role/RLS mỗi lần, trả attachment/no-store/nosniff. Storage SELECT vẫn kiểm active role. SQL11 cloud đã áp/history xác minh; CLI còn15 history gap cũ, không replay.
+
+
+### XKLD-FINANCE-1 — SQL12
+
+Ba bảng xkld_finance_installments/transactions/history bật RLS. Authenticated chỉ SELECT với app.can_manage_xkld_finance (active super_admin/executive); không direct INSERT/UPDATE/DELETE. Staff không có raw metadata/giao dịch/CTV/đối tác/audit. read_xkld_finance guard XKLĐ, staff chỉ overview/detail candidate_fee với projection whitelist, ép kind và không trả counterparty/note/version. View app.xkld_finance_balances không grant app user, số dư tính từ phiếu không hủy. write_xkld_finance security definer/search_path rỗng, guard finance, khóa parent theo cùng thứ tự, UUID unique cho nghĩa vụ/phiếu/hủy, expected_updated_at cho sửa. CHECK số nguyên VNĐ tối đa999999999999, không tự làm tròn. Hoàn khóa cùng parent, kiểm receipt thuộc đợt/chưa hủy/chưa hoàn hết và ngày hợp lệ; hủy phiếu thu có hoàn active bị chặn. Tất cả mutation ghi lịch sử trong cùng transaction, actor auth.uid và tên snapshot. SQL20261014000012 cloud/history đã xác minh sau pgTAP43/43 rollback;15 history gap cũ vẫn giữ, không replay. Không seed phí thật.
+
+
+### B2C-CLASS-WORKSPACE-1 — SQL13
+
+Bảng b2c_class_meetings, b2c_student_attendance, b2c_student_comments, b2c_class_requests, b2c_class_history đều RLS, không direct write/delete cho authenticated. SELECT manager, riêng requests không grant read; comments/history append-only. Read/write RPC security definer/search_path rỗng, guard manager, UUID replay cùng actor/payload, advisory UUID lock + unique request, parent class/meeting lock, expected_updated_at cho sửa. Attendance unique(meeting_id,enrollment_id), kiểm enrollment.class_id bằng meeting.class_id. Không mở raw B2C cho XKLĐ hoặc teacher. Read server25/trang, class-only fee aggregates từ packages/receipts; missing package null. SQL13 backfill actual b2c_teaching_sessions với source/creator gốc, trigger insert payroll mirror hoặc gắn buổi trùng thời gian; buổi linked chỉ xem trên trang này. Không tạo event lịch sử giả khi backfill. SQL13 cloud/history đã xác minh, pgTAP40/40 rollback;15 B2C history gap cũ không replay/repair.

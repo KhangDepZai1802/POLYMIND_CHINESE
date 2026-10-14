@@ -30,6 +30,7 @@ export async function createTeachingSessionAction(
         "Không tạo được buổi dạy. Kiểm tra tài khoản, đơn giá giáo viên và lịch trùng.",
     };
   revalidatePath("/admin/b2c/teaching");
+  revalidatePath("/admin/b2c/classes/[classId]", "page");
   revalidatePath("/teacher/b2c-teaching");
   return { success: "Đã tạo buổi dạy." };
 }

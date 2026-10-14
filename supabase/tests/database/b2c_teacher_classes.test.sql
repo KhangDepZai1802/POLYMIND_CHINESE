@@ -1,0 +1,74 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select plan(23);
+insert into auth.users(id,aud,role,email,created_at,updated_at) values
+('76000000-0000-4000-8000-000000000001','authenticated','authenticated','b2c-visibility-teacher@example.test',now(),now()),
+('76000000-0000-4000-8000-000000000002','authenticated','authenticated','b2c-visibility-other@example.test',now(),now());
+insert into public.profiles(id,role,full_name,is_active) values
+('76000000-0000-4000-8000-000000000001','teacher','TEST VISIBILITY TEACHER',true),
+('76000000-0000-4000-8000-000000000002','teacher','TEST VISIBILITY OTHER',true);
+insert into public.teachers(id,user_id) values('76000000-0000-4000-8000-000000000003','76000000-0000-4000-8000-000000000001');
+insert into public.b2c_teachers(id,full_name,source_teacher_id) values('76000000-0000-4000-8000-000000000004','TEST VISIBILITY TEACHER','76000000-0000-4000-8000-000000000003');
+insert into public.b2c_classes(id,program_slug,name,teacher_name) values
+('76000000-0000-4000-8000-000000000010','tieng-anh','TEST VISIBLE CLASS','TEST VISIBILITY TEACHER'),
+('76000000-0000-4000-8000-000000000011','tieng-anh','TEST OTHER CLASS','NO MATCH');
+insert into public.b2c_students(id,source_key,full_name,phone) values('76000000-0000-4000-8000-000000000020','TEST-VISIBILITY-STUDENT','TEST VISIBLE STUDENT','0901234567');
+insert into public.b2c_enrollments(id,source_key,class_id,student_id,enrollment_date,salesperson) values('76000000-0000-4000-8000-000000000030','TEST-VISIBILITY-ENROLL','76000000-0000-4000-8000-000000000010','76000000-0000-4000-8000-000000000020','2026-01-01','TEST');
+insert into public.b2c_class_meetings(request_id,class_id,starts_at,ends_at,created_by,updated_by) values(gen_random_uuid(),'76000000-0000-4000-8000-000000000010','2026-01-01T10:00:00+07','2026-01-01T11:00:00+07','76000000-0000-4000-8000-000000000001','76000000-0000-4000-8000-000000000001');
+insert into public.b2c_student_comments(class_id,enrollment_id,content,created_by,actor_name) values('76000000-0000-4000-8000-000000000010','76000000-0000-4000-8000-000000000030','TEST nhận xét','76000000-0000-4000-8000-000000000001','TEST');
+select is((select teacher_id from public.b2c_classes where id='76000000-0000-4000-8000-000000000010'),'76000000-0000-4000-8000-000000000004'::uuid,'Unique teacher name resolved to stable ID');
+select ok(not has_function_privilege('anon','public.read_my_b2c_classes(uuid,text,integer,text)','EXECUTE'),'Anonymous cannot call teacher lookup');
+select set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+select is((public.read_my_b2c_classes()->>'total')::int,1,'Teacher sees assigned B2C class without payroll sessions');
+select is(public.read_my_b2c_classes()->'rows'->0->>'name','TEST VISIBLE CLASS','Correct class');
+select is((public.read_my_b2c_classes()->'rows'->0->>'student_count')::int,1,'Correct roster count');
+select is(public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010')->'rows'->0->>'full_name','TEST VISIBLE STUDENT','Assigned teacher sees student');
+select ok(not (public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010')->'rows'->0 ?| array['phone','guardian_name','tuition_end_date','balance','paid_amount','total_due']),'No contact or financial fields');
+select is((public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010','students',0,'NO RESULT')->>'total')::int,0,'Search filters assigned roster');
+select is(jsonb_array_length(public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010','students',1)->'rows'),0,'Roster paginates');
+select is((public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010','schedule')->>'total')::int,1,'Teacher reads class calendar');
+select is((public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010','comments')->>'total')::int,1,'Teacher reads class comments');
+select throws_ok($$select public.read_my_b2c_classes('76000000-0000-4000-8000-000000000011')$$,'42501',null,'Foreign class denied');
+select throws_ok($$select public.read_my_b2c_classes('76000000-0000-4000-8000-000000000010','tuition')$$,'P0001',null,'Tuition tab denied');
+select throws_ok($$select public.read_my_b2c_classes(null,'students',-1)$$,'P0001',null,'Invalid page rejected');
+select is((select count(*)::int from public.b2c_students),0,'Raw student RLS still closed');
+select throws_ok($$select public.read_b2c_class_workspace('76000000-0000-4000-8000-000000000010','students')$$,'42501',null,'Manager financial projection still denied');
+reset role;
+update public.b2c_teachers set full_name='TEST RENAMED TEACHER' where id='76000000-0000-4000-8000-000000000004';
+set local role authenticated;
+select is((public.read_my_b2c_classes()->>'total')::int,1,'Teacher rename preserves ID assignment');
+reset role;
+update public.teachers set is_active=false where id='76000000-0000-4000-8000-000000000003';
+set local role authenticated;
+select is((public.read_my_b2c_classes()->>'total')::int,0,'Inactive teacher loses assignments');
+reset role;
+update public.teachers set is_active=true where id='76000000-0000-4000-8000-000000000003';
+update public.b2c_classes set teacher_name='NO MATCH' where id='76000000-0000-4000-8000-000000000010';
+set local role authenticated;
+select is((public.read_my_b2c_classes()->>'total')::int,0,'Reassignment removes previous teacher access');
+reset role;
+insert into public.b2c_teachers(full_name) values('TEST DUPLICATE'),('TEST DUPLICATE');
+update public.b2c_classes set teacher_name='TEST DUPLICATE' where id='76000000-0000-4000-8000-000000000010';
+select ok((select teacher_id is null from public.b2c_classes where id='76000000-0000-4000-8000-000000000010'),'Ambiguous names fail closed');
+select set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+set local role authenticated;
+select is((public.read_my_b2c_classes()->>'total')::int,0,'Unlinked teacher has no classes');
+reset role;
+set local role service_role;
+update public.profiles set is_active=false where id='76000000-0000-4000-8000-000000000002';
+reset role;
+select set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select public.read_my_b2c_classes()$$,'42501',null,'Inactive account denied');
+reset role;
+set local role service_role;
+update public.profiles set is_active=true,role='executive' where id='76000000-0000-4000-8000-000000000002';
+reset role;
+select set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select public.read_my_b2c_classes()$$,'42501',null,'Other role denied');
+reset role;
+select * from finish();
+rollback;

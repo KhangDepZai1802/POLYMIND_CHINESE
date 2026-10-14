@@ -6,7 +6,11 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { getClasses } from "@/features/classes/server/queries";
+import { getMyB2CClasses } from "@/features/b2c/server/teacher-class-queries";
+import { TeacherB2CClassCards } from "@/features/b2c/components/teacher-class-cards";
 import { requireTeaching } from "@/lib/auth/session";
 import { formatDate } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
@@ -18,9 +22,25 @@ import {
 
 export const metadata: Metadata = { title: "Lớp của tôi" };
 
-export default async function TeacherClassesPage() {
+export default async function TeacherClassesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string | string[] }>;
+}) {
   await requireTeaching();
-  const classes = await getClasses();
+  const search = await searchParams;
+  const query =
+    typeof search.q === "string" ? search.q.trim().slice(0, 200) : "";
+  const [allClasses, allB2CClasses] = await Promise.all([
+    getClasses(),
+    getMyB2CClasses(),
+  ]);
+  const matches = (code: string, name: string) =>
+    `${code} ${name}`
+      .toLocaleLowerCase("vi")
+      .includes(query.toLocaleLowerCase("vi"));
+  const classes = allClasses.filter((c) => matches(c.code, c.name));
+  const b2cClasses = allB2CClasses.filter((c) => matches(c.code, c.name));
 
   return (
     <>
@@ -29,13 +49,38 @@ export default async function TeacherClassesPage() {
         description="Các lớp bạn được phân công giảng dạy."
       />
 
-      {classes.length === 0 ? (
+      <form
+        className="mb-5 flex gap-2"
+        role="search"
+        aria-label="Lọc lớp của tôi"
+      >
+        <Input
+          type="search"
+          name="q"
+          aria-label="Tìm theo mã hoặc tên lớp"
+          placeholder="Tìm mã hoặc tên lớp…"
+          maxLength={200}
+          defaultValue={query}
+        />
+        <Button type="submit">Tìm</Button>
+      </form>
+
+      <TeacherB2CClassCards classes={b2cClasses} />
+      {classes.length === 0 && b2cClasses.length === 0 ? (
         <Card>
           <CardContent className="p-0">
             <EmptyState
               icon={School}
-              title="Bạn chưa được phân công lớp nào"
-              description="Quản trị viên sẽ phân công lớp cho bạn."
+              title={
+                query
+                  ? "Không tìm thấy lớp phù hợp"
+                  : "Bạn chưa được phân công lớp nào"
+              }
+              description={
+                query
+                  ? "Thử tìm lại bằng mã hoặc tên lớp khác."
+                  : "Quản trị viên sẽ phân công lớp cho bạn."
+              }
             />
           </CardContent>
         </Card>

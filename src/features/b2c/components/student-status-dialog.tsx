@@ -43,7 +43,7 @@ export function B2CStudentStatusDialog({ enrollmentId, fullName, className, stat
     <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (value) { setSelected(status); setSource(customerSource ?? ""); setGoal(learningGoal ?? ""); } }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" aria-label={`Sửa ghi danh ${fullName}`} title="Sửa ghi danh">
-          <Pencil className="size-4" aria-hidden />
+          <Pencil className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">

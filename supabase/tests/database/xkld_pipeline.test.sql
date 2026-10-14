@@ -1,0 +1,72 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select plan(43);
+insert into auth.users(id,aud,role,email,created_at,updated_at) values
+('72000000-0000-4000-8000-000000000001','authenticated','authenticated','pipeline-staff@example.test',now(),now()),
+('72000000-0000-4000-8000-000000000002','authenticated','authenticated','pipeline-exec@example.test',now(),now()),
+('72000000-0000-4000-8000-000000000003','authenticated','authenticated','pipeline-consultant@example.test',now(),now());
+insert into public.profiles(id,role,full_name,is_active) values
+('72000000-0000-4000-8000-000000000001','xkld_staff','TEST PIPELINE STAFF',true),
+('72000000-0000-4000-8000-000000000002','executive','TEST PIPELINE EXEC',true),
+('72000000-0000-4000-8000-000000000003','consultant','TEST PIPELINE CONSULTANT',true);
+insert into public.b2c_classes(id,program_slug,name,status) values('72000000-0000-4000-8000-000000000010','tieng-trung','TEST PIPELINE B2C','active');
+insert into public.xkld_orders(create_request_id,market_id,employer,industry,recruitment_quantity,salary_amount,salary_currency,salary_period,conditions,recruitment_deadline,partner) select '72000000-0000-4000-8000-000000000020',id,'TEST PIPELINE ORDER','TEST',10,1000,'SGD','month','TEST','2099-01-01','TEST' from public.xkld_markets where country_code='SG';
+select ok((select relrowsecurity from pg_class where oid='public.xkld_pipeline_history'::regclass),'History RLS enabled');
+select ok(not has_column_privilege('authenticated','public.xkld_candidates','stage','UPDATE'),'No direct stage update grant');
+select set_config('request.jwt.claims','{"sub":"72000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+insert into public.xkld_candidates(create_request_id,full_name,date_of_birth,phone,hometown,education,occupation,health_status,source,assignee_id) values('72000000-0000-4000-8000-000000000030','TEST PIPELINE CANDIDATE','2000-01-01','0901234567','TEST','TEST','TEST','passed','employee','72000000-0000-4000-8000-000000000001');
+select is((select stage from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'),'lead','New candidate begins at Lead');
+select is((select count(*)::int from public.xkld_pipeline_history where candidate_code=(select code from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030')),1,'Lead entry recorded');
+select throws_ok($$update public.xkld_candidates set stage='visa' where create_request_id='72000000-0000-4000-8000-000000000030'$$,'42501',null,'REST cannot bypass transition rules');
+select throws_ok($$select public.transition_xkld_candidate(id,'visa',null,null,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'P0001',null,'Forward skipping blocked');
+select lives_ok($$select public.transition_xkld_candidate(id,'consultation',null,null,updated_at,'72000000-0000-4000-8000-000000000101','TEST CONSULT') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Lead to consultation');
+select lives_ok($$select public.transition_xkld_candidate(id,'consultation',null,null,'2000-01-01','72000000-0000-4000-8000-000000000101','TEST CONSULT') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Retry returns success despite stale version');
+select is((select count(*)::int from public.xkld_pipeline_history where request_id='72000000-0000-4000-8000-000000000101'),1,'Retry does not duplicate history');
+select throws_ok($$select public.transition_xkld_candidate(id,'registration',null,null,'2000-01-01',gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'P0001',null,'Stale write blocked');
+select lives_ok($$select public.transition_xkld_candidate(id,'registration',null,null,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Registration follows consultation');
+select throws_ok($$select public.transition_xkld_candidate(id,'language_training',null,null,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'P0001',null,'Language training requires linked class');
+select lives_ok($$select public.transition_xkld_candidate(id,'language_training',null,'72000000-0000-4000-8000-000000000010',updated_at,gen_random_uuid(),'TEST CLASS') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Training links B2C class');
+select is((select b2c_class_id from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'),'72000000-0000-4000-8000-000000000010'::uuid,'Class ID saved');
+select is((select count(*)::int from public.b2c_classes),0,'Staff still cannot read B2C table');
+select ok((public.search_xkld_b2c_classes('TEST PIPELINE B2C',0)->>'total')::int=1,'Minimal B2C lookup available');
+select lives_ok($$select public.transition_xkld_candidate(id,'documentation',null,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Training to documentation');
+select throws_ok($$select public.transition_xkld_candidate(id,'interview',null,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'P0001',null,'Interview requires order');
+select lives_ok($$select public.transition_xkld_candidate(c.id,'interview',o.id,c.b2c_class_id,c.updated_at,gen_random_uuid(),'TEST INTERVIEW') from public.xkld_candidates c cross join public.xkld_orders o where c.create_request_id='72000000-0000-4000-8000-000000000030' and o.create_request_id='72000000-0000-4000-8000-000000000020'$$,'Interview with order succeeds');
+select lives_ok($$select public.transition_xkld_candidate(id,'selected',order_id,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Selected follows interview');
+select lives_ok($$select public.transition_xkld_candidate(id,'visa',order_id,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Visa follows selected');
+select lives_ok($$select public.transition_xkld_candidate(id,'departed',order_id,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Departure follows visa');
+select lives_ok($$select public.transition_xkld_candidate(id,'aftercare',order_id,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Aftercare follows departure');
+select is((select stage from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'),'aftercare','All ten stages reached');
+select throws_ok($$select public.transition_xkld_candidate(id,'interview',order_id,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'P0001',null,'Rollback requires reason');
+select lives_ok($$select public.transition_xkld_candidate(id,'interview',order_id,b2c_class_id,updated_at,gen_random_uuid(),'TEST ROLLBACK') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'Rollback with reason supported');
+select is((select actor_id from public.xkld_pipeline_history where request_id='72000000-0000-4000-8000-000000000101'),'72000000-0000-4000-8000-000000000001'::uuid,'Actual actor in history');
+select is((select actor_name from public.xkld_pipeline_history where request_id='72000000-0000-4000-8000-000000000101'),'TEST PIPELINE STAFF','Actor name snapshot');
+select throws_ok($$delete from public.xkld_pipeline_history$$,'42501',null,'User cannot delete history');
+select throws_ok($$update public.xkld_pipeline_history set note='FAKE'$$,'42501',null,'User cannot modify history');
+insert into public.xkld_candidates(create_request_id,full_name,date_of_birth,phone,hometown,education,occupation,health_status,source,assignee_id) select gen_random_uuid(),'TEST PAGINATION '||n,'2000-01-01','0901234567','TEST','TEST','TEST','passed','employee','72000000-0000-4000-8000-000000000001' from generate_series(1,25)n;
+select is((public.get_xkld_pipeline('TEST PAGINATION',null,'lead',0)->0->>'total')::int,25,'Filtered stage count exact');
+select is(jsonb_array_length(public.get_xkld_pipeline('TEST PAGINATION',null,'lead',0)->0->'candidates'),20,'First stage page capped at 20');
+select is(jsonb_array_length(public.get_xkld_pipeline('TEST PAGINATION',null,'lead',1)->0->'candidates'),5,'Second stage page remaining five');
+select throws_ok($$select public.get_xkld_pipeline('',null,'wrong',0)$$,'P0001',null,'Invalid stage rejected');
+select set_config('request.jwt.claims','{"sub":"72000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+select lives_ok($$select public.get_xkld_pipeline('',null,'',0)$$,'Executive reads board');
+select throws_ok($$select public.transition_xkld_candidate(id,'selected',order_id,b2c_class_id,updated_at,gen_random_uuid(),'') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'42501',null,'Executive cannot transition');
+select set_config('request.jwt.claims','{"sub":"72000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
+select throws_ok($$select public.get_xkld_pipeline('',null,'',0)$$,'42501',null,'Consultant cannot read board');
+select throws_ok($$select public.search_xkld_b2c_classes('',0)$$,'42501',null,'Consultant cannot use class lookup');
+select is((select count(*)::int from public.xkld_pipeline_history),0,'Consultant cannot read progress history');
+reset role;
+alter table public.xkld_pipeline_history add constraint test_atomic_history check(note<>'TEST FAIL HISTORY') not valid;
+select set_config('request.jwt.claims','{"sub":"72000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select public.transition_xkld_candidate(id,'selected',order_id,b2c_class_id,updated_at,gen_random_uuid(),'TEST FAIL HISTORY') from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'$$,'23514',null,'History failure rolls back mutation');
+select is((select stage from public.xkld_candidates where create_request_id='72000000-0000-4000-8000-000000000030'),'interview','Stage preserved after history failure');
+reset role;
+select is((select count(*)::int from public.b2c_enrollments where class_id='72000000-0000-4000-8000-000000000010'),0,'Class link does not enroll students');
+set local role anon;
+select throws_ok($$select public.get_xkld_pipeline('',null,'',0)$$,'42501',null,'Anonymous cannot call pipeline RPC');
+reset role;
+select * from finish();
+rollback;

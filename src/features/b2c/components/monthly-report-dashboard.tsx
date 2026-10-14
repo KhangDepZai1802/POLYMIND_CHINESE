@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { B2C_PROGRAMS } from "@/features/b2c/domain/programs";
 import { saveB2CMonthlyReportAction } from "@/features/b2c/server/actions";
 import type { ActionState } from "@/lib/action-state";
+import { monthlyTotalCost } from "@/features/b2c/domain/finance";
 
 export type MonthlyReport = {
   id: string;
@@ -20,6 +21,8 @@ export type MonthlyReport = {
   water_cost: number;
   internet_cost: number;
   payroll_cost: number;
+  teacher_payroll_cost: number | null;
+  office_payroll_cost: number | null;
   rent_cost: number;
   marketing_cost: number;
   advertising_cost: number;
@@ -48,7 +51,8 @@ const COSTS = [
   ["electricity", "Điện", "electricity_cost"],
   ["water", "Nước", "water_cost"],
   ["internet", "Internet", "internet_cost"],
-  ["payroll", "Lương nhân viên/giáo viên", "payroll_cost"],
+  ["teacher_payroll", "Lương giáo viên", "teacher_payroll_cost"],
+  ["office_payroll", "Lương NV văn phòng", "office_payroll_cost"],
   ["rent", "Mặt bằng", "rent_cost"],
   ["marketing", "Marketing", "marketing_cost"],
   ["advertising", "Quảng cáo", "advertising_cost"],
@@ -57,8 +61,10 @@ const COSTS = [
 
 export function B2CMonthlyReportDashboard({
   reports,
+  initialPeriod,
 }: {
   reports: MonthlyReport[];
+  initialPeriod?: { month: number; year: number };
 }) {
   const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "new");
   const report = reports.find((item) => item.id === selectedId) ?? null;
@@ -66,7 +72,11 @@ export function B2CMonthlyReportDashboard({
     saveB2CMonthlyReportAction,
     INITIAL_STATE,
   );
-  const now = new Date();
+  // Use the server snapshot; never read the browser clock during hydration.
+  const period = initialPeriod ?? {
+    month: reports[0]?.report_month,
+    year: reports[0]?.report_year,
+  };
 
   const summary = useMemo(() => summarize(report), [report]);
   const previous = report
@@ -97,7 +107,7 @@ export function B2CMonthlyReportDashboard({
         </label>
         {report && (
           <p className="text-muted-foreground text-sm">
-            Cập nhật {new Date(report.updated_at).toLocaleString("vi-VN")}
+            Cập nhật {new Date(report.updated_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}
           </p>
         )}
       </div>
@@ -170,14 +180,14 @@ export function B2CMonthlyReportDashboard({
               label="Tháng"
               min={1}
               max={12}
-              defaultValue={report?.report_month ?? now.getMonth() + 1}
+              defaultValue={report?.report_month ?? period.month}
             />
             <NumberField
               name="report_year"
               label="Năm"
               min={2000}
               max={2100}
-              defaultValue={report?.report_year ?? now.getFullYear()}
+              defaultValue={report?.report_year ?? period.year}
             />
             <NumberField
               name="revenue"
@@ -242,13 +252,31 @@ export function B2CMonthlyReportDashboard({
 
           <section>
             <h2 className="mb-3 font-semibold">Chi phí</h2>
+            {report && report.teacher_payroll_cost === null && (
+              <p className="mb-3 text-sm text-amber-700">
+                Tổng lương cũ: {money.format(report.payroll_cost)}, chưa phân
+                loại. Nhập rõ lương GV và NV văn phòng trước khi lưu; hệ thống
+                không tự chia số tiền cũ.
+              </p>
+            )}
+            <p className="text-muted-foreground mb-3 text-xs">
+              Marketing bắt buộc nhập, có thể nhập 0 nếu tháng này không phát
+              sinh. Lương GV và NV văn phòng được cộng đúng một lần vào tổng chi
+              phí.
+            </p>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {COSTS.map(([name, label, key]) => (
                 <NumberField
                   key={name}
                   name={name}
                   label={`${label} (VNĐ)`}
-                  defaultValue={report?.[key] ?? 0}
+                  defaultValue={
+                    report
+                      ? (report[key] ?? undefined)
+                      : name === "marketing"
+                        ? undefined
+                        : 0
+                  }
                 />
               ))}
             </div>
@@ -280,9 +308,7 @@ export function B2CMonthlyReportDashboard({
 
 function summarize(report: MonthlyReport | null) {
   const metrics = report?.metrics ?? [];
-  const totalCost = report
-    ? COSTS.reduce((sum, [, , key]) => sum + report[key], 0)
-    : 0;
+  const totalCost = report ? monthlyTotalCost(report) : 0;
   return {
     students: metrics.reduce(
       (sum, item) =>
@@ -372,10 +398,18 @@ function CostTable({
             <div key={key} className="flex justify-between gap-4">
               <dt className="text-muted-foreground">{label}</dt>
               <dd className="font-medium tabular-nums">
-                {money.format(report[key])}
+                {report[key] === null
+                  ? "Chưa phân loại"
+                  : money.format(report[key])}
               </dd>
             </div>
           ))}
+          {report.teacher_payroll_cost === null && (
+            <div className="flex justify-between gap-4 text-amber-700">
+              <dt>Lương gộp chưa phân loại (dữ liệu cũ)</dt>
+              <dd>{money.format(report.payroll_cost)}</dd>
+            </div>
+          )}
           <div className="flex justify-between gap-4 border-t pt-3 font-semibold">
             <dt>Tổng chi phí</dt>
             <dd>{money.format(total)}</dd>
@@ -395,7 +429,7 @@ function NumberField({
 }: {
   name: string;
   label: string;
-  defaultValue: number;
+  defaultValue?: number;
   min?: number;
   max?: number;
 }) {

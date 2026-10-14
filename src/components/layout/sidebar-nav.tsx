@@ -6,7 +6,8 @@ import { Logo } from "@/components/shared/logo";
 import { NavGroups } from "@/components/layout/nav-links";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import {
-  B2C_NAVIGATION,
+  getB2CNavigation,
+  getXkldNavigation,
   getNavigationGroups,
 } from "@/lib/permissions/navigation";
 import { isManagerRole, ROLE_LABELS, type UserRole } from "@/types/roles";
@@ -23,9 +24,10 @@ export function SidebarNav({
   hasAssignedClasses?: boolean;
 }) {
   const pathname = usePathname();
-  const groups =
-    isManagerRole(role) && pathname.startsWith("/admin/b2c")
-      ? [{ label: "Lớp trung tâm", items: B2C_NAVIGATION }]
+  const groups = pathname.startsWith("/workspace/xkld")
+    ? [{ label: "Xuất khẩu lao động", items: getXkldNavigation(role) }]
+    : isManagerRole(role) && pathname.startsWith("/admin/b2c")
+      ? [{ label: "Lớp trung tâm", items: getB2CNavigation(role) }]
       : getNavigationGroups(role, { hasAssignedClasses });
 
   return (
@@ -36,7 +38,7 @@ export function SidebarNav({
           logo đã là chữ đó. */}
       <div className="flex flex-col gap-2 border-b px-5 py-4">
         <div className="flex items-center gap-2">
-          {isManagerRole(role) && <ModuleSwitcher />}
+          {isManagerRole(role) && <ModuleSwitcher role={role} />}
           <Logo height={36} priority />
         </div>
         <div className="flex items-center gap-2">

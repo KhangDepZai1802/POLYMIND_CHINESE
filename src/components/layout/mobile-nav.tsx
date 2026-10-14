@@ -15,7 +15,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  B2C_NAVIGATION,
+  getB2CNavigation,
+  getXkldNavigation,
   getNavigationGroups,
 } from "@/lib/permissions/navigation";
 import { isManagerRole, ROLE_LABELS, type UserRole } from "@/types/roles";
@@ -33,9 +34,10 @@ export function MobileNav({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const groups =
-    isManagerRole(role) && pathname.startsWith("/admin/b2c")
-      ? [{ label: "Lớp trung tâm", items: B2C_NAVIGATION }]
+  const groups = pathname.startsWith("/workspace/xkld")
+    ? [{ label: "Xuất khẩu lao động", items: getXkldNavigation(role) }]
+    : isManagerRole(role) && pathname.startsWith("/admin/b2c")
+      ? [{ label: "Lớp trung tâm", items: getB2CNavigation(role) }]
       : getNavigationGroups(role, { hasAssignedClasses });
 
   return (

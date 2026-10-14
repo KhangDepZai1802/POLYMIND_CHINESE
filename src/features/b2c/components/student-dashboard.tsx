@@ -74,7 +74,13 @@ const groupTitles = {
   classes: "Lớp đang hoạt động",
 };
 
-export function StudentDashboard({ data }: { data: StudentDashboardData }) {
+export function StudentDashboard({
+  data,
+  canViewHistory = false,
+}: {
+  data: StudentDashboardData;
+  canViewHistory?: boolean;
+}) {
   const allRows = studentDashboardRows(data);
   const byStudent = new Map(
     data.students.map((s) => [
@@ -570,7 +576,7 @@ export function StudentDashboard({ data }: { data: StudentDashboardData }) {
         </h2>
         <div className="mb-3 flex flex-wrap items-end gap-3">
           <label className="relative min-w-52 flex-1">
-            <Search className="absolute top-2.5 left-3 size-4 text-slate-400" />
+            <Search className="absolute top-2.5 left-3 size-4 text-blue-600 dark:text-blue-400" />
             <input
               aria-label="Tìm học viên"
               placeholder="Tìm mã, tên học viên, phụ huynh, số điện thoại…"
@@ -662,6 +668,7 @@ export function StudentDashboard({ data }: { data: StudentDashboardData }) {
           </label>
         </div>
         <StudentDashboardTable
+          canViewHistory={canViewHistory}
           rows={visible}
           offset={current * pageSize}
           selected={selected}

@@ -11,6 +11,10 @@ const ROLE_HOME: Record<UserRole, string> = {
   academic_manager: "/admin",
   teacher: "/teacher",
   student: "/student",
+  executive: "/workspace",
+  center_manager: "/workspace",
+  consultant: "/workspace",
+  xkld_staff: "/workspace",
 };
 
 /**
@@ -25,10 +29,14 @@ const ROLE_HOME: Record<UserRole, string> = {
  * **prefix thôi là không đủ** — phải có thêm danh sách chặn theo path.
  */
 const ROLE_PREFIXES: Record<UserRole, readonly string[]> = {
-  super_admin: ["/admin"],
+  super_admin: ["/admin", "/workspace/xkld"],
   academic_manager: ["/admin", "/teacher"],
   teacher: ["/teacher"],
   student: ["/student"],
+  executive: ["/workspace"],
+  center_manager: ["/workspace"],
+  consultant: ["/workspace"],
+  xkld_staff: ["/workspace"],
 };
 
 /**
@@ -45,8 +53,11 @@ const ROLE_PREFIXES: Record<UserRole, readonly string[]> = {
  * khác nhau.
  */
 const ROLE_DENIED_PATHS: Partial<Record<UserRole, readonly string[]>> = {
+  center_manager: ["/workspace/xkld"],
+  consultant: ["/workspace/xkld"],
   academic_manager: [
     "/admin/system",
+    "/admin/b2c/history",
     "/admin/flashcards",
     "/admin/question-bank-review",
   ],

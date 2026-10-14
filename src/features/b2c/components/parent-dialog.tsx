@@ -14,7 +14,7 @@ export function ParentDialog({ parent }: { parent?: ParentRow }) {
   const [open,setOpen] = useState(false);
   const { state, formAction } = useFormAction(saveB2CParentAction,{onSuccess:()=>setOpen(false)});
   const key = parent?.id ?? "new";
-  return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild>{parent ? <Button variant="ghost" size="icon" aria-label={`Sửa phụ huynh ${parent.full_name}`}><Pencil className="size-4" aria-hidden /></Button> : <Button><Plus className="size-4" aria-hidden />Thêm phụ huynh</Button>}</DialogTrigger>
+  return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild>{parent ? <Button variant="ghost" size="icon" aria-label={`Sửa phụ huynh ${parent.full_name}`}><Pencil className="size-4 text-amber-600 dark:text-amber-400" aria-hidden /></Button> : <Button><Plus className="size-4" aria-hidden />Thêm phụ huynh</Button>}</DialogTrigger>
     <DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{parent ? "Sửa phụ huynh" : "Thêm phụ huynh"}</DialogTitle><DialogDescription>Một phụ huynh có thể liên kết với nhiều học viên.</DialogDescription></DialogHeader>
       <form action={formAction} className="space-y-4"><input type="hidden" name="id" value={parent?.id ?? ""} />
         <div className="space-y-2"><Label htmlFor={`name-${key}`}>Tên phụ huynh *</Label><Input id={`name-${key}`} name="full_name" required maxLength={200} defaultValue={parent?.full_name ?? ""} /></div>

@@ -1,5 +1,44 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## CLASS-BACK-BUTTON-1 — 2026-10-14
+
+- **Fix:** Fixed; **Verification:** Not Started. Link trở lại nhạt chuyển BackLink vuông44px bo góc/nền/viền/hover/focus/dark, nhãn đích rõ. Teacher B2C/B2B + manager B2C class detail, giữ route.
+- **Đã chạy:** lint/typecheck/build exit0, Vitest832/832, Edge3121 teacher login/roster/lịch/nhận xét/mobile: nút44×44px và back đúng /teacher/classes,0pageerror; fixtures/account dọn sạch. Chưa phát hành online.
+
+
+## TEACHER-HOME-REDESIGN-1 — 2026-10-14
+
+- **Fix:** Fixed; **Verification:** Not Started (chờ QA độc lập). Bố cục dashboard theo ảnh và giữ logo cũ; số liệu thật/scope B2B rõ, không bịa delta; header search có hoạt động.
+- **Đã chạy:** lint/typecheck/build exit0, Vitest832/832 (138files),2 regression KPI/date/links/cancelled. Edge production3120:4 KPI/4 class cards cùng hàng desktop1672, logo src logopolymind.png, header search class đúng, mobile390/360 không tràn/menu hoạt động,0pageerror. Ảnh desktop/mobile cuối đã xem; synthetic15students/4classes/meeting/account đã dọn sạch.
+- **Giới hạn:** giữ nguồn attendance/risk B2B hiện hữu; không thêm nghiệp vụ B2C chỉ vì UI tham chiếu. Chưa commit/push/deploy.
+
+
+## B2C-STRUCTURED-SCHEDULE-1 — 2026-10-14
+
+- **Fix:** Fixed; **Verification:** Not Started (chờ QA độc lập). Lịch lặp nhiều thứ/time/room/date-range, atomic generation, no duplicates/no resurrection, room exclusion/race, teacher actual today+room/cancellation/weekly override.
+- **Đã chạy:** SQL15 cloud/history xác minh; pgTAP98/98 (40+23+35), Vitest830/830, lint/typecheck/build exit0. Edge production3117 create4/repeat0skip4/conflict rollback/concurrent1winner/teacheractual+cancel/deny/mobile0overflow/0pageerror, fixtures/account dọn sạch.
+- **Giới hạn:** nhập tên phòng nhất quán, không có danh mục phòng/cơ sở; phòng cũ chưa có, không tự đoán. Rule lưu bất biến, buổi tự sinh giữ giờ gốc, đổi lịch qua hủy/buổi bù; không sinh payroll. Chưa commit/push/deploy.
+
+
+## B2C-ICON-COLORS-1 — 2026-10-14
+
+- **Fix:** Fixed; **Verification:** Not Started. B2C/giáo viên menu desktop/mobile, KPI Tổng quan, thẻ lớp, icon tìm/xem/sửa/history. Pastel theo chức năng, active trắng, dark variants; không thay quyền/dữ liệu.
+- **Đã chạy:** lint/typecheck/build exit0; Vitest818/818. Edge production3115 B2C Tổng quan/Giáo viên/menu điện thoại, teacher/roster/lịch/nhận xét/IDOR/mobile đạt,0pageerror; fixtures dọn sạch. Ảnh Tổng quan desktop đã xem. Chờ QA độc lập và phát hành online.
+
+## B2C-TEACHER-TODAY-1 — 2026-10-14
+
+- **Lỗi:** có Starter Hero T2-T4 nhưng Hôm nay chỉ đọc buổi B2B.
+- **Fix:** Fixed; **Verification:** Not Started. Kết hợp lớp B2C lịch tuần vào tổng và nội dung Hôm nay, đúng ngày Việt Nam/active/ngày khai giảng, mỗi lớp một dòng; không đổi quyền hoặc sinh buổi/lương.
+- **Đã chạy:** lint/typecheck/build exit0, Vitest818/818 gồm5 regression thứ Tư/UTC/CN/trạng thái/start-date/ngày sai.
+Edge production3114: đăng nhập, lịch hôm nay đúng1lần/giờ, link/roster/lịch/nhận xét, IDOR/mobile đạt,0pageerror; fixtures dọn sạch. - **Giới hạn:** lịch tuần dự kiến không thay thế buổi cụ thể/ngày nghỉ; chưa phát hành online.
+
+## B2C-TEACHER-VISIBILITY-1 — 2026-10-14
+
+- **Lỗi:** cô Lê được phân công4 lớp B2C/15 ghi danh nhưng trang giáo viên chỉ query classes B2B.
+- **Fix:** Fixed; **Verification:** Not Started (chờ QA độc lập). SQL14/FK tài khoản + RPC projection tối thiểu; trang chủ/lớp của tôi/chi tiết B2C chỉ lớp được phân công.
+- **Đã chạy:** pgTAP23/23, Vitest813/813, lint/typecheck/build exit0; Edge production3113 login → lớp → roster/search/schedule/comments; lớp khác404, mobile390 không tràn,0pageerror. Tài khoản cô Lê kiểm tra RLS đọc4 lớp/15 ghi danh; không đổi mật khẩu. Fixtures/tài khoản thử dọn sạch.
+- **Giới hạn:** lớp B2C đọc roster/lịch/nhận xét; không cấp sửa điểm danh/học phí. Chưa phát hành online.
+
 > Bảng điều phối QA giữa **Claude (QA/Verify)** và **Codex (Fix)**. Nguồn sự thật về trạng thái QA từng module.
 > Đọc cùng [`WORKLOG.md`](../../WORKLOG.md). **Không dựa vào trí nhớ phiên trước** — mọi trạng thái nằm ở đây.
 
@@ -150,3 +189,61 @@ Khi bắt đầu QA một module, tạo `docs/testing/modules/<ID>-<tên>/`:
 07-fix-report.md          Codex ghi: sửa gì, file nào, test gì
 08-verification-report.md Claude xác minh ĐỘC LẬP → Verified / Failed
 ```
+
+
+## HYDRATION-PERF-1 (2026-10-14)
+
+- Fix: sửa thời gian báo cáo B2C dùng múi giờ cố định và snapshot kỳ báo cáo; tách chuông thông báo khỏi đường chờ layout.
+- Regression: Vitest SSR→hydrate qua giao năm, không có recoverable error; 761/761 toàn bộ test đạt, build/typecheck/lint exit0.
+- Verification: Not Started — chờ xác minh độc lập và URL tái hiện #418 của user. Chưa xác nhận tốc độ dưới 2 giây; thiếu tài khoản/phiên đo PERF_USER/PERF_PASS.
+
+
+## XKLD-CANDIDATES-1 — 2026-10-14
+
+- Fix/Implementation: hoàn thành code local và SQL08 cloud; chưa xác minh độc lập.
+- Automated checks: pgTAP24/24, Vitest774/774, lint/typecheck/build exit0. Edge production local: tạo/tìm/sửa, actor, chặn stale-write, retry không trùng, mobile không tràn, executive chỉ đọc, consultant bị chặn; 0 pageerror, fixture TEST được dọn.
+- Verification: Not Started — chờ review độc lập. Chưa deploy online, chưa thử danh sách quy mô lớn hoặc tải đồng thời.
+
+
+## XKLD-ORDERS-1 — 2026-10-14
+
+- Implementation: thị trường/đơn hàng code local, SQL09 đã áp cloud, chưa phát hành web online.
+- Automated: pgTAP31/31, Vitest785/785, lint/typecheck/build exit0. Edge production local: tạo/sửa market/order, ngừng market giữ đơn, lương/tiền tệ/kỳ, tìm kiếm, actor thật, chặn stale-update cả market/order, mobile không tràn, executive read-only, consultant denied;0pageerror. Hồ sơ thử riêng đã dọn.
+- Verification: Not Started — chờ xác minh độc lập; chưa đo tải lớn/đồng thời.
+
+
+## XKLD-PIPELINE-1 — 2026-10-14
+
+- Implementation: board10 bước/popup liên kết/lịch sử, SQL10 cloud; chưa phát hành online.
+- Automated: pgTAP43/43, Vitest794/794, lint/typecheck/build exit0. Edge production local bản cuối: đi đủ10 bước, chặn thiếu lớp/đơn, liên kết B2C/order, rollback có lý do,11 event thật, retry không đổi ngược bước, stale bị chặn, raw B2C vẫn kín/không enrollment tự sinh, mobile không tràn, executive chỉ xem, consultant denied;0pageerror. Fixtures ứng viên/đơn/lớp/history riêng đã dọn.
+- UI refresh: server action revalidatePath cập nhật cùng response, không thêm router.refresh trùng ở popup pipeline. Hồ sơ/đơn thay đổi cũng invalidate pipeline.
+- Verification: Not Started — chờ xác minh độc lập. Chưa đo tải lớn/đồng thời hoặc camera/tài liệu/hậu xuất cảnh chi tiết.
+
+
+## XKLD-DOCUMENTS-1 — 2026-10-14
+
+Codex Status: Implemented; Verification: Not Started (chờ QA độc lập). SQL11 cloud/history xác minh, pgTAP28/28. Vitest798/798, lint/typecheck/build exit0. Edge production local: create checklist/save dates/expiry/PDF upload/download, fake signature rejected, public URL/overwrite/delete denied; executive readonly/download, consultant/anonymous denied;390px không tràn,0pageerror. Fixtures/auth sessions thử đã dọn. Chưa commit/push/deploy; signature không thay antivirus/legal review.
+
+
+## MODULE-SWITCHER-CLOSE-1 — 2026-10-14
+
+Bug: chọn module đã chuyển trang nhưng popup vẫn mở vì layout dùng chung giữ Dialog. Codex Status: Fixed — DialogClose asChild trên cả3 Link; test layout giữ mounted, chọn từng module/đang sử dụng và mở lại. Verification: Not Started (chờ QA độc lập). Không đổi DB/quyền.
+
+MODULE-SWITCHER-CLOSE-1 validation: lint/typecheck/build exit0, Vitest801/801 gồm3 regression. Chưa kiểm tra phiên admin thật; Verification vẫn Not Started.
+
+
+## XKLD-FINANCE-1 — 2026-10-14
+
+Codex Status: Implemented; Verification: Not Started (chờ QA độc lập). SQL12 cloud/history xác minh; pgTAP43/43 về RLS/projection/thu-hoàn-hủy/giới hạn/actor/retry/stale. Edge production local3106 tạo/sửa phí, thu tiền, hoàn cả2 chính sách, hủy hoàn, chi CTV/thu đối tác, lịch sử10 event actor thật, concurrent1 thu nhận/1 thu vượt từ chối. Staff chỉ debt/no raw tx/write, consultant denied; mobile390px không tràn,0pageerror, fixture dọn. Bản cuối3107 sau đổi invalidate page pattern đã chạy lại đủ luồng đạt; lint/typecheck/build exit0, Vitest805/805. Verification vẫn Not Started, chưa commit/push/deploy.
+
+
+## B2C-CLASS-DETAIL-1 — 2026-10-14
+
+Bug: con mắt trong danh sách lớp B2C là span, chưa mở chi tiết. Codex Status: Fixed — tên lớp và mắt là button mở dialog, thông tin lớp/roster lọc đúng classCode, search/page20/empty state. Regression mở từ2 nút, không lẫn học viên lớp khác, search reset pagination. Verification: Not Started (chờ QA độc lập). Không DB hoặc đổi quyền.
+
+B2C-CLASS-DETAIL-1 validation: lint/typecheck/build exit0, Vitest807/807 gồm2 regression. Chưa kiểm tra trực quan manager thật; Verification vẫn Not Started.
+
+
+## B2C-CLASS-WORKSPACE-1 — 2026-10-14
+
+Codex Status: Implemented; Verification: Not Started (chờ QA độc lập). SQL13 cloud/history xác minh, pgTAP40/40 (RLS/manager/roster class/attendance/comments/tuition/retry/stale/future/history). Vitest811/811, build exit0. Edge production cuối3112 temporary academic_manager/lớp fixture: mở từ popup5 tabs, thêm lịch, điểm danh present→late, nhận xét theo buổi, gói/phiếu thu1m-400k=600k, history4actor, mirrorpayroll1, cross-class/anonymous deny,390px không tràn,0pageerror; fixtures/account dọn sạch. Lint/typecheck/build exit0. Verification vẫn Not Started. Không mở quyền teacher/XKLĐ, không tự trừ học phí hoặc thay tiền công.

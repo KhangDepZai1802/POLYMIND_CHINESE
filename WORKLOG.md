@@ -38,6 +38,48 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261014-B — đang kiểm tra và phát hành — Codex — 2026-10-14. User yêu cầu commit/push GitHub trong lượt này. Bao gồm thay đổi B2C/giáo viên/lịch lặp và XKLĐ đã hoàn thành; giữ riêng .env.example bị xóa nội dung ngoài scope. Xác minh SHA/push trong chat sau phát hành.
+
+> CLASS-BACK-BUTTON-1 — hoàn thành local — Codex — 2026-10-14. BackLink vuông44px/bo12px/nền xanh/viền/hover/focus/dark, giữ href và nhãn điểm đến. Teacher B2C/B2B + admin B2C class detail. Lint/typecheck/build exit0, Vitest832/832; Edge3121 mobile44×44/back đúng đạt,0pageerror, fixtures dọn sạch. Chưa commit/push/deploy.
+
+> TEACHER-HOME-REDESIGN-1 — hoàn thành local — Codex — 2026-10-14. Hôm nay theo mẫu:4KPI,4B2C cards ngang, timeline/panel công việc, header search hoạt động. Giữ logo cũ, ngày VN và nguồn/quyền dữ liệu; scope B2B rõ. Lint/typecheck/build exit0, Vitest832/832; Edge3120 desktop/mobile/search/logo đạt,0pageerror, fixtures dọn sạch. Chưa commit/push/deploy.
+
+> B2C-STRUCTURED-SCHEDULE-1 — hoàn thành local/SQL15 cloud — Codex — 2026-10-14. Lịch nhiều thứ/time/phòng tùy chọn/date-range → sinh buổi atomic/retry/room exclusion; teacher actualToday+room/cancel/weekly override. pgTAP98/98 (35 mới), Vitest830/830, lint/typecheck/build exit0; Edge3117 create/retry/conflict/concurrency/teacher/mobile đạt,0pageerror, fixtures dọn sạch. Chưa commit/push/deploy.
+
+> B2C-ICON-COLORS-1 — hoàn thành local — Codex — 2026-10-14. Menu B2C/teacher pastel desktop/mobile, KPI Tổng quan nhiều màu, thẻ lớp GV/icon thao tác rõ hơn; active vẫn trắng. Lint/typecheck/build exit0, Vitest818/818; Edge3115 không lỗi trang, fixtures dọn sạch. Chưa commit/push/deploy.
+
+> B2C-TEACHER-TODAY-1 — hoàn thành local — Codex — 2026-10-14. Hôm nay hiện thêm B2C theo lịch tuần, đúng ngày VN/active/start-date và phân công; không sinh buổi/lương. Vitest818/818, lint/typecheck/build exit0. Edge3114 lớp hôm nay hiện1lần/đúng giờ/link roster/lịch/nhận xét/mobile/IDOR đạt,0pageerror; fixture dọn sạch. Chưa commit/push/deploy.
+
+> B2C-TEACHER-VISIBILITY-1 — hoàn thành local/SQL14 cloud — Codex — 2026-10-14. Trang chủ/lớp GV hiện B2C và roster/lịch/nhận xét theo ID; Cô Lê4 lớp/15 ghi danh đọc đúng. pgTAP23/23, Vitest813/813, lint/typecheck/build exit0; Edge3113 login/roster/search/schedule/comments/IDOR/mobile đạt,0pageerror; fixtures dọn sạch. Chưa commit/push/deploy.
+
+> B2C-CLASS-WORKSPACE-1 — hoàn thành code local/SQL13 cloud — Codex — 2026-10-14. Chi tiết5 mục, lịch ngày/giờ/linked payroll, roll-call save/edit, học phí cũ và nhận xét buổi/chung. pgTAP40/40, Vitest811/811, lint/typecheck/build exit0; Edge bản cuối3112 toàn luồng/quyền/mobile đạt, fixtures + tài khoản thử dọn sạch. Chưa commit/push/deploy.
+
+> B2C-CLASS-DETAIL-1 — hoàn thành code local — Codex — 2026-10-14. Tên/mắt mở popup thông tin lớp, roster đúng lớp/tìm/page20. Vitest807/807; lint/typecheck/build exit0. Không DB/quyền mới, chưa commit/push.
+
+> XKLD-FINANCE-1 — hoàn thành code local/SQL12 cloud — Codex — 2026-10-14. Chỉ VNĐ, admin/executive xem-sửa, staff chỉ công nợ ứng viên. Phí đợt/thu/nợ/hoàn/hoa hồng/đối tác/lịch sử. pgTAP43/43, Vitest805/805, lint/typecheck/build exit0; Edge bản cuối3107 đủ luồng/quyền/concurrency/mobile đạt, fixtures dọn sạch. Chưa commit/push/deploy.
+
+> MODULE-SWITCHER-CLOSE-1 — hoàn thành local — Codex — 2026-10-14. DialogClose cho cả3 module, kể cả module hiện tại; Vitest801/801, lint/typecheck/build exit0. Chưa commit/push.
+
+> XKLD-DOCUMENTS-1 — hoàn thành code local/SQL11 cloud — Codex — 2026-10-14. Checklist theo thị trường, ngày nộp/hết hạn/cảnh báo30 ngày và file private. pgTAP28/28, Vitest798/798, lint/typecheck/build exit0; Edge production upload/download/quyền/mobile đạt,0pageerror, fixtures dọn sạch. Chưa commit/push/deploy; bản mới local3105.
+
+> XKLD-PIPELINE-1 — hoàn thành code local/SQL10 cloud — Codex — 2026-10-14. Board10 bước/links/lịch sử, rollback có lý do, lookup B2C tối thiểu. pgTAP43/43, Vitest794/794, lint/typecheck/build exit0; Edge production cuối10 bước/rollback11event/retry/stale/mobile/RLS đạt, fixtures dọn sạch. Chưa commit/push/deploy; bản mới local cổng3104.
+
+> XKLD-ORDERS-1 — hoàn thành code local/SQL09 cloud — Codex — 2026-10-14. Thị trường và đơn hàng đủ trường, lương tiền tệ/kỳ, tìm/lọc/phân trang25, RLS/actor/retry/stale-write. pgTAP31/31, Vitest785/785, lint/typecheck/build exit0; Edge production local thao tác/mobile/read-only/deny đạt, fixture dọn sạch. Chưa commit/push/deploy.
+
+> XKLD-CANDIDATES-1 — hoàn thành code local/SQL08 cloud — Codex — 2026-10-14. Hồ sơ đủ trường, thêm/sửa/tìm/lọc/phân trang, code DB/actor/retry/stale-write. pgTAP24/24, Vitest774/774, lint/typecheck/build exit0; Edge production local thao tác và quyền/mobile đạt, fixture dọn sạch. Chưa commit/push/deploy; các nghiệp vụ XKLĐ khác chưa xây.
+
+> XKLD-ACCOUNTS-1 — đã cấp 4 tài khoản cloud — Codex — 2026-10-14. executive/center_manager/consultant/xkld_staff, workspace chờ local; SQL07/history đã xác minh, pgTAP7/7, Vitest766/766, build/lint/typecheck exit0; API isolation4/4, Edge production login/admin-denied/notifications4/4. Chưa phát hành code online, chưa có dashboard nghiệp vụ.
+
+> XKLD-FOUNDATION-1 — đã ghi đặc tả, chờ phân quyền — Codex — 2026-10-14. docs/09 ghi đủ sáu nhóm nghiệp vụ/mười bước/năm dashboard. Chưa tạo schema/role/quyền/CRUD; đang hỏi mapping vai trò và phạm vi ứng viên/tài chính.
+
+> MODULE-XKLD-BUTTON-1 — đã thêm nút — Codex — 2026-10-14. Thẻ Xuất khẩu lao động màu cam, thông báo chờ khi bấm, grid 1/2/3 cột. Chưa có nghiệp vụ/route/DB; chi tiết chờ user.
+
+> HYDRATION-PERF-1 — đã sửa rủi ro ngày giờ và chờ đo thực tế — Codex — 2026-10-14. Báo cáo dùng giờ VN/snapshot kỳ, notification Suspense riêng. Vitest761/761 và build exit0; chưa tái hiện đúng URL user, chưa có phiên đăng nhập để đo dưới 2 giây.
+
+> `B2C-CHANGE-HISTORY-1` — hoàn thành code/SQL — Codex — 2026-10-14. Nhật ký DB học phí/phiếu thu/trạng thái và dữ liệu ghi danh, actor thật/snapshot trước-sau/thời gian. Menu/link theo ghi danh, chỉ super admin đọc theo D-2. SQL06 áp/history xác minh, pgTAP24/24, lint/typecheck/build exit0, Vitest760/760. Chưa kiểm tra trực quan user thật; không backfill lịch sử cũ.
+
+> `B2C-FINANCE-2` — hoàn thành tách lương/hòa vốn — Codex — 2026-10-14. Lương GV/NV văn phòng riêng, Marketing nhập rõ; hòa vốn theo báo cáo tháng trên Tổng quan. SQL05 áp/history xác minh, giữ nguyên 2 báo cáo cũ chưa phân loại; pgTAP14/14, lint/typecheck/build exit0, Vitest754/754. CAC còn chờ hai lựa chọn; chưa kiểm tra trực quan manager.
+
 > `RELEASE-B2C-20261014` — sẵn sàng commit/push theo yêu cầu user — Codex — 2026-10-14. Bao gồm hồ sơ GV, B2C GV/chấm công/lương, dashboard GV/HV/popup và sửa login touch. Lint/typecheck/build exit 0, Vitest 747/747; soát 53 file không có credential-pattern match. Giữ riêng `.env.example` bị xóa nội dung ngoài scope. Kết quả SHA/push xác minh và báo trong chat.
 
 > `B2C-STUDENT-DASHBOARD-1` — hoàn thành code — Codex — 2026-10-14. Dashboard học viên theo ảnh: bốn KPI/popup, biểu đồ vòng/cột, bảng gọn lọc/chọn/phân trang/Excel và chi tiết/sửa ghi danh cũ. Vitest 747/747, typecheck/build exit 0; Edge fixture desktop/mobile/popup/Escape/focus/Excel 10 dòng đạt. Lint cuối exit 0; chưa thử manager thật.
@@ -724,6 +766,44 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**CLASS-BACK-BUTTON-1-REVIEW:** dev3000 hoặc local3121, mở chi tiết lớp → nút mũi tên vuông44px bo góc/nền xanh cạnh nhãn đích, thử hover/focus/mobile/back đúng danh sách. QA độc lập, chưa phát hành online.
+
+**TEACHER-HOME-REDESIGN-1-REVIEW:** localhost:3120/teacher hoặc dev3000, xem bố cục theo ảnh và logo cũ; thử tìm lớp,4KPI, link lịch/class, mobile360/390. Chờ QA độc lập/phát hành online theo user.
+
+**B2C-STRUCTURED-SCHEDULE-1-REVIEW:** dev3000 hoặc localhost:3117, B2C → lớp → Lịch học → Lịch lặp & sinh buổi. Chọn thứ/giờ/khoảng ngày; phòng tùy chọn (dữ liệu cũ chưa có). Kiểm teacher Hôm nay và phòng; QA độc lập/chưa phát hành online. Không tự backfill chuỗi lịch cũ, không sinh lương.
+
+**B2C-ICON-COLORS-1-REVIEW:** dev3000 hoặc localhost:3115, xem B2C menu/Tổng quan/Học viên/Giáo viên và giao diện giáo viên. Palette pastel nhẹ, active trắng, mobile dùng chung. Chưa phát hành online; QA độc lập chưa làm.
+
+**B2C-TEACHER-TODAY-1-REVIEW:** dev3000 hoặc localhost:3114/teacher, cô Lê vào Hôm nay thứ Tư thấy Starter Hero18h-19h30 ở Lịch dạy hôm nay. Lịch tuần dự kiến chỉ hiển thị, không tạo chấm công/lương. QA độc lập/chưa phát hành online.
+
+**B2C-TEACHER-VISIBILITY-1-REVIEW:** localhost:3113/teacher/classes hoặc dev3000, đăng nhập cô Lê →4 lớp B2C → roster15 ghi danh. QA độc lập; lớp chỉ đọc HV/lịch/nhận xét, chấm công vẫn buổi được phân công. Chưa phát hành online.
+
+**B2C-CLASS-WORKSPACE-1-REVIEW:** local3112 (hoặc dev3000) B2C → chương trình → lớp → chọn5 nút HV/lịch/điểm danh/học phí/nhận xét. Admin/giáo vụ thao tác; teacher/XKLĐ chưa mở quyền cho workflow này. Chờ QA độc lập/phát hành online theo user.
+
+**B2C-CLASS-DETAIL-1-REVIEW:** trên localhost:3000 vào B2C → chương trình → bấm tên hoặc mắt của lớp, xem thông tin/roster và tìm/phân trang. Chờ QA độc lập/phiên manager thật.
+
+**XKLD-FINANCE-1-REVIEW:** local3107 /workspace/xkld/finance, admin/MS Thương nhập số thực tế; staff chỉ công nợ. Chưa phát hành online. Tiếp XKLD-AFTERCARE-1 khi user yêu cầu hậu xuất cảnh; dashboard tổng hợp vẫn chờ dữ liệu nguồn.
+
+**MODULE-SWITCHER-CLOSE-1-REVIEW:** trên localhost:3000 chọn B2B/B2C/XKLĐ, popup tự đóng; code local chưa phát hành online.
+
+**XKLD-DOCUMENTS-1-REVIEW:** mở /workspace/xkld/documents trên local3105, cấu hình danh mục thực tế theo thị trường; chưa phát hành online. Tiếp XKLD-FINANCE-1 khi user yêu cầu chi tiết phí/công nợ, cần chốt tiền tệ trước khi tổng hợp.
+
+**XKLD-PIPELINE-1:** đã hoàn thành liên kết/bước/lịch sử; code local cổng3104 có ứng viên/đơn hàng/pipeline. Tiếp XKLD-DOCUMENTS-1.
+
+**XKLD-ORDERS-1:** đã hoàn thành phần thị trường/đơn hàng và ứng viên; code local mới cổng3102 có cả hai. Chưa commit/push/deploy.
+
+**XKLD-FOUNDATION-2:** triển khai dữ liệu ứng viên/đơn hàng/pipeline, hồ sơ private, công nợ chỉ đọc cho nhân viên XKLĐ theo docs/09. Bốn account mới đã cấp cloud; code local mới nhận role, chưa commit/push/deploy.
+
+**XKLD-FOUNDATION-1-ACCESS:** đã chốt và cấp bốn tài khoản. XKLĐ xem toàn bộ ứng viên, chỉ đọc công nợ; tiếp tục XKLD-FOUNDATION-2.
+
+**MODULE-XKLD-DETAILS:** chờ user cung cấp phạm vi Xuất khẩu lao động; hiện chỉ có nút chờ theo yêu cầu.
+
+**HYDRATION-PERF-1-MEASURE:** lấy URL gây #418 và phiên đăng nhập kiểm thử; chạy production + bộ đo module-nav, theo dõi hydration và thời gian nội dung thực tế. Chưa cam kết đạt dưới 2 giây.
+
+**`B2C-CHANGE-HISTORY-1-REVIEW`:** local B2C → Nhật ký thay đổi bằng super_admin; thử một thay đổi hợp lệ ở học phí/trạng thái rồi xem trước/sau/actor và lọc theo ghi danh. Không sửa dữ liệu thật chỉ để test. Nhật ký bắt đầu từ khi bật SQL06, không phục hồi người sửa của dữ liệu cũ; academic_manager không được đọc theo D-2.
+
+**`B2C-CAC-1`:** chờ user chọn Marketing đã gồm quảng cáo hay cộng hai khoản; mẫu số HV mới đã trả phí hay toàn bộ HV mới. Sau đó triển khai CAC với học viên mới duy nhất theo tháng. Trên local Tổng quan/Báo cáo, nhập phân loại lương cho tháng cần dùng để tính hòa vốn; 2 báo cáo cũ không tự chia.
+
 **`B2C-STUDENT-DASHBOARD-1-REVIEW`:** mở local `/admin/b2c/students`, kiểm tra dashboard với dữ liệu thật, popup từng nhóm, lọc/chọn/xuất Excel, xem và sửa ghi danh bằng manager. Nhắc học phí chưa gửi tin; tiếp nhận mới dẫn tới Tuyển sinh hiện có.
 
 **`B2C-TEACHER-CARD-POPUPS-1-REVIEW`:** local Giáo viên B2C → bấm từng thẻ, kiểm tra nhóm GV/tháng/chuyên môn và danh sách lớp, tìm trong popup, đóng bằng X/Escape.
@@ -1028,6 +1108,10 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- `B2C-CHANGE-HISTORY-1-HISTORY`: SQL06 đã áp và history xác minh, RLS bật; dry-run trước/sau vẫn chặn 15 migration B2C cũ thiếu history. Không repair/chạy lại SQL cũ. Chưa kiểm tra trực quan bằng tài khoản thật; phần test DB đã rollback toàn bộ fixture.
+
+- `B2C-FINANCE-2-HISTORY`: SQL 20261014000005 áp và history xác minh; dry-run vẫn chặn 15 migration B2C cũ thiếu history. Không repair hoặc áp lại SQL cũ. CAC chờ hai định nghĩa user, chưa tính.
+
 - `B2C-TEACHER-METRICS-1-DATA`: chưa có điểm danh học viên B2C nên chuyên cần hiện —; chưa có lịch sử đổi hạn học phí nên tái phí hết hạn chỉ phản ánh hạn hiện tại. Chưa kiểm tra trực quan manager.
 
 - `B2C-TEACHING-TIME-1-HISTORY`: SQL 20261014000004 đã áp và xác minh; dry-run trước/sau vẫn báo 15 migration B2C cũ thiếu history, không chạy lại/repair ngoài scope. Chưa kiểm tra camera trên điện thoại thật; chụp camera web cần HTTPS hoặc localhost.
@@ -1136,44 +1220,77 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ---
 
-## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
+## 📖 NHẬT KÝ SESSION
 
-### [2026-10-14] Codex — `RELEASE-B2C-20261014`
+### [2026-10-14] Codex — CLASS-BACK-BUTTON-1
+- **Làm được:** thay link back nhạt tại chi tiết lớp bằng BackLink vuông44px bo12px/nền xanh/viền/shadow/hover đậm/focus/dark; aria-label và nhãn đích. Áp3 trang teacherB2C/teacherB2B/adminB2C, giữ href.
+- **File thay đổi:** shared/back-link.tsx,3 class detail pages, docs04/08/QA/WORKLOG.
+- **Migration/data impact:** không có; giữ logo/quyền/nghiệp vụ. Synthetic fixtures/account test đã dọn sạch.
+- **Đã test:** lint/typecheck/build exit0, Vitest832/832; Edge3121 teacher login/roster/search/schedule/comments/foreign404/mobile0overflow, back44×44 và về đúng /teacher/classes,0pageerror.
+- **Rủi ro:** chưa commit/push/deploy; chờ QA độc lập.
+- **Next action:** CLASS-BACK-BUTTON-1-REVIEW.
 
-- User yêu cầu rõ “đẩy code lên github”, cho phép commit/push theo ngoại lệ AGENTS.md trong lượt này. Phạm vi: toàn bộ code/docs/migrations/tests của hồ sơ giáo viên, B2C GV/chấm công/lương, dashboard học viên/giáo viên và login touch đã kiểm tra. Không đưa thay đổi rỗng `.env.example` vào commit; không đưa `.env.local`, dữ liệu nhập riêng hoặc preview `.tmp` vào Git.
-- Cổng đã chạy ở lượt triển khai gần nhất trên cùng code: lint/typecheck/build exit 0, Vitest 747/747; preview Edge fixture desktop/mobile, popup/focus và Excel đã kiểm tra. Fetch origin thành công, HEAD/origin main cùng baseline trước release. Soát 53 file không có credential-pattern match; script import GV chỉ truy vấn nguồn DB, không hard-code dữ liệu cá nhân.
-- Không áp migration lại: SQL 20261014000001–04 đã được áp và xác minh tại các lượt trước; history cũ thiếu vẫn là blocker đã ghi. Commit/push origin main và xác minh remote SHA; kết quả thực tế báo trong chat. Không khẳng định production deploy khi chưa kiểm tra hosting.
 
-### [2026-10-14] Codex — `B2C-STUDENT-DASHBOARD-1`
+### [2026-10-14] Codex — TEACHER-HOME-REDESIGN-1
+- **Làm được:** dashboard theo ảnh: nền xanh nhẹ/greeting/date VN/KPI4, B2C4 thẻ ngang đa sắc, timeline/empty panels, teacher active gradient. Giữ logopolymind.png/Logo nguyên trạng. Header search GET lọc lớp được phân công, có form mobile.
+- **File thay đổi:** teacher page/classes, TeacherHomeDashboard, TeacherHeaderSearch/layout/nav-links, B2C class cards/today,2 regression home, docs04/08/QA/WORKLOG.
+- **Migration/data impact:** không DB/quyền mới. Queries và actualToday/weekly/cancel giữ nguyên; scope B2B chỉ số thiếu nguồn B2C ghi rõ, không bịa delta. Synthetic4classes/15students/meeting/account đã dọn sạch.
+- **Đã test:** lint/typecheck/build exit0, Vitest832/832 (138files). Edge3120 desktop1672:4card ngang/logo src giữ nguyên/search đúng; mobile390/360 không tràn/menu hoạt động,0pageerror. Đã xem ảnh desktop/mobile cuối, nút lịch trên phone xuống dòng riêng.
+- **Rủi ro:** chưa commit/push/deploy; QA độc lập chưa làm.
+- **Next action:** TEACHER-HOME-REDESIGN-1-REVIEW.
 
-- User gửi ảnh dashboard Học viên, yêu cầu làm tương tự. Thêm domain/server/dashboard/table riêng, đổi page học viên; giữ bảng chương trình và dialog sửa ghi danh cũ. Bốn thẻ có popup, đếm học viên duy nhất, tính hạn đến 30 ngày, lớp active có studying; biểu đồ tình trạng ưu tiên rõ ràng để không đếm trùng và nguồn theo năm nhập học. Đọc đủ các trang profiles/enrollments/classes B2C manager/RLS, gồm hồ sơ chưa ghi danh.
-- Bảng gọn có lọc trạng thái/lớp/nguồn/ngày, tìm tên/mã/phụ huynh/SĐT/email/lớp, 10/20/50 dòng/trang, chọn trang/dòng để xuất Excel; không chọn xuất toàn bộ kết quả. Nút mắt mở chi tiết các thông tin trước đây; cây bút dùng flow cũ. Nhắc học phí mở danh sách, không gửi tin; tiếp nhận mới dẫn Tuyển sinh, không tạo flow ghi danh mới.
-- Vitest 747/747 (+4 test tổng/ghi danh/mẫu số/ranh ngày/popup/bộ lọc), typecheck/build exit 0. Typecheck test fixture ban đầu có array access possibly undefined đã sửa bằng non-null assertion cho phần tử fixture cố định. Preview Edge fixture 24 hồ sơ: desktop1460/mobile390 không tràn trang/lỗi JS, bốn popup và Escape/focus đạt; Excel tải thật chọn 10 dòng đọc lại 11 hàng gồm tiêu đề. Đã xem ảnh; popup screenshot chụp lúc animation, kiểm tra tương tác vẫn đạt. Dialog sửa trong fixture là stub, chưa thử manager thật. Lint cuối exit 0 sau di chuyển bundle preview ra khỏi vùng lint.
-- Không migration/data mutation, không commit theo AGENTS.md. Next: `B2C-STUDENT-DASHBOARD-1-REVIEW`.
 
-### [2026-10-14] Codex — `B2C-TEACHER-CARD-POPUPS-1`
 
-- User yêu cầu bốn thẻ mở popup. KPI chuyển thành button hỗ trợ bàn phím, Dialog chung theo từng nhóm; tổng/có lịch/chưa lịch hiển thị GV/liên hệ/chuyên môn/số lớp, lớp phụ trách hiển thị tên/mã lớp/GV/sĩ số. Dữ liệu lớp bổ sung trong truy vấn manager/RLS đã có, không đoán tên trùng.
-- Popup giữ chuyên môn/tháng của thẻ, tìm kiếm và phân trang 20 riêng, trạng thái rỗng, X/Escape đóng và restore focus về đúng thẻ. Thêm `teacher-summary-dialog.tsx`, sửa dashboard/query và fixture tests; cập nhật docs nghiệp vụ/phase.
-- Lint/typecheck/build exit 0, Vitest 743/743 (+2 test mở/đóng đủ bốn nhóm, đúng lớp, tháng/chuyên môn và tìm kiếm). Lỗi type ban đầu do dùng option Playwright trong Testing Library đã sửa; build cuối đạt. Chưa kiểm tra trực quan manager thật. Không migration/data mutation; không commit theo AGENTS.md.
-- Next: `B2C-TEACHER-CARD-POPUPS-1-REVIEW` trên local.
 
-### [2026-10-14] Codex — `B2C-TEACHER-DASHBOARD-1`
+### [2026-10-14] Codex — B2C-STRUCTURED-SCHEDULE-1
+- **Làm được:** rule nhiều thứ/giờ/phòng tùy chọn/range/preview → atomic generate, unique DB/request retries; room exclusion concurrent, class conflict, no overwrite/cancel resurrection, actor/history. Manager lịch/form/phòng; teacher schedule + actualToday/override/cancel tránh trùng fallback.
+- **File thay đổi:** SQL15/pgTAP, structured-schedule domain/dialog/actions/unit, class workspace/actions/dialogs/types, teacher queries/page/today/detail, docs01/02/03/08/QA/WORKLOG.
+- **Migration/data impact:** SQL15 cloud/history xác minh, bảng rule RLS/no direct writes, metadata/exclusion trên meeting. Không tự backfill nguồn/phòng/lịch cũ, không sinh payroll. CLI15 history gaps không replay/repair. Tất cả synthetic fixtures/account dọn sạch.
+- **Đã test:** pgTAP98/98 (40workspace+23teacher+35schedule) rollback, Vitest830/830 (137files), lint/typecheck/build exit0. Edge3117 create4, retry0skip4, room atomic rollback, concurrent1winner, teacher actual+room/no fallback/cancel/deny/mobile đạt,0pageerror.
+- **Giới hạn:** phòng nhập tên (gồm cơ sở) và cần nhất quán; rule lưu bất biến, generated giờ gốc không sửa, hủy+bù khi đổi lịch. Chưa commit/push/deploy, QA độc lập chưa làm.
+- **Next action:** B2C-STRUCTURED-SCHEDULE-1-REVIEW.
 
-- User gửi ảnh mẫu dashboard Giáo viên B2C. Thay trang bảng đơn bằng `teacher-dashboard.tsx`: bốn KPI, vòng lịch dạy/cột chuyên môn, bộ lọc tháng/chuyên môn/tình trạng và tìm tên/SĐT/email; bảng gọn 20 dòng/trang, thêm/sửa giữ dialog cũ. ReadAll server trả hồ sơ/chỉ số/tháng lịch qua manager/RLS; không dùng dữ liệu giả trong app hoặc thay shell trang khác.
-- Tải Excel dùng ExcelJS dynamic import, toàn bộ kết quả lọc; In/Lưu PDF bằng trình duyệt, bảng in đủ các trang. Lịch dạy mở tháng đang chọn, Báo cáo giáo viên cuộn tới bảng. Các chỉ số lũy kế giữ công thức, tháng chỉ lọc lịch dạy; không bịa số tăng/giảm hoặc trạng thái hồ sơ chưa có nguồn.
-- Vitest 741/741 (+2 test kết hợp bộ lọc/đổi tháng/mẫu số rỗng), lint/typecheck/build exit 0. Preview Edge standalone dữ liệu mẫu: 1500px/390px không tràn trang/lỗi JS, lọc lịch còn 2 GV, XLSX tải thật và đọc lại đủ 8 dòng. Đã xem ảnh desktop/mobile, tắt animation để biểu đồ hiện đầy đủ ngay khi đổi lọc. Preview dialog là stub, chưa kiểm tra tích hợp thêm/sửa bằng manager. Dev log GET teachers 200.
-- Không migration/data mutation; không commit theo AGENTS.md; giữ các thay đổi có sẵn. Next: `B2C-TEACHER-DASHBOARD-1-REVIEW`.
 
-### [2026-10-14] Codex — `B2C-TEACHER-METRICS-1`
 
-- Thêm chỉ số vào `src/app/(dashboard)/admin/b2c/teachers/page.tsx`; truy vấn `server/teacher-metrics.ts` phân trang tất cả dữ liệu B2C qua manager/RLS. Tên hồ sơ trùng không tự gán chỉ số, sĩ số theo học viên duy nhất/lớp, fallback số nhập khi chưa có ghi danh. Chi phí là tiền công đã đủ chấm công / phiếu thu các lớp phụ trách, không phải lợi nhuận theo kỳ.
-- User chọn cả hai cách tái phí: hết hạn rồi đóng tiếp (theo hạn hiện tại) và có từ 2 phiếu thu (bao gồm đóng nhiều đợt), đếm học viên duy nhất, loại phiếu tương lai; mẫu số rỗng hiện —. Thêm domain helper và 3 test phân biệt hai công thức, trùng học viên, chưa hết hạn/mẫu số rỗng. Chuyên cần chưa có nguồn B2C nên hiện — có giải thích.
-- Lint/typecheck/build exit 0, Vitest 739/739. Lần đầu test bị sandbox esbuild, build bị chặn Google Fonts; đã chạy lại ngoài sandbox đạt. Typecheck đầu bị chạy cùng build xung đột generated types, chạy lại sau build đạt. Không migration/data mutation. Chưa kiểm tra giao diện manager. Không commit theo AGENTS.md, giữ toàn bộ thay đổi có sẵn.
-- Next: `B2C-TEACHER-METRICS-2`, dữ liệu chuyên cần/lịch sử hạn học phí và kiểm tra trực quan.
 
-### [2026-10-14] Codex — `AUTH-MOBILE-LAN-1`
 
-- Tái hiện qua IP Wi-Fi bằng Edge viewport 390px/touch: checkbox 16×44px, eye tap/click không đổi type, checkbox không đổi state; log HMR bị chặn cross-origin. Sửa riêng login checkbox size20/min-h0 và nhãn44px, thêm allowedDevOrigins 192.168.1.56 rồi restart npm dev ngoài sandbox.
-- Xác minh checkbox 20×20px, eye tap hiện/ẩn giữ giá trị, nhãn toggles checkbox. Regression Playwright touch viewport iPhone với Edge 1/1 (không phải engine Safari), sau build smoke LAN vẫn hoạt động. Lint/typecheck/build exit 0, Vitest 736/736. Không có migration/data impact, không thay đổi auth/session lifetime hay chức năng ghi nhớ phía server. Không commit, giữ các thay đổi khác.
-- Next: user reload login trên điện thoại; nếu LAN IP đổi cập nhật allowedDevOrigins. Chưa thử trực tiếp iPhone/Zalo.
+
+### [2026-10-14] Codex — B2C-ICON-COLORS-1
+- **Làm được:** màu icon xuyên B2C và giáo viên: menu có ô pastel32px, active trắng; KPI Tổng quan ngọc/xanh/tím/emerald; thẻ lớp sách xanh, users ngọc; tìm/xem xanh, sửa amber, history tím. Giữ icon trắng ở nút màu, dark variants.
+- **File thay đổi:** nav-links, B2C overview/components tìm-xem-sửa-history, teacher page/class cards, docs04/08/QA/WORKLOG.
+- **Migration/data impact:** không có. Không đổi quyền, links hoặc nghiệp vụ. Tài khoản/fixture tổng hợp phục vụ browser đã dọn sạch.
+- **Đã test:** lint/typecheck/build exit0; Vitest818/818 (136files); Edge3115 teacher login/roster/lịch/nhận xét/IDOR/mobile, B2C overview/teachers/menu điện thoại chụp screenshot,0pageerror. Đã xem ảnh desktop Tổng quan, giữ độ tương phản active.
+- **Rủi ro:** chưa commit/push/deploy; QA độc lập chưa làm.
+- **Next action:** B2C-ICON-COLORS-1-REVIEW.
+
+
+
+
+
+
+
+
+### [2026-10-14] Codex — B2C-TEACHER-TODAY-1
+- **Làm được:** nối lớp B2C theo lịch tuần vào tổng và nội dung Hôm nay; đúng thứ/ngày VN, active, ngày khai giảng. Giờ/mã/tên/sĩ số/link lịch lớp, nhãn dự kiến; mỗi lớp một dòng.
+- **File thay đổi:** teacher/page, domain/teacher-today, components/teacher-today-classes, unit domain test, docs01/03/08/QA/WORKLOG.
+- **Migration/data impact:** không có DB/quyền mới; chỉ dùng RPC lớp được phân công hiện hữu. Không sinh buổi, điểm danh hoặc lương. Fixtures thử/account đã dọn sạch.
+- **Đã test:** lint/typecheck/build exit0, Vitest818/818 (136 files),5 regression thứ Tư/UTC/CN/start-date/trạng thái/malformed. Edge production3114 login → lịch hôm nay đúng1lần/giờ → roster/search/schedule/comments/IDOR/mobile đạt,0pageerror.
+- **Giới hạn:** lịch tuần là dự kiến; buổi cụ thể/ngày nghỉ xem lịch lớp. Chưa commit/push/deploy, QA độc lập chưa làm.
+- **Next action:** B2C-TEACHER-TODAY-1-REVIEW.
+
+
+
+
+
+
+
+
+
+
+### [2026-10-14] Codex — B2C-TEACHER-VISIBILITY-1
+- **Làm được:** xác minh Cô Lê account/source link đúng nhưng /teacher/classes chỉ đọc B2B. Thêm FK phân công B2C/backfill duy nhất, RPC own-class roster/lịch/nhận xét, thẻ trên home/lớp của tôi; menu giáo vụ đếm phân công B2C cả khi chưa có payroll.
+- **File thay đổi:** SQL14/pgTAP, teacher-class queries/cards/detail, teacher home/classes/session/types, component regression, docs01/02/03/08/QA.
+- **Migration/data impact:** SQL14 cloud/history xác minh;19 lớp hiện có được map duy nhất theo hồ sơ GV. Không đổi mật khẩu hoặc dữ liệu HV/lương/phí. Raw RLS giữ nguyên. CLI15 gaps cũ không replay.
+- **Đã test:** pgTAP23/23 rollback; Vitest813/813 (135 files), lint/typecheck/build exit0; Edge3113 teacher login/home/classes/roster/search/schedule/comments/mobile390/foreign404 đạt,0pageerror. Dùng claims tài khoản Cô Lê transaction rollback kiểm4 lớp/15 ghi danh; synthetic fixtures/account dọn sạch.
+- **Giới hạn:** chỉ đọc, không mở teacher sửa attendance/comment/học phí; QA độc lập chưa làm, chưa commit/push/deploy.
+- **Next action:** B2C-TEACHER-VISIBILITY-1-REVIEW.

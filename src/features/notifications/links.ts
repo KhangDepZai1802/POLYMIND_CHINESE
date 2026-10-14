@@ -15,6 +15,10 @@ const ROLE_ROOTS: Record<UserRole, readonly string[]> = {
   academic_manager: ["/admin", "/teacher"],
   teacher: ["/teacher"],
   student: ["/student"],
+  executive: ["/workspace"],
+  center_manager: ["/workspace"],
+  consultant: ["/workspace"],
+  xkld_staff: ["/workspace"],
 };
 
 export function notificationPathForRole(role: UserRole): string {

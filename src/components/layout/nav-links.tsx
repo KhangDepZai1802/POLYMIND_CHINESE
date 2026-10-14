@@ -70,6 +70,21 @@ export function NavLinks({
       {items.map((item) => {
         const active = isNavItemActive(item, pathname);
         const Icon = item.icon;
+        const colorful =
+          pathname.startsWith("/admin/b2c") ||
+          pathname === "/teacher" ||
+          pathname.startsWith("/teacher/");
+        const iconTone = /tuition|teaching/.test(item.href)
+          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+          : /teacher[s]?|exams/.test(
+                item.href.replace(/^\/teacher(?=\/|$)/, ""),
+              )
+            ? "bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400"
+            : /attendance|admissions|evaluations/.test(item.href)
+              ? "bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400"
+              : /students|parents|exercises/.test(item.href)
+                ? "bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-400"
+                : "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400";
 
         return (
           <Link
@@ -85,9 +100,23 @@ export function NavLinks({
               active
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-brand-orange/15 hover:text-foreground",
+              active &&
+                (pathname === "/teacher" || pathname.startsWith("/teacher/")) &&
+                "bg-gradient-to-r from-blue-700 to-blue-500 shadow-md shadow-blue-200/50 dark:shadow-none",
             )}
           >
-            <Icon className="size-5 shrink-0" aria-hidden />
+            {colorful ? (
+              <span
+                className={cn(
+                  "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+                  active ? "bg-white/15 text-white" : iconTone,
+                )}
+              >
+                <Icon className="size-[18px]" aria-hidden />
+              </span>
+            ) : (
+              <Icon className="size-5 shrink-0" aria-hidden />
+            )}
             <span className="truncate">{item.label}</span>
             {active && (
               <span

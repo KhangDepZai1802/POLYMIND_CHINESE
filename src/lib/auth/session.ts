@@ -145,6 +145,15 @@ export const hasAssignedClasses = cache(async function hasAssignedClasses(
     .eq("teacher_id", teacher.id);
 
   if ((count ?? 0) > 0) return true;
+  const { data: assignedB2C } = await supabase.rpc("read_my_b2c_classes", {});
+  if (
+    assignedB2C &&
+    typeof assignedB2C === "object" &&
+    !Array.isArray(assignedB2C) &&
+    typeof assignedB2C.total === "number" &&
+    assignedB2C.total > 0
+  )
+    return true;
   const { data: b2cTeacher } = await supabase
     .from("b2c_teachers")
     .select("id")

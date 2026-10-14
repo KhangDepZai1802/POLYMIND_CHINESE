@@ -35,6 +35,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      xkld_candidates: {
+        Row: { id: string; code: string; create_request_id: string; full_name: string; date_of_birth: string; phone: string; zalo: string | null; hometown: string; education: string; occupation: string; health_status: "passed" | "failed"; source: "collaborator" | "employee" | "advertising"; assignee_id: string; created_at: string; updated_at: string; created_by: string | null; updated_by: string | null; search_text: string; stage: "lead" | "consultation" | "registration" | "language_training" | "documentation" | "interview" | "selected" | "visa" | "departed" | "aftercare"; order_id: string | null; b2c_class_id: string | null }
+        Insert: { create_request_id: string; full_name: string; date_of_birth: string; phone: string; zalo?: string | null; hometown: string; education: string; occupation: string; health_status: "passed" | "failed"; source: "collaborator" | "employee" | "advertising"; assignee_id: string }
+        Update: { full_name?: string; date_of_birth?: string; phone?: string; zalo?: string | null; hometown?: string; education?: string; occupation?: string; health_status?: "passed" | "failed"; source?: "collaborator" | "employee" | "advertising"; assignee_id?: string }
+        Relationships: []
+      }
+      xkld_markets: {
+        Row: { id: string; create_request_id: string; country_code: string; country_name: string; currency_code: string; is_active: boolean; created_at: string; updated_at: string; created_by: string | null; updated_by: string | null }
+        Insert: { create_request_id: string; country_code: string; country_name: string; currency_code: string; is_active?: boolean }
+        Update: { country_code?: string; country_name?: string; currency_code?: string; is_active?: boolean }
+        Relationships: []
+      }
+      xkld_document_requirements: {
+        Row: { id:string; request_id:string; market_id:string; name:string; is_required:boolean; expects_expiry:boolean; is_active:boolean; sort_order:number; updated_at:string; updated_by:string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_class_schedules: {
+        Row: {id:string;class_id:string;weekdays:number[];start_time:string;end_time:string;room_name:string;date_from:string;date_to:string;created_at:string;created_by:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_class_meetings: {
+        Row: {id:string;request_id:string;class_id:string;teaching_session_id:string|null;schedule_id:string|null;room_name:string;room_key:string|null;starts_at:string;ends_at:string;teacher_name:string;status:"planned"|"completed"|"cancelled";note:string;created_at:string;created_by:string;updated_at:string;updated_by:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_student_attendance: {
+        Row: {id:string;meeting_id:string;enrollment_id:string;status:"present"|"late"|"absent"|"excused";note:string;updated_at:string;updated_by:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_student_comments: {
+        Row: {id:string;class_id:string;enrollment_id:string;meeting_id:string|null;content:string;created_at:string;created_by:string;actor_name:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_class_requests: {
+        Row: {request_id:string;action:string;payload:Json;result_id:string;actor_id:string;created_at:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_class_history: {
+        Row: {id:string;class_id:string;action:string;before_data:Json|null;after_data:Json|null;actor_id:string;actor_name:string;created_at:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      xkld_finance_installments: {
+        Row: { id:string; request_id:string; code:string; candidate_id:string; kind:"candidate_fee"|"partner_fee"|"commission"; title:string; counterparty:string; amount:number; due_date:string; note:string; created_at:string; created_by:string; updated_at:string; updated_by:string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      xkld_finance_transactions: {
+        Row: { id:string; request_id:string; code:string; installment_id:string; kind:"receipt"|"refund"|"commission_payment"; receipt_id:string|null; amount:number; fee_reduction:number; occurred_on:string; method:"cash"|"bank_transfer"; note:string; created_at:string; created_by:string; actor_name:string; void_request_id:string|null; voided_at:string|null; voided_by:string|null; void_reason:string|null }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      xkld_finance_history: {
+        Row: { id:string; candidate_id:string; installment_id:string; action:string; before_data:Json|null; after_data:Json|null; actor_id:string; actor_name:string; created_at:string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      xkld_candidate_documents: {
+        Row: { id:string; candidate_id:string; requirement_id:string; submitted_on:string|null; expires_on:string|null; note:string; updated_at:string; updated_by:string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      xkld_document_files: {
+        Row: { id:string; request_id:string; document_id:string; file_name:string; storage_path:string; mime_type:string; size_bytes:number; state:"pending"|"ready"|"cancelled"; uploaded_by:string; uploaded_at:string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      xkld_orders: {
+        Row: { id: string; code: string; create_request_id: string; market_id: string; employer: string; industry: string; recruitment_quantity: number; salary_amount: number; salary_currency: string; salary_period: "hour" | "day" | "month" | "year"; conditions: string; recruitment_deadline: string; partner: string; status: "open" | "paused" | "closed"; created_at: string; updated_at: string; created_by: string | null; updated_by: string | null; search_text: string }
+        Insert: { create_request_id: string; market_id: string; employer: string; industry: string; recruitment_quantity: number; salary_amount: number; salary_currency: string; salary_period: "hour" | "day" | "month" | "year"; conditions: string; recruitment_deadline: string; partner: string; status?: "open" | "paused" | "closed" }
+        Update: { market_id?: string; employer?: string; industry?: string; recruitment_quantity?: number; salary_amount?: number; salary_currency?: string; salary_period?: "hour" | "day" | "month" | "year"; conditions?: string; recruitment_deadline?: string; partner?: string; status?: "open" | "paused" | "closed" }
+        Relationships: []
+      }
+      xkld_pipeline_history: {
+        Row: { id: string; request_id: string; candidate_id: string; candidate_code: string; from_stage: "lead" | "consultation" | "registration" | "language_training" | "documentation" | "interview" | "selected" | "visa" | "departed" | "aftercare" | null; to_stage: "lead" | "consultation" | "registration" | "language_training" | "documentation" | "interview" | "selected" | "visa" | "departed" | "aftercare"; old_order_code: string | null; new_order_code: string | null; old_class_label: string | null; new_class_label: string | null; actor_id: string | null; actor_name: string | null; created_at: string; note: string; order_id: string | null; b2c_class_id: string | null }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      b2c_change_history: {
+        Row: { id: string; created_at: string; actor_id: string | null; actor_name: string | null; actor_role: Database["public"]["Enums"]["user_role"] | null; entity_type: "enrollment" | "tuition_package" | "tuition_receipt"; entity_id: string; operation: "INSERT" | "UPDATE" | "DELETE"; enrollment_id: string | null; student_id: string | null; student_code: string | null; student_name: string | null; class_id: string | null; class_code: string | null; class_name: string | null; before_data: Json | null; after_data: Json | null; search_text: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       b2c_teachers: {
         Row: { id: string; source_teacher_id: string | null; full_name: string; phone: string | null; email: string | null; specialization: string | null; employment_type: "full_time" | "part_time" | null; hourly_rate: number | null; created_by: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; source_teacher_id?: string | null; full_name: string; phone?: string | null; email?: string | null; specialization?: string | null; employment_type?: "full_time" | "part_time" | null; hourly_rate?: number | null; created_by?: string | null; created_at?: string; updated_at?: string }
@@ -585,6 +687,7 @@ export type Database = {
           time_text: string | null
           start_date: string | null
           status: string
+          teacher_id: string | null
           teacher_name: string | null
           updated_at: string
           weekdays_text: string | null
@@ -606,6 +709,7 @@ export type Database = {
           time_text?: string | null
           start_date?: string | null
           status?: string
+          teacher_id?: string | null
           teacher_name?: string | null
           updated_at?: string
           weekdays_text?: string | null
@@ -627,6 +731,7 @@ export type Database = {
           time_text?: string | null
           start_date?: string | null
           status?: string
+          teacher_id?: string | null
           teacher_name?: string | null
           updated_at?: string
           weekdays_text?: string | null
@@ -839,6 +944,8 @@ export type Database = {
           notes: string | null
           other_cost: number
           payroll_cost: number
+          teacher_payroll_cost: number | null
+          office_payroll_cost: number | null
           rent_cost: number
           report_month: number
           report_year: number
@@ -858,6 +965,8 @@ export type Database = {
           notes?: string | null
           other_cost?: number
           payroll_cost?: number
+          teacher_payroll_cost?: number | null
+          office_payroll_cost?: number | null
           rent_cost?: number
           report_month: number
           report_year: number
@@ -877,6 +986,8 @@ export type Database = {
           notes?: string | null
           other_cost?: number
           payroll_cost?: number
+          teacher_payroll_cost?: number | null
+          office_payroll_cost?: number | null
           rent_cost?: number
           report_month?: number
           report_year?: number
@@ -4382,6 +4493,19 @@ export type Database = {
       }
     }
     Functions: {
+      get_xkld_assignees: { Args: Record<string, never>; Returns: { id: string; full_name: string; is_active: boolean }[] }
+      get_xkld_pipeline: { Args: { p_query?: string; p_assignee?: string; p_stage?: string; p_page?: number }; Returns: Json }
+      generate_b2c_class_schedule: {Args:{p_data:Json};Returns:Json}
+      read_my_b2c_today: {Args:Record<string,never>;Returns:Json}
+      read_my_b2c_classes: { Args: { p_class_id?: string; p_tab?: string; p_page?: number; p_query?: string }; Returns: Json }
+      read_b2c_class_workspace: { Args: { p_class_id:string; p_tab:string; p_page?:number; p_query?:string; p_meeting_id?:string }; Returns:Json }
+      write_b2c_class_workspace: { Args: { p_action:string; p_data:Json }; Returns:string }
+      read_xkld_finance: { Args: { p_action:string; p_data?:Json }; Returns:Json }
+      write_xkld_finance: { Args: { p_action:string; p_data:Json }; Returns:string }
+      xkld_documents_command: { Args: { p_action: string; p_data?: Json }; Returns: Json }
+      transition_xkld_candidate: { Args: { p_candidate_id: string; p_stage: string; p_order_id: string | null; p_b2c_class_id: string | null; p_expected_updated_at: string; p_request_id: string; p_note?: string }; Returns: string }
+      search_xkld_b2c_classes: { Args: { p_query?: string; p_page?: number }; Returns: Json }
+      search_xkld_pipeline_orders: { Args: { p_query?: string; p_page?: number }; Returns: Json }
       save_b2c_parent: { Args: { p_id: string | null; p_name: string; p_phone: string; p_zalo: string; p_student_codes: string[]; p_relationship: string }; Returns: string };
       can_check_b2c_session: { Args: {p_id:string}; Returns:boolean }
       create_b2c_teaching_session: { Args: {p_class_id:string;p_teacher_id:string;p_starts_at:string;p_ends_at:string}; Returns:string }
@@ -5044,7 +5168,7 @@ export type Database = {
         | "duration_expired"
         | "exam_window_closed"
         | "system_finalize"
-      user_role: "super_admin" | "teacher" | "student" | "academic_manager"
+      user_role: "super_admin" | "teacher" | "student" | "academic_manager" | "executive" | "center_manager" | "consultant" | "xkld_staff"
       video_status: "draft" | "published"
     }
     CompositeTypes: {
@@ -5321,7 +5445,7 @@ export const Constants = {
         "exam_window_closed",
         "system_finalize",
       ],
-      user_role: ["super_admin", "teacher", "student", "academic_manager"],
+      user_role: ["super_admin", "teacher", "student", "academic_manager", "executive", "center_manager", "consultant", "xkld_staff"],
       video_status: ["draft", "published"],
     },
   },

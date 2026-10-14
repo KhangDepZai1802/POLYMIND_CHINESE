@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { B2C_PROGRAMS } from "@/features/b2c/domain/programs";
+import { estimateBreakEven } from "@/features/b2c/domain/finance";
 import { B2C_CUSTOMER_SOURCES, B2C_CUSTOMER_SOURCE_LABELS } from "@/features/b2c/domain/customer-source";
 
 export async function getB2CAdmissionsPage(stage: string | null, program: string, query: string, page = 0, limit = 20) {
@@ -79,7 +80,7 @@ export async function getB2COverview() {
       supabase
         .from("b2c_monthly_reports")
         .select(
-          "id, report_year, report_month, revenue, electricity_cost, water_cost, internet_cost, payroll_cost, rent_cost, marketing_cost, advertising_cost, other_cost",
+          "id, report_year, report_month, revenue, electricity_cost, water_cost, internet_cost, payroll_cost, teacher_payroll_cost, office_payroll_cost, rent_cost, marketing_cost, advertising_cost, other_cost",
         )
         .order("report_year", { ascending: false })
         .order("report_month", { ascending: false })
@@ -131,6 +132,12 @@ export async function getB2COverview() {
   });
 
   const latestReport = reportResult.data;
+  let breakEven: ReturnType<typeof estimateBreakEven> | null = null;
+  if (latestReport) {
+    const { data: metrics, error: metricsError } = await supabase.from("b2c_monthly_program_metrics").select("opening_students,new_students,departed_students").eq("report_id",latestReport.id);
+    if (metricsError) throw new Error("Không tải được dữ liệu tính hòa vốn B2C.");
+    breakEven = estimateBreakEven(latestReport, (metrics ?? []).reduce((sum,m) => sum+m.opening_students+m.new_students-m.departed_students,0));
+  }
   const totalCost = latestReport
     ? Number(latestReport.electricity_cost) +
       Number(latestReport.water_cost) +
@@ -161,6 +168,7 @@ export async function getB2COverview() {
           balance: Number(latestReport.revenue) - totalCost,
         }
       : null,
+    breakEven,
   };
 }
 
@@ -263,7 +271,7 @@ export async function getB2CMonthlyReports() {
   const { data: reports, error } = await supabase
     .from("b2c_monthly_reports")
     .select(
-      "id, report_year, report_month, revenue, electricity_cost, water_cost, internet_cost, payroll_cost, rent_cost, marketing_cost, advertising_cost, other_cost, notes, updated_at",
+      "id, report_year, report_month, revenue, electricity_cost, water_cost, internet_cost, payroll_cost, teacher_payroll_cost, office_payroll_cost, rent_cost, marketing_cost, advertising_cost, other_cost, notes, updated_at",
     )
     .order("report_year", { ascending: false })
     .order("report_month", { ascending: false });

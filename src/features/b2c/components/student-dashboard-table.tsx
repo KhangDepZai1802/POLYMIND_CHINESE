@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, History } from "lucide-react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ export function StudentDashboardTable({
   rows,
   offset = 0,
   compact = false,
+  canViewHistory = false,
   selected,
   onSelect,
   onSelectAll,
@@ -41,6 +43,7 @@ export function StudentDashboardTable({
   rows: StudentListRow[];
   offset?: number;
   compact?: boolean;
+  canViewHistory?: boolean;
   selected?: Set<string>;
   onSelect?: (id: string) => void;
   onSelectAll?: () => void;
@@ -180,8 +183,17 @@ export function StudentDashboardTable({
                           onClick={() => setDetail(r)}
                           className="rounded p-2 text-blue-600 hover:bg-blue-50"
                         >
-                          <Eye className="size-4" />
+                          <Eye className="size-4 text-blue-600 dark:text-blue-400" />
                         </button>
+                        {canViewHistory && r.enrollment && (
+                          <Link
+                            href={`/admin/b2c/history?enrollment=${r.enrollment.id}`}
+                            aria-label={`Nhật ký thay đổi ${r.student.full_name}`}
+                            className="rounded p-2 text-blue-600 hover:bg-blue-50"
+                          >
+                            <History className="size-4 text-violet-600 dark:text-violet-400" />
+                          </Link>
+                        )}
                         {r.enrollment && r.classInfo && (
                           <B2CStudentStatusDialog
                             enrollmentId={r.enrollment.id}

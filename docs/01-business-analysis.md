@@ -1,5 +1,39 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## Lịch B2C có cấu trúc (2026-10-14)
+
+Admin/giáo vụ mở chi tiết lớp → Lịch học → Lịch lặp & sinh buổi. Chọn nhiều thứ T2–CN, giờ bắt đầu/kết thúc cùng ngày (tối đa12h), từ/đến ngày (bao gồm hai đầu, tối đa366 ngày, không trước khai giảng), phòng tùy chọn. Hiện số buổi dự kiến; Lưu tự sinh buổi lịch học trong khoảng đó, không cần cron và không sinh công/lương/phiếu thu. Muốn mở rộng thời gian thì lưu thêm khoảng ngày.
+
+Dữ liệu B2C đã nhập chỉ có thứ/giờ/cơ sở; chưa có phòng riêng, không có Excel gốc để xác minh cột nguồn. Phòng cho nhập tên gồm cơ sở; trống là Chưa xếp phòng. So tên phòng không phân biệt hoa/thường, gom khoảng trắng; không đoán các tên viết tắt là cùng phòng. Không tự chuyển chuỗi giờ cũ vì có dữ liệu nhiều khung/không rõ.
+
+Lưu lịch và sinh buổi nguyên tử. Buổi có sẵn đúng giờ/phòng được bỏ qua; trùng lớp/phòng hoặc khác buổi cũ thì hủy cả lượt, không ghi đè. Bấm lại/new UUID không tạo buổi/rule trùng; buổi đã hủy không hồi sinh. Lịch lặp lưu bất biến; ngày/giờ gốc của buổi sinh tự động giữ nguyên để không tái tạo sai sau retry. Đổi lịch bằng hủy buổi và thêm buổi bù, theo quy tắc giữ lịch sử/điểm danh hiện hành.
+
+Hôm nay của GV ưu tiên buổi cụ thể có giờ/phòng/trạng thái và bỏ lịch tuần dự kiến của cùng lớp/ngày; buổi hủy hiển thị Đã hủy, không cộng tổng đang học. Trong thời gian có lịch cấu trúc thì lịch tuần cũ không được dùng làm fallback. Lớp chưa có lịch cấu trúc/buổi cụ thể vẫn giữ fallback cũ. Chỉ lớp GV được phân công; không cấp thêm quyền học phí hoặc sửa điểm danh.
+
+## Giáo viên xem lớp B2C (2026-10-14)
+
+Hôm nay bổ sung lớp B2C theo lịch tuần: ngày/thứ tính Asia/Ho_Chi_Minh, chỉ lớp active đã đến ngày khai giảng. Hiện trong tổng Lịch dạy hôm nay với nhãn Theo lịch tuần, giờ và link lịch lớp. Đây là lịch dự kiến đọc từ weekdays_text/time_text; không tạo buổi, điểm danh hay lương. Lịch theo ngày/nghỉ/đổi giờ xem tại lịch lớp, không suy ra trạng thái thực tế từ lịch tuần. Không thêm quyền hay truy vấn dữ liệu ngoài các lớp đã phân công.
+
+Giáo viên và giáo vụ có phân công xem lớp trung tâm ngay tại /teacher và /teacher/classes. Mở lớp /teacher/b2c-classes/[classId] để đọc học viên (mã, tên, trạng thái, ngày nhập học), lịch buổi và nhận xét; tìm mã/tên, 25 dòng/trang. Chỉ lớp được phân công theo ID b2c_classes.teacher_id → b2c_teachers.source_teacher_id → teachers.user_id; tài khoản và hồ sơ teachers phải còn hoạt động. Không phụ thuộc có buổi chấm công hay đơn giá lương.
+
+Không mở học phí, công nợ, liên hệ/phụ huynh hay sửa điểm danh/nhận xét trong thay đổi này. Chấm công B2C vẫn chỉ đúng buổi đã phân công bằng teaching_session.teacher_id. Lớp nhập tên GV được liên kết khi tên khớp duy nhất hồ sơ; tên không khớp/trùng không cấp quyền. Đổi tên hồ sơ GV không làm mất phân công theo ID; đổi tên GV của lớp sẽ cập nhật phân công.
+
+## Nhật ký thay đổi B2C (2026-10-14)
+
+Quản trị viên xem `/admin/b2c/history` hoặc mục Nhật ký thay đổi trong B2C; có liên kết theo ghi danh tại Học viên/Học phí. Giữ D-2: chỉ super_admin được đọc audit, giáo vụ không thấy menu và bị chặn cả route/server/RLS dù được sửa nghiệp vụ.
+
+Ghi tự động tại DB khi tạo/sửa/xóa ghi danh, gói học phí hoặc phiếu thu; theo dõi trạng thái/lý do, ngày học/ngày hết phí, số buổi và dữ liệu ghi danh, đơn giá/chiết khấu/tổng phải thu, số tiền/ngày thu/hình thức/người thu khai báo. Actor là auth.uid() thật, chụp tên/vai trò cùng học viên/lớp tại thời điểm ghi; người thu khai báo khác với tài khoản thao tác. Không có phiên đăng nhập thì actor để trống, không bịa người sửa. Thời gian do DB ghi và hiển thị theo Việt Nam; trước/sau chỉ hiển thị trường thay đổi bằng nhãn tiếng Việt. Lưu không đổi giá trị hoặc retry phiếu thu không thêm log trùng.
+
+Nhật ký không cho user insert/update/delete trực tiếp; ghi lỗi thì rollback cùng thay đổi nghiệp vụ. Tìm học viên/lớp, người sửa, loại thay đổi, khoảng ngày; 30 sự kiện/trang, có lọc theo ghi danh. Bắt đầu từ lúc bật tính năng; không khôi phục lịch sử cũ hoặc gán actor cho dữ liệu cũ. Chưa theo dõi sửa hồ sơ liên hệ học viên hay báo cáo tài chính tháng trong phạm vi này.
+
+## Lương và điểm hòa vốn B2C (2026-10-14)
+
+Báo cáo tháng tách lương giáo viên và lương NV văn phòng, nhập Marketing bắt buộc (0 nếu xác nhận không phát sinh). payroll_cost là tổng hai thành phần và chỉ cộng một lần vào chi phí. Hai báo cáo lịch sử giữ nguyên số tiền, thành phần chưa biết để null; lưu qua biểu mẫu mới phải nhập rõ cả hai. Không tự phân chia hoặc cộng chồng tiền công từ chấm công vào số liệu tháng nhập tay.
+
+User chọn điểm hòa vốn ước tính từ báo cáo tháng. Trên Tổng quan hiển thị HV cần, HV cuối tháng và còn thiếu, cùng kỳ và giả định. Toàn bộ lương GV coi là biến đổi, các khoản còn lại (gồm NV văn phòng, mặt bằng, Marketing/Quảng cáo, điện/nước/internet/khác) coi là cố định. HV cần = ceil(chi phí cố định × HV cuối tháng / (doanh thu − lương GV)). Chưa tách lương, không có HV hoặc đóng góp không dương thì hiện lý do. HV cuối tháng là tổng các chương trình theo báo cáo, chưa loại người học nhiều chương trình. Chưa mô hình hóa tăng bậc lớp/phòng/giá; số cần thêm không âm.
+
+CAC chưa tính: chờ chốt Marketing có bao gồm quảng cáo hay cộng hai khoản; mẫu số là HV mới đã đóng học phí hay toàn bộ HV mới. Không tự coi số HV mới từng chương trình là khách hàng mới duy nhất.
+
 ## Dashboard Học viên B2C (2026-10-14)
 
 `/admin/b2c/students` dùng bố cục theo ảnh user: bốn thẻ tổng học viên/đang học/sắp hết học phí/lớp hoạt động, biểu đồ vòng tình trạng, cột nguồn khách theo năm nhập học, thao tác nhanh và bảng gọn. Thẻ mở popup đúng nhóm, tìm kiếm/phân trang riêng, đóng X/Escape trả focus. Không bịa phần trăm tăng trưởng khi chưa có dữ liệu lịch sử.
@@ -395,3 +429,65 @@ Số buổi / thời lượng / học phí: **để null** ở catalog (trung t�
 - Thiết kế DB + RLS matrix: [`02-database-design.md`](02-database-design.md)
 - Workflow: [`03-workflow.md`](03-workflow.md)
 - Kiến trúc: [`04-system-architecture.md`](04-system-architecture.md)
+
+
+### Bổ sung theo yêu cầu 2026-10-14 — Nút module Xuất khẩu lao động
+
+Ngoại lệ giới hạn cho quy tắc loại domain XKLĐ: bộ chọn module có thêm thẻ Xuất khẩu lao động, biểu tượng máy bay, trạng thái Sắp triển khai. Bấm hiện thông báo chờ; chi tiết nghiệp vụ do user cung cấp sau. Chỉ giao diện, không tạo route/table/workflow XKLĐ ở bước này.
+
+
+### Yêu cầu mở rộng XKLĐ ngày 14/10/2026
+
+User đã cung cấp đặc tả xây mới module XKLĐ và dashboard theo vai trò. Phạm vi mới tại [09-xkld-requirements.md](09-xkld-requirements.md) thay thế giới hạn chỉ làm nút và yêu cầu loại XKLĐ đối với module mới này. Chưa thay đổi quyền hiện có, chưa gán vai trò nghiệp vụ trong ảnh vào bốn role hiện tại; đang chờ xác nhận phạm vi dữ liệu/nhân viên.
+
+
+### Tài khoản nghiệp vụ mới — user chốt 14/10/2026
+
+Tạo một tài khoản mỗi nhóm: ms.thuong → executive (Ban điều hành), quanly.trungtam → center_manager, tuvan.cskh → consultant, nhanvien.xkld → xkld_staff. Đây là nhóm quyền riêng, không tự gán super_admin/academic_manager. Nhân viên XKLĐ được xem toàn bộ ứng viên và chỉ đọc công nợ; không nhập/sửa khoản thu. Ngoại lệ mật khẩu khởi tạo 6 ký tự chỉ áp dụng bốn tài khoản do user chỉ định; validation cấp/đặt lại mật khẩu chung vẫn tối thiểu 8 ký tự. Không lưu mật khẩu vào docs/script/migration.
+
+Bốn role mới đăng nhập tới /workspace; giao diện theo vai trò ghi rõ chức năng đang xây, không hiển thị số liệu giả. /workspace/notifications dùng luồng thông báo hiện hữu. Chưa triển khai dashboard nghiệp vụ và module XKLĐ từ đặc tả, các quyền dữ liệu tương ứng chưa được mở. Tài khoản Auth đã tạo cloud; cần phát hành code trước khi đăng nhập bốn role trên website online.
+
+
+### XKLD-CANDIDATES-1 — Quản lý ứng viên (2026-10-14)
+
+Route /workspace/xkld/candidates có danh sách 25 hồ sơ/trang, tìm mã/tên/SĐT/Zalo/quê quán/trình độ/nghề và lọc nguồn/sức khỏe/người phụ trách. Thêm/sửa gồm họ tên, ngày sinh, SĐT/Zalo, quê quán, trình độ, nghề, sức khỏe đạt/không, nguồn CTV/nhân viên/quảng cáo, người phụ trách. Mã UV do DB tự sinh; Zalo tùy chọn, các trường còn lại bắt buộc. Ngày sinh từ 1900 đến hôm nay theo giờ VN; SĐT 10 số bắt đầu 0 hoặc +84 và 9 số. Không tự gộp người trùng tên/SĐT.
+
+Super admin và xkld_staff thêm/sửa, xem toàn bộ; executive chỉ đọc; các role khác/anonymous bị chặn ở server và RLS. Người phụ trách là super admin hoặc nhân viên XKLĐ đang hoạt động; giữ tên phụ trách cũ khi tài khoản dừng hoạt động. Không có xóa hồ sơ. UUID yêu cầu tạo unique chống tạo trùng khi retry; updated_at kiểm tra trước update để tránh ghi đè bản mới. Actor thật do trigger auth.uid(), không lấy từ dữ liệu form. Phần tài chính/công nợ không nằm trong thay đổi này.
+
+
+### XKLD-ORDERS-1 — Thị trường và đơn hàng (2026-10-14)
+
+Trang /workspace/xkld/orders quản lý danh mục quốc gia (tên/mã hai chữ, tiền tệ mặc định, đang/ngừng sử dụng) và đơn hàng có mã DH DB tự sinh, quốc gia, chủ sử dụng, ngành nghề, số lượng tuyển, lương, tiền tệ/kỳ lương, điều kiện, hạn tuyển, đối tác, trạng thái đang tuyển/tạm dừng/đóng. Có sẵn ba quốc gia tham chiếu SG/Singapore/SGD, JP/Nhật Bản/JPY, TW/Đài Loan/TWD; thêm/sửa được thị trường khác. Không tạo đơn hàng hay mức lương mẫu.
+
+Danh sách25/trang, tìm mã/chủ sử dụng/nghề/đối tác/điều kiện, lọc quốc gia/trạng thái/hạn. Hạn tuyển tính theo ngày VN, hôm nay còn trong hạn; nhãn đã qua hạn chỉ cho đơn đang tuyển, không tự đóng đơn. Số lượng là số nguyên dương; lương dương tối đa2 chữ số thập phân; nhập rõ mã tiền tệ3 chữ và kỳ giờ/ngày/tháng/năm, không quy đổi hoặc cộng lẫn tiền tệ. Đơn đã có giữ nguyên tiền tệ khi đổi mặc định thị trường.
+
+Super admin/xkld_staff thêm/sửa và đọc toàn bộ, executive chỉ đọc; role khác bị chặn server/RLS. Ngừng thị trường chặn đơn mới nhưng giữ và cho sửa đơn cũ; không hard delete. UUID tạo unique chống retry; cập nhật kiểm tra updated_at để tránh ghi đè. Actor do auth.uid() từ trigger. Các biểu mẫu giữ dữ liệu đã nhập khi server báo lỗi.
+
+
+### XKLD-PIPELINE-1 — Pipeline10 bước (2026-10-14)
+
+Trang /workspace/xkld/pipeline có bảng10 cột đúng thứ tự user: Lead, Tư vấn, Đăng ký/đặt cọc, Đào tạo ngoại ngữ, Hoàn thiện hồ sơ, Phỏng vấn, Trúng tuyển, Visa/giấy phép, Xuất cảnh, Hậu xuất cảnh. Mỗi ứng viên có một tiến trình hiện tại, một đơn hàng và một lớp B2C tùy giai đoạn. Hồ sơ mới vào Lead tự động; hồ sơ có trước SQL10 được mặc định Lead nhưng không dựng lịch sử/người thao tác giả.
+
+Super admin/xkld_staff cập nhật; executive xem và đọc lịch sử; role khác chặn server/RPC/RLS. Chỉ tiến tới bước kế tiếp, quay lại bước cũ phải có lý do; có thể cập nhật liên kết tại bước hiện tại. Từ đào tạo cần lớp B2C; từ phỏng vấn cần đơn hàng. Liên kết mới chỉ nhận lớp planned/active và đơn đang tuyển, còn hạn, thị trường hoạt động; liên kết cũ được giữ khi lớp/đơn ngừng nhận mới. Không tự ghi danh hoặc đổi học phí B2C; đăng ký/đặt cọc không tự tạo phiếu thu.
+
+Bảng tải tối đa20 hồ sơ/cột, chọn một giai đoạn để phân trang20. Tìm mã/tên/SĐT và lọc người phụ trách. Popup có tra lớp/đơn phân trang20; chỉ trả metadata lớp, không mở hồ sơ/học phí B2C. Lịch sử bất biến lưu từ-bước/đến-bước, liên kết trước-sau, người/thời gian VN/ghi chú; đây là lịch sử tiến trình nghiệp vụ, không mở audit hệ thống. UUID chống retry, updated_at chống ghi đè, ghi lịch sử và chuyển bước chung transaction.
+
+
+### XKLD-DOCUMENTS-1 — Hồ sơ giấy tờ
+
+Checklist do trung tâm cấu hình theo thị trường: tên, bắt buộc, theo dõi hết hạn, thứ tự và ngừng sử dụng. Không tự điền yêu cầu pháp lý. Mỗi ứng viên chọn thị trường (mặc định từ đơn hàng nếu có), lưu ngày nộp thực tế/ngày hết hạn/ghi chú; cảnh báo 30 ngày. Giữ hồ sơ thị trường/checklist cũ. Super admin và xkld_staff cập nhật toàn bộ; executive chỉ xem/tải xuống; các role khác không truy cập. File PDF/PNG/JPG tối đa10 MB, nhiều phiên bản không ghi đè/xóa lịch sử. Upload không tự xác nhận nộp/hợp lệ; không tự chặn pipeline hoặc ghi danh/thu phí.
+
+
+### XKLD-FINANCE-1 — Tài chính VNĐ
+
+User chốt chỉ VNĐ, super_admin và executive cùng xem/ghi/sửa; xkld_staff chỉ đọc công nợ ứng viên. Ba nhóm nghĩa vụ gắn ứng viên: phí dịch vụ phải thu, phí đối tác/chủ sử dụng phải thu, hoa hồng CTV phải chi. Mỗi đợt có tên/đối tượng/số tiền/hạn/ghi chú. Có thể thu/chi từng phần, không vượt còn phải thu/chi. Hoàn gắn phiếu thu gốc, không vượt số chưa hoàn, có lý do và chọn giảm phí tương ứng hay giữ phí để mở lại công nợ. Phiếu đã ghi không sửa/xóa trực tiếp; hủy có lý do rồi lập đúng, giữ lịch sử actor thật. Phí sửa không thấp hơn thực thu/đã chi ròng; phí0 có thể dùng khi đã hủy hoặc hoàn hết. Hủy phiếu hoàn giảm phí khôi phục mức phí cũ; không cho hủy nếu làm thu vượt phí. Không tự coi nghĩa vụ là doanh thu ghi nhận, không quy đổi hoặc lấy dữ liệu tài chính B2C.
+
+
+### B2C-CLASS-DETAIL-1 — Xem chi tiết lớp
+
+Tại chương trình B2C, bấm tên lớp hoặc con mắt mở popup gồm mã/tên/chương trình/giáo viên/cấp độ/trạng thái/lịch/khai giảng/hình thức/cơ sở/sĩ số ghi nhận/ghi chú. Roster chỉ lấy ghi danh có classCode khớp lớp đang chọn, có mã/tên/trạng thái/phụ huynh/SĐT/ngày nhập học/hết học phí/số buổi; tìm kiếm và20 hồ sơ/trang. Sĩ số ghi nhận và số hồ sơ ghi danh hiển thị riêng, không tự coi bằng nhau. Dùng dữ liệu hiện có trên trang chương trình qua requireManager/RLS, không đổi quyền hoặc schema.
+
+
+### B2C-CLASS-WORKSPACE-1 — Trang chi tiết đủ5 mục
+
+Trang /admin/b2c/classes/[classId] có Học viên, Lịch học từng buổi, Điểm danh, Học phí, Nhận xét; mở từ5 nút trong popup lớp. Quyền super_admin/academic_manager theo requireManager + app.is_manager/RLS, không mở quyền giáo viên/nhóm XKLĐ ở bước này. Lịch học độc lập công/lương: nhập ngày/giờ/giáo viên/trạng thái/ghi chú, không tạo tiền công. Lịch dạy đã có được mirror giữ nguồn/creator; lịch mới từ giờ dạy tự liên kết, không nhập trùng cùng lớp/giờ. Điểm danh từng ghi danh/buổi gồm có mặt/đi muộn/vắng/vắng phép; chưa nhập là Chưa điểm danh, không tự coi vắng. Chặn tương lai, nhầm lớp, buổi hủy, ghi đè stale; buổi có điểm danh/nhận xét không đổi giờ hoặc hủy. Nhận xét chung hoặc theo buổi giữ nội dung/actor/thời điểm, bổ sung mới thay vì xóa lịch sử. Học phí dùng gói/phiếu thu hiện có của đúng ghi danh, có thêm/sửa gói và thu tiền; chưa có gói hiện rõ, không coi miễn phí. Điểm danh không tự trừ học phí hoặc cập nhật lương.

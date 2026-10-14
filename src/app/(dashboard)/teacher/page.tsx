@@ -1,15 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import {
-  AlertTriangle,
-  BookOpenCheck,
-  CalendarClock,
-  CheckCircle2,
-  ClipboardCheck,
-  FileCheck2,
-  School,
-} from "lucide-react";
-
 import {
   getMyClasses,
   getPendingGrading,
@@ -17,328 +6,56 @@ import {
   getTeacherAtRiskStudents,
   getTeacherSessionsToday,
 } from "@/features/dashboard/server/teacher-queries";
-import { EmptyState } from "@/components/shared/empty-state";
-import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireTeaching } from "@/lib/auth/session";
-import { formatDate, formatTime } from "@/lib/dates";
-import { CLASS_STATUS_LABELS, CLASS_STATUS_TONE } from "@/lib/domain/labels";
-
+import {
+  getMyB2CClasses,
+  getMyB2CToday,
+} from "@/features/b2c/server/teacher-class-queries";
+import { getB2CClassesToday } from "@/features/b2c/domain/teacher-today";
+import { TeacherHomeDashboard } from "@/features/dashboard/components/teacher-home-dashboard";
 export const metadata: Metadata = { title: "Hôm nay" };
-
 export default async function TeacherDashboardPage() {
-  const [user, today, needAttendance, pendingGrading, atRisk, myClasses] =
-    await Promise.all([
-      requireTeaching(),
-      getTeacherSessionsToday(),
-      getSessionsNeedingAttendance(),
-      getPendingGrading(),
-      getTeacherAtRiskStudents(),
-      getMyClasses(),
-    ]);
-
+  const [
+    user,
+    today,
+    needAttendance,
+    pendingGrading,
+    atRisk,
+    myClasses,
+    b2cClasses,
+    b2cMeetings,
+  ] = await Promise.all([
+    requireTeaching(),
+    getTeacherSessionsToday(),
+    getSessionsNeedingAttendance(),
+    getPendingGrading(),
+    getTeacherAtRiskStudents(),
+    getMyClasses(),
+    getMyB2CClasses(),
+    getMyB2CToday(),
+  ]);
+  const now = new Date();
+  const b2cToday = getB2CClassesToday(
+    b2cClasses.filter((c) => !b2cMeetings.override_class_ids.includes(c.id)),
+    now,
+  );
+  const todayCount =
+    today.length +
+    b2cToday.length +
+    b2cMeetings.rows.filter((m) => m.status !== "cancelled").length;
   return (
-    <>
-      <PageHeader
-        title={`Xin chào, ${user.fullName}`}
-        description="Lịch dạy hôm nay, buổi chưa điểm danh và bài chờ chấm."
-      />
-
-      {/* `min-w-0` trên hai cột là bắt buộc, không phải trang trí: grid item mặc
-          định `min-width: auto` nên KHÔNG co được dưới bề rộng min-content của
-          nội dung. Tên lớp và địa điểm dài đẩy cột rộng ra và cả trang tràn
-          ngang 31px ở 360px — đo được ở `P17-T5`, mà thang 3 mốc cũ không bắt
-          vì lỗi chỉ lộ ở bề rộng hẹp nhất. */}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.7fr)]">
-        <div className="min-w-0 space-y-5">
-          {/* --- Lịch dạy hôm nay --- */}
-          <Card>
-            <CardHeader>
-              {/* asChild → <h2> thật: trang này có 5 khu vực lớn, nếu tiêu đề
-                  chỉ là <div> thì trình đọc màn hình không nhảy khối được. */}
-              <CardTitle asChild className="flex items-center gap-2 text-base">
-                <h2>
-                  <CalendarClock className="size-4" aria-hidden />
-                  Lịch dạy hôm nay ({today.length})
-                </h2>
-              </CardTitle>
-              <p className="text-text-secondary mt-1 text-sm">
-                Giờ hiển thị theo múi giờ Việt Nam.
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              {today.length === 0 ? (
-                <EmptyState
-                  icon={CalendarClock}
-                  title="Hôm nay bạn không có buổi dạy"
-                  description="Xem toàn bộ lớp của bạn ở danh sách bên cạnh."
-                />
-              ) : (
-                <ul className="divide-y border-t">
-                  {today.map((s) => (
-                    <li
-                      key={s.id}
-                      className="flex flex-wrap items-center gap-3 px-6 py-4"
-                    >
-                      <span className="w-24 shrink-0 text-sm font-medium tabular-nums">
-                        {formatTime(s.startsAt)}–{formatTime(s.endsAt)}
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">
-                          {/* Mã lớp là thứ nhận dạng hàng — trước đây nó là chữ
-                              NHỎ NHẤT trên hàng (12px cạnh 16px). */}
-                          <span className="font-mono text-sm">
-                            {s.classCode}
-                          </span>{" "}
-                          · Buổi {s.sessionNumber}
-                        </p>
-                        <p
-                          className="text-text-secondary truncate text-sm"
-                          title={s.topic ?? s.className}
-                        >
-                          {s.topic ?? s.className}
-                        </p>
-                      </div>
-
-                      {s.isFullyMarked ? (
-                        <span className="text-success flex shrink-0 items-center gap-1 text-sm">
-                          <CheckCircle2 className="size-4" aria-hidden />
-                          Đã điểm danh {s.marked}/{s.expected}
-                        </span>
-                      ) : (
-                        <Button asChild size="sm" className="shrink-0">
-                          <Link href={`/teacher/attendance?session=${s.id}`}>
-                            <ClipboardCheck className="size-4" aria-hidden />
-                            Điểm danh{" "}
-                            {s.expected > 0 ? `${s.marked}/${s.expected}` : ""}
-                          </Link>
-                        </Button>
-                      )}
-                      {/* Hành động phụ trong hàng danh sách = cấp ghost
-                          (02 §8). Trước đây nó là `outline`, đứng ngang hàng
-                          với "Điểm danh" nên hai nút cạnh tranh nhau. */}
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="ghost"
-                        className="shrink-0"
-                      >
-                        <Link href={`/teacher/sessions/${s.id}`}>
-                          <BookOpenCheck className="size-4" aria-hidden />
-                          Nhật ký
-                        </Link>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* --- Buổi chưa điểm danh --- */}
-          <Card>
-            <CardHeader>
-              <CardTitle asChild className="flex items-center gap-2 text-base">
-                <h2>
-                  <ClipboardCheck className="size-4" aria-hidden />
-                  Buổi chưa điểm danh ({needAttendance.length})
-                </h2>
-              </CardTitle>
-              <p className="text-text-secondary mt-1 text-sm">
-                Buổi đã diễn ra mà còn thiếu điểm danh. Buổi sắp tới không tính.
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              {needAttendance.length === 0 ? (
-                <EmptyState
-                  icon={CheckCircle2}
-                  title="Không còn buổi nào thiếu điểm danh"
-                  description="Mọi buổi đã dạy đều đã điểm danh đủ."
-                />
-              ) : (
-                <ul className="divide-y border-t">
-                  {needAttendance.map((s) => (
-                    <li
-                      key={s.id}
-                      className="flex flex-wrap items-center gap-3 px-6 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          <span className="font-mono">{s.classCode}</span> · Buổi{" "}
-                          {s.sessionNumber}
-                        </p>
-                        <p className="text-text-secondary text-sm">
-                          {formatDate(s.startsAt)} · Đã điểm danh {s.marked}/
-                          {s.expected}
-                        </p>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={`/teacher/attendance?session=${s.id}`}>
-                          Điểm danh
-                        </Link>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* --- Bài chờ chấm --- */}
-          <Card>
-            <CardHeader>
-              <CardTitle asChild className="flex items-center gap-2 text-base">
-                <h2>
-                  <FileCheck2 className="size-4" aria-hidden />
-                  Bài chờ chấm ({pendingGrading.length})
-                </h2>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {pendingGrading.length === 0 ? (
-                <EmptyState
-                  icon={FileCheck2}
-                  title="Không có bài nào chờ chấm"
-                  description="Bài nộp mới sẽ hiện ở đây."
-                />
-              ) : (
-                <ul className="divide-y border-t">
-                  {pendingGrading.map((s) => (
-                    <li
-                      key={s.id}
-                      className="flex flex-wrap items-center gap-3 px-6 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {s.enrollment?.student?.full_name ?? "Học viên"}
-                        </p>
-                        <p
-                          className="text-text-secondary truncate text-sm"
-                          title={s.delivery?.title}
-                        >
-                          {s.delivery?.title} · Nộp{" "}
-                          {formatDate(s.submitted_at)}
-                        </p>
-                      </div>
-                      {s.is_late && (
-                        <StatusBadge label="Nộp muộn" tone="warning" />
-                      )}
-                      <Button asChild size="sm" variant="outline">
-                        <Link
-                          href={
-                            s.delivery?.id
-                              ? `/teacher/${s.kind === "exercise" ? "exercises" : "exams"}/${s.delivery.id}`
-                              : `/teacher/${s.kind === "exercise" ? "exercises" : "exams"}`
-                          }
-                        >
-                          Chấm bài
-                        </Link>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="min-w-0 space-y-5">
-          {/* --- Lớp của tôi --- */}
-          {/* overflow-hidden: hàng cuối có nền hover chạy sát mép, không có nó
-              thì nền vuông phủ ra ngoài góc bo `rounded-xl` của Card. An toàn
-              vì focus ring của hàng dùng `ring-inset` nên không bị cắt. */}
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <CardTitle asChild className="text-base">
-                <h2>Lớp của tôi ({myClasses.length})</h2>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {myClasses.length === 0 ? (
-                <EmptyState
-                  icon={School}
-                  title="Bạn chưa được phân công lớp nào"
-                  description="Quản trị viên sẽ phân công lớp cho bạn."
-                />
-              ) : (
-                <ul className="divide-y border-t">
-                  {myClasses.map((c) => (
-                    <li key={c.id}>
-                      {/* Cả hàng là link. Trước đây đi bằng bàn phím qua danh
-                          sách lớp KHÔNG thấy mình đang ở đâu — chỉ có hover. */}
-                      <Link
-                        href={`/teacher/classes/${c.id}`}
-                        className="hover:bg-primary-50 focus-visible:ring-ring flex items-center justify-between gap-3 px-6 py-3 focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-sm font-medium">
-                              {c.code}
-                            </span>
-                            <StatusBadge
-                              label={CLASS_STATUS_LABELS[c.status]}
-                              tone={CLASS_STATUS_TONE[c.status]}
-                            />
-                          </div>
-                          <p className="truncate text-sm" title={c.name}>
-                            {c.name}
-                          </p>
-                        </div>
-                        <span className="text-text-secondary shrink-0 text-sm tabular-nums">
-                          {c.openCount}/{c.capacity}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* --- Học viên cần chú ý --- */}
-          <Card>
-            <CardHeader>
-              <CardTitle asChild className="flex items-center gap-2 text-base">
-                <h2>
-                  <AlertTriangle className="text-warning size-4" aria-hidden />
-                  Học viên cần chú ý ({atRisk.length})
-                </h2>
-              </CardTitle>
-              <p className="text-text-secondary mt-1 text-sm">
-                Hệ thống chỉ cảnh báo — quyết định vẫn là của bạn.
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              {atRisk.length === 0 ? (
-                <EmptyState
-                  icon={CheckCircle2}
-                  title="Không có học viên nào cần chú ý"
-                  description="Chuyên cần, điểm và bài tập đều đạt ngưỡng."
-                />
-              ) : (
-                <ul className="divide-y border-t">
-                  {atRisk.map((s) => (
-                    <li key={s.enrollment_id} className="px-6 py-3">
-                      <p className="text-sm font-medium">{s.full_name}</p>
-                      <p className="text-text-secondary text-sm">
-                        {s.student_code} · {s.class_name}
-                      </p>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {(s.risk_reasons ?? []).map((r) => (
-                          <StatusBadge key={r} label={r} tone="warning" />
-                        ))}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </>
+    <TeacherHomeDashboard
+      fullName={user.fullName}
+      now={now.toISOString()}
+      today={today}
+      needAttendance={needAttendance}
+      pendingGrading={pendingGrading}
+      atRisk={atRisk}
+      myClasses={myClasses}
+      b2cClasses={b2cClasses}
+      b2cToday={b2cToday}
+      meetings={b2cMeetings.rows}
+      todayCount={todayCount}
+    />
   );
 }

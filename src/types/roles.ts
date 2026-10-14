@@ -1,5 +1,5 @@
 /**
- * Bốn role của hệ thống. Thêm role thứ năm thì phải sửa cùng một bộ thay đổi:
+ * Role của hệ thống. Thêm role phải sửa cùng một bộ thay đổi:
  * enum `public.user_role` trong DB, docs 01 §5 và RLS matrix docs 02 §6.
  *
  * Đặc biệt: KHÔNG có role phụ huynh. Thông tin người giám hộ chỉ là field liên hệ
@@ -10,6 +10,10 @@ export const USER_ROLES = [
   "academic_manager",
   "teacher",
   "student",
+  "executive",
+  "center_manager",
+  "consultant",
+  "xkld_staff",
 ] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
@@ -19,7 +23,13 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   academic_manager: "Giáo vụ",
   teacher: "Giáo viên",
   student: "Học viên",
+  executive: "Ban điều hành",
+  center_manager: "Quản lý trung tâm",
+  consultant: "Tư vấn / CSKH",
+  xkld_staff: "Nhân viên XKLĐ",
 };
+
+export const BUSINESS_ROLES = ["executive", "center_manager", "consultant", "xkld_staff"] as const;
 
 /**
  * QUẢN LÝ nghiệp vụ đào tạo — bản sao phía TS của `app.is_manager()` dưới DB.
