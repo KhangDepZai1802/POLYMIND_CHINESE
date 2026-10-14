@@ -8,7 +8,7 @@ export async function getTeachers(search?: string) {
   let query = supabase
     .from("teachers")
     .select(
-      `id, user_id, teacher_code, specialization, bio, is_active, created_at,
+      `id, user_id, teacher_code, specialization, bio, employment_type, hourly_rate, is_active, created_at,
        profile:profiles!fk_teachers_profile (full_name, phone, email, username, is_active),
        class_teachers (id, class:classes (id, code, name, status))`,
     )

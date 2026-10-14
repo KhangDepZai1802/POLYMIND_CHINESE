@@ -65,6 +65,8 @@
 
 ## B2C-STUDENT-COUNT-1 — Số học viên trên trang nhóm chương trình
 
+- [x] `B2C-STUDENT-DASHBOARD-1`: trang Học viên theo ảnh mẫu, bốn KPI/popup, biểu đồ tình trạng/nguồn theo năm, bảng gọn lọc/chọn/phân trang/Excel và xem chi tiết/sửa ghi danh cũ. Tổng học viên duy nhất, hồ sơ chưa ghi danh vẫn hiện, hạn học phí 30 ngày theo Việt Nam. Vitest 747/747, lint/typecheck/build exit 0; preview Edge dữ liệu mẫu desktop/mobile, bốn popup/Escape/focus và Excel 10 dòng đã chọn đạt. Chưa kiểm tra tích hợp bằng manager thật.
+
 ### B2C-IDENTITY-1 — Mã học viên và trạng thái theo ghi danh
 
 - [x] Mã học viên B2C duy nhất, không đổi mã, hiện/tìm kiếm trên danh sách; trạng thái/lý do theo ghi danh, giữ thông tin cũ; không đổi VCB. SQL đã commit; pgTAP 7/7; lint/typecheck/build exit 0, Vitest 675/675. Chưa kiểm tra giao diện bằng manager.
@@ -1125,6 +1127,50 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 | M20    | Security & Deployment              | P7              |
 | M21    | Student Class Portal               | P14             |
 | M22    | Flashcards & Wrong-answer Review   | P14             |
+# TEACHER-PROFILE-1 — Hồ sơ giáo viên
+
+## AUTH-MOBILE-LAN-1 — Đăng nhập trên điện thoại cùng Wi-Fi
+
+- [x] Checkbox giữ vuông 20px, nhãn có vùng chạm 44px, không bị CSS touch kéo thành 16×44px.
+- [x] Dev origin cho IP Wi-Fi 192.168.1.56 để hydrate/tương tác được, nút mắt hiện/ẩn và checkbox hoạt động.
+- [x] Playwright touch viewport iPhone bằng Edge qua LAN 1/1.
+- [x] Lint/typecheck/build exit 0, Vitest 736/736; smoke chạm LAN sau build đạt.
+
+## B2C-TEACHING-TIME-1 — Chấm công ảnh và tiền công
+
+- [x] User chốt tính giờ theo lịch, đủ check-in/out tự tính không cần duyệt.
+- [x] Màn quản lý Giờ dạy & Lương B2C tạo buổi và tổng tháng.
+- [x] Màn giảng viên Chấm công B2C, ảnh vào/ra và tổng tiền của mình.
+- [x] RLS/RPC bảo vệ phân công, thời gian server, bucket private, lưu snapshot đơn giá, retry không tính trùng.
+- [x] Migration 04 áp cloud, history xác minh, pgTAP rollback 20/20; tests schema/upload/retry 10/10.
+- [x] Lint/typecheck/build exit 0, Vitest 736/736; actual signed upload ảnh/check-in/out/tiền công bằng tài khoản thử đã kiểm tra và dọn dữ liệu.
+- [ ] Kiểm tra camera và giao diện trên điện thoại thật.
+
+## B2C-TEACHERS-1 — Hồ sơ riêng trong B2C
+
+- [x] `B2C-TEACHER-CARD-POPUPS-1`: bấm cả bốn thẻ mở popup nhóm giáo viên hoặc lớp phụ trách, giữ tháng/chuyên môn, tìm kiếm và phân trang riêng, trả focus về thẻ. Lint/typecheck/build exit 0, Vitest 743/743.
+
+- [x] `B2C-TEACHER-DASHBOARD-1`: dashboard theo ảnh mẫu, bốn KPI, biểu đồ vòng/cột, lọc tháng lịch dạy/chuyên môn/tình trạng/tìm kiếm; bảng gọn 20 dòng/trang, Excel thật và in/lưu PDF, giữ thêm/sửa hồ sơ. Kiểm tra Edge bằng dữ liệu mẫu desktop/mobile và tải Excel; chưa kiểm tra tích hợp với tài khoản manager thật.
+
+- [x] `B2C-TEACHER-METRICS-1`: hiển thị chỉ số theo GV; tính số lớp/sĩ số TB, hai tỷ lệ tái phí theo lựa chọn user và tiền công đã xác nhận trên học phí thực thu lũy kế bằng dữ liệu B2C qua RLS, đọc phân trang đầy đủ. Tái phí theo hạn đang lưu, đóng từ 2 lần bao gồm đóng nhiều đợt; có giải thích tại trang.
+- [ ] `B2C-TEACHER-METRICS-2`: bổ sung điểm danh học viên B2C để tính chuyên cần (hiện —), lịch sử đổi hạn để phân tích gia hạn lịch sử; kiểm tra giao diện bằng manager.
+
+- [x] `B2C-TEACHERS-IMPORT-1`: bổ sung 8 hồ sơ đã tạo khớp duy nhất với tên giáo viên lớp B2C; liên kết nguồn unique, không tạo trùng khi chạy lại; giữ null cho thông tin chưa biết. Migration 03 và data-fix đã áp, pgTAP 5/5 rollback và đối chiếu nguồn 0 sai lệch.
+
+- [x] Menu Giáo viên B2C trên desktop/mobile và route `/admin/b2c/teachers`.
+- [x] Thêm/sửa liên hệ, chuyên môn, cơ hữu/part-time, đơn giá/giờ, không tạo tài khoản.
+- [x] Bảng riêng RLS manager-only; không hard delete/đổi actor, tìm tên và phân trang 50.
+- [x] Migration 20261014000002 áp cloud, history xác minh, pgTAP rollback 11/11.
+- [x] Lint/typecheck/build exit 0, Vitest 726/726.
+- [ ] Kiểm tra giao diện bằng manager.
+
+- [x] Màn Giáo viên hiển thị liên hệ, chuyên môn, hình thức cơ hữu/part-time, đơn giá VNĐ/giờ.
+- [x] Tạo/sửa/lưu hai trường mới; dữ liệu cũ không tự gán giá trị.
+- [x] Validation đơn giá nguyên không âm; RPC invoker giữ RLS và giao dịch nguyên tử.
+- [x] Migration áp cloud và pgTAP 9/9 rollback; kiểm thử schema 7/7.
+- [x] Lint/typecheck/build exit 0; Vitest 717/717.
+- [ ] Kiểm tra giao diện bằng manager.
+
 # MARKETING-HOME-1 — Website giới thiệu công khai
 
 - [x] Trang chủ responsive với header, hero, định hướng chương trình, phương pháp và CTA.

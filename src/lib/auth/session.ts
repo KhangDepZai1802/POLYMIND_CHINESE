@@ -144,5 +144,16 @@ export const hasAssignedClasses = cache(async function hasAssignedClasses(
     .select("class_id", { count: "exact", head: true })
     .eq("teacher_id", teacher.id);
 
-  return (count ?? 0) > 0;
+  if ((count ?? 0) > 0) return true;
+  const { data: b2cTeacher } = await supabase
+    .from("b2c_teachers")
+    .select("id")
+    .eq("source_teacher_id", teacher.id)
+    .maybeSingle();
+  if (!b2cTeacher) return false;
+  const { count: b2cCount } = await supabase
+    .from("b2c_teaching_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("teacher_id", b2cTeacher.id);
+  return (b2cCount ?? 0) > 0;
 });

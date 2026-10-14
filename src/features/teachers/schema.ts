@@ -34,6 +34,19 @@ export const teacherSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Nhập họ tên giáo viên" }),
   phone: optionalText,
   specialization: optionalText,
+  employment_type: z.preprocess(
+    (v) => (v === "" || v === undefined ? null : v),
+    z.enum(["full_time", "part_time"]).nullable(),
+  ),
+  hourly_rate: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : v),
+    z.coerce
+      .number()
+      .int("Đơn giá phải là số nguyên VNĐ")
+      .min(0, "Đơn giá không được âm")
+      .max(999999999999, "Đơn giá quá lớn")
+      .nullable(),
+  ),
   bio: optionalText,
 });
 

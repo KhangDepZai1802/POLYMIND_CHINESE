@@ -70,6 +70,7 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: "Hôm nay", href: "/teacher", icon: LayoutDashboard },
     { label: "Lớp của tôi", href: "/teacher/classes", icon: School },
     { label: "Điểm danh", href: "/teacher/attendance", icon: ClipboardCheck },
+    { label: "Chấm công B2C", href: "/teacher/b2c-teaching", icon: CalendarDays },
     // Đứng ngay sau Điểm danh vì đó là thứ tự làm việc thật: điểm danh xong mới
     // báo cáo được. Giáo vụ có đứng lớp cũng thấy mục này — nhánh "Lớp được
     // phân công" dùng chung đúng danh sách `NAVIGATION.teacher` (`D-2`).
@@ -130,6 +131,8 @@ export const B2C_NAVIGATION: NavItem[] = [
   { label: "Tuyển sinh", href: "/admin/b2c/admissions", icon: TrendingUp },
   { label: "Lớp học", href: "/admin/b2c", icon: School },
   { label: "Học viên", href: "/admin/b2c/students", icon: Users },
+  { label: "Giáo viên", href: "/admin/b2c/teachers", icon: GraduationCap },
+  { label: "Giờ dạy & Lương", href: "/admin/b2c/teaching", icon: CalendarDays },
   { label: "Phụ huynh", href: "/admin/b2c/parents", icon: UserCircle },
   { label: "Học phí", href: "/admin/b2c/tuition", icon: Wallet },
   { label: "Báo cáo", href: "/admin/b2c/reports", icon: BarChart3 },

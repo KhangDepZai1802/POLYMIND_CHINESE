@@ -1,0 +1,15 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select plan(5);
+insert into auth.users(id,aud,role,email,created_at,updated_at) values('49000000-0000-4000-8000-000000000001','authenticated','authenticated','teacher-import-test@example.test',now(),now());
+insert into public.profiles(id,role,full_name,is_active) values('49000000-0000-4000-8000-000000000001','teacher','TEST IMPORT',true);
+insert into public.teachers(id,user_id,teacher_code) values('49000000-0000-4000-8000-000000000002','49000000-0000-4000-8000-000000000001','GV-TEST-IMPORT');
+insert into public.b2c_teachers(full_name,source_teacher_id) values('TEST IMPORT','49000000-0000-4000-8000-000000000002');
+select ok((select relrowsecurity from pg_class where oid='public.b2c_teachers'::regclass),'RLS retained');
+select ok(not has_column_privilege('authenticated','public.b2c_teachers','source_teacher_id','UPDATE'),'Users cannot alter source mapping');
+select ok(not has_table_privilege('authenticated','public.b2c_teachers','DELETE'),'Profiles cannot be hard deleted');
+select throws_ok($$insert into public.b2c_teachers(full_name,source_teacher_id) values('TEST IMPORT','49000000-0000-4000-8000-000000000002')$$,'23505',null,'Import source remains unique');
+select lives_ok($$update public.b2c_teachers set hourly_rate=null,employment_type=null where source_teacher_id is not null$$,'Unknown employment and hourly rate are preserved as unset');
+select * from finish();
+rollback;

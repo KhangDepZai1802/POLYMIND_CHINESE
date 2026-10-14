@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireManager } from "@/lib/auth/session";
+import { formatCurrency } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Giáo viên" };
 
@@ -59,7 +60,7 @@ export default async function AdminTeachersPage() {
              * nào — cùng kiểu trôi dữ liệu với màn Học viên.
              */
             <DataTable
-              caption="Danh sách giáo viên: mã, họ tên, liên hệ, chuyên môn, lớp phụ trách và trạng thái"
+              caption="Danh sách giáo viên: mã, họ tên, liên hệ, chuyên môn, hình thức, đơn giá mỗi giờ, lớp phụ trách và trạng thái"
               minWidthClass="min-w-[60rem]"
             >
               <DataTableHeader>
@@ -68,6 +69,8 @@ export default async function AdminTeachersPage() {
                   <DataTableHead>Họ tên</DataTableHead>
                   <DataTableHead>Liên hệ</DataTableHead>
                   <DataTableHead>Chuyên môn</DataTableHead>
+                  <DataTableHead>Hình thức</DataTableHead>
+                  <DataTableHead>Đơn giá / giờ</DataTableHead>
                   <DataTableHead>Lớp phụ trách</DataTableHead>
                   <DataTableHead>Trạng thái</DataTableHead>
                   <DataTableHead className="w-10">
@@ -96,6 +99,18 @@ export default async function AdminTeachersPage() {
                       )}
                     </DataTableCell>
                     <DataTableCell>{t.specialization ?? "—"}</DataTableCell>
+                    <DataTableCell>
+                      {t.employment_type === "full_time"
+                        ? "Cơ hữu"
+                        : t.employment_type === "part_time"
+                          ? "Part-time"
+                          : "Chưa cập nhật"}
+                    </DataTableCell>
+                    <DataTableCell>
+                      {t.hourly_rate === null
+                        ? "Chưa cập nhật"
+                        : formatCurrency(t.hourly_rate)}
+                    </DataTableCell>
                     <DataTableCell>
                       {t.class_teachers.length === 0 ? (
                         <span className="text-text-secondary">

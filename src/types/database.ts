@@ -35,6 +35,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      b2c_teachers: {
+        Row: { id: string; source_teacher_id: string | null; full_name: string; phone: string | null; email: string | null; specialization: string | null; employment_type: "full_time" | "part_time" | null; hourly_rate: number | null; created_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; source_teacher_id?: string | null; full_name: string; phone?: string | null; email?: string | null; specialization?: string | null; employment_type?: "full_time" | "part_time" | null; hourly_rate?: number | null; created_by?: string | null; created_at?: string; updated_at?: string }
+        Update: { full_name?: string; phone?: string | null; email?: string | null; specialization?: string | null; employment_type?: "full_time" | "part_time" | null; hourly_rate?: number | null }
+        Relationships: []
+      }
+      b2c_teaching_sessions: {
+        Row: { id:string; class_id:string; teacher_id:string; starts_at:string; ends_at:string; hourly_rate:number; created_by:string; created_at:string; check_in_at:string|null; check_out_at:string|null; check_in_photo:string|null; check_out_photo:string|null; teaching_hours:number; salary:number }
+        Insert: { class_id:string;teacher_id:string;starts_at:string;ends_at:string;hourly_rate:number;created_by:string }
+        Update: { check_in_at?:string;check_out_at?:string;check_in_photo?:string;check_out_photo?:string }
+        Relationships: []
+      }
       announcements: {
         Row: {
           body: string
@@ -3660,6 +3672,8 @@ export type Database = {
       }
       teachers: {
         Row: {
+          employment_type: "full_time" | "part_time" | null
+          hourly_rate: number | null
           bio: string | null
           created_at: string
           id: string
@@ -3670,6 +3684,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          employment_type?: "full_time" | "part_time" | null
+          hourly_rate?: number | null
           bio?: string | null
           created_at?: string
           id?: string
@@ -3680,6 +3696,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          employment_type?: "full_time" | "part_time" | null
+          hourly_rate?: number | null
           bio?: string | null
           created_at?: string
           id?: string
@@ -4365,6 +4383,14 @@ export type Database = {
     }
     Functions: {
       save_b2c_parent: { Args: { p_id: string | null; p_name: string; p_phone: string; p_zalo: string; p_student_codes: string[]; p_relationship: string }; Returns: string };
+      can_check_b2c_session: { Args: {p_id:string}; Returns:boolean }
+      create_b2c_teaching_session: { Args: {p_class_id:string;p_teacher_id:string;p_starts_at:string;p_ends_at:string}; Returns:string }
+      check_b2c_teaching_session: { Args: {p_id:string;p_kind:string;p_photo:string}; Returns:undefined }
+      get_b2c_teaching_page: { Args: {p_month:string;p_page?:number;p_mine?:boolean}; Returns:Json }
+      update_teacher_profile: {
+        Args: { p_id: string; p_full_name: string; p_phone: string | null; p_specialization: string | null; p_bio: string | null; p_employment_type: "full_time" | "part_time" | null; p_hourly_rate: number | null }
+        Returns: undefined
+      }
       get_b2c_tuition_page: { Args: { p_query?: string; p_page?: number }; Returns: Json };
       save_b2c_tuition_package: { Args: { p_enrollment_id: string; p_sessions: number; p_unit_price: number; p_discount: number; p_discount_reason: string }; Returns: string };
       record_b2c_tuition_receipt: { Args: { p_package_id: string; p_request_id: string; p_paid_date: string; p_amount: number; p_method: string; p_collector_name: string }; Returns: string };

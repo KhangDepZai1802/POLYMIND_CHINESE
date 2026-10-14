@@ -1,0 +1,18 @@
+import type { Metadata } from "next";
+import { requireManager } from "@/lib/auth/session";
+import { getB2CTeacherMetrics } from "@/features/b2c/server/teacher-metrics";
+import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
+
+export const metadata: Metadata = { title: "Giáo viên B2C" };
+export default async function TeachersPage() {
+  await requireManager();
+  const metrics = await getB2CTeacherMetrics();
+  const month = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+  })
+    .format(new Date())
+    .slice(0, 7);
+  return <TeacherDashboard rows={[...metrics.values()]} initialMonth={month} />;
+}

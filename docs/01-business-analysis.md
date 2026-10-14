@@ -1,5 +1,37 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## Dashboard Học viên B2C (2026-10-14)
+
+`/admin/b2c/students` dùng bố cục theo ảnh user: bốn thẻ tổng học viên/đang học/sắp hết học phí/lớp hoạt động, biểu đồ vòng tình trạng, cột nguồn khách theo năm nhập học, thao tác nhanh và bảng gọn. Thẻ mở popup đúng nhóm, tìm kiếm/phân trang riêng, đóng X/Escape trả focus. Không bịa phần trăm tăng trưởng khi chưa có dữ liệu lịch sử.
+
+Tổng học viên đếm hồ sơ duy nhất kể cả chưa ghi danh; đang học có ít nhất một ghi danh studying. Sắp hết phí đếm học viên có ghi danh chưa Nghỉ/Hoàn thành với hạn từ hôm nay đến ngày thứ 30, theo ngày Việt Nam. Lớp hoạt động có status active và ít nhất một học viên studying. Biểu đồ tình trạng mỗi người một nhóm, ưu tiên studying → overdue → awaiting_renewal → on_hold → withdrawn → completed → chưa ghi danh. Nguồn khách đếm hồ sơ duy nhất, lọc năm nếu có ghi danh trong năm đó; dùng đúng các nguồn hiện có và Chưa xác định.
+
+Bảng hiển thị từng lượt ghi danh và hồ sơ chưa ghi danh, có tìm tên/mã/phụ huynh/SĐT/email/lớp, lọc trạng thái/lớp/nguồn/khoảng ngày nhập học, phân trang 10/20/50. Chọn dòng để xuất Excel, nếu không chọn thì xuất toàn bộ kết quả lọc. Bộ lọc bảng không đổi thẻ/biểu đồ. Chi tiết hồ sơ giữ các thông tin đã có ở bảng cũ; sửa ghi danh dùng dialog/RPC cũ. Nhắc học phí chỉ mở danh sách cần liên hệ, chưa gửi tin; tiếp nhận mới dẫn tới Tuyển sinh, chưa thêm luồng tạo hồ sơ/ghi danh mới. Đọc phân trang đầy đủ profiles/enrollments/classes B2C qua manager/RLS, không dùng bảng VCB.
+
+## Chỉ số giáo viên B2C (2026-10-14)
+
+Bốn thẻ tổng quan có thể bấm để mở popup: tổng giáo viên, giáo viên có lịch, giáo viên chưa có lịch và danh sách lớp phụ trách kèm giáo viên/sĩ số. Popup giữ bộ lọc chuyên môn của thẻ; nhóm có/chưa có lịch giữ tháng đang chọn. Bộ lọc tìm kiếm/tình trạng của bảng chính không làm đổi danh sách của thẻ. Popup có tìm kiếm riêng, 20 dòng/trang, trạng thái rỗng; đóng bằng nút X/Escape và trả tiêu điểm về thẻ đã bấm.
+
+Trang Giáo viên B2C trình bày theo mẫu dashboard user gửi: bốn thẻ tổng quan, biểu đồ vòng theo lịch dạy, biểu đồ cột chuyên môn và bảng gọn. Tháng theo ngày giờ Việt Nam chỉ áp dụng trạng thái có/chưa có lịch dạy; không suy từ hình thức làm việc. Bộ lọc chuyên môn áp dụng thẻ/biểu đồ/bảng; tìm kiếm tên/SĐT/email và tình trạng áp dụng bảng. Phân trang 20 dòng, tải Excel toàn bộ kết quả đang lọc; in/lưu PDF qua hộp thoại trình duyệt, in mọi trang kết quả. Không bịa tăng/giảm so với tháng trước khi chưa có lịch sử hồ sơ. Không thay đổi menu hoặc shell của các trang khác.
+
+Danh sách Giáo viên B2C hiển thị số lớp, sĩ số trung bình, tỷ lệ chuyên cần, hai tỷ lệ tái phí và chi phí GV/doanh thu lớp, lũy kế toàn bộ dữ liệu. Lớp phụ trách hiện đối chiếu tên giáo viên khớp chính xác sau chuẩn hóa khoảng trắng đầu/cuối và hoa/thường; tên hồ sơ trùng không tự gán chỉ số. Không dùng lớp doanh nghiệp. Sĩ số trung bình = tổng học viên duy nhất trong từng lớp / số lớp, dùng enrolled_count khi lớp chưa có ghi danh. Chi phí/doanh thu = tiền công đủ check-in/out của giáo viên ở các lớp phụ trách / tổng học phí thực thu của các lớp đó; đây là tỷ lệ lũy kế, chưa phải biên lợi nhuận theo kỳ. Không có tiền công đã xác nhận hoặc doanh thu dương thì hiện —. Chuyên cần chưa có điểm danh học viên B2C nên hiện —.
+
+User chọn cả hai cách tính tái phí. “Hết hạn rồi đóng tiếp” = số học viên có phiếu thu sau hạn học phí / số học viên đã hết hạn. Chỉ so với tuition_end_date đang lưu, chưa có lịch sử đổi hạn nên không đại diện tỷ lệ gia hạn lịch sử. “Đóng từ 2 lần” = số học viên có ít nhất hai phiếu thu / số học viên có phiếu thu, bao gồm đóng nhiều đợt; cộng phiếu thu giữa các lớp phụ trách của cùng GV. Cả hai đếm học viên duy nhất, chỉ phiếu thu dương đến ngày hiện tại theo Asia/Ho_Chi_Minh, mẫu số rỗng hiện —. Hết hạn nghĩa là ngày kết thúc học phí nhỏ hơn hôm nay.
+
+## Giờ dạy và tiền công B2C (2026-10-14)
+
+User chốt: tính theo thời lượng trong lịch; check-in/out xác nhận đã dạy; đủ hai bước thì tự tính ngay, không cần quản lý duyệt. Quản lý vào `/admin/b2c/teaching` tạo buổi dạy theo ngày/giờ Việt Nam, lớp và giảng viên. Giảng viên cần hồ sơ B2C đã liên kết tài khoản teacher/academic_manager đang hoạt động và đơn giá/giờ đã nhập. Không tự sinh buổi từ chuỗi lịch lớp chưa chuẩn hóa.
+
+Giảng viên vào `/teacher/b2c-teaching`, chỉ thấy buổi của mình; mỗi bước cần ảnh JPG/PNG/WebP tối đa 5 MB, điện thoại có nút mở camera. Check-in trong ngày trước giờ kết thúc, check-out cùng ngày sau giờ kết thúc và sau check-in. Thời gian do server ghi, ảnh private, liên kết xem ảnh hết hạn sau 5 phút. Buổi thiếu ảnh vào/ra chưa tính tiền; đủ thì giờ = thời lượng lịch, tiền công = làm tròn VNĐ(giờ × đơn giá chụp tại thời điểm tạo buổi). Tổng theo tháng dựa ngày lịch Việt Nam. Không có sửa giờ/checkpoint hay hoàn duyệt, không ghi nhận đã chi trả lương, không tính thuế/phụ cấp. Camera trực tiếp cần HTTPS hoặc localhost theo trình duyệt; file ảnh có thể được chọn nếu thiết bị không mở camera.
+
+## Hồ sơ giáo viên (2026-10-14)
+
+Theo yêu cầu bổ sung dữ liệu đã tạo, đã sao chép 8 giáo viên có tên khớp duy nhất với lớp B2C từ hồ sơ chung vào B2C. Giữ liên hệ/chuyên môn đã nhập, lưu liên kết nguồn, không đoán hình thức/đơn giá. Hồ sơ nguồn và tài khoản vẫn giữ nguyên; sửa trong B2C chỉ đổi hồ sơ B2C, không đồng bộ ngược. Hai giáo viên còn lại chưa có tên trong lớp B2C không tự đưa vào.
+
+B2C có mục Giáo viên riêng tại `/admin/b2c/teachers`: quản lý thêm/sửa hồ sơ không cấp tài khoản, gồm họ tên, SĐT, email liên hệ, chuyên môn, hình thức cơ hữu/part-time và đơn giá nguyên VNĐ/giờ. Giáo vụ và super admin quản lý; giáo viên/học viên không truy cập. Không tự chuyển tên giáo viên từ lớp thành hồ sơ hoặc gộp người trùng tên. Chưa liên kết hồ sơ mới với lớp hay tự tính lương. Tìm theo tên, 50 hồ sơ/trang.
+
+Màn `/admin/teachers` quản lý liên hệ SĐT/email, chuyên môn, hình thức cơ hữu hoặc part-time và đơn giá nguyên VNĐ/giờ (không âm). Hình thức và đơn giá chưa nhập hiển thị “Chưa cập nhật”, khác đơn giá 0. Không suy đoán dữ liệu hồ sơ cũ. Quản lý sửa chuyên môn/hình thức/đơn giá; quyền đổi tên/SĐT vẫn dành cho super admin, email liên hệ hiện chỉ nhập khi cấp tài khoản. Đơn giá là thông tin hồ sơ, chưa tự tính bảng lương.
+
 > **POLYMIND CHINESE — Hệ thống quản lý học viên tiếng Trung.**
 > Nguồn sự thật về **yêu cầu**. Khi code/migration khác tài liệu này → hoặc code sai, hoặc tài liệu phải được cập nhật cùng lúc với business change. Không để lệch âm thầm.
 

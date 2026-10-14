@@ -29,6 +29,8 @@ type Teacher = {
   teacher_code: string;
   specialization: string | null;
   bio: string | null;
+  employment_type: "full_time" | "part_time" | null;
+  hourly_rate: number | null;
   profile: {
     full_name: string;
     phone: string | null;
@@ -215,6 +217,43 @@ export function TeacherFormDialog({
               defaultValue={teacher?.specialization ?? ""}
               placeholder="HSK, Tiếng Trung thương mại"
             />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="employment_type">Hình thức làm việc</Label>
+              <select
+                id="employment_type"
+                name="employment_type"
+                defaultValue={teacher?.employment_type ?? ""}
+                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+              >
+                <option value="">Chưa cập nhật</option>
+                <option value="full_time">Cơ hữu</option>
+                <option value="part_time">Part-time</option>
+              </select>
+              {fe["employment_type"] && (
+                <p className="text-destructive text-xs">
+                  {fe["employment_type"]}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hourly_rate">Đơn giá / giờ (VNĐ)</Label>
+              <Input
+                id="hourly_rate"
+                name="hourly_rate"
+                type="number"
+                min={0}
+                max={999999999999}
+                step={1}
+                defaultValue={teacher?.hourly_rate ?? ""}
+                placeholder="Chưa cập nhật"
+              />
+              {fe["hourly_rate"] && (
+                <p className="text-destructive text-xs">{fe["hourly_rate"]}</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

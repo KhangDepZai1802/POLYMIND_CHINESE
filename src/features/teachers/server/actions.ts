@@ -66,6 +66,8 @@ export async function createTeacherAction(
     .insert({
       user_id: account.userId,
       specialization: input.specialization,
+      employment_type: input.employment_type,
+      hourly_rate: input.hourly_rate,
       bio: input.bio,
     })
     .select("id, teacher_code")
@@ -111,39 +113,34 @@ export async function updateTeacherAction(
   const parsed = teacherUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
-  const { id, full_name, phone, specialization, bio } = parsed.data;
+  const {
+    id,
+    full_name,
+    phone,
+    specialization,
+    bio,
+    employment_type,
+    hourly_rate,
+  } = parsed.data;
 
   const supabase = await createClient();
 
-  const { data: teacher, error: fetchError } = await supabase
-    .from("teachers")
-    .select("user_id")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (fetchError || !teacher) return { error: "Không tìm thấy giáo viên." };
-
-  const { error } = await supabase
-    .from("teachers")
-    .update({ specialization, bio })
-    .eq("id", id);
-
+  const { error } = await supabase.rpc("update_teacher_profile", {
+    p_id: id,
+    p_full_name: full_name,
+    p_phone: phone,
+    p_specialization: specialization,
+    p_bio: bio,
+    p_employment_type: employment_type,
+    p_hourly_rate: hourly_rate,
+  });
   if (error) return { error: dbErrorToMessage(error) };
-
-  // Tên và SĐT nằm ở `profiles`. Super admin có policy ALL trên profiles nên
-  // KHÔNG cần admin client ở đây — RLS cho phép.
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .update({ full_name, phone })
-    .eq("id", teacher.user_id);
-
-  if (profileError) return { error: dbErrorToMessage(profileError) };
 
   await logAudit(supabase, {
     action: "teacher.update",
     resourceType: "teacher",
     resourceId: id,
-    after: { full_name },
+    after: { full_name, specialization, employment_type, hourly_rate },
   });
 
   revalidatePath("/admin/teachers");

@@ -24,6 +24,8 @@ const TEACHER = {
   teacher_code: "GV000002",
   specialization: "HSK1-6",
   bio: null,
+  employment_type: null,
+  hourly_rate: null,
   is_active: true,
   profile: {
     full_name: "Khang dep zai",

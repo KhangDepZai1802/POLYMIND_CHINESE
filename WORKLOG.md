@@ -38,6 +38,26 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> `RELEASE-B2C-20261014` — sẵn sàng commit/push theo yêu cầu user — Codex — 2026-10-14. Bao gồm hồ sơ GV, B2C GV/chấm công/lương, dashboard GV/HV/popup và sửa login touch. Lint/typecheck/build exit 0, Vitest 747/747; soát 53 file không có credential-pattern match. Giữ riêng `.env.example` bị xóa nội dung ngoài scope. Kết quả SHA/push xác minh và báo trong chat.
+
+> `B2C-STUDENT-DASHBOARD-1` — hoàn thành code — Codex — 2026-10-14. Dashboard học viên theo ảnh: bốn KPI/popup, biểu đồ vòng/cột, bảng gọn lọc/chọn/phân trang/Excel và chi tiết/sửa ghi danh cũ. Vitest 747/747, typecheck/build exit 0; Edge fixture desktop/mobile/popup/Escape/focus/Excel 10 dòng đạt. Lint cuối exit 0; chưa thử manager thật.
+
+> `B2C-TEACHER-CARD-POPUPS-1` — hoàn thành code — Codex — 2026-10-14. Bốn thẻ mở popup nhóm giáo viên hoặc lớp phụ trách kèm sĩ số/GV; giữ tháng/chuyên môn, tìm kiếm và phân trang riêng. Lint/typecheck/build exit 0, Vitest 743/743; chưa kiểm tra trực quan manager thật.
+
+> `B2C-TEACHER-DASHBOARD-1` — hoàn thành code — Codex — 2026-10-14. Dashboard theo ảnh mẫu: KPI, biểu đồ vòng/cột, Excel/in PDF, bảng gọn và bộ lọc. Vitest 741/741, lint/typecheck/build exit 0; preview Edge desktop/mobile bằng dữ liệu mẫu, tải XLSX 8 dòng đạt. Chưa kiểm tra thao tác manager thật; dev có GET teachers 200.
+
+> `B2C-TEACHER-METRICS-1` — hoàn thành phần dữ liệu hiện có — Codex — 2026-10-14. Giáo viên B2C có số lớp/sĩ số TB, hai tỷ lệ tái phí user chọn và chi phí GV/thực thu lớp lũy kế. Chuyên cần hiện — do thiếu điểm danh học viên B2C; tái phí theo hạn hiện tại, chưa có lịch sử đổi hạn. Lint/typecheck/build exit 0, Vitest 739/739. Chưa kiểm tra giao diện manager.
+
+> `AUTH-MOBILE-LAN-1` — hoàn thành — Codex — 2026-10-14. Checkbox giữ 20×20px, nhãn chạm 44px; allowedDevOrigins IP Wi-Fi giúp nút mắt/checkbox tương tác. Đã restart server và xác minh chạm qua LAN trước/sau build; Playwright viewport iPhone/Edge 1/1, lint/typecheck/build exit 0, Vitest 736/736. Chưa kiểm tra trực tiếp iPhone Safari/Zalo.
+
+> `B2C-TEACHING-TIME-1` — hoàn thành code/SQL — Codex — 2026-10-14. Quản lý tạo buổi dạy B2C; giảng viên ảnh check-in/out. User chốt giờ lịch × đơn giá snapshot, đủ hai bước tự tính không duyệt. SQL 04 áp/history xác minh, pgTAP 20/20, Vitest 736/736, lint/typecheck/build exit 0. Upload/check-in/out/ảnh private/tính tiền thật bằng tài khoản thử đã chạy và dọn sạch. Chưa thử camera điện thoại thật.
+
+> `B2C-TEACHERS-IMPORT-1` — hoàn thành — Codex — 2026-10-14. Đã bổ sung 8 giáo viên tên khớp duy nhất với lớp B2C, lưu source_teacher_id unique; giữ liên hệ/chuyên môn, hình thức/đơn giá chưa biết để null. SQL 03 + data-fix đã áp, history xác minh, đối chiếu nguồn 0 sai lệch, pgTAP 5/5. Lint/typecheck/build exit 0, Vitest 726/726. Chưa kiểm tra trực quan manager.
+
+> `B2C-TEACHERS-1` — hoàn thành code/SQL — Codex — 2026-10-14. Menu Giáo viên riêng B2C, thêm/sửa liên hệ/chuyên môn/hình thức/đơn giá giờ không cần tài khoản. SQL 20261014000002 đã áp, history xác minh, pgTAP 11/11; lint/typecheck/build exit 0, Vitest 726/726. Chưa kiểm tra trực quan manager; chưa liên kết hồ sơ mới với lớp.
+
+> `TEACHER-PROFILE-1` — hoàn thành code/SQL — Codex — 2026-10-14. Màn Giáo viên có liên hệ/chuyên môn/hình thức cơ hữu-part-time/đơn giá VNĐ mỗi giờ. Migration đã áp và history mới đã xác minh; pgTAP rollback 9/9, Vitest 717/717, lint/typecheck/build exit 0. Chưa kiểm tra trực quan bằng manager; history B2C cũ chưa đồng bộ.
+
 > `B2C-TUITION-1` — code/SQL hoàn thành — Codex — 2026-10-13. Menu Học phí, gói theo ghi danh, chiết khấu VNĐ/lý do, thu nhiều đợt TM/CK/người thu và công nợ. Dùng lại validation/hiển thị tiền B2B, lưu riêng B2C. SQL 10/11 đã áp sau pgTAP rollback 17/17; lint/typecheck/build exit 0, Vitest 710/710. Chưa kiểm tra trực quan bằng manager hoặc tải đồng thời. User yêu cầu commit/push GitHub.
 
 > `B2C-PARENTS-1` — code/SQL hoàn thành — Codex — 2026-10-13. Menu Phụ huynh B2C, chuyển 33 tên phụ huynh cũ và liên kết từng học viên; không tự gộp trùng tên/đoán SĐT. Hồ sơ sửa tên/SĐT/Zalo và liên kết nhiều con bằng mã; quan hệ trên liên kết. SQL đã áp, pgTAP 7/7; lint/typecheck/build exit 0, Vitest 702/702. Chưa kiểm tra trực quan bằng manager. Chỉ B2C.
@@ -704,6 +724,24 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**`B2C-STUDENT-DASHBOARD-1-REVIEW`:** mở local `/admin/b2c/students`, kiểm tra dashboard với dữ liệu thật, popup từng nhóm, lọc/chọn/xuất Excel, xem và sửa ghi danh bằng manager. Nhắc học phí chưa gửi tin; tiếp nhận mới dẫn tới Tuyển sinh hiện có.
+
+**`B2C-TEACHER-CARD-POPUPS-1-REVIEW`:** local Giáo viên B2C → bấm từng thẻ, kiểm tra nhóm GV/tháng/chuyên môn và danh sách lớp, tìm trong popup, đóng bằng X/Escape.
+
+**`B2C-TEACHER-DASHBOARD-1-REVIEW`:** mở local `/admin/b2c/teachers`, đối chiếu dashboard theo ảnh mẫu, thử bộ lọc/thêm/sửa bằng manager. Tháng chỉ áp dụng tình trạng lịch dạy; số liệu trong bảng là lũy kế. Xuất Excel toàn bộ kết quả đang lọc, in/PDF qua hộp thoại trình duyệt. Chưa đưa thay đổi lên website online.
+
+**`B2C-TEACHER-METRICS-2`:** kiểm tra giao diện Giáo viên B2C bằng manager; bổ sung điểm danh học viên để tính chuyên cần và lịch sử gia hạn để đo tái phí lịch sử. Hai cách tái phí hiện tại đã có công thức/mẫu số tại trang. Không cần migration cho thay đổi lần này.
+
+**`AUTH-MOBILE-LAN-1-REVIEW`:** điện thoại tải lại http://192.168.1.56:3000/login; kiểm tra nút mắt và ô ghi nhớ. Nếu IP máy thay đổi phải cập nhật allowedDevOrigins. Không thay đổi thời hạn session/logic ghi nhớ trong task sửa giao diện này.
+
+**`B2C-TEACHING-TIME-1-REVIEW`:** nhập đơn giá trong Giáo viên B2C, mở Giờ dạy & Lương → Thêm buổi dạy. GV đăng nhập → Chấm công B2C → ảnh vào/ra; đủ hai bước tính giờ theo lịch và tiền công ngay. Lịch B2C hiện tạo từng buổi, không tự sinh từ chuỗi lịch lớp; GV mới chưa liên kết tài khoản sẽ không nằm trong lựa chọn. Chưa có sửa/cancel buổi hoặc điều chỉnh chấm công.
+
+**`B2C-TEACHERS-IMPORT-1-REVIEW`:** tải lại B2C → Giáo viên để xem 8 hồ sơ đã tạo trước. Dùng cây bút bổ sung hình thức/đơn giá. Hồ sơ B2C sửa độc lập, không đồng bộ ngược hồ sơ tài khoản chung.
+
+**`B2C-TEACHERS-1-REVIEW`:** mở B2C → Giáo viên (`/admin/b2c/teachers`), Thêm giáo viên hoặc cây bút sửa hồ sơ. Danh sách mới chưa có hồ sơ, không tự sao chép giáo viên VCB hay đoán thông tin từ tên trên lớp. Nhập hình thức và đơn giá bắt buộc; chưa tự tính lương/phân công lớp.
+
+**`TEACHER-PROFILE-1-REVIEW`:** mở `/admin/teachers`, sửa hồ sơ nhập hình thức và đơn giá/giờ; hồ sơ cũ hiển thị Chưa cập nhật. Chỉ super admin đổi tên/SĐT; giáo vụ sửa chuyên môn/hình thức/đơn giá khi liên hệ không đổi. Chưa tự tính lương.
+
 **`B2C-TUITION-1-REVIEW`:** mở Học phí B2C, tạo gói bằng +, sửa bằng cây bút, mở Phiếu thu để thu nhiều đợt và xem lịch sử. Ghi danh cũ chưa tự sinh gói/phiếu thu. SQL đã áp; không chạy lại.
 
 **`B2C-PARENTS-1-REVIEW`:** mở menu Phụ huynh B2C, đối chiếu 33 hồ sơ với dữ liệu cũ; cây bút sửa liên hệ/quan hệ và thêm mã học viên của các con. SQL đã áp, không chạy lại.
@@ -990,6 +1028,14 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- `B2C-TEACHER-METRICS-1-DATA`: chưa có điểm danh học viên B2C nên chuyên cần hiện —; chưa có lịch sử đổi hạn học phí nên tái phí hết hạn chỉ phản ánh hạn hiện tại. Chưa kiểm tra trực quan manager.
+
+- `B2C-TEACHING-TIME-1-HISTORY`: SQL 20261014000004 đã áp và xác minh; dry-run trước/sau vẫn báo 15 migration B2C cũ thiếu history, không chạy lại/repair ngoài scope. Chưa kiểm tra camera trên điện thoại thật; chụp camera web cần HTTPS hoặc localhost.
+
+- `B2C-TEACHERS-1-HISTORY`: SQL mới đã áp và history 20261014000002 đã xác minh. Dry-run trước/sau còn báo 15 migration B2C cũ thiếu history đã ghi ở phiên trước; không chạy lại SQL cũ hoặc repair history ngoài scope.
+
+- `TEACHER-PROFILE-1-HISTORY`: migration `20261014000001` đã áp và ghi history; dry-run bằng DB URL vẫn báo 15 migration B2C cũ (20261012–20261013) thiếu history dù đã áp theo các phiên trước. Không chạy lại hoặc tự repair history ngoài scope. Không thể xác nhận toàn bộ remote up-to-date.
+
 - `B2C-STUDENT-STATUS-1`: SQL chưa áp theo yêu cầu user tự chạy; danh sách học viên B2C cần migration trước khi sử dụng. Docker daemon không hoạt động nên chưa chạy pgTAP; chưa xác minh lưu dữ liệu thật với manager.
 
 | ID         | Blocker                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Ảnh hưởng                                                                                                                                                                                                                                                                                   | Cần gì để gỡ                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -1092,171 +1138,42 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION (mới nhất ở trên, giữ 6 entry)
 
-### [2026-10-13] Codex — `B2C-TUITION-1`
+### [2026-10-14] Codex — `RELEASE-B2C-20261014`
 
-- Menu Học phí B2C, gói riêng từng ghi danh: số buổi/đơn giá/chiết khấu VNĐ/lý do/tổng phải thu; phiếu thu nhiều đợt với ngày/tiền/TM-CK/người thu. Tổng phải thu/đã thu/còn nợ, tìm kiếm/phân trang 50, lịch sử phiếu 20/popup. Dùng validation và formatCurrency B2B; không đổi VCB.
-- RPC invoker/manager/RLS, mã phiếu tự sinh, request_id unique cho retry, khóa gói khi thu để kiểm công nợ, chặn sửa tổng dưới tiền đã thu; phiếu chỉ thêm, actor thật. Migration 10/11 đã dry-run rollback rồi áp cloud; pgTAP 17/17, không sinh gói hay thu tiền cho hồ sơ thật. History CLI chưa đồng bộ.
-- Lint/typecheck/build exit 0; Vitest 710/710. App khởi động lại localhost:3000. Chưa kiểm tra trực quan manager/tải đồng thời. User yêu cầu push toàn bộ thay đổi B2C; .env.example bị xóa nội dung ngoài scope sẽ giữ ở máy. Next: B2C-TUITION-1-REVIEW.
+- User yêu cầu rõ “đẩy code lên github”, cho phép commit/push theo ngoại lệ AGENTS.md trong lượt này. Phạm vi: toàn bộ code/docs/migrations/tests của hồ sơ giáo viên, B2C GV/chấm công/lương, dashboard học viên/giáo viên và login touch đã kiểm tra. Không đưa thay đổi rỗng `.env.example` vào commit; không đưa `.env.local`, dữ liệu nhập riêng hoặc preview `.tmp` vào Git.
+- Cổng đã chạy ở lượt triển khai gần nhất trên cùng code: lint/typecheck/build exit 0, Vitest 747/747; preview Edge fixture desktop/mobile, popup/focus và Excel đã kiểm tra. Fetch origin thành công, HEAD/origin main cùng baseline trước release. Soát 53 file không có credential-pattern match; script import GV chỉ truy vấn nguồn DB, không hard-code dữ liệu cá nhân.
+- Không áp migration lại: SQL 20261014000001–04 đã được áp và xác minh tại các lượt trước; history cũ thiếu vẫn là blocker đã ghi. Commit/push origin main và xác minh remote SHA; kết quả thực tế báo trong chat. Không khẳng định production deploy khi chưa kiểm tra hosting.
 
-### [2026-10-13] Codex — `B2C-PARENTS-1`
+### [2026-10-14] Codex — `B2C-STUDENT-DASHBOARD-1`
 
-- Menu Phụ huynh riêng; bảng phụ huynh và liên kết con, backfill 33 tên từ dữ liệu đang có. Không gộp trùng tên/đoán SĐT/quan hệ. Form sửa tên/SĐT/Zalo, liên kết nhiều mã học viên và quan hệ; danh sách học viên đọc tên từ hồ sơ mới.
-- RPC invoker/RLS, parent không hard delete, liên kết được sửa nguyên tử; tìm kiếm/phân trang 50 trên server. SQL đã test rollback 7/7 rồi commit; API relation 200; migration history CLI chưa đồng bộ.
-- Lint/typecheck/build exit 0, Vitest 702/702. Chưa kiểm tra trực quan bằng manager. Next: user đối chiếu/sửa dữ liệu phụ huynh. VCB không đổi.
+- User gửi ảnh dashboard Học viên, yêu cầu làm tương tự. Thêm domain/server/dashboard/table riêng, đổi page học viên; giữ bảng chương trình và dialog sửa ghi danh cũ. Bốn thẻ có popup, đếm học viên duy nhất, tính hạn đến 30 ngày, lớp active có studying; biểu đồ tình trạng ưu tiên rõ ràng để không đếm trùng và nguồn theo năm nhập học. Đọc đủ các trang profiles/enrollments/classes B2C manager/RLS, gồm hồ sơ chưa ghi danh.
+- Bảng gọn có lọc trạng thái/lớp/nguồn/ngày, tìm tên/mã/phụ huynh/SĐT/email/lớp, 10/20/50 dòng/trang, chọn trang/dòng để xuất Excel; không chọn xuất toàn bộ kết quả. Nút mắt mở chi tiết các thông tin trước đây; cây bút dùng flow cũ. Nhắc học phí mở danh sách, không gửi tin; tiếp nhận mới dẫn Tuyển sinh, không tạo flow ghi danh mới.
+- Vitest 747/747 (+4 test tổng/ghi danh/mẫu số/ranh ngày/popup/bộ lọc), typecheck/build exit 0. Typecheck test fixture ban đầu có array access possibly undefined đã sửa bằng non-null assertion cho phần tử fixture cố định. Preview Edge fixture 24 hồ sơ: desktop1460/mobile390 không tràn trang/lỗi JS, bốn popup và Escape/focus đạt; Excel tải thật chọn 10 dòng đọc lại 11 hàng gồm tiêu đề. Đã xem ảnh; popup screenshot chụp lúc animation, kiểm tra tương tác vẫn đạt. Dialog sửa trong fixture là stub, chưa thử manager thật. Lint cuối exit 0 sau di chuyển bundle preview ra khỏi vùng lint.
+- Không migration/data mutation, không commit theo AGENTS.md. Next: `B2C-STUDENT-DASHBOARD-1-REVIEW`.
 
-### [2026-10-13] Codex — `B2C-SCALE-1`
+### [2026-10-14] Codex — `B2C-TEACHER-CARD-POPUPS-1`
 
-- Bỏ tải toàn bộ leads/logs: RPC lọc/tìm kiếm tại DB, count exact, lịch hẹn chỉ trên trang hiện tại; UI pipeline 20/cột và danh sách 50/trang, URL giữ bộ lọc và trang. Không đổi VCB.
-- SQL thêm RPC invoker/manager và index đã áp sau pgTAP rollback 8/8. Fixture 5.000 khách/25.000 logs rollback: list 50 ~695 ms, stage 20 ~204 ms; một phép đo truy vấn gồm roundtrip, không phải SLA hay tải đồng thời.
-- Lint/typecheck/build exit 0, Vitest 699/699. Chưa kiểm tra trực quan bằng manager; chưa đo tải giao diện. Next: user thử tìm kiếm/phân trang/Danh sách. Migration history CLI chưa đồng bộ.
+- User yêu cầu bốn thẻ mở popup. KPI chuyển thành button hỗ trợ bàn phím, Dialog chung theo từng nhóm; tổng/có lịch/chưa lịch hiển thị GV/liên hệ/chuyên môn/số lớp, lớp phụ trách hiển thị tên/mã lớp/GV/sĩ số. Dữ liệu lớp bổ sung trong truy vấn manager/RLS đã có, không đoán tên trùng.
+- Popup giữ chuyên môn/tháng của thẻ, tìm kiếm và phân trang 20 riêng, trạng thái rỗng, X/Escape đóng và restore focus về đúng thẻ. Thêm `teacher-summary-dialog.tsx`, sửa dashboard/query và fixture tests; cập nhật docs nghiệp vụ/phase.
+- Lint/typecheck/build exit 0, Vitest 743/743 (+2 test mở/đóng đủ bốn nhóm, đúng lớp, tháng/chuyên môn và tìm kiếm). Lỗi type ban đầu do dùng option Playwright trong Testing Library đã sửa; build cuối đạt. Chưa kiểm tra trực quan manager thật. Không migration/data mutation; không commit theo AGENTS.md.
+- Next: `B2C-TEACHER-CARD-POPUPS-1-REVIEW` trên local.
 
-### [2026-10-13] Codex — `B2C-CARE-1`
+### [2026-10-14] Codex — `B2C-TEACHER-DASHBOARD-1`
 
-- Popup nhật ký theo khách: gọi/nhắn, ngày liên hệ, người phụ trách, nội dung, ngày hẹn tùy chọn; lịch sử 20 dòng/trang, hẹn của lần lưu mới nhất trên thẻ.
-- Bảng manager-only/RLS, actor thật, chỉ thêm lịch sử không sửa/xóa. SQL đã kiểm thử rollback 6/6 rồi commit trên cloud; migration history CLI chưa đồng bộ.
-- Lint/typecheck/build exit 0, Vitest 699/699. Chưa kiểm tra trực quan bằng manager. Next: user thử ghi nhật ký và ngày hẹn. Không đổi VCB.
+- User gửi ảnh mẫu dashboard Giáo viên B2C. Thay trang bảng đơn bằng `teacher-dashboard.tsx`: bốn KPI, vòng lịch dạy/cột chuyên môn, bộ lọc tháng/chuyên môn/tình trạng và tìm tên/SĐT/email; bảng gọn 20 dòng/trang, thêm/sửa giữ dialog cũ. ReadAll server trả hồ sơ/chỉ số/tháng lịch qua manager/RLS; không dùng dữ liệu giả trong app hoặc thay shell trang khác.
+- Tải Excel dùng ExcelJS dynamic import, toàn bộ kết quả lọc; In/Lưu PDF bằng trình duyệt, bảng in đủ các trang. Lịch dạy mở tháng đang chọn, Báo cáo giáo viên cuộn tới bảng. Các chỉ số lũy kế giữ công thức, tháng chỉ lọc lịch dạy; không bịa số tăng/giảm hoặc trạng thái hồ sơ chưa có nguồn.
+- Vitest 741/741 (+2 test kết hợp bộ lọc/đổi tháng/mẫu số rỗng), lint/typecheck/build exit 0. Preview Edge standalone dữ liệu mẫu: 1500px/390px không tràn trang/lỗi JS, lọc lịch còn 2 GV, XLSX tải thật và đọc lại đủ 8 dòng. Đã xem ảnh desktop/mobile, tắt animation để biểu đồ hiện đầy đủ ngay khi đổi lọc. Preview dialog là stub, chưa kiểm tra tích hợp thêm/sửa bằng manager. Dev log GET teachers 200.
+- Không migration/data mutation; không commit theo AGENTS.md; giữ các thay đổi có sẵn. Next: `B2C-TEACHER-DASHBOARD-1-REVIEW`.
 
-### [2026-10-13] Codex — `B2C-PIPELINE-1`
+### [2026-10-14] Codex — `B2C-TEACHER-METRICS-1`
 
-- Thêm menu Tuyển sinh B2C và pipeline 6 cột, thêm/sửa thông tin/giai đoạn, lý do thất bại, nguồn/referrer, tìm kiếm và lọc chương trình. Chỉ B2C; không ghi vào hồ sơ học viên hoặc VCB.
-- Bảng manager-only/RLS/actor thật; thu hồi quyền mặc định Supabase để chặn sửa created_by và hard delete. SQL đã chạy thử/pgTAP rollback 7/7 rồi commit schema; migration history CLI chưa đồng bộ.
-- Lint/typecheck/build exit 0, Vitest 696/696. Chưa kiểm tra trực quan bằng manager. Đặt cọc/Ghi danh chỉ trạng thái theo dõi; next: user thử form và chuyển giai đoạn.
+- Thêm chỉ số vào `src/app/(dashboard)/admin/b2c/teachers/page.tsx`; truy vấn `server/teacher-metrics.ts` phân trang tất cả dữ liệu B2C qua manager/RLS. Tên hồ sơ trùng không tự gán chỉ số, sĩ số theo học viên duy nhất/lớp, fallback số nhập khi chưa có ghi danh. Chi phí là tiền công đã đủ chấm công / phiếu thu các lớp phụ trách, không phải lợi nhuận theo kỳ.
+- User chọn cả hai cách tái phí: hết hạn rồi đóng tiếp (theo hạn hiện tại) và có từ 2 phiếu thu (bao gồm đóng nhiều đợt), đếm học viên duy nhất, loại phiếu tương lai; mẫu số rỗng hiện —. Thêm domain helper và 3 test phân biệt hai công thức, trùng học viên, chưa hết hạn/mẫu số rỗng. Chuyên cần chưa có nguồn B2C nên hiện — có giải thích.
+- Lint/typecheck/build exit 0, Vitest 739/739. Lần đầu test bị sandbox esbuild, build bị chặn Google Fonts; đã chạy lại ngoài sandbox đạt. Typecheck đầu bị chạy cùng build xung đột generated types, chạy lại sau build đạt. Không migration/data mutation. Chưa kiểm tra giao diện manager. Không commit theo AGENTS.md, giữ toàn bộ thay đổi có sẵn.
+- Next: `B2C-TEACHER-METRICS-2`, dữ liệu chuyên cần/lịch sử hạn học phí và kiểm tra trực quan.
 
-### [2026-10-13] Codex — `B2C-GOAL-1`
+### [2026-10-14] Codex — `AUTH-MOBILE-LAN-1`
 
-- Thêm mục tiêu học và chứng chỉ vào ghi danh B2C, form cây bút và danh sách; tên chứng chỉ bắt buộc khi chọn Chứng chỉ. Không đổi VCB, không tạo nghiệp vụ XKLĐ.
-- SQL `20261013000005_b2c_learning_goal.sql` đã áp cloud sau kiểm thử rollback 4/4 + validation 9/9; giữ RPC invoker/RLS. Migration history CLI chưa đồng bộ.
-- Lint/typecheck/build exit 0, Vitest 688/688. Chưa kiểm tra giao diện bằng manager. Next: user chọn mục tiêu trong từng lớp.
-
-### [2026-10-13] Codex — `B2C-SOURCE-POPUP-1`
-
-- Thẻ nguồn khách có popup danh sách hồ sơ theo nguồn, 50/trang; hiển thị mã/tên/SĐT, thêm người giới thiệu cho referral; có tải/lỗi/thử lại/trống.
-- Server action requireManager + client phiên đăng nhập/RLS; validate nguồn/page. Không thay đổi SQL/dữ liệu/VCB.
-- Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra trực quan bằng manager. Next: user bấm thẻ và thử phân trang.
-
-### [2026-10-13] Codex — `B2C-SOURCE-OVERVIEW-1`
-
-- Thêm thẻ thống kê nguồn khách trên Tổng quan B2C: số hồ sơ, tỷ lệ, thanh màu; dữ liệu dùng count exact/head qua client phiên đăng nhập/RLS, không giới hạn 1.000 dòng.
-- Không thay đổi SQL/dữ liệu/VCB. API chỉ đọc xác minh 58 hồ sơ Chưa xác định, sáu nguồn còn lại 0.
-- Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra giao diện bằng manager. Next: user nhập nguồn khách và xem Tổng quan.
-
-### [2026-10-13] Codex — `B2C-SOURCE-1`
-
-- Thêm nguồn khách và tên người giới thiệu vào hồ sơ học viên B2C, cột danh sách và form cây bút; nguồn dùng chung các lớp. Không tự gán nguồn cho dữ liệu cũ; không đổi VCB.
-- Migration `20261013000004_b2c_customer_source.sql` đã áp cloud sau dry-run/pgTAP rollback: 5/5 nguồn khách, 9/9 validation ghi danh. RPC invoker/RLS vẫn nguyên tử; chưa đồng bộ migration history CLI.
-- Lint/typecheck/build exit 0, Vitest 687/687. Chưa kiểm tra giao diện bằng manager. Next: user thử chọn nguồn và tên giới thiệu.
-
-### [2026-10-13] Codex — `B2C-VALIDATION-1`
-
-- Form sửa ghi danh cho manager, validation server và RPC invoker/RLS, lưu SĐT hồ sơ + ghi danh nguyên tử; giữ chương trình theo lớp. Chỉ B2C, không sửa dữ liệu cũ tự động.
-- Migration `20261013000003_b2c_enrollment_validation.sql`: kiểm thử 9/9 trong rollback với role authenticated/manager rồi commit riêng schema trên Supabase. Migration history CLI chưa đồng bộ.
-- Lint/typecheck/build exit 0, Vitest 686/686. Chưa kiểm tra giao diện bằng manager. Next: user thử cây bút và validation.
-
-### [2026-10-13] Codex — `B2C-IDENTITY-1`
-
-- Mã học viên B2C duy nhất, tìm kiếm theo mã; trạng thái/lý do nghỉ và nút cây bút cập nhật riêng lượt ghi danh. Không thay đổi VCB.
-- Migration mới chuyển trạng thái cũ sang ghi danh, giữ cột hồ sơ cũ để bảo toàn thông tin; không tự ghép các hồ sơ theo tên. 58/58 hồ sơ được cấp mã khác nhau.
-- SQL đã dry-run trong rollback rồi commit trên cloud; pgTAP 7/7, RLS hai bảng vẫn bật. Migration history CLI chưa đồng bộ.
-- Kiểm tra code: lint/typecheck/build exit 0, Vitest 675/675; chưa kiểm tra giao diện bằng manager. Next: user thử sửa trạng thái riêng lớp.
-
-### [2026-10-13] Codex — `B2C-STUDENT-STATUS-1`
-
-- **Làm được:** trạng thái/lý do nghỉ trong bảng học viên B2C, dialog sửa, validation server, manager + RLS; chuẩn bị migration và pgTAP.
-- **Migration/data impact:** chỉ `b2c_students`; chưa áp SQL theo yêu cầu user. VCB không đổi. Mặc định dữ liệu cũ là Đang học sau khi áp SQL.
-- **Đã test:** lint/typecheck/build exit 0; Vitest 675/675. pgTAP chưa chạy vì Docker daemon không hoạt động; chưa kiểm tra lưu thật.
-- **Next action:** user chạy SQL, tải lại danh sách B2C, kiểm tra sửa trạng thái.
-
-### [2026-10-13] Codex — `B2C-STUDENT-COUNT-1`
-
-- **Làm được:** thêm tổng học viên B2C và số học viên duy nhất theo chương trình; đọc ghi danh theo trang để không bị giới hạn 1.000 dòng.
-- **File thay đổi:** trang `/admin/b2c`, `src/features/b2c/server/queries.ts`, WORKLOG và phase plan.
-- **Migration/data impact:** không có; chỉ đọc dữ liệu qua Supabase client theo phiên đăng nhập.
-- **Đã test:** lint/typecheck/build exit 0; Vitest 666/666; truy vấn quan hệ Supabase trả HTTP 200 bằng service role (chỉ kiểm tra schema, không xác minh quyền manager).
-- **Blocker/rủi ro:** chưa kiểm tra giao diện với phiên đăng nhập manager.
-- **Next action:** user xem trang `/admin/b2c`.
-
-### [2026-10-12] Phiên 113 — Codex — `B2C-REPORT-1`: báo cáo hoạt động tháng B2C
-
-- **Làm được:** đọc 6 sheet Excel; tạo trang báo cáo B2C có bộ chọn kỳ, 4 KPI, bảng chương trình, cơ cấu chi phí và biểu mẫu thêm/sửa; thêm menu riêng trong module B2C.
-- **File thay đổi:** `src/app/(dashboard)/admin/b2c/reports/page.tsx`, `src/features/b2c/{components,server,schema.ts}`, navigation/types, migration/test/data-fix và tài liệu phối hợp.
-- **Migration/data impact:** tạo `b2c_monthly_reports`, `b2c_monthly_program_metrics`, RPC lưu nguyên tử + RLS manager-only; nhập 2 báo cáo và 10 metric tháng 8–9/2026. Không đụng `classes`, `students`, `enrollments` doanh nghiệp.
-- **Đã test:** lint 0 · typecheck 0 · Vitest **666/666** · build exit 0; DB xác nhận tháng 8 chi phí 80.079.560đ/lợi nhuận -22.039.560đ, tháng 9 chi phí 69.419.970đ/lợi nhuận -34.734.970đ.
-- **Quyết định mới:** tổng chi phí lấy đủ 8 cột từ sheet `Chi phí`; không dùng công thức thiếu Internet và Lương ở sheet `Tổng hợp`.
-- **Blocker/rủi ro:** browser tích hợp không khả dụng; Docker local không chạy nên pgTAP chưa chạy local. Supabase Management API không cho link project mới, nên migration history B2C chưa đồng bộ dù schema/data đã áp trực tiếp thành công.
-- **Next action:** user mở `/admin/b2c/reports` kiểm bằng mắt; sau khi cấp quyền Management API thì repair migration history `…001–…004`.
-
-### [2026-10-05] Phiên 112 — Codex — `PUBLIC-AUDIO-B3-1`: bộ nghe Bài 3 công khai cho lớp Ban Giám đốc
-
-- **Làm được:** đối chiếu PDF 31 trang; khớp/đổi tên đủ 22 audio trong ZIP (21 M4A + 1 MP3); tạo dữ liệu tập trung, trang danh sách `/nghe`, trang theo số sách `/nghe/trang-[số]`, trạng thái trang không có audio, ba tốc độ `0.75x/1x/1.25x` và cơ chế tự dừng audio đang phát. Gắn đủ 22 ảnh mới ngay dưới đúng 22 audio, giữ kích thước gốc và mô tả truy cập theo tiêu đề; chuẩn hóa `trang15-phaniii.png` → `trang15-phan-iii.png` và `trang17-tuvung.png` → `trang17-tu-vung.png`.
-- **File thay đổi:** `public/audio/bai-3/*` · `src/features/listening/*` · `src/app/nghe/*` · `src/lib/supabase/middleware.ts` · test unit/e2e liên quan · `WORKLOG.md` · `docs/08-phase-plan.md`.
-- **Migration/data impact:** không có; audio là tài sản tĩnh, không thay đổi Supabase hay dữ liệu lớp.
-- **Đã test:** lint **0** · typecheck **0** · Vitest **662/662** · build **exit 0**; kiểm runtime bằng Edge headless 360×800 trên đủ 13 trang có audio (`1, 2, 4, 6, 8, 9, 12, 13, 14, 15, 16, 17, 18`): tất cả HTTP 200, số ảnh bằng số audio, **0 ảnh hỏng**, **0px tràn ngang**; `/nghe/trang-3` hiện đúng empty state; M4A trả HTTP 200 + `audio/mp4` + đúng dung lượng.
-- **Quyết định mới:** URL QR ổn định theo số trang sách (`/nghe/trang-N`); trang và media bỏ qua xác minh phiên Supabase nhưng không được lập chỉ mục tìm kiếm (`noindex`).
-- **Blocker/rủi ro:** chưa deploy; E2E mới đã viết nhưng chưa chạy bằng Playwright runner vì máy không có browser bundle và Docker/Supabase local không chạy. Luồng tương đương đã được kiểm trực tiếp bằng Microsoft Edge headless có sẵn.
-- **Next action:** user review/commit/deploy, rồi smoke M4A + MP3 trên điện thoại thật và tạo QR từ 13 URL.
-
-### [2026-08-20] Phiên 111 — Claude — `DATA-SCHED-LOP01-2`: dời khai giảng LOP-01 sang 07/09 + sửa nút "Xóa tất cả" chết cả mẻ vì một buổi vướng lịch bù
-
-- **User yêu cầu:** _"tôi ko thể xóa tất cả buổi học của lớp 1 - đàm phán tài chính (ban giám đốc) … lớp giám đốc bị dời học trễ hơn, dự kiến khai giảng 7/9 … giúp tôi xóa hết và sinh lại buổi học y chang … chỉ khác cái là khai giảng 7/9"_, kèm ảnh toast lỗi và ảnh khối "Lịch lặp"/"Sinh buổi học".
-- **Làm được:** (1) truy ra nguyên nhân toast _"dữ liệu đang được sử dụng ở nơi khác"_; (2) **sửa `deleteAllSessionsAction`** để một buổi vướng không kéo cả mẻ chết theo; (3) **đã áp production**: `LOP-01` dời khai giảng sang 07/09/2026, 35 buổi nắn về lưới T2/T4 mới, hạn lịch lặp nới tới 04/01/2027.
-- **File thay đổi:** `src/features/schedules/server/actions.ts` · `src/features/schedules/components/schedule-manager.tsx` (câu mô tả trong hộp xác nhận) · `tests/unit/server/delete-all-sessions-action.test.ts` (mới, 5 bài) · `scripts/data-fixes/2026-08-20-doi-khai-giang-lop-01-07-09.sql` (mới) · `WORKLOG.md` · `docs/08-phase-plan.md`.
-- **Migration/data impact:** **không có migration.** Sửa dữ liệu production **ĐÃ CHẠY và ĐÃ COMMIT**: `LOP-01` `start_date` 2026-08-17 → **2026-09-07**, `expected_end_date` NULL → **2027-01-04**, hai lịch lặp `[17/08 → 23/12]` → `[07/09 → 04/01/2027]`, **35** buổi đổi `starts_at`/`ends_at`/`schedule_id` (giữ nguyên `id` và `session_number`), **+1** dòng `audit_logs`. Không xoá/thêm buổi nào — tổng buổi toàn hệ thống vẫn **105**.
-- **🔴 Nguyên nhân lỗi, truy bằng đọc schema rồi mới đo lại trên dữ liệu thật.** Toast đó là mã `23503` dịch ở `action-state.ts:47`. Rà toàn bộ migration tìm FK trỏ vào `class_sessions`: có 5, và **đúng một cái** là `on delete restrict` — `class_session_schedule_changes.source_session_id` (migration `…091`, bảng vết "Nghỉ học / xếp lịch bù"). ✅ Lượt xem trước trả về đúng **một dòng**: _"GĐ có Lịch đột xuất"_, nghỉ 17/08, bù 16/12, dời 35 buổi, **buổi gốc = Buổi 1**. Cùng dòng đó giải thích luôn vì sao lịch cũ lệch một nhịp (buổi 1 nằm ở **T4 19/08**, không phải T2 17/08) — chi tiết mà chỉ nhìn ảnh chụp màn hình của user thì không thấy.
-- **🔴 Vì sao MỘT buổi vướng giết cả 35 buổi.** `deleteAllSessionsAction` xoá cả mẻ bằng **một câu DELETE**; chú thích ngay trên thân hàm nói đúng lý do phải lọc trước ("một buổi vướng lịch sử thì cả mẻ rollback") — nhưng chỉ lọc cho trigger `prevent_session_delete_with_history`, **bỏ sót** FK lịch bù. Đúng hình dạng cái bẫy nó đang phòng. Nay lọc thêm buổi có vết lịch bù, **đếm riêng hai lý do giữ lại** (gộp một con số thì người dùng không biết buổi nào hủy được, buổi nào phải giữ), và khử trùng để buổi vừa có điểm danh vừa có vết lịch bù không bị đếm hai lần.
-- **🔴 Con số quyết định nghiệp vụ, tính tay rồi ghim vào script.** Từ T2 07/09, hai buổi/tuần T2+T4, tới 23/12/2026 chỉ được **32** buổi (buổi 33 = 28/12, 34 = 30/12, 35 = 04/01/2027). Giữ nguyên `effective_to = 23/12` thì `generate_class_sessions` dừng ở 32 và **trả về bình thường, không báo lỗi gì** — lớp thiếu 3 buổi mà không ai thấy. User chốt nới hạn tới 04/01/2027 (`D-46`).
-- **Đã test (kết quả THẬT):** lint **0** · typecheck **0** · Vitest **652/652** (647 → **+5**) · build **exit 0**. 🔴 **Kiểm ngược đã chạy:** gỡ vế `!rescheduledIds.has(id)` ⇒ **đỏ 3/5 bài**, và **cả 5 bài đều chạy hết** (đếm số bài đã chạy chứ không chỉ đọc PASS/FAIL — bài học phiên 110); khôi phục xong xanh lại 5/5. **Production:** `-v apply=false` chạy trọn script rồi `ROLLBACK` → đối chiếu → `-v apply=true` → `COMMIT`; xác minh lại bằng **kết nối MỚI** trong `BEGIN READ ONLY` (số đo ở `TRẠNG THÁI HIỆN TẠI`). ⚠️ **KHÔNG chạy pgTAP/Playwright** — Docker Desktop không chạy trên máy phiên này.
-- **🔴 Không dựng được DB local hoá ra không phải rào cản như tôi tưởng.** Tôi đã ghi rủi ro là "script chưa chạy thử ở đâu, có thể lỗi cú pháp". Thực tế lượt `-v apply=false` **chạy trọn script trên chính production rồi rollback** — mạnh hơn một lượt thử trên DB local, vì nó kiểm cú pháp **và** cổng an toàn **và** dữ liệu thật, cùng lúc, mà không ghi gì. 📌 Luật rút ra: script sửa dữ liệu nên **luôn** có chế độ chạy-trọn-rồi-rollback; đó là môi trường thử tốt nhất, không phải bản sao local.
-- **Quyết định mới:** **`D-46`** — nới hạn lịch lặp 23/12/2026 → 04/01/2027, và **dời ngày tại chỗ** thay vì xoá-sinh-lại (user chốt qua `AskUserQuestion`).
-- **Blocker/rủi ro:** ✅ `BLK-13` **đã gỡ** (user tự thêm luật quyền cho `psql`; luật so khớp **tiền tố** nên lệnh phải bắt đầu bằng `& "…psql.exe"` — xem ghi chú ở `BLOCKERS`). ⚠️ Claude vừa tự viết code **và** tự chạy sửa dữ liệu nên ghi `Fixed — chờ xác minh độc lập`. ⚠️ Bản ghi lịch bù _"GĐ có Lịch đột xuất"_ nay **hết hiệu lực trên lịch** (dòng lịch sử vẫn còn) — user đã được báo trước và vẫn chọn phương án này; thực tế không mất buổi nào vì cả ngày nghỉ 17/08 lẫn ngày bù 16/12 đều nằm ngoài/đã nằm sẵn trong lưới mới.
-- **Next action:** `DATA-SCHED-LOP01-2-VERIFY` cho Codex; user bấm mắt trên `/admin/classes/<LOP-01>` xem có đúng _"Áp dụng 07/09/2026 → 04/01/2027"_ + _"Đã sinh 35/35 buổi"_.
-
-### [2026-08-19] Phiên 110 — Claude — `ADMIN-ATTENDANCE-1`: tab "Điểm danh" ở `/admin/reports` + admin sửa được điểm danh đã chốt
-
-- **Làm được:** tab thứ tư `tab=diem-danh` (lưới buổi×học viên gom theo lớp, sửa thẳng trong ô, gom thay đổi rồi Lưu một lượt); RPC `admin_override_attendance` **chỉ super_admin**, nhận nhiều buổi trong MỘT transaction, ghi audit before/after và **dựng lại `attendance_snapshot`** của báo cáo đã gửi (`D-45` vế 2 — đảo `D-43` (c)); tách `app.upsert_attendance_records()` + `app.build_attendance_snapshot()` để hai đường dùng chung một cách ghi/một cách dựng; gom bảng ký hiệu ✓/M/V/P về `status-display.ts` dùng chung với lưới chỉ-đọc của tab Học tập.
-- **File thay đổi:** `supabase/migrations/20260819000095_admin_attendance_override.sql` (mới) · `supabase/tests/database/admin_attendance_override.test.sql` (mới) · `supabase/tests/database/rls_catalog_matrix.test.sql` (mốc catalog 84 → 85) · `src/features/attendance/{status-display.ts,admin-edit.ts}` (mới) · `src/features/attendance/server/{admin-queries.ts,admin-actions.ts}` (mới) · `src/features/attendance/components/admin-attendance-board.tsx` (mới) · `src/app/(dashboard)/admin/reports/page.tsx` · `src/features/reports/components/attendance-grid.tsx` (dùng bảng ký hiệu chung) · `src/features/reports/server/learning-queries.ts` (export 2 helper sẵn có) · `src/types/database.ts` (+4 dòng, chỉ RPC mới) · `tests/unit/domain/admin-attendance-edit.test.ts` (mới) · `tests/e2e/admin-attendance.spec.ts` (mới) · `WORKLOG.md` · `docs/08-phase-plan.md`.
-- **Migration/data impact:** `…095` **thuần thêm hàm, KHÔNG thêm/đổi cột nào** (`D-45` vế 3). ✅ **ĐÃ ÁP CLOUD 2026-08-19** trước khi push code (`D-37`), xác minh bằng `psql` trong `BEGIN READ ONLY`: đỉnh `schema_migrations` = `20260819000095` · RPC mới = 1 · `anon` EXECUTE = 0 · hai hàm `app.*` không cấp cho `authenticated`/`anon`. Dữ liệu không bị đụng (`profiles` 60 · `students` 55 · `class_sessions` 105).
-- **Đã test:** lint **0** · typecheck **0** · Vitest **647/647** (632 → +15) · build **exit 0** · pgTAP **790/790** (763 → +27) trên DB sạch · Playwright `admin-attendance` **5/5** trên Chromium **và 5/5 trên `mobile`**. **Năm kiểm ngược pgTAP chạy thật, cả năm đỏ đúng chỗ** (nới cổng ⇒ đỏ bài 2 · gỡ trigger ⇒ đỏ 6,7 · gỡ idempotency ⇒ đỏ 14,15 · gỡ `revised_from` ⇒ đỏ 22 · phá nguyên tử ⇒ đỏ 26,27) + kiểm ngược e2e ép `canEdit={true}` ⇒ đỏ bài giáo vụ.
-- **Quyết định mới:** **`D-45`** — bốn vế, trong đó vế 2 **đảo ngược `D-43` điểm (c)**.
-- **Blocker/rủi ro:** 🔴 **Hai khẳng định của chính tôi bị kiểm ngược bác bỏ:** (1) "chưa có ràng buộc ghi danh thuộc lớp" — SAI, `trg_attendance_class_match` (migration `…005`) đã chặn ở từng hàng; phép kiểm tôi thêm là **thừa**, đã gỡ. (2) "27/27 xanh là bộ kiểm tốt" — SAI, dưới một đột biến cả lượt **chết ở bài 11** và **20 bài sau không chạy** mà vẫn chỉ hiện `Result: FAIL`; đã sửa bằng `order by created_at limit 1`. 🔴 Lỗi bố cục **chỉ trình duyệt mới thấy**: tràn ngang **329px** ở 360px do `<li>` grid `min-width:auto` (+`min-w-0`) và span `sr-only` `position:absolute` **thoát khỏi vùng cắt** của khung cuộn `static` (+`relative`) — `body.scrollWidth` báo 360 trong khi `documentElement.scrollWidth` là 591. ⚠️ **`BLK-12` mới:** cùng khuôn `sr-only` còn ở `attendance-grid.tsx`, **chưa sửa, chưa đo** — ngoài phạm vi task. ⚠️ Claude tự viết code nên ghi `Fixed — chờ xác minh độc lập`.
-- **Next action:** `ADMIN-ATTENDANCE-1-VERIFY` — Codex xác minh độc lập (đọc `…095`, chạy lại 5 kiểm ngược, dựng lại kịch bản "sửa buổi đã có báo cáo ký"); rồi `db push` cloud + xác minh bằng `psql` trong `BEGIN READ ONLY`; sau đó gỡ `BLK-12`.
-
-### [2026-08-17] Phiên 109 — Claude — `TEACHER-REPORT-5`: số đề mục chìm khi in · nút "Không cần báo cáo" · nút "Xuất báo cáo" của giáo viên · tên file PDF
-
-- **User yêu cầu (kèm 4 ảnh):** (a) _"các đề mục số 1 2 3 4 5 6 7 8 9, cái màu của số đang bị chìm quá"_ trên PDF xuất ra; (b) thêm nút _"không cần báo cáo"_ — **chỉ ở tab báo cáo giáo viên trong trang admin** — cho buổi đã điểm danh; (c) thêm nút _"Xuất báo cáo"_ **cạnh** _"Xem báo cáo"_ ở trang giáo viên; (d) file PDF ở **cả hai** trang phải tên `lớp_buổi_ngày.pdf`.
-- **Hai nhánh chốt qua `AskUserQuestion`:** PDF đi bằng **hộp thoại In của trình duyệt** (không thêm thư viện PDF — repo chưa có cả `pdf-lib` lẫn font tiếng Việt, và `TEACHER-REPORT-1h` vốn đã chọn đường này), tên file **bỏ dấu**: `LOP-03_Buoi-4_17-08-2026.pdf`.
-- **File thay đổi:** mới — `supabase/migrations/20260817000094_session_report_waiver.sql` · `supabase/tests/database/session_report_waiver.test.sql` · `features/session-reports/domain/file-name.ts` · `components/session-report-printable.tsx` · `components/report-print.tsx` · `components/waive-report-button.tsx` · `app/(dashboard)/teacher/reports/[sessionId]/ban-in/page.tsx` · `tests/unit/domain/session-report-file-name.test.ts`. Sửa — `globals.css` (khối in số đề mục) · `domain/render.ts` (`startsAtISO`) · `server/queries.ts` · `server/actions.ts` · `schema.ts` · `components/admin-teacher-reports.tsx` · `teacher/reports/page.tsx` · `admin/reports/bao-cao/[reportId]/page.tsx` · `lib/dates/index.ts` · `types/database.ts` · `rls_catalog_matrix.test.sql` (83 → **84** RPC) · 4 file test.
-- **Migration/data impact:** `…094` **thuần mở rộng** — 3 cột nullable trên `class_sessions` + 1 RPC. Không đụng cột cũ, không backfill; 105 buổi hiện có đều `report_waived_at = null` = "không buổi nào được miễn", đúng hiện trạng. ✅ **ĐÃ ÁP CLOUD 2026-08-17**, xác minh bằng `psql` trong `BEGIN READ ONLY`: đỉnh `schema_migrations` = `20260817000094`, 3 cột mới, RPC = 1, `anon` EXECUTE = 0.
-- **Đã test (kết quả THẬT):** lint **0** · typecheck **0** · Vitest **632/632** (626 → +6) · build **exit 0** · pgTAP **763/763** (748 → +15) trên DB sạch · Playwright `session-reports` **8/8** trên Chromium (5/5 → +3).
-- **🔴 Hai bài kiểm đầu tiên viết ra KHÔNG ĐỎ khi gỡ phần sửa — đây là phần đáng ghi nhất của phiên.** (b) gỡ `await waitForReportImages()` mà bài vẫn xanh vì Storage local trả ảnh nhanh hơn nhịp `useEffect` đầu tiên; phải `page.route(..., { times: 1 })` làm chậm **chính request ảnh** 1,5s (đúng cách `UX-MOBILE-3` đã ghi) thì mới đỏ đúng _"imagesComplete: expected 1, received 0"_. (c) gỡ vế `!item.reportWaived` mà bài vẫn xanh vì hàng trong nhóm "Không cần báo cáo" vẫn đúng hình dạng — cái hỏng thật là hàng bị **nhân đôi**; thêm phép đếm hàng + phép đo ô số thì đỏ đúng _"resolved to 2 elements"_. 📌 **Luật: viết assertion xong phải gỡ thử phần sửa; không đỏ thì bài kiểm sai, không phải code đúng.**
-- **🔴 Bắt được một lỗ cũ khi gom hai bản in về một component:** bản in **thiếu khối XÁC NHẬN** trong khi DOCX có nó — `buildConfirmationLine()` tồn tại mà không bề mặt nào gọi. Bài e2e đếm tiêu đề mục **9 → 10** là chỗ ghim lại.
-- **Quyết định mới:** không có quyết định cấp `D-*` mới; hai lựa chọn của user (hộp thoại In · tên file bỏ dấu) là chi tiết triển khai trong khuôn `D-43` điểm 3.
-- **Blocker/rủi ro:** ✅ `BLK-10` đã gỡ — `…94` **đã áp cloud** và xác minh bằng `psql` read-only, code đã push đúng sau đó (`D-37`). ⚠️ `BLK-11` — 3 bài `session-reports` trên project `mobile` đỏ **từ trước** đợt này (đo bằng `git stash` rồi chạy lại ở HEAD). ⚠️ `npm run db:types` **hỏng và còn nguy hiểm**: `--local` trả _"password authentication failed for user postgres"_, mà script dùng `>` nên **xoá trắng `src/types/database.ts` trước khi lệnh kịp hỏng** (đã phải `git checkout` để phục hồi). Đường đi được: `npx supabase gen types typescript --db-url "postgresql://postgres:postgres@127.0.0.1:55322/postgres"` ra file tạm rồi mới ghi đè. ⚠️ Claude tự viết code nên ghi `Fixed — chờ xác minh độc lập`.
-- **Next action:** `npx supabase db push` + xác minh bằng `psql` → `git push` → `TEACHER-REPORT-5-VERIFY` cho Codex.
-
-### [2026-08-17] Phiên 108 — Claude — `DATA-GV-LOP01-1`: cấp tài khoản giáo viên mới + đổi giáo viên phụ trách LOP-01
-
-- **User yêu cầu:** tạo tài khoản giáo viên cho một người mới và **gắn thay** vào `LOP-01` (đang do `GV000003` phụ trách). ⚠️ Thông tin cá nhân + mật khẩu **đã đưa thẳng cho user trong hội thoại, KHÔNG ghi vào repo** — repo này public.
-- **Làm được:** tạo `GV000005` (`auth.users` → `auth.identities` → `profiles` → `teachers`) và chuyển `class_teachers` của `LOP-01` từ `GV000003` sang `GV000005`, **trong MỘT giao dịch duy nhất** trên production.
-- **File thay đổi:** **không có file nguồn nào** — đây là thao tác **dữ liệu**, không phải migration. Script chạy một lần để ở scratchpad ngoài repo (chứa mật khẩu).
-- **Migration/data impact:** không thêm migration. Production: `profiles` **59 → 60** · `teachers` **3 → 4** · `class_teachers` giữ **3 hàng** (chỉ đổi `teacher_id` của LOP-01). Không đụng `students` (55) · `enrollments active` (55) · `class_sessions` (105) · `attendance_records` (156) · `session_reports` (4, và LOP-01 vẫn **0** nên không có báo cáo nào bị mồ côi). Ba lớp đều còn `status='active'`.
-- **🔴 Không có đường đi qua giao diện cho việc này, và đó là CỐ Ý.** `app.prevent_active_class_teacher_removal` chặn đổi `class_teachers.teacher_id` khi lớp `active`; `assignTeacherAction` nói đúng câu đó ra màn hình (_"Hãy tạm dừng lớp trước"_). Đường ghi ở đây làm **y hệt** — `active → paused → đổi → active` — nhưng gói trong cùng một giao dịch, nên **không có khoảnh khắc nào lớp nằm `paused` mà người dùng khác nhìn thấy**, và hỏng ở bất kỳ bước nào thì lớp không bị bỏ lại lơ lửng. Cổng `trg_classes_active_requirements` (phải có `start_date` + `planned_session_count` + `session_duration_minutes` + một giáo viên) được **kiểm trước khi tạm dừng**, chứ không phải phát hiện lúc kích hoạt lại.
-- **🔴 Hàng `auth.users` dựng theo khuôn hàng GoTrue TỰ TẠO trên chính production, không theo trí nhớ.** Chèn tay vào `auth.users` là thứ `scripts/provision-student-accounts.mjs` cấm — nhưng ở phiên này chỉ có `SUPABASE_DB_PASSWORD`, **không có service role key của cloud**, nên không gọi được `auth.admin.createUser`. Cách bù: `INSERT` rồi **so sánh từng cột với hàng của `GV000003`** (hàng GoTrue tự tạo và đang đăng nhập được) — chỉ lệch đúng 8 cột danh tính/thời điểm/hash, không lệch cột nào khác. Bẫy `seed.dev.sql` đã ghi (8 cột token phải là `''`, NULL ⇒ GoTrue crash _"converting NULL to string"_) được ghim bằng một phép đo riêng. `bcrypt cost 10` cho khớp GoTrue, không dùng mặc định `6` của `gen_salt`.
-- **Đã test (kết quả THẬT):** (1) **chạy khô trước** (cùng file, `-v apply=0` → `ROLLBACK`) rồi mới chạy thật; (2) đo lại bằng **kết nối mới**, không tin số đếm trong giao dịch vừa ghi; (3) 🟢 **đăng nhập THẬT bằng Chromium trên `polymind-chinese-one.vercel.app`** — vào được `/teacher`, thấy đúng _"Lịch dạy hôm nay (1) · 14:00–15:30 · LOP-01 · Buổi 1"_ và `/teacher/classes` liệt kê đúng một lớp `LOP-01` (3/3 học viên), **0 lỗi console, 0 HTTP 4xx/5xx**. Đây mới là bằng chứng hàng `auth.users` dựng tay còn sống — SQL xanh không chứng minh được điều đó.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** ⚠️ `GV000003` **vẫn hoạt động, chỉ còn 0 lớp** — user chỉ nói "gắn thay", không nói khoá tài khoản. ⚠️ Mật khẩu cấp ban đầu **chưa đổi**; hệ thống chưa có màn "tự đổi mật khẩu" cho giáo viên, đổi phải qua super_admin ở `/admin/teachers`. ⚠️ Claude vừa tự làm nên ghi `Fixed — chờ xác minh độc lập`. ⚠️ Nếu cần lặp lại việc này, đường đúng vẫn là **service role key của cloud** + `auth.admin.createUser`; chèn tay vào `auth.users` là đường vòng, phải trả giá bằng bước so khuôn + đăng nhập thật.
-- **Next action:** `DATA-GV-LOP01-1-VERIFY` cho Codex; hỏi user có khoá `GV000003` không.
-
-### [2026-08-14] Phiên 107 — Claude — `TEACHER-REPORT-4`: bảng DOCX co thành dải hẹp + dòng "Thời gian" in sai
-
-- **User báo (nguyên văn, kèm 2 ảnh chụp điện thoại):** _"file docx xuất ra sao lại bị lỗi như vậy (hình 1)"_ · _"còn file pdf xuất ra thì bị chữ nhỏ xíu khó đọc quá (hình 2)"_ · _"cả 2 đều đang xem trên điện thoại, hay do coi trên điện thoại nên bắt buộc phải bị vậy"_.
-- **Làm được:** (1) sửa bề ngang bảng DOCX — **lỗi thật**; (2) sửa dòng _"Thời gian"_ in `10/08/2026 – 09:30` thay vì `08:00 – 09:30` — **lỗi thật, thấy trên cả hai bản**; (3) bản in: đo trước rồi mới sửa, nới cỡ chữ và thu khoảng trắng, nhưng **nói thẳng với user phần nào là vật lý chứ không phải bug**.
-- **Gốc lỗi bảng DOCX, đọc thẳng trong file sinh ra:** `<w:tblGrid><w:gridCol w:w="100"/><w:gridCol w:w="100"/></w:tblGrid>` — `w:tblGrid` là thứ **Word dựng bảng theo**, khai mỗi cột **100 twip ≈ 0,18 cm**. `docx` sinh ra con số đó vì bảng chỉ khai bề ngang bằng phần trăm và không truyền `columnWidths`. Nay khai tuyệt đối bằng twip (`9639` = 170mm lòng trang A4) + `layout: FIXED`; đo lại ra `3663`/`5976`.
-- **File thay đổi:** `src/features/session-reports/server/export-docx.ts` · `domain/render.ts` (thêm `session.startTime`) · `server/queries.ts` · `src/app/(dashboard)/admin/reports/bao-cao/[reportId]/page.tsx` (neo `data-report-print`) · `src/app/globals.css` (khối cỡ chữ bản in) · `tests/unit/domain/session-report-render.test.ts` (mới) · `tests/unit/server/session-report-docx.test.ts` (đổi tên từ `…-docx-evidence`, thêm 2 bài hình học bảng) · `tests/unit/domain/session-report-evidence.test.ts`.
-- **Migration/data impact:** **KHÔNG có migration.** Không đụng bảng/RPC/policy nào.
-- **Đã test (kết quả THẬT):** lint **0** · typecheck **0** · Vitest **626/626** (621 → **+5**) · build **exit 0** · Playwright `session-reports` **5/5** trên Chromium. **Kiểm ngược đã chạy thật, đỏ đúng chỗ rồi khôi phục:** lùi bảng về phần trăm ⇒ bài mới đỏ với đúng con số của lỗi gốc — _"tổng bề ngang cột = **200** twip: expected 200 to be 9639"_.
-- **Đo bản in, con số thật (trước → sau):** bề ngang bản in ở A4 **794px, không tràn** (nên "chữ nhỏ" KHÔNG do tràn/thu nhỏ) · chữ giá trị **14px (10,5pt) → 15,33px (11,5pt)**, +9,5% · tổng chiều cao trang **2549px → 2306px**, −9,5%. Tức chữ to hơn mà lại ít trang hơn.
-- **Quyết định mới:** không có.
-- **Blocker/rủi ro:** ⚠️ Đã đo bằng cách **mở zip đọc `word/document.xml`**, **chưa mở bằng Word thật** — đây vẫn là món cần user hoặc Codex xác nhận bằng mắt. ⚠️ Claude vừa viết code nên ghi `Fixed — chờ xác minh độc lập`.
-- **Next action:** `TEACHER-REPORT-3-VERIFY` + `TEACHER-REPORT-4-VERIFY` cho Codex; chạy `npx playwright test` cả bộ.
-
-<!-- Phiên 104 (`UX-REPORT-STICKY-1`/`D-44`), 103 (`TEACHER-REPORT-1`/`FLASHCARD-BULKPUB-1`), 102 (`BUG-SCHED-MAKEUP-1`), 101 (`UX-MOBILE-3`), 100 (`UX-MOBILE-2`), 99 (`UX-MOBILE-1`), 98 (`DATA-SCHED-1`), 97 (`VIDEO-1`), 96 (`P16-T13`), 95 (`REPORT-REDESIGN-1`), 94 (`UX-SCHED-1`), 93 (`GIAOVU-1-VERIFY`), 92 (`UX-STUDENTS-1`) và 91 (`UX-ENROLL-1`) và 105 (`TEACHER-REPORT-2`) đã cắt theo luật "giữ 6 entry". 📌 Kết luận còn dùng của phiên 102: học bù đi qua RPC `reschedule_class_session_with_makeup` (nguyên tử, giữ nguyên tổng row/ID/điểm danh), và `session_number` bị DB chặn trong `1..planned_session_count` — đừng quay lại luồng "xóa + thêm tay". Tra lại ở lịch sử git. 📌 Kết luận còn dùng của phiên 103 đã nằm ở chỗ khác nên cắt được an toàn: `D-43` ở bảng QUYẾT ĐỊNH, bài học *"migration tạo bảng mới phải tự grant/revoke"* ở `BLK-6` và trong chú thích của `rls_catalog_matrix.test.sql`, còn đường vòng `gen types --db-url` được nhắc lại ở phiên 109. 📌 Kết luận còn dùng của phiên 99 nằm ở phép đo cuộn ngang trong `tests/e2e/session-reports.spec.ts` (đếm phần tử con có `overflow-x`, KHÔNG dùng `documentElement.scrollWidth`); của phiên 98 là hai cảnh báo còn treo ở `BLOCKERS` (mật khẩu DB production trong `.env.local`). 📌 Kết luận còn dùng của phiên 94 vẫn nằm ở `TRẠNG THÁI HIỆN TẠI` và ở chú thích trong `schedule-manager.tsx`: lưới tuần cần **1050px = 150px/cột** vì lòng thẻ phải chứa badge ~101px và cụm nút 96px cảm ứng — **đừng thu con số đó lại**. Của phiên 93 nằm ở `BLK-8`. 📌 Kết luận còn dùng của phiên 105 đã nằm ở chỗ khác nên cắt được an toàn: hai tầng chặn ở DB (`save_session_log` đòi `lesson_id`, `lesson_progress.lesson_id` NOT NULL) và luật rút ra *"fail-closed chỉ đúng khi nó chặn thứ người dùng kiểm soát được"* nằm ở `TRẠNG THÁI HIỆN TẠI` phần `…093`; ô "Bài học đã dạy" gõ tay nằm trong `sessionReportSchema`; `docs/BaoCao.pdf` vẫn cố ý chưa commit (đã ở `.gitignore`). 📌 Kết luận còn dùng của phiên 104 đã nằm ở chỗ khác nên cắt được an toàn: `D-44` ở bảng QUYẾT ĐỊNH, luật "chạy CẢ BỘ pgTAP sau khi thêm object" ở `rls_catalog_matrix.test.sql`, và `docs/BaoCao.pdf` vẫn cố ý chưa commit. -->
+- Tái hiện qua IP Wi-Fi bằng Edge viewport 390px/touch: checkbox 16×44px, eye tap/click không đổi type, checkbox không đổi state; log HMR bị chặn cross-origin. Sửa riêng login checkbox size20/min-h0 và nhãn44px, thêm allowedDevOrigins 192.168.1.56 rồi restart npm dev ngoài sandbox.
+- Xác minh checkbox 20×20px, eye tap hiện/ẩn giữ giá trị, nhãn toggles checkbox. Regression Playwright touch viewport iPhone với Edge 1/1 (không phải engine Safari), sau build smoke LAN vẫn hoạt động. Lint/typecheck/build exit 0, Vitest 736/736. Không có migration/data impact, không thay đổi auth/session lifetime hay chức năng ghi nhớ phía server. Không commit, giữ các thay đổi khác.
+- Next: user reload login trên điện thoại; nếu LAN IP đổi cập nhật allowedDevOrigins. Chưa thử trực tiếp iPhone/Zalo.

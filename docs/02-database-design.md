@@ -1,5 +1,19 @@
 # 02 — Thiết kế Database
 
+## Chấm công giảng viên B2C (2026-10-14)
+
+Migration `20261014000004` tạo `b2c_teaching_sessions`, FK restrict tới lớp/hồ sơ B2C, giờ lịch/đơn giá snapshot, check-in/out thời gian/ảnh, generated teaching_hours/salary chỉ có giá trị khi hoàn tất. RLS chỉ quản lý hoặc người được phân công đang hoạt động đọc; authenticated không có quyền insert/update/delete trực tiếp. RPC definer search_path rỗng gác manager khi tạo lịch, khóa giáo viên để chặn lịch trùng; RPC checkpoint kiểm liên kết source_teacher_id → teachers.user_id, tài khoản hoạt động, đúng ngày Việt Nam, ảnh đã tồn tại/đúng namespace/dung lượng/MIME, khóa buổi và không cho ghi lại. Retry cùng ảnh idempotent. RPC danh sách tháng phân trang 50, tổng toàn tháng theo cùng quyền.
+
+Bucket `b2c-check-photos` private, 5 MB, JPG/PNG/WebP. Upload policy kiểm buổi được phân công và namespace session/user/checkpoint/random; đọc chỉ ảnh đã gắn với buổi mà user có quyền xem. Không cấp quyền overwrite/delete ảnh. UI cấp signed upload bằng client người dùng qua RLS, không service role; server ghi checkpoint không nhận timestamp client. Tài khoản giáo vụ có buổi B2C được hiện nhóm giảng dạy khi không có lớp VCB.
+
+## Hồ sơ giáo viên (2026-10-14)
+
+`20261014000003` thêm `b2c_teachers.source_teacher_id` unique FK restrict tới teachers; hình thức/đơn giá và created_by cho phép null cho dữ liệu lịch sử chưa biết. Policy insert user vẫn yêu cầu created_by=auth.uid(), update không cấp cột source_teacher_id. Script `scripts/data-fixes/2026-10-14-import-b2c-teachers.sql` chỉ sao chép tên khớp duy nhất với giáo viên trên lớp B2C, dừng khi mơ hồ hoặc có hồ sơ B2C trùng chưa ánh xạ, ON CONFLICT nguồn DO NOTHING để không tạo trùng/ghi đè. Không tự gán actor nhập lịch sử. Đã nhập 8 hồ sơ và đối chiếu trường với nguồn không lệch.
+
+`20261014000002` tạo `b2c_teachers` riêng: full_name, phone/email, specialization, employment_type bắt buộc full_time/part_time, hourly_rate nguyên VNĐ không âm, created_by auth.uid(), timestamps. RLS manager-only select/insert/update; insert kiểm actor thật, update chỉ cấp các cột hồ sơ, không cấp delete. Server action requireManager, kiểm Zod và xác minh bản ghi đã lưu; không dùng service role cho user flow. Không backfill từ teachers hoặc teacher_name của lớp. Dữ liệu liên hệ chỉ ở bảng B2C.
+
+Migration `20261014000001` thêm `teachers.employment_type` (full_time/part_time, nullable) và `hourly_rate` (numeric, nullable, số nguyên từ 0 đến 999999999999). Giữ nguyên RLS của teachers/profiles. RPC `update_teacher_profile` security invoker, manager-only, cập nhật hồ sơ và tên/SĐT trong cùng transaction; chỉ super admin đổi tên/SĐT, không ghi profiles khi liên hệ không đổi. Anonymous không có quyền execute. Dữ liệu cũ giữ null.
+
 ## Học phí B2C (2026-10-13)
 
 `b2c_tuition_packages` có một gói trên mỗi ghi danh (unique enrollment_id), số buổi/đơn giá/chiết khấu VNĐ và lý do khi giảm > 0; total_due generated = sessions × unit_price − discount. `b2c_tuition_receipts` chỉ thêm, ngày/tiền nguyên VNĐ/TM-CK/người thu, mã phiếu sequence riêng, actor auth.uid(), request_id unique. RPC record khóa gói trước khi kiểm tổng đã thu, retry cùng dữ liệu trả phiếu cũ; vượt công nợ bị chặn. Trigger chặn sửa gói xuống dưới số đã thu. Không cho authenticated xóa/sửa phiếu, đổi actor hay liên kết gói; manager-only RLS/invoker. Hai hàm trigger không cấp execute cho anon. Chưa có hủy phiếu/hoàn tiền trong phạm vi B1/B2.

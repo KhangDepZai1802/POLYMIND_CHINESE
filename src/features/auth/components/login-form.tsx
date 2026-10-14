@@ -114,15 +114,15 @@ export function LoginForm({ initialError }: { initialError?: string }) {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 py-0.5">
+          <div className="flex min-h-11 items-center gap-2 py-0.5">
             <Checkbox
               id="remember"
               name="remember"
-              className="data-[state=checked]:border-primary-600 data-[state=checked]:bg-primary-600 size-4 rounded border-slate-300"
+              className="data-[state=checked]:border-primary-600 data-[state=checked]:bg-primary-600 size-5 min-h-0 min-w-0 rounded border-slate-300"
             />
             <label
               htmlFor="remember"
-              className="cursor-pointer text-xs font-medium text-slate-700 select-none"
+              className="flex min-h-11 flex-1 cursor-pointer items-center text-xs font-medium text-slate-700 select-none"
             >
               Ghi nhớ đăng nhập
             </label>

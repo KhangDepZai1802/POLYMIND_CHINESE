@@ -35,6 +35,8 @@ type Teacher = {
   teacher_code: string;
   specialization: string | null;
   bio: string | null;
+  employment_type: "full_time" | "part_time" | null;
+  hourly_rate: number | null;
   is_active: boolean;
   profile: {
     full_name: string;
