@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-SOURCE-TIKTOK-ICONS-1 — hoàn thành code/SQL cloud — Antigravity — 2026-10-14. Thêm icon con người (Users) cho tiêu đề Nguồn khách; icon sinh động cho từng nguồn (FB, Zalo, TikTok, Giới thiệu, Walk-in, Trường học, Khác); thêm nguồn tiktok vào domain, Zod schema, ràng buộc CSDL (migration 16) và đồng bộ bảng màu. Lint/typecheck/build exit 0, Vitest 843/843.
+
 > RELEASE-20261014-B — đang kiểm tra và phát hành — Codex — 2026-10-14. User yêu cầu commit/push GitHub trong lượt này. Bao gồm thay đổi B2C/giáo viên/lịch lặp và XKLĐ đã hoàn thành; giữ riêng .env.example bị xóa nội dung ngoài scope. Xác minh SHA/push trong chat sau phát hành.
 
 > CLASS-BACK-BUTTON-1 — hoàn thành local — Codex — 2026-10-14. BackLink vuông44px/bo12px/nền xanh/viền/hover/focus/dark, giữ href và nhãn điểm đến. Teacher B2C/B2B + admin B2C class detail. Lint/typecheck/build exit0, Vitest832/832; Edge3121 mobile44×44/back đúng đạt,0pageerror, fixtures dọn sạch. Chưa commit/push/deploy.
@@ -1222,6 +1224,15 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-14] Antigravity — B2C-SOURCE-TIKTOK-ICONS-1
+- **Làm được:** Tiêu đề "Nguồn khách" thêm icon con người (`Users`); các thẻ nguồn thêm icon sinh động (Facebook, Zalo, TikTok, Giới thiệu, Walk-in, Trường học, Khác, Chưa xác định); bổ sung nguồn TikTok vào danh sách nguồn, nhãn, Zod schema, ràng buộc CSDL và đồng bộ bảng màu.
+- **File thay đổi:** src/features/b2c/domain/customer-source.ts, src/features/b2c/components/customer-source-icons.tsx, src/features/b2c/components/customer-source-card.tsx, src/app/(dashboard)/admin/b2c/overview/page.tsx, supabase/migrations/20261014000016_b2c_tiktok_customer_source.sql, tests/unit/b2c-enrollment-validation.test.ts, tests/unit/components/customer-source-icons.test.tsx, docs/08-phase-plan.md, WORKLOG.md.
+- **Migration/data impact:** Migration 16 cập nhật check constraint trên `b2c_students` và `b2c_admission_leads` cho phép `tiktok`; đã thực thi và xác minh trên remote database.
+- **Đã test:** lint/typecheck/build exit 0; Vitest 843/843 (139 files).
+- **Rủi ro:** Chưa commit/push origin main.
+- **Next action:** B2C-SOURCE-TIKTOK-ICONS-1-REVIEW.
+
+
 ### [2026-10-14] Codex — CLASS-BACK-BUTTON-1
 - **Làm được:** thay link back nhạt tại chi tiết lớp bằng BackLink vuông44px bo12px/nền xanh/viền/shadow/hover đậm/focus/dark; aria-label và nhãn đích. Áp3 trang teacherB2C/teacherB2B/adminB2C, giữ href.
 - **File thay đổi:** shared/back-link.tsx,3 class detail pages, docs04/08/QA/WORKLOG.
@@ -1286,11 +1297,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 
 
-
-### [2026-10-14] Codex — B2C-TEACHER-VISIBILITY-1
-- **Làm được:** xác minh Cô Lê account/source link đúng nhưng /teacher/classes chỉ đọc B2B. Thêm FK phân công B2C/backfill duy nhất, RPC own-class roster/lịch/nhận xét, thẻ trên home/lớp của tôi; menu giáo vụ đếm phân công B2C cả khi chưa có payroll.
-- **File thay đổi:** SQL14/pgTAP, teacher-class queries/cards/detail, teacher home/classes/session/types, component regression, docs01/02/03/08/QA.
-- **Migration/data impact:** SQL14 cloud/history xác minh;19 lớp hiện có được map duy nhất theo hồ sơ GV. Không đổi mật khẩu hoặc dữ liệu HV/lương/phí. Raw RLS giữ nguyên. CLI15 gaps cũ không replay.
-- **Đã test:** pgTAP23/23 rollback; Vitest813/813 (135 files), lint/typecheck/build exit0; Edge3113 teacher login/home/classes/roster/search/schedule/comments/mobile390/foreign404 đạt,0pageerror. Dùng claims tài khoản Cô Lê transaction rollback kiểm4 lớp/15 ghi danh; synthetic fixtures/account dọn sạch.
-- **Giới hạn:** chỉ đọc, không mở teacher sửa attendance/comment/học phí; QA độc lập chưa làm, chưa commit/push/deploy.
-- **Next action:** B2C-TEACHER-VISIBILITY-1-REVIEW.

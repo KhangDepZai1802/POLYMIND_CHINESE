@@ -12,6 +12,7 @@ describe("Validation ghi danh B2C", () => {
     expect(b2cEnrollmentEditSchema.safeParse({ ...valid, customer_source: "referral" }).success).toBe(false);
     expect(b2cEnrollmentEditSchema.parse({ ...valid, customer_source: "referral", referrer_name: "  Lan  " }).referrer_name).toBe("Lan");
     expect(b2cEnrollmentEditSchema.parse({ ...valid, customer_source: "facebook", referrer_name: "Lan" }).referrer_name).toBeNull();
+    expect(b2cEnrollmentEditSchema.parse({ ...valid, customer_source: "tiktok", referrer_name: "Lan" }).referrer_name).toBeNull();
     expect(b2cEnrollmentEditSchema.safeParse({ ...valid, customer_source: "invalid" }).success).toBe(false);
   });
   it("nhận dữ liệu hợp lệ và hai ngày bằng nhau", () => {

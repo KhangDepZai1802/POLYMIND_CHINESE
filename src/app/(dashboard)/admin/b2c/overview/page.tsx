@@ -164,7 +164,12 @@ export default async function B2COverviewPage() {
       <Card className="mt-4 gap-4 py-4">
         <CardHeader className="px-4">
           <CardTitle asChild className="text-base">
-            <h2>Nguồn khách</h2>
+            <h2 className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                <Users className="h-4 w-4" />
+              </span>
+              <span>Nguồn khách</span>
+            </h2>
           </CardTitle>
           <p className="text-muted-foreground text-sm">
             {customerSources.total.toLocaleString("vi-VN")} học viên · Mỗi học
@@ -172,19 +177,20 @@ export default async function B2COverviewPage() {
           </p>
         </CardHeader>
         <CardContent className="grid gap-3 px-4 sm:grid-cols-2 xl:grid-cols-4">
-          {customerSources.rows.map((row, index) => {
+          {customerSources.rows.map((row) => {
             const percent = customerSources.total
               ? (row.count / customerSources.total) * 100
               : 0;
-            const colors = [
-              "bg-blue-500",
-              "bg-cyan-500",
-              "bg-violet-500",
-              "bg-amber-500",
-              "bg-emerald-500",
-              "bg-rose-500",
-              "bg-slate-400",
-            ];
+            const sourceColorMap: Record<string, string> = {
+              facebook: "bg-blue-600",
+              zalo: "bg-sky-500",
+              tiktok: "bg-neutral-800 dark:bg-neutral-200",
+              referral: "bg-violet-500",
+              walk_in: "bg-amber-500",
+              school: "bg-emerald-500",
+              other: "bg-rose-500",
+              unknown: "bg-slate-400",
+            };
             return (
               <CustomerSourceCard
                 key={row.source ?? "unknown"}
@@ -192,7 +198,7 @@ export default async function B2COverviewPage() {
                 label={row.label}
                 count={row.count}
                 percent={percent}
-                color={colors[index] ?? "bg-slate-400"}
+                color={sourceColorMap[row.source ?? "unknown"] ?? "bg-slate-400"}
               />
             );
           })}

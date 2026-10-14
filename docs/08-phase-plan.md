@@ -1,5 +1,9 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-SOURCE-TIKTOK-ICONS-1 — Bổ sung nguồn TikTok và icon nguồn khách
+
+- [x] Tiêu đề "Nguồn khách" thêm icon con người (Users); các thẻ nguồn có icon sinh động: Facebook, Zalo, TikTok, Giới thiệu, Walk-in, Trường học, Khác, Chưa xác định. Bổ sung nguồn TikTok vào danh sách nguồn, nhãn, Zod schema, ràng buộc CSDL (migration 16) và đồng bộ bảng màu. Lint/typecheck/build exit 0, Vitest 843/843.
+
 ## RELEASE-20261014-B — Phát hành thay đổi đã hoàn thành
 
 - [ ] Theo yêu cầu user ngày14/10: kiểm tra lint/typecheck/full test/build, rà secret, commit/push main B2C/teacher/XKLĐ đã hoàn thành; giữ riêng .env.example bị xóa nội dung ngoài scope. Xác minh HEAD trùng origin/main và báo SHA trong chat; không suy ra deployment thành công từ git push.
