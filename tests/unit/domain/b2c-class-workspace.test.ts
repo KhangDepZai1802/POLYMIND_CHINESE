@@ -37,6 +37,11 @@ describe("B2C class workspace inputs", () => {
       expected_updated_at: null,
     };
     expect(attendanceSchema.safeParse(v).success).toBe(false);
+    for (const status of ["present", "excused", "absent", "makeup", "late"])
+      expect(attendanceSchema.safeParse({ ...v, status }).success).toBe(true);
+    expect(
+      attendanceSchema.safeParse({ ...v, status: "unknown" }).success,
+    ).toBe(false);
     expect(
       attendanceSchema.safeParse({ ...v, status: "present" }).success,
     ).toBe(true);

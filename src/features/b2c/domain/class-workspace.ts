@@ -15,8 +15,9 @@ export const MEETING_STATUSES = {
 export const ATTENDANCE_STATUSES = {
   present: "Có mặt",
   late: "Đi muộn",
-  absent: "Vắng",
+  absent: "Vắng không phép",
   excused: "Vắng có phép",
+  makeup: "Học bù",
 } as const;
 export type ClassTab = keyof typeof CLASS_TABS;
 export type ClassMeeting = {
@@ -100,7 +101,7 @@ export const attendanceSchema = z.object({
   ...base,
   meeting_id: z.uuid(),
   enrollment_id: z.uuid(),
-  status: z.enum(["present", "late", "absent", "excused"]),
+  status: z.enum(["present", "late", "absent", "excused", "makeup"]),
   note: z.string().max(1000),
   expected_updated_at: z.string().nullable(),
 });

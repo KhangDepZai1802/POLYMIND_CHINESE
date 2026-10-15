@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-ATTENDANCE-MOBILE-1 — hoàn thành code/SQL cloud — Codex — 2026-10-15. Thêm Học bù/Vắng không phép, giữ Đi muộn; mobile cards/nút44px, quyền/phân công/cancel/future/stale/retry/audit giữ nguyên. SQL02 áp/history exact verify + integration rollback đạt; lint/typecheck/build exit0, Vitest862/862. Chưa QA browser/điện thoại thật. User yêu cầu commit/push GitHub; SHA được xác minh và báo trong chat.
+
 > RELEASE-20261015-ALL — chuẩn bị commit/push — Codex — 2026-10-15. User chốt đưa toàn bộ code/tài nguyên hiện có lên GitHub, gồm B2C/phân quyền/Bài3/Bài4/favicon. Bản hiện tại lint/typecheck/build exit0, Vitest858/858 và Edge9audio/mobile đạt. Rà secret trước commit; kết quả SHA/push báo trong chat, không suy ra deploy thành công từ push.
 
 > LISTENING-LESSON-4-1 — hoàn thành local — Codex — 2026-10-15. Bài4 Phương hướng/địa điểm có9audio +9ảnh Word trang2/4/5/6/7/25/26/29/30, root chọn bài, route riêng; publicaudio whitelistB4, Bài3 giữ22. Lint/typecheck/build exit0, Vitest858/858; Edge phát thật9audio/speed/ảnh/mobile390/nav đạt. Chưa commit/push.
@@ -782,6 +784,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-ATTENDANCE-MOBILE-1: QA độc lập trên điện thoại thật, cấp quyền GV thực tế theo admin; user đã yêu cầu phát hành code lên GitHub; SQL cloud đã áp.
+
 - LISTENING-LESSON-4-1: user xem /nghe → Bài4 hoặc /nghe/bai-4; chờ nội dung tiếp theo. Code/media local chưa phát hành online.
 
 - LISTENING-LESSON-INDEX-1: chờ user cung cấp bài nghe tiếp theo; hiện chỉ thêm mục Bài3, chưa tạo nội dung bài khác.
@@ -1250,6 +1254,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-15] Codex — B2C-ATTENDANCE-MOBILE-1
+- Làm được: Học bù/makeup, Vắng không phép, giữ late; thẻ mobile, nút/select44px, giữ quyền và trạng thái buổi.
+- SQL20261015000002 áp riêng sau dry-run bị16 history gaps cũ; exact SQL/history verify và integration rollback quyền/save/read/stats/retry/stale/invalid/audit đạt. Không replay/repair migration cũ, không lưu fixture hoặc bật quyền thật.
+- Test: lint/typecheck/build exit0, Vitest143files862/862. Test/build ban đầu bị sandbox esbuild/network fonts; chạy lại có escalation đạt. Chưa QA browser/điện thoại thật hoặc deploy.
+- Next: QA độc lập điện thoại, admin cấp quyền theo GV; user đã yêu cầu commit/push trong lượt phát hành tiếp theo; kết quả SHA báo trong chat.
+
+
 ### [2026-10-15] Codex — RELEASE-20261015-ALL
 - User yêu cầu commit/push toàn bộ thay đổi hiện có, gồm favicon/logo ngoài các tính năng B2C và bài nghe đã làm. HEAD và origin/main đang ngang nhau trước phát hành.
 - Kiểm tra code gần nhất: lint/typecheck/build exit0,858/858test; Edge9audio Bài4/phát/speed/ảnh/mobile/Bài3 đạt. Rà staged secrets và exclude env theo gitignore trước commit. SHA/push xác nhận trong chat; không tự xác nhận Vercel deploy từ gitpush.
@@ -1273,14 +1284,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Làm được:** user trả lời ok cho production migration; apply20261015000001 và ghi history trong cùng transaction thành công. Kết nối mới verify SQL khớp file đã duyệt và2 bảng RLS. Chạy integration thực tế6 nhóm quyền trên fixture rollback đạt; không cấp thêm quyền tài khoản thật.
 - **Kiểm tra:** scripts/b2c-permissions-db.mjs apply exit0, verify exit0. Dry-run sau exit1 do16 history gaps ngoài scope, không repair/replay. Code trước áp đã lint/typecheck/build exit0 và854/854test; phiên này chỉ sửa script verify/docs. Chưa QA browser hoặc commit/push/deploy code.
 - **Next:** dùng Phân quyền trên bản local; QA độc lập và phát hành code khi được yêu cầu. DB không còn chờ approval.
-
-### [2026-10-15] Codex — B2C-TEACHER-PERMISSIONS-1
-- **Làm được:** admin B2C/Giáo viên có Phân quyền, chọn giáo viên/liên kết tài khoản hiện hữu,15 checkbox phụ thuộc xem/sửa, version chống ghi đè. User chốt gồm quản lý lớp/hồ sơ/học phí. Teacher UI áp quyền, lớp mới tự phân công, không nâng role.
-- **Bảo vệ:** manager-only editor+audit, raw-table RLS đóng; salary RPC redact khi thiếu view_pay; collect/edit tách; hồ sơ chung nhiều lớp chỉ đổi tên/SĐT nếu có quyền ở mọi lớp. SQL kiểm IDOR/self-escalation/unknown/dependency/stale grants/defaults/revocation/student/pay/finance.
-- **Đã test:** lint/typecheck/build exit0, full Vitest854/854 (141files); integration migration+fixtures rollback đạt6 nhóm. Chưa QA browser với DB mới, chưa áp/commit/push. Auto-review từ chối applyproduction; chờ user duyệt SQL cụ thể, không bypass. Dry-run có15 history gaps cũ.
-- **Next:** user duyệt → apply20261015000001, verify mới/dry-run, browser admin/teacher/thu hồi và cleanup. Không tự bật quyền thật.
-
-### [2026-10-15] Codex — B2C-CLASS-POPUP-TABS-1
-- **Làm được:** bỏ liên kết đóng popup/sang trang ở năm nút; dùng chung ClassWorkspaceContent với trang riêng và readClassWorkspaceAction (manager/RLS/validation). Tìm/page/chọn buổi ở popup, lỗi/thử lại, bỏ phản hồi cũ; context tải lại mục sau lưu buổi/lịch lặp/điểm danh/học phí/nhận xét.
-- **File:** class-detail-dialog, class-workspace-content/refresh/read, trang admin class detail, các dialog lưu, test b2c-class-detail và docs. Không migration.
-- **Đã test:** lint exit0; typecheck exit0; full Vitest845/845, sau thêm test navigation/race popup6/6; build cuối exit0. Chưa QA trình duyệt hoặc commit. Next: QA manager năm mục và lưu dữ liệu.

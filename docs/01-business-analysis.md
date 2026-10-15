@@ -1,5 +1,9 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## Điểm danh B2C trên điện thoại (2026-10-15)
+
+Theo từng buổi: Có mặt, Vắng có phép, Vắng không phép, Học bù; giữ Đi muộn để không mất dữ liệu/chức năng cũ. Học bù là trạng thái tham dự trong buổi đang chọn, không tự xếp buổi khác hoặc trừ học phí. Giáo viên cần quyền Điểm danh học viên trong lớp được phân công. Điện thoại hiện thẻ từng học viên với trạng thái, ghi chú và nút điểm danh tối thiểu 44px; chọn trạng thái rồi lưu. Chưa nhập vẫn là Chưa điểm danh.
+
 ## Phân quyền giáo viên B2C (2026-10-15)
 
 User chốt quyền theo từng giáo viên, dùng tài khoản đã có; cấp cả nhóm quản lý lớp/hồ sơ/học phí nhưng tách xem, sửa và thu.15 quyền: xem lớp, học viên, lịch, nhận xét; viết nhận xét; điểm danh; chấm công; xem giờ/đơn giá/tiền công; tạo lớp tự phân công; sửa lớp; sửa lịch; sửa hồ sơ; xem học phí/phiếu thu; thu học phí; sửa gói. Quyền dữ liệu chỉ trong lớp được phân công, không nâng role. Admin/giáo vụ quản lý quyền và vẫn giữ quyền quản lý theo role. Mặc định giữ6 quyền cũ; quyền ghi mới tắt. Quyền sửa tự kèm quyền xem liên quan, thu hồi xem bỏ quyền phụ thuộc. Hồ sơ học viên dùng chung nhiều lớp: tên/SĐT chỉ sửa khi có quyền ở tất cả lớp liên quan; trạng thái/ngày nhập học chỉ ghi danh hiện tại. User đã xác nhận, SQL20261015000001 đã áp production và verify quyền/RLS; code hiện ở local, chưa phát hành online.

@@ -106,6 +106,7 @@ export function ClassWorkspaceContent({
   const href = (tab: string, page = 0, meetingId?: string) =>
     `${base}?${new URLSearchParams({ tab, page: String(page), ...(filters.q ? { q: filters.q } : {}), ...(meetingId ? { meeting: meetingId } : {}) })}`;
   const canAttend =
+    can("mark_attendance") &&
     meeting &&
     meeting.status !== "cancelled" &&
     formatInTimeZone(meeting.starts_at, "Asia/Ho_Chi_Minh", "yyyy-MM-dd") <=
@@ -353,8 +354,45 @@ export function ClassWorkspaceContent({
           </p>
         </div>
       )}
+      {filters.tab === "attendance" && (
+        <div
+          className="mb-4 grid gap-3 md:hidden"
+          aria-label="Điểm danh trên điện thoại"
+        >
+          {studentRows.map((student) => (
+            <article
+              key={student.enrollment_id}
+              className="bg-card rounded-xl border p-4"
+            >
+              <p className="font-semibold">{student.full_name}</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {student.student_code}
+              </p>
+              <p className="my-3 text-sm">
+                {student.attendance_status
+                  ? ATTENDANCE_STATUSES[student.attendance_status]
+                  : "Chưa điểm danh"}
+              </p>
+              {student.attendance_note && (
+                <p className="mb-3 text-sm break-words whitespace-pre-wrap">
+                  {student.attendance_note}
+                </p>
+              )}
+              {meeting && canAttend && (
+                <ClassAttendanceDialog
+                  classId={classId}
+                  meeting={meeting}
+                  student={student}
+                />
+              )}
+            </article>
+          ))}
+        </div>
+      )}
       {["students", "attendance", "tuition"].includes(filters.tab) && (
-        <div className="bg-card overflow-x-auto rounded-xl border">
+        <div
+          className={`bg-card overflow-x-auto rounded-xl border ${filters.tab === "attendance" ? "hidden md:block" : ""}`}
+        >
           <table className="w-full min-w-[56rem] text-left text-sm">
             <thead className="bg-muted/60">
               <tr>

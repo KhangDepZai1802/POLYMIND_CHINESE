@@ -1,5 +1,9 @@
 # 03 — Workflow nghiệp vụ
 
+## B2C — Điểm danh trên điện thoại
+
+Quản lý cấp quyền Điểm danh học viên trong Phân quyền B2C. Giáo viên vào lớp được phân công → Lịch học → Mở điểm danh tại buổi → thẻ học viên → Điểm danh → chọn Có mặt / Vắng có phép / Vắng không phép / Học bù (giữ thêm Đi muộn) → Lưu. Có thể sửa trạng thái và ghi chú; lỗi lưu giữ popup để thử lại. Không tự đánh dấu người chưa nhập. Buổi tương lai/đã hủy chỉ xem; thu hồi quyền chặn ghi cả server/DB. Học bù chỉ ghi nhận tham dự tại buổi đang chọn.
+
 ## Chọn bài nghe (2026-10-15)
 
 /nghe mở danh sách Bài3–Thời gian (22audio) và Bài4–Phương hướng, địa điểm (9audio). Chọn bài → /nghe/bai-3 hoặc /nghe/bai-4 → chọn trang tài liệu để nghe. Bài4 ghép theo tên audio trong ZIP user với Word42trang:2/4/5/6/7/25/26/29/30; ảnh dựng từ nền và chữ của Word, không dùng riêng nền thiếu chữ. /nghe/bai-4/trang-N riêng, back về Bài4, prev/next theo trang có audio; header Tất cả bài nghe về /nghe. Các URL/audio/ảnh Bài3 cũ giữ nguyên. MediaB4 công khai giống Bài3, middleware cho đúng /audio/bai-4/ phục vụ Range mà không chuyển đăng nhập.

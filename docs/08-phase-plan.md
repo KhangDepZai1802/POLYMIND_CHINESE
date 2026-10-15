@@ -1191,6 +1191,14 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 | M20    | Security & Deployment              | P7              |
 | M21    | Student Class Portal               | P14             |
 | M22    | Flashcards & Wrong-answer Review   | P14             |
+## B2C-ATTENDANCE-MOBILE-1 — Điểm danh theo buổi trên điện thoại
+
+- [x] Bổ sung Học bù; Vắng đổi thành Vắng không phép; giữ Đi muộn/dữ liệu cũ.
+- [x] Thẻ học viên trên mobile, vùng chạm 44px; lưu/sửa qua cùng quyền/RPC/audit.
+- [x] Migration20261015000002 áp cloud, exact SQL/history verify, integration rollback save/read/stats/retry/stale/invalid/actor + quyền cũ đạt.
+- [x] Lint/typecheck/build exit0, Vitest862/862, gồm4 kiểm thử thẻ và chặn tương lai/hủy/thu hồi quyền.
+- [ ] QA độc lập trên điện thoại thật. Không khẳng định đã kiểm Safari/camera hoặc deploy website.
+
 # TEACHER-PROFILE-1 — Hồ sơ giáo viên
 
 ## AUTH-MOBILE-LAN-1 — Đăng nhập trên điện thoại cùng Wi-Fi

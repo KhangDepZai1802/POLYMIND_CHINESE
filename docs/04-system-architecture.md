@@ -1,5 +1,9 @@
 # 04 — Kiến trúc hệ thống
 
+## B2C attendance mobile (2026-10-15)
+
+ClassWorkspaceContent dùng thẻ điểm danh dưới breakpoint md, bảng ở desktop; cùng ClassAttendanceDialog/action/schema/RPC cho cả hai. Vùng chạm nút/select tối thiểu 44px, trạng thái và ghi chú nằm trên thẻ. Permission mark_attendance kết hợp ngày VN/trạng thái buổi để hiện nút; RPC tiếp tục xác thực phân công, chống stale/retry và audit. makeup là text status riêng B2C; không thay enum B2B. Migration20261015000002 mở CHECK và thống kê ở hai read RPC.
+
 ## Capability giáo viên B2C (2026-10-15)
 
 Catalog/dependency/schema tại domain/teacher-permissions.ts. Admin dialog đọc/lưu qua manager-only actions/RPC với optimistic version; server không dùng service role. Teacher ClassWorkspaceContent nhận permissions để hiện tab/thao tác, nhưng enforcement nằm tại DB helper (capability AND lớp phân công), RPC đọc projection và mutation. Không thay app.is_manager hoặc role middleware toàn hệ thống. Teacher management actions quản lý lớp/hồ sơ qua RPC scoped; ClassWorkspaceContent dùng chung admin/teacher. User đã xác nhận; migration production đã áp/history và verify bằng kết nối mới với integration rollback. Code chưa phát hành online.

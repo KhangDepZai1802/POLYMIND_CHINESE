@@ -222,7 +222,7 @@ export function ClassAttendanceDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="min-h-11">
           {student.attendance_status ? "Sửa điểm danh" : "Điểm danh"}
         </Button>
       </DialogTrigger>
@@ -273,7 +273,7 @@ export function ClassAttendanceDialog({
               aria-label="Trạng thái điểm danh"
               required
               defaultValue={student.attendance_status ?? ""}
-              className="bg-background rounded border p-2"
+              className="bg-background min-h-11 rounded border p-2"
             >
               <option value="" disabled>
                 Chọn trạng thái
