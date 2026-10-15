@@ -5,7 +5,8 @@ import {
   b2cTuitionPackageSchema,
   b2cReceiptSchema,
 } from "@/features/b2c/tuition-schema";
-import { requireManager } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
+import { permissionRpc } from "./permission-rpc";
 import { createClient } from "@/lib/supabase/server";
 import {
   dbErrorToMessage,
@@ -17,7 +18,7 @@ export async function saveB2CTuitionPackageAction(
   _: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  await requireManager();
+  await requireTeaching("super_admin");
   const parsed = b2cTuitionPackageSchema.safeParse(
     Object.fromEntries(form.entries()),
   );
@@ -39,13 +40,14 @@ export async function saveB2CTuitionPackageAction(
   if (typeof classId === "string" && z.uuid().safeParse(classId).success)
     revalidatePath(`/admin/b2c/classes/${classId}`);
   revalidatePath("/admin/b2c/history");
+  revalidatePath("/teacher/b2c-classes/[classId]", "page");
   return { success: "Đã lưu gói học phí." };
 }
 export async function recordB2CReceiptAction(
   _: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  await requireManager();
+  await requireTeaching("super_admin");
   const parsed = b2cReceiptSchema.safeParse(Object.fromEntries(form.entries()));
   if (!parsed.success) return zodToActionState(parsed.error);
   const v = parsed.data;
@@ -66,10 +68,11 @@ export async function recordB2CReceiptAction(
   if (typeof classId === "string" && z.uuid().safeParse(classId).success)
     revalidatePath(`/admin/b2c/classes/${classId}`);
   revalidatePath("/admin/b2c/history");
+  revalidatePath("/teacher/b2c-classes/[classId]", "page");
   return { success: "Đã lưu phiếu thu." };
 }
 export async function getB2CReceiptsAction(packageId: string, page: number) {
-  await requireManager();
+  await requireTeaching("super_admin");
   if (
     !/^[0-9a-f-]{36}$/i.test(packageId) ||
     !Number.isSafeInteger(page) ||
@@ -77,18 +80,27 @@ export async function getB2CReceiptsAction(packageId: string, page: number) {
     page > 1000000
   )
     return { receipts: [], total: 0, error: "Bộ lọc không hợp lệ." };
-  const { data, count, error } = await (
-    await createClient()
-  )
-    .from("b2c_tuition_receipts")
-    .select("id, code, paid_date, amount, method, collector_name", {
-      count: "exact",
-    })
-    .eq("package_id", packageId)
-    .order("created_at", { ascending: false })
-    .order("id")
-    .range(page * 20, page * 20 + 19);
-  if (error)
-    return { receipts: [], total: 0, error: "Không tải được phiếu thu." };
-  return { receipts: data ?? [], total: count ?? 0 };
+  try {
+    return await permissionRpc<{
+      receipts: {
+        id: string;
+        code: string;
+        paid_date: string;
+        amount: number;
+        method: string;
+        collector_name: string;
+      }[];
+      total: number;
+      error?: string;
+    }>("read_b2c_permitted_receipts", {
+      p_package_id: packageId,
+      p_page: page,
+    });
+  } catch {
+    return {
+      receipts: [],
+      total: 0,
+      error: "Không tải được phiếu thu hoặc bạn chưa được cấp quyền xem.",
+    };
+  }
 }

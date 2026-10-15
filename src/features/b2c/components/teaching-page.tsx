@@ -10,6 +10,7 @@ import { requireManager, requireTeaching } from "@/lib/auth/session";
 import type { TeachingPage } from "@/features/b2c/teaching-schema";
 import { TeachingSessionDialog } from "@/features/b2c/components/teaching-dialog";
 import { TeachingCheckpoint } from "@/features/b2c/components/teaching-checkpoint";
+import { getMyB2CPermissionsAction } from "../server/permission-actions";
 export async function B2CTeachingPage({
   params,
   mine,
@@ -19,6 +20,19 @@ export async function B2CTeachingPage({
 }) {
   if (mine) await requireTeaching();
   else await requireManager();
+  const permissions = mine ? await getMyB2CPermissionsAction() : null;
+  const canPay = !permissions || permissions.includes("view_pay");
+  const canCheck = !permissions || permissions.includes("check_teaching");
+  if (mine && !canPay && !canCheck)
+    return (
+      <>
+        <PageHeader title="Chấm công B2C" />
+        <p>
+          Bạn chưa được cấp quyền chấm công hoặc xem tiền công B2C. Liên hệ quản
+          lý để được phân quyền.
+        </p>
+      </>
+    );
   const month =
     typeof params.month === "string" &&
     /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)
@@ -105,16 +119,18 @@ export async function B2CTeachingPage({
             }),
           ],
           ["Tiền công đã ghi nhận", formatCurrency(Number(result.salary))],
-        ].map(([label, value]) => (
-          <Card key={label}>
-            <CardContent className="pt-5">
-              <p className="text-muted-foreground text-sm">{label}</p>
-              <p className="mt-1 text-xl font-semibold">{value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        ]
+          .filter(([label]) => canPay || label === "Buổi trong lịch")
+          .map(([label, value]) => (
+            <Card key={label}>
+              <CardContent className="pt-5">
+                <p className="text-muted-foreground text-sm">{label}</p>
+                <p className="mt-1 text-xl font-semibold">{value}</p>
+              </CardContent>
+            </Card>
+          ))}
       </div>
-      {mine && (
+      {mine && canCheck && (
         <p className="text-muted-foreground mb-4 text-sm">
           Chụp ảnh tại buổi dạy. Check-in trước khi buổi kết thúc; check-out sau
           giờ kết thúc, trong cùng ngày. Buổi thiếu một trong hai bước chưa được
@@ -131,9 +147,8 @@ export async function B2CTeachingPage({
                 "Giảng viên",
                 "Check-in",
                 "Check-out",
-                "Đơn giá / giờ",
-                "Giờ / Tiền công",
-                ...(mine ? ["Chấm công"] : []),
+                ...(canPay ? ["Đơn giá / giờ", "Giờ / Tiền công"] : []),
+                ...(mine && canCheck ? ["Chấm công"] : []),
               ].map((h) => (
                 <th key={h} className="px-4 py-3">
                   {h}
@@ -173,27 +188,34 @@ export async function B2CTeachingPage({
                       </td>
                     );
                   })}
-                  <td className="px-4 py-3">
-                    {formatCurrency(Number(s.hourly_rate))}
-                  </td>
-                  <td className="px-4 py-3">
-                    {s.check_out_at ? (
-                      <>
-                        <p>
-                          {Number(s.teaching_hours).toLocaleString("vi-VN", {
-                            maximumFractionDigits: 2,
-                          })}{" "}
-                          giờ
-                        </p>
-                        <p className="font-medium">
-                          {formatCurrency(Number(s.salary))}
-                        </p>
-                      </>
-                    ) : (
-                      "Chưa đủ check-in/out"
-                    )}
-                  </td>
-                  {mine && (
+                  {canPay && (
+                    <>
+                      <td className="px-4 py-3">
+                        {formatCurrency(Number(s.hourly_rate))}
+                      </td>
+                      <td className="px-4 py-3">
+                        {s.check_out_at ? (
+                          <>
+                            <p>
+                              {Number(s.teaching_hours).toLocaleString(
+                                "vi-VN",
+                                {
+                                  maximumFractionDigits: 2,
+                                },
+                              )}{" "}
+                              giờ
+                            </p>
+                            <p className="font-medium">
+                              {formatCurrency(Number(s.salary))}
+                            </p>
+                          </>
+                        ) : (
+                          "Chưa đủ check-in/out"
+                        )}
+                      </td>
+                    </>
+                  )}
+                  {mine && canCheck && (
                     <td className="px-4 py-3">
                       {s.check_out_at ? (
                         "Đã hoàn tất"

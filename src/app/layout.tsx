@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   },
   description:
     "POLYMIND - Trung tâm đào tạo ngoại ngữ với lộ trình rõ ràng, nội dung thực tiễn và tiến độ học tập minh bạch.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 /**

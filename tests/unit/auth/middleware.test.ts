@@ -71,6 +71,17 @@ describe("updateSession JWT verification", () => {
     expect(createServerClient).not.toHaveBeenCalled();
   });
 
+  it("phục vụ Range audio Bài4 công khai thay vì chuyển đến đăng nhập", async () => {
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/audio/bai-4/trang-02.m4a", {
+        headers: { Range: "bytes=0-1023" },
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
   it("dùng getClaims thay vì gọi Auth server bằng getUser", async () => {
     const supabase = createSupabaseMock({
       data: { claims: { sub: USER_ID, email: "admin@polymind.test" } },

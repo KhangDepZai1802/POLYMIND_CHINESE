@@ -1,5 +1,13 @@
 # 03 — Workflow nghiệp vụ
 
+## Chọn bài nghe (2026-10-15)
+
+/nghe mở danh sách Bài3–Thời gian (22audio) và Bài4–Phương hướng, địa điểm (9audio). Chọn bài → /nghe/bai-3 hoặc /nghe/bai-4 → chọn trang tài liệu để nghe. Bài4 ghép theo tên audio trong ZIP user với Word42trang:2/4/5/6/7/25/26/29/30; ảnh dựng từ nền và chữ của Word, không dùng riêng nền thiếu chữ. /nghe/bai-4/trang-N riêng, back về Bài4, prev/next theo trang có audio; header Tất cả bài nghe về /nghe. Các URL/audio/ảnh Bài3 cũ giữ nguyên. MediaB4 công khai giống Bài3, middleware cho đúng /audio/bai-4/ phục vụ Range mà không chuyển đăng nhập.
+
+## Phân quyền giáo viên B2C (2026-10-15)
+
+Admin B2C → menu trái Phân quyền (ngay dưới Nhật ký thay đổi) → tìm/chọn hồ sơ B2C → chọn tài khoản giáo viên đang hoạt động đã có → tích từng quyền → Lưu phân quyền. Quyền phụ thuộc tự chọn/bỏ; thay đổi chỉ lưu khi bấm Lưu, bản ghi cũ thay đổi thì báo tải lại. Giáo viên dùng Lớp của tôi → lớp B2C để xem/nhập theo quyền; Tạo lớp B2C xuất hiện nếu được cấp, lớp mới tự phân công cho mình. Chấm công B2C tách quyền upload/check-in/out và xem tiền công. Không được truy cập lớp khác bằng URL/RPC. User đã xác nhận và migration production đã áp/verify. Code hiện ở local, chưa phát hành online.
+
 ## Xếp lịch lặp và sinh buổi B2C (2026-10-14)
 
 Chi tiết lớp → Lịch học → Lịch lặp & sinh buổi → thứ/giờ/từ ngày/đến ngày/phòng tùy chọn → kiểm số buổi dự kiến → Lưu lịch & sinh buổi. Xem lịch đã lưu và các buổi có nhãn Sinh từ lịch lặp, phòng hoặc Chưa xếp phòng. Sinh lại cùng kế hoạch bỏ qua buổi đã có, không hồi sinh buổi hủy. Conflict lớp/phòng/khác buổi cũ hiển thị lỗi và không lưu phần nào. Tên phòng cần ghi cùng cơ sở, nhất quán.
@@ -460,10 +468,12 @@ Tài chính & công nợ → chọn ứng viên → nhóm phí ứng viên/đố
 
 ### B2C-CLASS-DETAIL-1
 
-Lớp trung tâm → chương trình → bấm tên lớp hoặc con mắt → popup thông tin và học viên đúng lớp → tìm/page20 → đóng về danh sách, giữ bộ tìm lớp/tab. Chuyển sang lớp khác khởi tạo lại bộ tìm/page. Danh sách rỗng có thông báo, trường chưa cập nhật dùng nhãn rõ hoặc dấu gạch. Chỉ đọc, không thêm mutation/DB query trong client.
+Lớp trung tâm → chương trình → bấm bất kỳ ô nào trên dòng lớp, tên lớp hoặc con mắt → popup thông tin và học viên đúng lớp → tìm/page20 → đóng về danh sách, giữ bộ tìm lớp/tab. Dòng có hiệu ứng hover/focus; nút tên và mắt vẫn dùng được bằng bàn phím, không xử lý click hai lần. Chuyển sang lớp khác khởi tạo lại bộ tìm/page. Danh sách rỗng có thông báo, trường chưa cập nhật dùng nhãn rõ hoặc dấu gạch. Chỉ đọc, không thêm mutation/DB query trong client.
 
 
 ### B2C-CLASS-WORKSPACE-1
+
+Từ danh sách lớp, năm nút Học viên/Lịch học/Điểm danh/Học phí/Nhận xét chuyển nội dung ngay trong popup, giữ danh sách lớp bên dưới. Tìm kiếm, phân trang, chọn buổi điểm danh/nhận xét xử lý trong popup; lưu thành công tải lại mục đang mở. Server action đọc dùng manager/RLS và validation giống trang chi tiết riêng; trang riêng vẫn hỗ trợ URL trực tiếp. Có trạng thái tải, lỗi/thử lại và bỏ qua phản hồi cũ khi chuyển mục nhanh.
 
 Popup lớp → chọn một trong5 mục → trang chi tiết. Lịch → thêm/sửa buổi hoặc giữ buổi liên kết lịch dạy → Mở điểm danh → chọn trạng thái từng học viên và lưu → Nhận xét từ hàng học viên, gắn buổi khi đang điểm danh. Tab Nhận xét cho xem theo buổi hoặc tất cả; chọn học viên để thêm đi đúng buổi đang chọn. Học phí → tạo/sửa gói bằng flow cũ → Phiếu thu → lưu và cập nhật số dư/lịch sử. Mọi danh sách25/trang, tìm học viên server. Buổi tương lai/hủy chặn điểm danh; roster lớp khác hoặc buổi lớp khác bị RPC chặn; học phí chưa cấu hình không là0đ miễn phí. Calendar/attendance/comments lưu request+history nguyên tử, retry không lặp và stale không ghi đè. Sửa lịch có roll-call/comment không cho đổi giờ/hủy. Revalidation vào pattern detail page từ save meeting/attendance/comment/tuition và tạo buổi dạy.
 

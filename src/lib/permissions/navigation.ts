@@ -157,6 +157,7 @@ export const B2C_NAVIGATION: NavItem[] = [
     icon: History,
     roles: ["super_admin"],
   },
+  { label: "Phân quyền", href: "/admin/b2c/permissions", icon: ShieldCheck },
 ];
 
 export function getB2CNavigation(role: UserRole): NavItem[] {

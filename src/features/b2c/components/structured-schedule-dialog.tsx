@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useClassWorkspaceRefresh } from "./class-workspace-refresh";
 import { CalendarDays } from "lucide-react";
 import {
   Dialog,
@@ -22,6 +23,7 @@ export function StructuredScheduleDialog({
   today: string;
   openingDate: string | null;
 }) {
+  const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -85,6 +87,7 @@ export function StructuredScheduleDialog({
                 else {
                   setMessage(r.success ?? "");
                   setOpen(false);
+                  refresh();
                 }
               } catch {
                 setError(

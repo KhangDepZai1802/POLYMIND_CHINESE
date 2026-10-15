@@ -1,5 +1,22 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## LISTENING-LESSON-4-1 — 2026-10-15
+
+- **Fix:** Fixed; **Verification:** Not Started. Bài4 riêng9audio/ảnh đúng trang nguồn Word, root chọn bài; giữ Bài3. Sửa audioB4 trước bị middleware chuyển login sang đúng whitelistmedia công khai và có Range regression.
+- **Đã chạy:** lint/typecheck/build exit0, Vitest858/858; Edge phát thật9audio, metadata/duration,1.25x/ảnh/nav/mobile390 khôngoverflow/0pageerror; Bài3 vẫn22entries. Không DB/chưa commit/push; chờ QA độc lập.
+
+## B2C-TEACHER-PERMISSIONS-1 — 2026-10-15
+
+- **Fix:** Code Ready; **Verification:** Not Started. Admin B2C/Giáo viên có15 checkbox/tài khoản hiện hữu; teacher UI và server/DB kiểm theo capability/lớp, các nhóm xem/sửa/thu/check/pay tách nhau, default giữ quyền cũ.
+- **Đã chạy:** lint/typecheck/build exit0; full Vitest854/854. Integration SQL migration+fixtures rollback đạt6 nhóm: defaults/assignment/unknown/self-escalation; admin/dependency/stale; attendance/comments/finance/profile/create-class; shared-profile/pay-redaction/separate-rights; audit; revocation. Không dùng dữ liệu thật.
+- **DB:** user đã duyệt, SQL20261015000001 áp cloud/history và verify SQL/RLS bằng kết nối mới; integration6 nhóm quyền rollback đạt trên bản đã áp. Chưa QA browser/commit/push code; dry-run còn16 history gaps ngoài scope, không repair/replay.
+
+## B2C-CLASS-POPUP-TABS-1 — 2026-10-15
+
+- **Fix:** Fixed; **Verification:** Not Started. Năm nút trước đây đóng popup và chuyển route; nay đổi nội dung tại popup, dùng chung workspace với trang riêng. Tìm/page/chọn buổi, refresh sau lưu, lỗi/thử lại và chống phản hồi cũ.
+- **Đã chạy:** lint/typecheck/build exit0, full Vitest845/845; test popup bản cuối6/6 (năm mục, không đổi URL, đúng lớp, search/page/link, lỗi/retry, phản hồi chậm).
+- **Cần QA:** thao tác trực quan và lưu dữ liệu bằng manager thật; chưa commit/push.
+
 ## CLASS-BACK-BUTTON-1 — 2026-10-14
 
 - **Fix:** Fixed; **Verification:** Not Started. Link trở lại nhạt chuyển BackLink vuông44px bo góc/nền/viền/hover/focus/dark, nhãn đích rõ. Teacher B2C/B2B + manager B2C class detail, giữ route.

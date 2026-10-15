@@ -1,5 +1,9 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## Phân quyền giáo viên B2C (2026-10-15)
+
+User chốt quyền theo từng giáo viên, dùng tài khoản đã có; cấp cả nhóm quản lý lớp/hồ sơ/học phí nhưng tách xem, sửa và thu.15 quyền: xem lớp, học viên, lịch, nhận xét; viết nhận xét; điểm danh; chấm công; xem giờ/đơn giá/tiền công; tạo lớp tự phân công; sửa lớp; sửa lịch; sửa hồ sơ; xem học phí/phiếu thu; thu học phí; sửa gói. Quyền dữ liệu chỉ trong lớp được phân công, không nâng role. Admin/giáo vụ quản lý quyền và vẫn giữ quyền quản lý theo role. Mặc định giữ6 quyền cũ; quyền ghi mới tắt. Quyền sửa tự kèm quyền xem liên quan, thu hồi xem bỏ quyền phụ thuộc. Hồ sơ học viên dùng chung nhiều lớp: tên/SĐT chỉ sửa khi có quyền ở tất cả lớp liên quan; trạng thái/ngày nhập học chỉ ghi danh hiện tại. User đã xác nhận, SQL20261015000001 đã áp production và verify quyền/RLS; code hiện ở local, chưa phát hành online.
+
 ## Lịch B2C có cấu trúc (2026-10-14)
 
 Admin/giáo vụ mở chi tiết lớp → Lịch học → Lịch lặp & sinh buổi. Chọn nhiều thứ T2–CN, giờ bắt đầu/kết thúc cùng ngày (tối đa12h), từ/đến ngày (bao gồm hai đầu, tối đa366 ngày, không trước khai giảng), phòng tùy chọn. Hiện số buổi dự kiến; Lưu tự sinh buổi lịch học trong khoảng đó, không cần cron và không sinh công/lương/phiếu thu. Muốn mở rộng thời gian thì lưu thêm khoảng ngày.

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useClassWorkspaceRefresh } from "./class-workspace-refresh";
 import { Pencil, Plus, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ export function TuitionPackageDialog({
   row: B2CTuitionRow;
   classId?: string;
 }) {
+  const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState(row.sessions ?? 1);
   const [price, setPrice] = useState(row.unit_price ?? 0);
@@ -37,6 +39,7 @@ export function TuitionPackageDialog({
   const { state, formAction } = useFormAction(saveB2CTuitionPackageAction, {
     onSuccess: () => {
       setOpen(false);
+      refresh();
     },
   });
   const key = row.enrollment_id;
@@ -160,12 +163,15 @@ export function TuitionReceiptsDialog({
   collector,
   today,
   classId,
+  canCollect = true,
 }: {
   row: B2CTuitionRow;
   collector: string;
   today: string;
   classId?: string;
+  canCollect?: boolean;
 }) {
+  const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false);
   const [requestId, setRequestId] = useState("");
   const [page, setPage] = useState(0);
@@ -176,6 +182,7 @@ export function TuitionReceiptsDialog({
   const { state, formAction } = useFormAction(recordB2CReceiptAction, {
     onSuccess: () => {
       setOpen(false);
+      refresh();
     },
   });
   async function load(next: number) {
@@ -221,7 +228,7 @@ export function TuitionReceiptsDialog({
             {formatCurrency(row.balance)}
           </DialogDescription>
         </DialogHeader>
-        {row.balance > 0 && (
+        {canCollect && row.balance > 0 && (
           <form action={formAction} className="space-y-4 border-b pb-4">
             {classId && <input type="hidden" name="class_id" value={classId} />}
             <input

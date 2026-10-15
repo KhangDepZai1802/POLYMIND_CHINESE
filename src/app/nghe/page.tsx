@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Headphones } from "lucide-react";
-
 import { ListeningShell } from "@/features/listening/components/listening-shell";
-import { LISTENING_TRACKS, listeningPageHref } from "@/features/listening/data";
+import { LISTENING_TRACKS } from "@/features/listening/data";
+import { BAI4_TITLE, BAI4_TRACKS } from "@/features/listening/bai4-data";
 
 export const metadata: Metadata = {
-  title: "Bài nghe Bài 3 – Thời gian",
+  title: "Danh sách bài nghe",
   description:
-    "Bộ audio luyện nghe Bài 3 – Thời gian dành cho lớp Ban Giám đốc.",
+    "Chọn bài học để mở tài liệu và audio luyện nghe của lớp Ban Giám đốc.",
   robots: { index: false, follow: false },
 };
 
@@ -21,40 +21,59 @@ export default function ListeningIndexPage() {
             Vietcombank · Học viện lãnh đạo
           </p>
           <h1 className="mt-3 text-3xl leading-tight font-bold sm:text-4xl">
-            Bài nghe Bài 3 – Thời gian
+            Bài nghe
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-white/75">
-            Chọn đúng số trang trong tài liệu để nghe từ vựng, mẫu câu và hội
-            thoại.
+            Chọn bài học để xem tài liệu và nghe audio.
           </p>
         </div>
       </section>
-
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="mb-5 flex items-center gap-2">
+        <h2 className="mb-5 flex items-center gap-2 text-xl font-bold text-[#10243f]">
           <Headphones className="size-5 text-[#1a5fa8]" aria-hidden />
-          <h2 className="text-xl font-bold text-[#10243f]">
-            Danh sách 22 audio
-          </h2>
-        </div>
-        <ol className="grid gap-3 sm:grid-cols-2">
-          {LISTENING_TRACKS.map((track) => (
-            <li key={track.src}>
-              <Link
-                href={listeningPageHref(track.page)}
-                className="group flex h-full min-h-20 items-center justify-between gap-3 rounded-2xl border border-[#dde5ee] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#91bbe8] hover:shadow-md focus-visible:ring-3 focus-visible:ring-[#1a5fa8]/40 focus-visible:outline-none"
-              >
-                <span className="leading-6 font-semibold text-[#0d3f78]">
-                  {track.title}
-                </span>
-                <ArrowRight
-                  className="size-5 shrink-0 text-[#1a5fa8] transition group-hover:translate-x-1"
-                  aria-hidden
-                />
-              </Link>
-            </li>
-          ))}
-        </ol>
+          Danh sách bài nghe
+        </h2>
+        <ul className="grid gap-4 sm:grid-cols-2">
+          <li>
+            <Link
+              href="/nghe/bai-3"
+              className="group flex min-h-32 items-center justify-between gap-4 rounded-2xl border border-[#dde5ee] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#91bbe8] hover:shadow-md focus-visible:ring-3 focus-visible:ring-[#1a5fa8]/40 focus-visible:outline-none"
+            >
+              <div>
+                <h3 className="text-xl font-bold text-[#0d3f78]">
+                  Bài 3 – Thời gian
+                </h3>
+                <p className="mt-2 text-sm text-[#5b6b80]">
+                  {LISTENING_TRACKS.length} audio · Từ vựng, mẫu câu và hội
+                  thoại
+                </p>
+              </div>
+              <ArrowRight
+                className="size-5 shrink-0 text-[#1a5fa8] transition group-hover:translate-x-1"
+                aria-hidden
+              />
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/nghe/bai-4"
+              className="group flex min-h-32 items-center justify-between gap-4 rounded-2xl border border-[#dde5ee] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#91bbe8] hover:shadow-md focus-visible:ring-3 focus-visible:ring-[#1a5fa8]/40 focus-visible:outline-none"
+            >
+              <div>
+                <h3 className="text-xl font-bold text-[#0d3f78]">
+                  {BAI4_TITLE}
+                </h3>
+                <p className="mt-2 text-sm text-[#5b6b80]">
+                  {BAI4_TRACKS.length} audio · Từ vựng, hỏi đường và hội thoại
+                </p>
+              </div>
+              <ArrowRight
+                className="size-5 shrink-0 text-[#1a5fa8] transition group-hover:translate-x-1"
+                aria-hidden
+              />
+            </Link>
+          </li>
+        </ul>
       </section>
     </ListeningShell>
   );

@@ -62,7 +62,11 @@ export function TeacherB2CClassCards({
                       <span className="block font-mono text-[11px] text-slate-500 dark:text-slate-400">
                         {item.code}
                       </span>{" "}
-                      <span role="heading" aria-level={3} className="block text-sm font-semibold break-words text-[#102752] dark:text-white">
+                      <span
+                        role="heading"
+                        aria-level={3}
+                        className="block text-sm font-semibold break-words text-[#102752] dark:text-white"
+                      >
                         {item.name}
                       </span>
                     </span>
@@ -77,7 +81,9 @@ export function TeacherB2CClassCards({
                     className="size-4 text-teal-600 dark:text-teal-400"
                     aria-hidden
                   />
-                  {item.student_count} học viên
+                  {item.student_count === undefined
+                    ? "Sĩ số chưa được cấp quyền xem"
+                    : `${item.student_count} học viên`}
                 </p>
                 <p className="text-muted-foreground flex items-start gap-2 text-xs leading-relaxed break-words">
                   <CalendarDays

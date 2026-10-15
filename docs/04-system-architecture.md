@@ -1,5 +1,9 @@
 # 04 — Kiến trúc hệ thống
 
+## Capability giáo viên B2C (2026-10-15)
+
+Catalog/dependency/schema tại domain/teacher-permissions.ts. Admin dialog đọc/lưu qua manager-only actions/RPC với optimistic version; server không dùng service role. Teacher ClassWorkspaceContent nhận permissions để hiện tab/thao tác, nhưng enforcement nằm tại DB helper (capability AND lớp phân công), RPC đọc projection và mutation. Không thay app.is_manager hoặc role middleware toàn hệ thống. Teacher management actions quản lý lớp/hồ sơ qua RPC scoped; ClassWorkspaceContent dùng chung admin/teacher. User đã xác nhận; migration production đã áp/history và verify bằng kết nối mới với integration rollback. Code chưa phát hành online.
+
 ## Nút trở lại chi tiết lớp (2026-10-14)
 
 Shared BackLink dùng Next Link (giữ semantic điều hướng), đích href tường minh. Icon ArrowLeft trong ô44×44px rounded-xl có nền/viền xanh, hover tương phản, focus outline và aria-label/title; nhãn điểm đến nằm cạnh nút. Dùng tại teacher B2C/B2B và admin B2C class detail. Không đổi quyền/dữ liệu hoặc thay bằng history.back không kiểm soát đích.

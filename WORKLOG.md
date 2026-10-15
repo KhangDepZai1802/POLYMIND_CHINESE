@@ -38,6 +38,20 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261015-ALL — chuẩn bị commit/push — Codex — 2026-10-15. User chốt đưa toàn bộ code/tài nguyên hiện có lên GitHub, gồm B2C/phân quyền/Bài3/Bài4/favicon. Bản hiện tại lint/typecheck/build exit0, Vitest858/858 và Edge9audio/mobile đạt. Rà secret trước commit; kết quả SHA/push báo trong chat, không suy ra deploy thành công từ push.
+
+> LISTENING-LESSON-4-1 — hoàn thành local — Codex — 2026-10-15. Bài4 Phương hướng/địa điểm có9audio +9ảnh Word trang2/4/5/6/7/25/26/29/30, root chọn bài, route riêng; publicaudio whitelistB4, Bài3 giữ22. Lint/typecheck/build exit0, Vitest858/858; Edge phát thật9audio/speed/ảnh/mobile390/nav đạt. Chưa commit/push.
+
+> LISTENING-LESSON-INDEX-1 — hoàn thành local — Codex — 2026-10-15. /nghe chọn Bài3–Thời gian, bấm mở22audio tại /nghe/bai-3; giữ URL trang/audio cũ, back về Bài3, shell tổng quát. HTTPlocalhost3route200 đúng0/22link và back. Lint/typecheck/build exit0, Vitest854/854; chưa commit/push.
+
+> B2C-PERMISSIONS-NAV-1 — hoàn thành local — Codex — 2026-10-15. Phân quyền nằm menu trái B2C sau Nhật ký thay đổi (desktop/mobile), route permissions mở bộ chọn trực tiếp, bỏ headerbuttons cũ. Manager/RLS giữ nguyên; lint/typecheck/build exit0, Vitest854/854. Chưa commit/push.
+
+> B2C-TEACHER-PERMISSIONS-1 — code local/SQL cloud hoàn thành — Codex — 2026-10-15. User đã duyệt và SQL20261015000001 đã áp transaction/history. Kết nối mới xác minh SQL khớp,2 bảng RLS, integration rollback6 nhóm đạt. Mặc định giữ6 quyền cũ, chưa cấp thêm quyền thật. Lint/typecheck/build exit0, Vitest854/854 ở bản code trước áp. Chưa QA browser/commit/push; dry-run vẫn16 history gaps ngoài scope.
+
+> B2C-CLASS-POPUP-TABS-1 — hoàn thành local — Codex — 2026-10-15. Năm mục chuyển trong popup; đọc manager/RLS, tìm/page/chọn buổi tại chỗ, refresh sau lưu, chống phản hồi cũ. Lint/typecheck/build exit0, full Vitest845/845 + popup6/6 bản cuối. Chưa QA trình duyệt, chưa commit.
+
+> B2C-CLASS-ROW-CLICK-1 — hoàn thành local — Codex — 2026-10-15. Bấm dòng danh sách lớp mở chi tiết như nút mắt; hover/focus, giữ nút bàn phím và tránh click kép. Lint/typecheck/build exit0, Vitest843/843; chưa kiểm tra trình duyệt, chưa commit.
+
 > B2C-SOURCE-TIKTOK-ICONS-1 — hoàn thành code/SQL cloud — Antigravity — 2026-10-14. Thêm icon con người (Users) cho tiêu đề Nguồn khách; icon sinh động cho từng nguồn (FB, Zalo, TikTok, Giới thiệu, Walk-in, Trường học, Khác); thêm nguồn tiktok vào domain, Zod schema, ràng buộc CSDL (migration 16) và đồng bộ bảng màu. Lint/typecheck/build exit 0, Vitest 843/843.
 
 > RELEASE-20261014-B — đang kiểm tra và phát hành — Codex — 2026-10-14. User yêu cầu commit/push GitHub trong lượt này. Bao gồm thay đổi B2C/giáo viên/lịch lặp và XKLĐ đã hoàn thành; giữ riêng .env.example bị xóa nội dung ngoài scope. Xác minh SHA/push trong chat sau phát hành.
@@ -768,6 +782,16 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- LISTENING-LESSON-4-1: user xem /nghe → Bài4 hoặc /nghe/bai-4; chờ nội dung tiếp theo. Code/media local chưa phát hành online.
+
+- LISTENING-LESSON-INDEX-1: chờ user cung cấp bài nghe tiếp theo; hiện chỉ thêm mục Bài3, chưa tạo nội dung bài khác.
+
+- B2C-TEACHER-PERMISSIONS-1: QA browser admin/teacher trên code local với DB mới; admin chọn giáo viên và quyền thực tế. Code chưa phát hành online; không tự commit theo AGENTS.md. SQL đã áp và kiểm chứng; không tự bật quyền thật.
+
+- B2C-CLASS-POPUP-TABS-1: QA trực quan năm mục popup và lưu điểm danh/học phí/nhận xét với tài khoản manager.
+
+- B2C-CLASS-ROW-CLICK-1: QA trình duyệt thao tác bấm ô/dòng mở đúng lớp.
+
 **CLASS-BACK-BUTTON-1-REVIEW:** dev3000 hoặc local3121, mở chi tiết lớp → nút mũi tên vuông44px bo góc/nền xanh cạnh nhãn đích, thử hover/focus/mobile/back đúng danh sách. QA độc lập, chưa phát hành online.
 
 **TEACHER-HOME-REDESIGN-1-REVIEW:** localhost:3120/teacher hoặc dev3000, xem bố cục theo ảnh và logo cũ; thử tìm lớp,4KPI, link lịch/class, mobile360/390. Chờ QA độc lập/phát hành online theo user.
@@ -1110,6 +1134,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C migration history (2026-10-15):** sau SQL20261015000001, CLI dry-run vẫn có16 khoảng thiếu history:15 migration B2C cũ và SQL20261014000016 ngoài scope. Không repair/replay; không khẳng định toàn bộ remote up-to-date. Blocker apply phân quyền đã gỡ sau user xác nhận và apply thành công.
+
 - `B2C-CHANGE-HISTORY-1-HISTORY`: SQL06 đã áp và history xác minh, RLS bật; dry-run trước/sau vẫn chặn 15 migration B2C cũ thiếu history. Không repair/chạy lại SQL cũ. Chưa kiểm tra trực quan bằng tài khoản thật; phần test DB đã rollback toàn bộ fixture.
 
 - `B2C-FINANCE-2-HISTORY`: SQL 20261014000005 áp và history xác minh; dry-run vẫn chặn 15 migration B2C cũ thiếu history. Không repair hoặc áp lại SQL cũ. CAC chờ hai định nghĩa user, chưa tính.
@@ -1224,76 +1250,37 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
-### [2026-10-14] Antigravity — B2C-SOURCE-TIKTOK-ICONS-1
-- **Làm được:** Tiêu đề "Nguồn khách" thêm icon con người (`Users`); các thẻ nguồn thêm icon sinh động (Facebook, Zalo, TikTok, Giới thiệu, Walk-in, Trường học, Khác, Chưa xác định); bổ sung nguồn TikTok vào danh sách nguồn, nhãn, Zod schema, ràng buộc CSDL và đồng bộ bảng màu.
-- **File thay đổi:** src/features/b2c/domain/customer-source.ts, src/features/b2c/components/customer-source-icons.tsx, src/features/b2c/components/customer-source-card.tsx, src/app/(dashboard)/admin/b2c/overview/page.tsx, supabase/migrations/20261014000016_b2c_tiktok_customer_source.sql, tests/unit/b2c-enrollment-validation.test.ts, tests/unit/components/customer-source-icons.test.tsx, docs/08-phase-plan.md, WORKLOG.md.
-- **Migration/data impact:** Migration 16 cập nhật check constraint trên `b2c_students` và `b2c_admission_leads` cho phép `tiktok`; đã thực thi và xác minh trên remote database.
-- **Đã test:** lint/typecheck/build exit 0; Vitest 843/843 (139 files).
-- **Rủi ro:** Chưa commit/push origin main.
-- **Next action:** B2C-SOURCE-TIKTOK-ICONS-1-REVIEW.
+### [2026-10-15] Codex — RELEASE-20261015-ALL
+- User yêu cầu commit/push toàn bộ thay đổi hiện có, gồm favicon/logo ngoài các tính năng B2C và bài nghe đã làm. HEAD và origin/main đang ngang nhau trước phát hành.
+- Kiểm tra code gần nhất: lint/typecheck/build exit0,858/858test; Edge9audio Bài4/phát/speed/ảnh/mobile/Bài3 đạt. Rà staged secrets và exclude env theo gitignore trước commit. SHA/push xác nhận trong chat; không tự xác nhận Vercel deploy từ gitpush.
 
+### [2026-10-15] Codex — LISTENING-LESSON-4-1
+- **Làm được:** nhập ZIP user9M4A, dựng ảnh9trang từ DOCX42trang bằng nền ảnh + textboxes giữ Hán/pinyin/Việt/hình; sửa hộp tiêu đề29 bị chồng NG. /nghe có Bài3/Bài4 theo thứ tự, Bài4 riêng/index/page/back/prev-next, trình phát chung. Whitelist chính xác /audio/bai-4/ để anonymous/Range không trả HTML đăng nhập.
+- **File:** public/audio/bai-4, public/bai4, bai4-data.ts, routesB4/root, middleware +test, import/render/check scripts, assettests và docs. Không DB.
+- **Kiểm tra:** lint/typecheck/build exit0, Vitest858/858 (142files). Edge localhost phát thật đủ9audio, duration hợp lệ,1.25x/ảnh/back/prevlinks/mobile390 khôngoverflow/0pageerror và Bài3đủ22. Tài sản18files khoảng2.2MB; scratch/preview dọn sạch. Chưa commit/push, chờ QA độc lập/user xem.
 
-### [2026-10-14] Codex — CLASS-BACK-BUTTON-1
-- **Làm được:** thay link back nhạt tại chi tiết lớp bằng BackLink vuông44px bo12px/nền xanh/viền/shadow/hover đậm/focus/dark; aria-label và nhãn đích. Áp3 trang teacherB2C/teacherB2B/adminB2C, giữ href.
-- **File thay đổi:** shared/back-link.tsx,3 class detail pages, docs04/08/QA/WORKLOG.
-- **Migration/data impact:** không có; giữ logo/quyền/nghiệp vụ. Synthetic fixtures/account test đã dọn sạch.
-- **Đã test:** lint/typecheck/build exit0, Vitest832/832; Edge3121 teacher login/roster/search/schedule/comments/foreign404/mobile0overflow, back44×44 và về đúng /teacher/classes,0pageerror.
-- **Rủi ro:** chưa commit/push/deploy; chờ QA độc lập.
-- **Next action:** CLASS-BACK-BUTTON-1-REVIEW.
+### [2026-10-15] Codex — LISTENING-LESSON-INDEX-1
+- **Làm được:** /nghe là danh sách bài học với Bài3–Thời gian; chuyển22audio cũ sang /nghe/bai-3. Shell header/footer tổng quát hoặc nhãn bài; trang audio giữ URL/file và back về Bài3. Không DB.
+- **File:** nghe/page.tsx, nghe/bai-3/page.tsx, nghe/[page]/page.tsx, listening-shell.tsx, workflow/ledger/worklog.
+- **Kiểm tra:** localhost /nghe, /nghe/bai-3, /nghe/trang-1 HTTP200; root0audio-link, Bài3 đủ22, trang1 linkback đúng. Lint/typecheck/build exit0; Vitest854/854. Chưa commit/push; next: user gửi bài khác.
 
+### [2026-10-15] Codex — B2C-PERMISSIONS-NAV-1
+- **Làm được:** đưa Phân quyền vào B2C_NAVIGATION sau Nhật ký thay đổi; trang /admin/b2c/permissions đọc quyền qua manager action và render editor inline. Bỏ nút header ở trang lớp/giáo viên. Không DB/quyền mới.
+- **File:** navigation.ts, trang permissions, teacher-permissions-dialog.tsx, trang B2C, teacher-dashboard, workflow/ledger/worklog.
+- **Kiểm tra:** lint/typecheck/build exit0; Vitest854/854. Chưa QA browser/commit/push. Next: user kiểm tra menu trái trên local.
 
-### [2026-10-14] Codex — TEACHER-HOME-REDESIGN-1
-- **Làm được:** dashboard theo ảnh: nền xanh nhẹ/greeting/date VN/KPI4, B2C4 thẻ ngang đa sắc, timeline/empty panels, teacher active gradient. Giữ logopolymind.png/Logo nguyên trạng. Header search GET lọc lớp được phân công, có form mobile.
-- **File thay đổi:** teacher page/classes, TeacherHomeDashboard, TeacherHeaderSearch/layout/nav-links, B2C class cards/today,2 regression home, docs04/08/QA/WORKLOG.
-- **Migration/data impact:** không DB/quyền mới. Queries và actualToday/weekly/cancel giữ nguyên; scope B2B chỉ số thiếu nguồn B2C ghi rõ, không bịa delta. Synthetic4classes/15students/meeting/account đã dọn sạch.
-- **Đã test:** lint/typecheck/build exit0, Vitest832/832 (138files). Edge3120 desktop1672:4card ngang/logo src giữ nguyên/search đúng; mobile390/360 không tràn/menu hoạt động,0pageerror. Đã xem ảnh desktop/mobile cuối, nút lịch trên phone xuống dòng riêng.
-- **Rủi ro:** chưa commit/push/deploy; QA độc lập chưa làm.
-- **Next action:** TEACHER-HOME-REDESIGN-1-REVIEW.
+### [2026-10-15] Codex — B2C-TEACHER-PERMISSIONS-1 áp DB theo xác nhận
+- **Làm được:** user trả lời ok cho production migration; apply20261015000001 và ghi history trong cùng transaction thành công. Kết nối mới verify SQL khớp file đã duyệt và2 bảng RLS. Chạy integration thực tế6 nhóm quyền trên fixture rollback đạt; không cấp thêm quyền tài khoản thật.
+- **Kiểm tra:** scripts/b2c-permissions-db.mjs apply exit0, verify exit0. Dry-run sau exit1 do16 history gaps ngoài scope, không repair/replay. Code trước áp đã lint/typecheck/build exit0 và854/854test; phiên này chỉ sửa script verify/docs. Chưa QA browser hoặc commit/push/deploy code.
+- **Next:** dùng Phân quyền trên bản local; QA độc lập và phát hành code khi được yêu cầu. DB không còn chờ approval.
 
+### [2026-10-15] Codex — B2C-TEACHER-PERMISSIONS-1
+- **Làm được:** admin B2C/Giáo viên có Phân quyền, chọn giáo viên/liên kết tài khoản hiện hữu,15 checkbox phụ thuộc xem/sửa, version chống ghi đè. User chốt gồm quản lý lớp/hồ sơ/học phí. Teacher UI áp quyền, lớp mới tự phân công, không nâng role.
+- **Bảo vệ:** manager-only editor+audit, raw-table RLS đóng; salary RPC redact khi thiếu view_pay; collect/edit tách; hồ sơ chung nhiều lớp chỉ đổi tên/SĐT nếu có quyền ở mọi lớp. SQL kiểm IDOR/self-escalation/unknown/dependency/stale grants/defaults/revocation/student/pay/finance.
+- **Đã test:** lint/typecheck/build exit0, full Vitest854/854 (141files); integration migration+fixtures rollback đạt6 nhóm. Chưa QA browser với DB mới, chưa áp/commit/push. Auto-review từ chối applyproduction; chờ user duyệt SQL cụ thể, không bypass. Dry-run có15 history gaps cũ.
+- **Next:** user duyệt → apply20261015000001, verify mới/dry-run, browser admin/teacher/thu hồi và cleanup. Không tự bật quyền thật.
 
-
-
-### [2026-10-14] Codex — B2C-STRUCTURED-SCHEDULE-1
-- **Làm được:** rule nhiều thứ/giờ/phòng tùy chọn/range/preview → atomic generate, unique DB/request retries; room exclusion concurrent, class conflict, no overwrite/cancel resurrection, actor/history. Manager lịch/form/phòng; teacher schedule + actualToday/override/cancel tránh trùng fallback.
-- **File thay đổi:** SQL15/pgTAP, structured-schedule domain/dialog/actions/unit, class workspace/actions/dialogs/types, teacher queries/page/today/detail, docs01/02/03/08/QA/WORKLOG.
-- **Migration/data impact:** SQL15 cloud/history xác minh, bảng rule RLS/no direct writes, metadata/exclusion trên meeting. Không tự backfill nguồn/phòng/lịch cũ, không sinh payroll. CLI15 history gaps không replay/repair. Tất cả synthetic fixtures/account dọn sạch.
-- **Đã test:** pgTAP98/98 (40workspace+23teacher+35schedule) rollback, Vitest830/830 (137files), lint/typecheck/build exit0. Edge3117 create4, retry0skip4, room atomic rollback, concurrent1winner, teacher actual+room/no fallback/cancel/deny/mobile đạt,0pageerror.
-- **Giới hạn:** phòng nhập tên (gồm cơ sở) và cần nhất quán; rule lưu bất biến, generated giờ gốc không sửa, hủy+bù khi đổi lịch. Chưa commit/push/deploy, QA độc lập chưa làm.
-- **Next action:** B2C-STRUCTURED-SCHEDULE-1-REVIEW.
-
-
-
-
-
-
-### [2026-10-14] Codex — B2C-ICON-COLORS-1
-- **Làm được:** màu icon xuyên B2C và giáo viên: menu có ô pastel32px, active trắng; KPI Tổng quan ngọc/xanh/tím/emerald; thẻ lớp sách xanh, users ngọc; tìm/xem xanh, sửa amber, history tím. Giữ icon trắng ở nút màu, dark variants.
-- **File thay đổi:** nav-links, B2C overview/components tìm-xem-sửa-history, teacher page/class cards, docs04/08/QA/WORKLOG.
-- **Migration/data impact:** không có. Không đổi quyền, links hoặc nghiệp vụ. Tài khoản/fixture tổng hợp phục vụ browser đã dọn sạch.
-- **Đã test:** lint/typecheck/build exit0; Vitest818/818 (136files); Edge3115 teacher login/roster/lịch/nhận xét/IDOR/mobile, B2C overview/teachers/menu điện thoại chụp screenshot,0pageerror. Đã xem ảnh desktop Tổng quan, giữ độ tương phản active.
-- **Rủi ro:** chưa commit/push/deploy; QA độc lập chưa làm.
-- **Next action:** B2C-ICON-COLORS-1-REVIEW.
-
-
-
-
-
-
-
-
-### [2026-10-14] Codex — B2C-TEACHER-TODAY-1
-- **Làm được:** nối lớp B2C theo lịch tuần vào tổng và nội dung Hôm nay; đúng thứ/ngày VN, active, ngày khai giảng. Giờ/mã/tên/sĩ số/link lịch lớp, nhãn dự kiến; mỗi lớp một dòng.
-- **File thay đổi:** teacher/page, domain/teacher-today, components/teacher-today-classes, unit domain test, docs01/03/08/QA/WORKLOG.
-- **Migration/data impact:** không có DB/quyền mới; chỉ dùng RPC lớp được phân công hiện hữu. Không sinh buổi, điểm danh hoặc lương. Fixtures thử/account đã dọn sạch.
-- **Đã test:** lint/typecheck/build exit0, Vitest818/818 (136 files),5 regression thứ Tư/UTC/CN/start-date/trạng thái/malformed. Edge production3114 login → lịch hôm nay đúng1lần/giờ → roster/search/schedule/comments/IDOR/mobile đạt,0pageerror.
-- **Giới hạn:** lịch tuần là dự kiến; buổi cụ thể/ngày nghỉ xem lịch lớp. Chưa commit/push/deploy, QA độc lập chưa làm.
-- **Next action:** B2C-TEACHER-TODAY-1-REVIEW.
-
-
-
-
-
-
-
-
-
+### [2026-10-15] Codex — B2C-CLASS-POPUP-TABS-1
+- **Làm được:** bỏ liên kết đóng popup/sang trang ở năm nút; dùng chung ClassWorkspaceContent với trang riêng và readClassWorkspaceAction (manager/RLS/validation). Tìm/page/chọn buổi ở popup, lỗi/thử lại, bỏ phản hồi cũ; context tải lại mục sau lưu buổi/lịch lặp/điểm danh/học phí/nhận xét.
+- **File:** class-detail-dialog, class-workspace-content/refresh/read, trang admin class detail, các dialog lưu, test b2c-class-detail và docs. Không migration.
+- **Đã test:** lint exit0; typecheck exit0; full Vitest845/845, sau thêm test navigation/race popup6/6; build cuối exit0. Chưa QA trình duyệt hoặc commit. Next: QA manager năm mục và lưu dữ liệu.

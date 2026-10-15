@@ -7,6 +7,7 @@ import {
 } from "@/features/b2c/teaching-schema";
 import { requireManager, requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { permissionRpc } from "./permission-rpc";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
 export async function createTeachingSessionAction(
   _: ActionState,
@@ -41,6 +42,12 @@ export async function teachingPhotoTicket(
   size: number,
 ) {
   const actor = await requireTeaching();
+  if (
+    !(await permissionRpc<boolean>("has_b2c_permission", {
+      p_key: "check_teaching",
+    }))
+  )
+    return { error: "Bạn chưa được cấp quyền chấm công B2C." };
   if (
     !z.uuid().safeParse(id).success ||
     !["in", "out"].includes(kind) ||

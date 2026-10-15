@@ -1,5 +1,11 @@
 # 02 — Thiết kế Database
 
+## Quyền giáo viên B2C — SQL20261015000001 (đã áp)
+
+Bảng b2c_teacher_permissions khóa theo b2c_teachers.id lưu15 capability, updated_at/actor; RLS chỉ manager đọc, không grant DML user. RPC manager-only lưu/quản lý liên kết tài khoản active, validation dependency và optimistic lock; history append-only actor thật. Thiếu bản ghi giữ6 quyền cũ; thiếu liên kết/khóa tài khoản/GV inactive deny. Helper kết hợp capability + teaches_b2c_class, không đổi role/global is_manager. Impl đọc cũ chuyển private app/revoke EXECUTE, public wrappers kiểm quyền. Teacher workspace bỏ finance ngoài tabtuition; raw tables vẫn manager-only. Check-in/view_pay tách; salary/hourly_rate/teaching_hours redacted khỏi JSON và raw session SELECT chặn teacher. Tuition RPC scoped SECURITY DEFINER; trigger balance/retry cũ giữ. Hồ sơ chung chỉ sửa tên/SĐT nếu có edit_students ở mọi lớp liên quan; trạng thái chỉ ghi danh hiện tại. Tạo lớp tự gắn teacher_id người tạo, retry/audit; không đổi phân công qua payload.
+
+User đã xác nhận áp production ngày15/10; SQL20261015000001 đã áp/history trong cùng transaction. Kết nối mới verify SQL khớp file,2 bảng RLS và integration6 nhóm quyền fixture rollback đạt. Không cấp thêm quyền thật; code local đã lint/typecheck/build exit0 và Vitest854/854, chưa phát hành online. CLI dry-run sau còn16 history gaps ngoài scope, không repair/replay hoặc khẳng định toàn remote up-to-date.
+
 ## Lịch có cấu trúc B2C — SQL15
 
 b2c_class_schedules lưu class_id, weekdays ISO1..7[], start/end time, room_name (trống nếu chưa xếp), date_from/date_to, actor/time; RLS SELECT manager, không direct mutation. Unique class/days/time/room/range, RPC chuẩn hóa mảng thứ. b2c_class_meetings thêm schedule_id FK restrict, room_name và generated room_key trim/gom khoảng trắng/upper/nullif. btree_gist exclusion (room_key =, tstzrange &&) chỉ buổi không hủy, [start,end) cho phép hai buổi liền nhau, chống race xuyên lớp. Không áp giới hạn phòng khi chưa xếp.

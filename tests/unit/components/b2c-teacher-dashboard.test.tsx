@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
+vi.mock("@/features/b2c/server/permission-actions", () => ({ readB2CPermissionAdminAction: vi.fn(), saveB2CPermissionsAction: vi.fn() }));
 
 vi.mock("@/features/b2c/components/teacher-dialog", () => ({
   B2CTeacherDialog: () => <button>Sửa hồ sơ</button>,

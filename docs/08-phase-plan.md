@@ -1,5 +1,29 @@
 # 08 — Phase Plan & Task Ledger
 
+## LISTENING-LESSON-4-1 — Bài4 phương hướng/địa điểm
+
+- [x] Nhập9audio từ ZIP user, ghép đúng trang2/4/5/6/7/25/26/29/30 trong Word42trang; giữ chữ Hán/pinyin/hình, routesB4/root và audio whitelist chính xác, Bài3 giữ22. Lint/typecheck/build exit0, Vitest858/858; Edge phát thật9audio/speed/ảnh/nav/mobile390/0pageerror đạt. Chưa commit/push.
+
+## LISTENING-LESSON-INDEX-1 — Danh sách bài nghe
+
+- [x] /nghe hiện chọn Bài3–Thời gian; bấm mở22audio cũ tại /nghe/bai-3. Trang audio giữ URL/back về Bài3; shell tổng quát ở trang chọn bài. Chưa tạo bài khác. Lint/typecheck/build exit0, Vitest854/854; localhost3route200, root0audio-link/Bài3đủ22/backđúng. Chưa commit/push.
+
+## B2C-PERMISSIONS-NAV-1 — Menu trái Phân quyền
+
+- [x] Mục Phân quyền nằm sau Nhật ký thay đổi trong menu B2C desktop/mobile, mở trang /admin/b2c/permissions với bộ chọn quyền trực tiếp. Bỏ nút header cũ; giữ kiểm manager/server/DB. Lint/typecheck/build exit0, Vitest854/854. Chưa commit/push.
+
+## B2C-TEACHER-PERMISSIONS-1 — Phân quyền giáo viên B2C
+
+- [x] Phân quyền tại admin B2C/Giáo viên,15 checkbox/tài khoản cũ, tách xem/sửa/thu, dependency/version/audit; teacher UI+server/DB, chỉ lớp phân công, lớp mới tự phân công. Mặc định6 quyền cũ. Lint/typecheck/build exit0, Vitest854/854. User duyệt production; SQL20261015000001 đã áp/history, verify kết nối mới SQL khớp và2 bảng RLS; integration fixture rollback6 nhóm đạt. Chưa QA browser/commit/push code; dry-run còn16 history gaps ngoài scope, không replay/repair.
+
+## B2C-CLASS-POPUP-TABS-1 — Các mục chi tiết trong popup
+
+- [x] Năm mục Học viên/Lịch học/Điểm danh/Học phí/Nhận xét chuyển nội dung trong cùng popup; tìm kiếm/phân trang/chọn buổi không điều hướng trang. Dùng chung nội dung với trang riêng; server kiểm manager/RLS và bộ lọc, tải lại mục sau lưu; xử lý lỗi/tải chậm/đổi tab nhanh. Lint/typecheck/build exit0, full Vitest845/845 + popup6/6 bản cuối. Chưa QA trình duyệt.
+
+## B2C-CLASS-ROW-CLICK-1 — Bấm dòng xem lớp
+
+- [x] Bấm ô bất kỳ trong dòng danh sách lớp mở chi tiết giống nút mắt; giữ nút tên/mắt dùng bàn phím và tránh xử lý click hai lần. Hover/focus làm nổi dòng; lint/typecheck/build exit0, Vitest843/843. Chưa QA trình duyệt.
+
 ## B2C-SOURCE-TIKTOK-ICONS-1 — Bổ sung nguồn TikTok và icon nguồn khách
 
 - [x] Tiêu đề "Nguồn khách" thêm icon con người (Users); các thẻ nguồn có icon sinh động: Facebook, Zalo, TikTok, Giới thiệu, Walk-in, Trường học, Khác, Chưa xác định. Bổ sung nguồn TikTok vào danh sách nguồn, nhãn, Zod schema, ràng buộc CSDL (migration 16) và đồng bộ bảng màu. Lint/typecheck/build exit 0, Vitest 843/843.

@@ -1,5 +1,32 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+import { readClassWorkspaceAction } from "@/features/b2c/server/class-workspace-read";
+vi.mock("@/features/b2c/server/class-workspace-read", () => ({
+  readClassWorkspaceAction: vi.fn(),
+}));
+vi.mock("@/features/b2c/server/teacher-management-actions", () => ({
+  readTeacherClassEditAction: vi.fn(), readTeacherStudentEditAction: vi.fn(),
+  saveTeacherClassAction: vi.fn(), saveTeacherStudentAction: vi.fn(),
+}));
+vi.mock("@/features/b2c/components/class-workspace-dialogs", () => ({
+  ClassMeetingDialog: () => null,
+  ClassAttendanceDialog: () => null,
+  ClassCommentDialog: () => null,
+}));
+vi.mock("@/features/b2c/components/tuition-dialogs", () => ({
+  TuitionPackageDialog: () => null,
+  TuitionReceiptsDialog: () => null,
+}));
+vi.mock("@/features/b2c/components/structured-schedule-dialog", () => ({
+  StructuredScheduleDialog: () => null,
+}));
 import {
   B2CProgramWorkspace,
   type ClassRow,
@@ -81,6 +108,144 @@ function setup(
   );
 }
 describe("B2C class details", () => {
+  it("keeps search, pagination and links inside the popup", async () => {
+    vi.mocked(readClassWorkspaceAction).mockImplementation(
+      async (classId, filters) => ({
+        classId,
+        base: `/admin/b2c/classes/${classId}`,
+        cls: { ...first, notes: null },
+        schedules: [],
+        result: { rows: [], total: 26, stats: null },
+        meeting: null,
+        today: "2026-10-15",
+        collector: "Quản lý",
+        filters: {
+          tab: filters.tab as "attendance",
+          page: Number(filters.page ?? 0),
+          q: String(filters.q ?? ""),
+        },
+      }),
+    );
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Lớp A" }));
+    const dialog = within(screen.getByRole("dialog"));
+    const url = window.location.href;
+    fireEvent.click(dialog.getByRole("button", { name: "Điểm danh" }));
+    await dialog.findByRole("link", { name: "Lịch học" });
+    fireEvent.change(dialog.getByLabelText("Tìm học viên của lớp"), {
+      target: { value: "HV-1" },
+    });
+    fireEvent.submit(
+      dialog.getByRole("button", { name: "Tìm" }).closest("form")!,
+    );
+    await waitFor(() =>
+      expect(readClassWorkspaceAction).toHaveBeenLastCalledWith("class-a", {
+        tab: "attendance",
+        q: "HV-1",
+      }),
+    );
+    fireEvent.click(await dialog.findByRole("link", { name: "Trang sau" }));
+    await waitFor(() =>
+      expect(readClassWorkspaceAction).toHaveBeenLastCalledWith("class-a", {
+        tab: "attendance",
+        q: "HV-1",
+        page: "1",
+      }),
+    );
+    fireEvent.click(await dialog.findByRole("link", { name: "Lịch học" }));
+    await waitFor(() =>
+      expect(readClassWorkspaceAction).toHaveBeenLastCalledWith("class-a", {
+        tab: "schedule",
+        q: "HV-1",
+        page: "0",
+      }),
+    );
+    expect(window.location.href).toBe(url);
+  });
+  it("ignores a delayed tab response after returning to students", async () => {
+    let resolve!: (
+      value: Awaited<ReturnType<typeof readClassWorkspaceAction>>,
+    ) => void;
+    vi.mocked(readClassWorkspaceAction).mockReturnValue(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Lớp A" }));
+    const dialog = within(screen.getByRole("dialog"));
+    fireEvent.click(dialog.getByRole("button", { name: "Lịch học" }));
+    expect(dialog.getByRole("status")).toBeInTheDocument();
+    fireEvent.click(dialog.getByRole("button", { name: "Học viên" }));
+    await act(async () =>
+      resolve({
+        classId: first.id,
+        base: `/admin/b2c/classes/${first.id}`,
+        cls: { ...first, notes: null },
+        schedules: [],
+        result: { rows: [], total: 0, stats: null },
+        meeting: null,
+        today: "2026-10-15",
+        collector: "Quản lý",
+        filters: { tab: "schedule", page: 0, q: "" },
+      }),
+    );
+    expect(dialog.getByText("Học viên A")).toBeInTheDocument();
+    expect(dialog.getByRole("button", { name: "Học viên" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+  it("switches all workspace sections inside the same dialog and returns to the roster", async () => {
+    vi.mocked(readClassWorkspaceAction).mockImplementation(
+      async (classId, filters) => ({
+        classId,
+        base: `/admin/b2c/classes/${classId}`,
+        cls: { ...first, notes: null },
+        schedules: [],
+        result: { rows: [], total: 0, stats: null },
+        meeting: null,
+        today: "2026-10-15",
+        filters: { tab: filters.tab as "schedule", page: 0, q: "" },
+        collector: "Quản lý",
+      }),
+    );
+    setup();
+    fireEvent.click(screen.getByText("B2C-A"));
+    const dialog = screen.getByRole("dialog");
+    const url = window.location.href;
+    for (const label of ["Lịch học", "Điểm danh", "Học phí", "Nhận xét"]) {
+      fireEvent.click(within(dialog).getByRole("button", { name: label }));
+      await waitFor(() =>
+        expect(within(dialog).queryByRole("status")).not.toBeInTheDocument(),
+      );
+      expect(screen.getByRole("dialog")).toBe(dialog);
+      expect(
+        within(dialog).getByRole("button", { name: label }),
+      ).toHaveAttribute("aria-pressed", "true");
+      expect(window.location.href).toBe(url);
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: "Học viên" }));
+    expect(within(dialog).getByText("Học viên A")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Học viên B")).not.toBeInTheDocument();
+  });
+  it("shows load errors inside the popup and allows retry", async () => {
+    vi.mocked(readClassWorkspaceAction).mockRejectedValue(new Error("offline"));
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Lớp A" }));
+    const dialog = within(screen.getByRole("dialog"));
+    fireEvent.click(dialog.getByRole("button", { name: "Lịch học" }));
+    expect(await dialog.findByRole("alert")).toHaveTextContent(
+      "Không tải được nội dung lớp",
+    );
+    const calls = vi.mocked(readClassWorkspaceAction).mock.calls.length;
+    fireEvent.click(dialog.getByRole("button", { name: "Thử lại" }));
+    await waitFor(() =>
+      expect(readClassWorkspaceAction).toHaveBeenCalledTimes(calls + 1),
+    );
+    fireEvent.click(dialog.getByRole("button", { name: "Học viên" }));
+    expect(dialog.getByText("Học viên A")).toBeInTheDocument();
+  });
   it("opens from name and eye and only shows the selected class roster", () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Lớp A" }));

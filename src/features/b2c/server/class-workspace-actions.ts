@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireManager } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { dbErrorToMessage } from "@/lib/action-state";
 import {
@@ -23,7 +23,7 @@ async function write(action: string, data: Json) {
   return { success: true };
 }
 export async function saveClassMeetingAction(input: unknown) {
-  await requireManager();
+  await requireTeaching("super_admin");
   const p = meetingSchema.safeParse(input);
   if (!p.success)
     return {
@@ -38,14 +38,14 @@ export async function saveClassMeetingAction(input: unknown) {
   });
 }
 export async function saveClassAttendanceAction(input: unknown) {
-  await requireManager();
+  await requireTeaching("super_admin");
   const p = attendanceSchema.safeParse(input);
   return !p.success
     ? { error: "Chọn học viên, buổi học và trạng thái điểm danh hợp lệ." }
     : write("save_attendance", p.data);
 }
 export async function addClassCommentAction(input: unknown) {
-  await requireManager();
+  await requireTeaching("super_admin");
   const p = commentSchema.safeParse(input);
   return !p.success
     ? { error: "Nhận xét phải có nội dung và tối đa 4.000 ký tự." }

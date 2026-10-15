@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { getClasses } from "@/features/classes/server/queries";
 import { getMyB2CClasses } from "@/features/b2c/server/teacher-class-queries";
 import { TeacherB2CClassCards } from "@/features/b2c/components/teacher-class-cards";
+import { getMyB2CPermissionsAction } from "@/features/b2c/server/permission-actions";
+import { TeacherClassManageDialog } from "@/features/b2c/components/teacher-management-dialogs";
 import { requireTeaching } from "@/lib/auth/session";
 import { formatDate } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
@@ -31,9 +33,10 @@ export default async function TeacherClassesPage({
   const search = await searchParams;
   const query =
     typeof search.q === "string" ? search.q.trim().slice(0, 200) : "";
-  const [allClasses, allB2CClasses] = await Promise.all([
+  const [allClasses, allB2CClasses, permissions] = await Promise.all([
     getClasses(),
     getMyB2CClasses(),
+    getMyB2CPermissionsAction(),
   ]);
   const matches = (code: string, name: string) =>
     `${code} ${name}`
@@ -47,6 +50,11 @@ export default async function TeacherClassesPage({
       <PageHeader
         title="Lớp của tôi"
         description="Các lớp bạn được phân công giảng dạy."
+        action={
+          permissions.includes("create_classes") ? (
+            <TeacherClassManageDialog />
+          ) : undefined
+        }
       />
 
       <form

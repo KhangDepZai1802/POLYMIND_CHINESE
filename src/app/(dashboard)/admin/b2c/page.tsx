@@ -40,10 +40,15 @@ export default async function B2CDashboardPage() {
               >
                 <Card className="hover:border-primary/50 relative h-full py-0 transition-all group-hover:-translate-y-0.5 group-hover:shadow-md">
                   <p className="text-primary absolute top-5 right-5 text-sm font-semibold tabular-nums">
-                    {(studentCounts.byProgram[group.slug] ?? 0).toLocaleString("vi-VN")} học viên
+                    {(studentCounts.byProgram[group.slug] ?? 0).toLocaleString(
+                      "vi-VN",
+                    )}{" "}
+                    học viên
                   </p>
-                  <CardHeader className="flex-row items-center gap-3 pr-32 pl-5 pt-5">
-                    <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${group.iconClassName}`}>
+                  <CardHeader className="flex-row items-center gap-3 pt-5 pr-32 pl-5">
+                    <span
+                      className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${group.iconClassName}`}
+                    >
                       <Icon className="size-5" aria-hidden />
                     </span>
                     <CardTitle className="text-base">{group.title}</CardTitle>

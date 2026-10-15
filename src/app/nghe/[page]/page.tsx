@@ -51,13 +51,13 @@ export default async function ListeningPage({ params }: PageProps) {
       : undefined;
 
   return (
-    <ListeningShell>
+    <ListeningShell lesson="Bài 3 · Thời gian">
       <section className="mx-auto max-w-3xl px-4 py-7 sm:px-6 sm:py-10">
         <Link
-          href="/nghe"
+          href="/nghe/bai-3"
           className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#1a5fa8] hover:text-[#134b86] hover:underline"
         >
-          <ArrowLeft className="size-4" aria-hidden /> Về danh sách bài nghe
+          <ArrowLeft className="size-4" aria-hidden /> Về Bài 3 – Thời gian
         </Link>
 
         <div className="mt-5 rounded-3xl bg-[#0d3f78] p-6 text-white shadow-lg sm:p-8">
@@ -87,7 +87,7 @@ export default async function ListeningPage({ params }: PageProps) {
               Đây có thể là trang bài tập hoặc trang luyện viết trong tài liệu.
             </p>
             <Link
-              href="/nghe"
+              href="/nghe/bai-3"
               className="mt-5 inline-flex min-h-11 items-center rounded-full bg-[#1a5fa8] px-5 text-sm font-bold text-white transition hover:bg-[#134b86]"
             >
               Về trang bài nghe

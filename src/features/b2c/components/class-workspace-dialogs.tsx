@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useClassWorkspaceRefresh } from "./class-workspace-refresh";
 import { formatInTimeZone } from "date-fns-tz";
 import {
   Dialog,
@@ -33,6 +34,7 @@ export function ClassMeetingDialog({
   today: string;
   meeting?: ClassMeeting;
 }) {
+  const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -61,7 +63,9 @@ export function ClassMeetingDialog({
           </DialogTitle>
           <DialogDescription>
             Giờ Việt Nam. Lịch học ở đây không tự ghi công/lương giáo viên.
-            {meeting?.schedule_id ? " Buổi sinh từ lịch lặp giữ ngày/giờ gốc; hủy buổi và thêm buổi bù khi cần đổi lịch." : ""}
+            {meeting?.schedule_id
+              ? " Buổi sinh từ lịch lặp giữ ngày/giờ gốc; hủy buổi và thêm buổi bù khi cần đổi lịch."
+              : ""}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -87,6 +91,7 @@ export function ClassMeetingDialog({
               if (r.error) setError(r.error);
               else {
                 setOpen(false);
+                refresh();
               }
             } catch {
               setError("Không lưu được buổi học.");
@@ -144,7 +149,15 @@ export function ClassMeetingDialog({
               defaultValue={meeting?.teacher_name ?? teacherName}
             />
           </label>
-          <label className="grid gap-1 text-sm">Phòng học (tùy chọn)<Input name="room_name" maxLength={120} defaultValue={meeting?.room_name ?? ""} placeholder="Cơ sở 1 – Phòng 201" /></label>
+          <label className="grid gap-1 text-sm">
+            Phòng học (tùy chọn)
+            <Input
+              name="room_name"
+              maxLength={120}
+              defaultValue={meeting?.room_name ?? ""}
+              placeholder="Cơ sở 1 – Phòng 201"
+            />
+          </label>
           <label className="grid gap-1 text-sm">
             Trạng thái buổi
             <select
@@ -191,6 +204,7 @@ export function ClassAttendanceDialog({
   meeting: ClassMeeting;
   student: ClassStudent;
 }) {
+  const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -243,6 +257,7 @@ export function ClassAttendanceDialog({
               if (r.error) setError(r.error);
               else {
                 setOpen(false);
+                refresh();
               }
             } catch {
               setError("Không lưu được điểm danh.");
@@ -301,6 +316,7 @@ export function ClassCommentDialog({
   student: ClassStudent;
   meeting?: ClassMeeting | null;
 }) {
+  const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -348,6 +364,7 @@ export function ClassCommentDialog({
               if (r.error) setError(r.error);
               else {
                 setOpen(false);
+                refresh();
               }
             } catch {
               setError("Không lưu được nhận xét.");

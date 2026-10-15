@@ -1,10 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireManager } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { scheduleSchema } from "../domain/structured-schedule";
 export async function generateB2CScheduleAction(input: unknown) {
-  await requireManager();
+  await requireTeaching("super_admin");
   const p = scheduleSchema.safeParse(input);
   if (!p.success)
     return {

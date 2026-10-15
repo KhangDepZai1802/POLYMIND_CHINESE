@@ -3,7 +3,13 @@ import { Headphones } from "lucide-react";
 
 import { Logo } from "@/components/shared/logo";
 
-export function ListeningShell({ children }: { children: React.ReactNode }) {
+export function ListeningShell({
+  children,
+  lesson,
+}: {
+  children: React.ReactNode;
+  lesson?: string;
+}) {
   return (
     <div className="bg-surface-page flex min-h-screen flex-col text-[#10243f]">
       <header className="sticky top-0 z-40 border-b border-[#dde5ee] bg-white/95 backdrop-blur">
@@ -19,7 +25,7 @@ export function ListeningShell({ children }: { children: React.ReactNode }) {
                 Lớp Ban Giám đốc
               </span>
               <span className="block text-sm font-semibold text-[#10243f]">
-                Bài 3 · Thời gian
+                {lesson ?? "Danh sách bài nghe"}
               </span>
             </span>
           </Link>
@@ -34,7 +40,7 @@ export function ListeningShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="flex-1">{children}</main>
       <footer className="mt-12 bg-[#0c2c4d] px-4 py-6 text-center text-xs text-white/65">
-        POLYMIND · Tài liệu nghe Bài 3 – Thời gian
+        POLYMIND · {lesson ? `Tài liệu nghe ${lesson}` : "Tài liệu luyện nghe"}
       </footer>
     </div>
   );

@@ -456,7 +456,14 @@ function ClassList({
             ) : (
               classes.map((item, index) => {
                 return (
-                  <tr key={item.id} className="border-b last:border-b-0">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-muted/50 focus-within:bg-muted/50 cursor-pointer border-b transition-colors last:border-b-0"
+                    onClick={(event) => {
+                      if ((event.target as HTMLElement).closest("button, a, input, select, textarea")) return;
+                      onSelectClass(item);
+                    }}
+                  >
                     <td className="px-3 py-3">{index + 1}</td>
                     <td className="px-3 py-3 font-mono text-xs">{item.code}</td>
                     <td className="px-3 py-3 font-medium"><button type="button" onClick={() => onSelectClass(item)} className="text-primary rounded text-left underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4">{item.name}</button></td>
