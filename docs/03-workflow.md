@@ -1,5 +1,15 @@
 # 03 — Workflow nghiệp vụ
 
+## Chấm công khi chưa biết đơn giá (B2C-UNPRICED-CHECKIN-1)
+
+Giáo viên mở Chấm công → Buổi dạy hôm nay → Mở check-in trên buổi thực tế đã phân công, chọn ảnh và Check-in; sau giờ kết thúc chọn ảnh Check-out. Thẻ hôm nay nằm trước bộ lọc tháng để dễ thấy trên điện thoại. Chưa có đơn giá vẫn thực hiện cả hai bước; đủ hai ảnh ghi giờ theo thời lượng lịch, tiền công hiển thị Chờ cập nhật đơn giá. Tổng tháng có cảnh báo số buổi đã đủ công còn chờ giá, tổng tiền chưa gồm các buổi đó.
+
+Quản lý vào Giờ dạy & Lương B2C, nhập Đơn giá / giờ tại buổi còn thiếu → Lưu đơn giá buổi này. Giá lưu riêng theo buổi, có lịch sử người thao tác; chỉ cho bổ sung khi giá đang null, retry cùng giá không ghi trùng. Không tự áp thay đổi đơn giá mặc định của giáo viên lên lịch sử, không dùng 0 thay cho chưa biết. Không tự tạo ngày từ mô tả lịch tuần; cần buổi theo ngày thật, đúng tài khoản/phân công/quyền. Buổi hủy, ngày khác, trùng lịch hoặc thiếu ảnh bị từ chối ở DB. Không thay đổi B2B/logo.
+
+## Thanh lấp đầy lớp B2C (B2C-OCCUPANCY-PROGRESS-1)
+
+Giữ nguyên số sĩ số dạng7/15 ở Tổng quan/danh sách lớp/chi tiết popup và trang lớp; thêm bên dưới thanh progress, phần trăm và chỗ còn trống (7/15→46,7%·Còn8chỗ). Thanh tính từ chính tử/mẫu đang hiển thị ở mỗi vị trí, không đổi logic đếm hoặc ghi dữ liệu. Đủ sĩ số ghi Đã đủ sĩ số; vượt ghi VượtNchỗ, thanh tối đa100% nhưng số% giữ tỷ lệ thực; mẫu số thiếu/không hợp lệ báo chưa đủ dữ liệu, không chia0. Progress có nhãn/giá trị cho trình đọc màn hình. Không đổi B2B/logo/mã học viên/quyền.
+
 ## Điểm danh lớp trung tâm từ menu giáo viên (B2C-TEACHER-ATTENDANCE-ENTRY-1)
 
 Menu **Điểm danh** hiển thị thêm khối **Lớp trung tâm · Hôm nay**, lấy buổi có ngày cụ thể từ read_my_b2c_today theo giáo viên được phân công và quyền mark_attendance, loại buổi hủy. Nút **Điểm danh học viên** dẫn thẳng `/teacher/b2c-classes/[classId]?tab=attendance&meeting=[meetingId]`, dùng nguyên đọc/ghi điểm danh có kiểm quyền và khóa stale sẵn có. Trang Hôm nay cũng có nút này trên thẻ buổi thực tế khi có quyền. Không tạo buổi từ lịch tuần hoặc ghi điểm danh tự động.

@@ -1,4 +1,5 @@
 "use client";
+import { ClassOccupancyProgress } from "./class-occupancy-progress";
 import { useRef, useState } from "react";
 import { ClassStudentAddDialog } from "./class-student-add-dialog";
 import { TeacherClassManageDialog } from "./teacher-management-dialogs";
@@ -182,6 +183,7 @@ export function B2CClassDetailDialog({
                     <dt className="text-muted-foreground text-xs">{label}</dt>
                     <dd className="mt-1 text-sm font-medium break-words whitespace-pre-wrap">
                       {value}
+                      {label === "Sĩ số ghi nhận" && <ClassOccupancyProgress count={classRow.enrolled_count} capacity={classRow.capacity} />}
                     </dd>
                   </div>
                 ))}

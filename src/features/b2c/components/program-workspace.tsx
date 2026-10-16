@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ClassOccupancyProgress } from "./class-occupancy-progress";
 import { ClassStudentAddDialog } from "./class-student-add-dialog";
 import { todayISO } from "@/lib/dates";
 import Link from "next/link";
@@ -479,6 +480,7 @@ function ClassList({
                     </td>
                     <td className="px-3 py-3 tabular-nums">
                       {item.enrolled_count}/{item.capacity}
+                      <ClassOccupancyProgress count={item.enrolled_count} capacity={item.capacity} />
                     </td>
                     <td className="px-3 py-3">
                       {item.campus ??

@@ -1,5 +1,10 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-UNPRICED-CHECKIN-1 — 2026-10-16
+
+- **Codex Status:** Fixed; **Verification:** Not Started. Giá null không chặn tạo/liên kết buổi/check-in/out; thẻ hôm nay hiện trước bộ lọc tháng, nhập giá riêng từng buổi còn thiếu có audit, tổng tiền cảnh báo chưa gồm buổi chờ giá. Giữ ảnh/ngày/quyền/RLS/phân công và B2B/logo.
+- **Đã chạy:** lint/typecheck/build đạt,950/950 Vitest;28 DB assertions gồm retry/ảnh/quyền/peer/null/giá/giờ/ngày tương lai/hủy/thu hồi. SQL06 cloud exact-history, read-only cole thấy Pre-Movers hôm nay; chưa QA browser thật/commit/push/deploy. Dry-run16 gaps cũ, không replay/repair.
+
 ## LISTENING-LESSON-4-1 — 2026-10-15
 
 - **Fix:** Fixed; **Verification:** Not Started. Bài4 riêng9audio/ảnh đúng trang nguồn Word, root chọn bài; giữ Bài3. Sửa audioB4 trước bị middleware chuyển login sang đúng whitelistmedia công khai và có Range regression.

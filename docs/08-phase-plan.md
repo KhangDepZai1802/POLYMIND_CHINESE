@@ -1,5 +1,15 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-UNPRICED-CHECKIN-1
+
+- [x] Cho tạo/liên kết buổi chấm công khi đơn giá null; thẻ hôm nay trước bộ lọc tháng, nút mở/check-in/out, kiểm quyền/phân công/ngày/hủy/trùng và retry tại DB. Đủ ảnh tính giờ, tiền chờ đơn giá/cảnh báo tổng tháng; manager cập nhật riêng buổi còn thiếu có audit. SQL06 cloud exact-history; pgTAP28/28, Vitest950/950, lint/build đạt.
+- [ ] B2C-UNPRICED-CHECKIN-1-QA: browser cole check-in/out với ảnh thực và quản lý nhập giá thực; chưa commit/push/deploy. Lint/typecheck/build đạt,950/950 unit tests,28/28 DB assertions.
+
+## B2C-OCCUPANCY-PROGRESS-1
+
+- [x] Giữ nguyên sĩ số7/15; thêm progress/%/chỗ còn ở Tổng quan,danh sách lớp,popup/trang lớp B2C. Tính từ chính số đang hiển thị, không đổi dữ liệu/logic sĩ số; xử lý0capacity/vượt,accessibility. Lint/typecheck/build đạt,947/947tests,manual math7/15/full/overflow đúng.
+- [ ] B2C-OCCUPANCY-PROGRESS-1-QA: đối chiếu browser số/thanh trên desktop/mobile; chưa commit/push/deploy.
+
 ## B2C-TEACHER-ATTENDANCE-ENTRY-1
 
 - [x] Menu Điểm danh hiện buổi B2C hôm nay theo quyền/phân công, loại hủy; link đúng class/meeting/tab attendance. Dashboard có lối vào trực tiếp; không đổi RPC/quyền/ghi điểm danh/B2B; không tự tạo buổi. Lint/typecheck/build đạt,947/947tests (6 mới); cloud read-only cole/workspace5HV đúng.

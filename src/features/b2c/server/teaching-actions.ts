@@ -9,6 +9,49 @@ import { requireManager, requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { permissionRpc } from "./permission-rpc";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
+export async function prepareMeetingCheckin(id: string) {
+  await requireTeaching();
+  if (!z.uuid().safeParse(id).success)
+    return { error: "Buổi học không hợp lệ." };
+  try {
+    await permissionRpc<string>("prepare_b2c_meeting_checkin", {
+      p_meeting_id: id,
+    });
+    revalidatePath("/teacher/b2c-teaching");
+    revalidatePath("/admin/b2c/teaching");
+    return { success: "Đã mở chấm công. Chọn ảnh để check-in." };
+  } catch {
+    return {
+      error:
+        "Không mở được chấm công. Kiểm tra phân công, ngày dạy và lịch trùng; tải lại để thử lại.",
+    };
+  }
+}
+export async function priceTeachingSession(form: FormData) {
+  await requireManager();
+  const input = z
+    .object({
+      id: z.uuid(),
+      rate: z.coerce.number().int().min(0).max(999999999999),
+    })
+    .safeParse(Object.fromEntries(form));
+  if (!input.success || !String(form.get("rate") ?? "").trim())
+    return { error: "Nhập đơn giá hợp lệ." };
+  try {
+    await permissionRpc("price_b2c_teaching_session", {
+      p_id: input.data.id,
+      p_rate: input.data.rate,
+    });
+    revalidatePath("/admin/b2c/teaching");
+    revalidatePath("/teacher/b2c-teaching");
+    return { success: "Đã cập nhật đơn giá cho buổi dạy." };
+  } catch {
+    return {
+      error:
+        "Không lưu được đơn giá. Buổi có thể đã được cập nhật; vui lòng tải lại.",
+    };
+  }
+}
 export async function createTeachingSessionAction(
   _: ActionState,
   form: FormData,
@@ -28,7 +71,7 @@ export async function createTeachingSessionAction(
   if (error)
     return {
       error:
-        "Không tạo được buổi dạy. Kiểm tra tài khoản, đơn giá giáo viên và lịch trùng.",
+        "Không tạo được buổi dạy. Kiểm tra tài khoản giáo viên và lịch trùng.",
     };
   revalidatePath("/admin/b2c/teaching");
   revalidatePath("/admin/b2c/classes/[classId]", "page");

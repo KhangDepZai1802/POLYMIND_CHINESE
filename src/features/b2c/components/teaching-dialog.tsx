@@ -74,8 +74,8 @@ export function TeachingSessionDialog({
             </div>
           ))}
           <p className="text-muted-foreground text-xs">
-            Giảng viên cần có tài khoản đang hoạt động và đơn giá/giờ đã nhập
-            tại Giáo viên B2C.
+            Giảng viên cần có tài khoản đang hoạt động. Chưa biết đơn giá có
+            thể để bổ sung sau, giáo viên vẫn check-in/check-out bình thường.
           </p>
           <div className="space-y-2">
             <Label htmlFor="teaching-date">Ngày dạy *</Label>

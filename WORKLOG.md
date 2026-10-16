@@ -38,6 +38,12 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261016-B2C-CHECKIN — Codex — 2026-10-16. User yêu cầu đẩy GitHub: gồm thanh lấp đầy giữ sĩ số cũ và chấm công thiếu đơn giá. Fetch HEAD=origin/main; rà 19 file không thấy secret. Kiểm tra gần nhất lint/typecheck/build đạt,950/950 unit tests,28/28 DB assertions; SQL06 cloud exact-history. Không thay logic sau checks. Commit/push theo yêu cầu, xác minh SHA remote trong chat; chưa xác minh deploy online.
+
+> B2C-UNPRICED-CHECKIN-1 — code/SQL cloud hoàn thành — Codex — 2026-10-16. Thẻ hôm nay/Mở check-in, chấm ảnh không cần giá; đủ bước ghi giờ/chờ giá, cảnh báo tiền chưa gồm buổi thiếu giá. Manager bổ sung riêng giá null có audit, giữ giá lịch sử/B2B/logo. SQL06 exact-history, pgTAP28/28, Vitest950/950, lint/typecheck/build đạt. Chưa QA browser/commit/push/deploy. Dry-run16 gaps cũ, chỉ áp SQL06 không replay/repair. Read-only cole thấy Pre-Movers hôm nay, chưa tạo chấm công/giá thật.
+
+> B2C-OCCUPANCY-PROGRESS-1 — hoàn thành code local — Codex — 2026-10-16. Giữ nguyên7/15,thêm thanh/%/chỗ còn ở Tổng quan/danh sách lớp/popup/trang lớp. Không đổi số đếm/DB/quyền/logo/B2B. Lint/typecheck/build đạt,947/947tests; kiểm tra số7/15→46,7%/8chỗ và full/overflow đúng; chưa QA browser/commit/push/deploy.
+
 > RELEASE-20261016-B2C-ATTENDANCE — Codex — 2026-10-16. User yêu cầu đưa bản sửa điểm danh B2C lên GitHub;11files đã rà không thấy secret, fetch HEAD=origin/main. Kiểm tra gần nhất lint/typecheck/build đạt,947/947tests; không thay code sau checks. Không DB/migration/quyền mới; commit/push theo yêu cầu, SHA/remote verification báo chat; chưa xác minh deploy online.
 
 > B2C-TEACHER-ATTENDANCE-ENTRY-1 — hoàn thành code local — Codex — 2026-10-16. Menu Điểm danh thêm panel B2C hôm nay theo quyền, dashboard link thẳng class/meeting; giữ RPC/ghi điểm danh và B2B. Read-only cloud cole có quyền, Pre-Movers17:30–19:30/5HV/0marked đọc đúng qua workspace. Lint/typecheck/build đạt,947/947tests; chưa QA browser/commit/push/deploy.
@@ -836,6 +842,10 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-UNPRICED-CHECKIN-1-QA: kiểm tra browser tài khoản cole, ảnh check-in/out thật và manager bổ sung giá theo nghiệp vụ; code local chưa commit/push/deploy.
+
+**B2C-OCCUPANCY-PROGRESS-1-QA:** F5 Tổng quan B2C hoặc danh sách/chi tiết lớp, kiểm7/15 giữ nguyên,progress46,7%vàCòn8chỗ bên dưới. Bản local chưa commit/push/deploy.
+
 **B2C-TEACHER-ATTENDANCE-ENTRY-1-QA:** cole mở Điểm danh → Lớp trung tâm · Hôm nay → Pre-Movers17:30–19:30 → Điểm danh học viên, hoặc nút trên Hôm nay. Chưa commit/push/deploy; không ghi điểm danh thật chỉ để test.
 
 **B2C-PERMISSION-SUCCESS-1-QA:** F5 trang Phân quyền, lưu thay đổi cần thiết và kiểm toast top-center; không đổi quyền thật chỉ để test. Chưa QA browser/commit/push/deploy.
@@ -1355,6 +1365,8 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ## 📖 NHẬT KÝ SESSION
 
 ### [2026-10-16] Codex — TODAY-TASKS-1 / B2C-TODAY-DESIGN-1
+- **B2C-UNPRICED-CHECKIN-1:** Thêm thẻ hôm nay/mở buổi công dù giá null, giữ ảnh/quyền/ngày/trùng; quản lý điền riêng giá còn thiếu có audit, không sửa giá đã có. SQL20261016000006 áp cloud transaction + exact history; pgTAP28/28 rollback, Vitest950/950, lint/typecheck/build đạt. Read-only cole trả Pre-Movers chưa linked/can_start=true, không chấm công giả hoặc giá thật. Dry-run16 gaps cũ, không replay/repair; QA browser/chưa commit/push/deploy.
+- B2C-OCCUPANCY-PROGRESS-1: user muốn thanh CRM nhưng giữ7/15. Thêm component span/progressbar với%chỗ còn/full/overflow/no-capacity, dùng dưới ratio hiện có ở4vị trí (Tổng quan/danh sách lớp/popup/trang lớp); không đổi nguồn/logic đếm/DB/B2B/logo. Lint/typecheck/build đạt,947/947tests; manual math7/15=46,7%8chỗ/full/overflow đúng. Chưa QA browser/commit/push/deploy. Next B2C-OCCUPANCY-PROGRESS-1-QA.
 - RELEASE-20261016-B2C-ATTENDANCE: user yêu cầu push bản sửa điểm danh;11files đã kiểm secret, fetch0ahead/0behind; lint/typecheck/build và947/947tests gần nhất đạt. Đối chiếu read-only8GV liên kết đúng tài khoản/19lớp B2C,0phân công B2B. SHA/remote verification báo chat, không suy deploy từ push.
 - B2C-TEACHER-ATTENDANCE-ENTRY-1: rootcause menu chỉ đọc B2B,không phải thiếu quyền hiện tại. Thêm helper/panel buổi B2C hôm nay gate mark_attendance/RPC assignment/loại hủy, link đúng attendance meeting; Hôm nay thêm nút direct theo quyền. B2B query/session/ghi giữ nguyên. Read-only cloud dưới JWTclaims cole xác nhận Pre-Movers16/10 17:30–19:30 có5HV/0marked và workspace đọc đúng; không ghi DB. Lint/typecheck/build đạt,161files947/947tests (6 mới). Chưa QA browser/commit/push/deploy. Next B2C-TEACHER-ATTENDANCE-ENTRY-1-QA.
 - RELEASE-20261016-B2C-SCHEDULE: user yêu cầu commit/push các thay đổi phiên;37files đã rà credential literal, không thấy secret, fetch main0ahead/0behind. Lint/typecheck/build và941/941tests gần nhất đạt. Không có thay đổi app sau checks, chỉ cập nhật worklog. SHA/push verification báo trong chat; không suy deploy từ push.

@@ -1,4 +1,5 @@
 import { CustomerSourceCard } from "@/features/b2c/components/customer-source-card";
+import { ClassOccupancyProgress } from "@/features/b2c/components/class-occupancy-progress";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart3, BookOpen, School, TrendingUp, Users } from "lucide-react";
@@ -341,6 +342,7 @@ export default async function B2COverviewPage() {
                     </DataTableCell>
                     <DataTableCell numeric>
                       {item.actualEnrollmentCount}/{item.capacity}
+                      <ClassOccupancyProgress count={item.actualEnrollmentCount} capacity={item.capacity} />
                     </DataTableCell>
                     <DataTableCell>
                       <StatusBadge label="Đang hoạt động" tone="success" />

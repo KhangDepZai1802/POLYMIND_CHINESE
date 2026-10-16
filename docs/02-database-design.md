@@ -1,5 +1,11 @@
 # 02 — Thiết kế Database
 
+## B2C-UNPRICED-CHECKIN-1 — SQL20261016000006
+
+b2c_teaching_sessions.hourly_rate nullable; teaching_hours vẫn sinh từ lịch khi checkout, salary null khi đã checkout nhưng chưa có giá. Giữ constraints ảnh, unique(class_id,starts_at), RLS và snapshot giá đã có. create_b2c_teaching_session cho manager tạo khi tài khoản hoạt động dù chưa có giá. prepare_b2c_meeting_checkin kiểm quyền check_teaching, mapping tài khoản B2C, ngày VN/phân công/trạng thái và trùng; khóa teacher/class/meeting cùng thứ tự trigger rồi INSERT có unique/on conflict; retry trả ID đã liên kết. Không tự materialize lịch tuần hoặc backfill dữ liệu thật. read_b2c_checkin_meetings chỉ đọc buổi hôm nay của người hiện tại. price_b2c_teaching_session chỉ manager bổ sung giá null có audit; không cho sửa giá đã chốt. get_b2c_teaching_page giữ lọc quyền và ẩn tiền, thêm pending_price_count cho người có view_pay.
+
+SQL06 đã áp cloud riêng transaction và exact-history verify qua kết nối mới. pgTAP28 assertions với fixture rollback đạt. Dry-run bị 16 migration history gaps cũ; không replay/repair và không tuyên bố toàn remote up-to-date.
+
 ## B2C-STUDENT-SESSIONS-1 (2026-10-16)
 
 SQL20261016000005 enrich read_b2c_class_workspace và read_teacher_b2c_workspace bằng session_summary trên trang kết quả, truy vấn toàn lịch sử ghi danh cùng lớp. Giữ quyền/pagination/search và end_date; chỉ cấp summary khi có mark_attendance. Đã áp SQL05 transactional, exact-history verify, 13 DB assertions đạt; dry-run vẫn 16 gaps cũ, không replay/repair.

@@ -33,15 +33,16 @@ export type TeachingRow = {
   teacher_name: string;
   starts_at: string;
   ends_at: string;
-  hourly_rate: number;
+  hourly_rate: number | null;
   teaching_hours: number;
-  salary: number;
+  salary: number | null;
   check_in_at: string | null;
   check_out_at: string | null;
   check_in_photo: string | null;
   check_out_photo: string | null;
 };
 export type TeachingPage = {
+  pending_price_count?: number;
   rows: TeachingRow[];
   total: number;
   hours: number;

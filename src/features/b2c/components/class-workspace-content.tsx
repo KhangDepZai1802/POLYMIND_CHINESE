@@ -1,5 +1,6 @@
 "use client";
 import NextLink from "next/link";
+import { ClassOccupancyProgress } from "./class-occupancy-progress";
 import { createContext, useContext, type ComponentProps } from "react";
 import type { readClassWorkspaceAction } from "../server/class-workspace-read";
 import { formatInTimeZone } from "date-fns-tz";
@@ -152,6 +153,7 @@ export function ClassWorkspaceContent({
           <strong>
             {cls.enrolled_count}/{cls.capacity}
           </strong>
+          <ClassOccupancyProgress count={cls.enrolled_count} capacity={cls.capacity} />
         </p>
         <p>
           Khai giảng:{" "}

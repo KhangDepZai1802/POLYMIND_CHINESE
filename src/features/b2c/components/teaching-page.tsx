@@ -11,6 +11,8 @@ import type { TeachingPage } from "@/features/b2c/teaching-schema";
 import { TeachingSessionDialog } from "@/features/b2c/components/teaching-dialog";
 import { TeachingCheckpoint } from "@/features/b2c/components/teaching-checkpoint";
 import { getMyB2CPermissionsAction } from "../server/permission-actions";
+import { permissionRpc } from "../server/permission-rpc";
+import { TeachingSetup } from "./teaching-setup";
 export async function B2CTeachingPage({
   params,
   mine,
@@ -28,8 +30,8 @@ export async function B2CTeachingPage({
       <>
         <PageHeader title="Chấm công" />
         <p>
-          Bạn chưa được cấp quyền chấm công hoặc xem tiền công. Liên hệ quản
-          lý để được phân quyền.
+          Bạn chưa được cấp quyền chấm công hoặc xem tiền công. Liên hệ quản lý
+          để được phân quyền.
         </p>
       </>
     );
@@ -48,6 +50,21 @@ export async function B2CTeachingPage({
   });
   if (error) throw Error("Không tải được giờ dạy B2C.");
   const result = data as unknown as TeachingPage;
+  const meetings =
+    mine && canCheck
+      ? await permissionRpc<
+          {
+            id: string;
+            class_name: string;
+            starts_at: string;
+            ends_at: string;
+            teaching_session_id: string | null;
+            check_in_at: string | null;
+            check_out_at: string | null;
+          can_start: boolean;
+          }[]
+        >("read_b2c_checkin_meetings")
+      : [];
   const paths = result.rows.flatMap((s) =>
     [s.check_in_photo, s.check_out_photo].filter((p): p is string =>
       Boolean(p),
@@ -76,7 +93,6 @@ export async function B2CTeachingPage({
         .from("b2c_teachers")
         .select("id,full_name")
         .not("source_teacher_id", "is", null)
-        .not("hourly_rate", "is", null)
         .order("full_name"),
     ]);
     if (classes.error || teachers.error)
@@ -90,13 +106,47 @@ export async function B2CTeachingPage({
     <>
       <PageHeader
         title={mine ? "Chấm công" : "Giờ dạy & Lương B2C"}
-        description="Giờ dạy tính theo lịch. Có đủ ảnh check-in và check-out thì tự tính tiền công theo đơn giá của buổi."
+        description="Đủ ảnh check-in và check-out sẽ ghi nhận giờ dạy theo lịch. Chưa có đơn giá vẫn chấm công được; tiền công chờ quản lý cập nhật đơn giá cho buổi."
         action={
           options ? (
             <TeachingSessionDialog {...options} today={todayISO()} />
           ) : undefined
         }
       />
+      {mine && canCheck && (
+        <section className="mb-5 space-y-3" aria-label="Chấm công hôm nay">
+          <h2 className="text-lg font-semibold">Buổi dạy hôm nay</h2>
+          {meetings.length ? (
+            meetings.map((m) => (
+              <Card key={m.id}>
+                <CardContent className="space-y-3 pt-5">
+                  <p className="font-semibold">
+                    {m.class_name} · {formatTime(m.starts_at)}–
+                    {formatTime(m.ends_at)}
+                  </p>
+                  {m.check_out_at ? (
+                    <p>Đã hoàn tất chấm công</p>
+                  ) : m.teaching_session_id ? (
+                    <TeachingCheckpoint
+                      id={m.teaching_session_id}
+                      kind={m.check_in_at ? "out" : "in"}
+                    />
+                  ) : !m.can_start ? (
+                    <p>Đã qua giờ check-in</p>
+                  ) : (
+                    <TeachingSetup meetingId={m.id} />
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p className="text-muted-foreground">
+              Chưa có buổi dạy theo ngày được phân công hôm nay. Lịch tuần cần
+              có buổi theo ngày trước khi chấm công.
+            </p>
+          )}
+        </section>
+      )}
       <form method="get" className="mb-4 flex items-center gap-2">
         <Input
           type="month"
@@ -109,6 +159,9 @@ export async function B2CTeachingPage({
           Xem tháng
         </Button>
       </form>
+      {canPay && Number(result.pending_price_count) > 0 && <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+        Có {result.pending_price_count} buổi đã đủ check-in/out đang chờ cập nhật đơn giá. Tổng tiền công bên dưới chưa bao gồm các buổi này.
+      </p>}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         {[
           ["Buổi trong lịch", String(result.total)],
@@ -139,7 +192,9 @@ export async function B2CTeachingPage({
       )}
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[950px] text-left text-sm">
-          <caption className="sr-only">{mine ? "Buổi dạy và chấm công" : "Buổi dạy và chấm công B2C"}</caption>
+          <caption className="sr-only">
+            {mine ? "Buổi dạy và chấm công" : "Buổi dạy và chấm công B2C"}
+          </caption>
           <thead className="bg-muted">
             <tr>
               {[
@@ -191,7 +246,12 @@ export async function B2CTeachingPage({
                   {canPay && (
                     <>
                       <td className="px-4 py-3">
-                        {formatCurrency(Number(s.hourly_rate))}
+                        {s.hourly_rate == null
+                          ? "Chờ cập nhật đơn giá"
+                          : formatCurrency(Number(s.hourly_rate))}
+                        {!mine && s.hourly_rate == null && (
+                          <TeachingSetup sessionId={s.id} />
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {s.check_out_at ? (
@@ -206,7 +266,9 @@ export async function B2CTeachingPage({
                               giờ
                             </p>
                             <p className="font-medium">
-                              {formatCurrency(Number(s.salary))}
+                              {s.hourly_rate == null
+                                ? "Chờ cập nhật đơn giá"
+                                : formatCurrency(Number(s.salary))}
                             </p>
                           </>
                         ) : (
@@ -244,7 +306,7 @@ export async function B2CTeachingPage({
                   Chưa có buổi dạy trong tháng này.
                   {mine
                     ? " Quản lý cần tạo lịch và phân công cho bạn."
-                    : " Nhập đơn giá tại Giáo viên B2C rồi bấm Thêm buổi dạy."}
+                    : " Bấm Thêm buổi dạy; có thể bổ sung đơn giá sau."}
                 </td>
               </tr>
             )}
