@@ -1,5 +1,42 @@
 # 03 — Workflow nghiệp vụ
 
+## Phản hồi lưu phân quyền (B2C-PERMISSION-SUCCESS-1)
+
+Sau server xác nhận Lưu phân quyền thành công, hiện toast xanh **Đã lưu phân quyền thành công** ở top-center4500ms qua Toaster sẵn có, áp dụng cả trang Phân quyền và dialog. Bỏ dòng success cuối trang; lỗi vẫn hiện tại editor và không kích hoạt toast thành công. Không thay đổi dữ liệu/quyền hay luồng lưu/tải lại.
+
+## Nhãn chấm công trên giao diện giáo viên (2026-10-16)
+
+Menu, tiêu đề trang và hướng dẫn cho giáo viên dùng tên **Chấm công**, bỏ hậu tố B2C theo yêu cầu user. Đường dẫn `/teacher/b2c-teaching`, nguồn dữ liệu/phân quyền/cách ghi công giữ nguyên; nhãn quản lý Giờ dạy & Lương B2C không đổi.
+
+## Thời khóa biểu giáo viên B2C (B2C-TEACHER-TIMETABLE-1)
+
+Mở B2C → **Thời khóa biểu GV**, hoặc Giáo viên → **Xem thời khóa biểu giáo viên**. Chọn một giáo viên hoặc tất cả, tìm tên/mã lớp; bảng có hàng giờ bắt đầu và cột T2–CN, thẻ lớp hiện đầy đủ giờ bắt đầu/kết thúc riêng từng thứ, giáo viên và cơ sở. Bấm thẻ mở đúng lớp/tab Lịch học để sửa. Đọc qua manager/session/RLS, phân trang nguồn dữ liệu; chỉ b2c_classes/b2c_teachers, không trộn B2B.
+
+Lịch tuần của lớp active/planned được dùng, không tạo ngày cụ thể. Các lớp paused/completed/cancelled không đưa vào. Trùng giờ cùng giáo viên/thứ đánh dấu đỏ, hai ca tiếp giáp không trùng; các lớp dự kiến cũng được tính, chưa xét thời gian hiệu lực do user chưa có ngày bắt đầu/kết thúc. Thiếu thứ/giờ/GV hiện riêng trong mục cần bổ sung, không giả thành không có lịch. Liên kết GV ưu tiên teacher_id, tên cũ chỉ khớp khi duy nhất; tên trùng hồ sơ không tự gán. Số giờ trên bảng là lịch tuần dự kiến, không phải công/lương.
+
+## Lịch tuần B2C không cần khoảng ngày (B2C-WEEKLY-INFO-1)
+
+User chốt: nhập giáo viên, thứ và giờ như Sheet; chưa biết ngày bắt đầu/kết thúc vẫn lưu và xem được. Tab Lịch học luôn hiện lịch tuần từ teacher_name/weekdays_text/time_text. Phần Các buổi học theo ngày nằm riêng phía dưới; chưa có buổi cụ thể không đồng nghĩa chưa có lịch tuần. Không tự suy ngày hoặc sinh buổi. Quyền xem/sửa và dữ liệu hiện có giữ nguyên.
+
+B2C-WEEKLY-EDIT-1: admin/giáo vụ bấm **Sửa lịch học hằng tuần** ngay trong khung lịch tuần, chỉnh giáo viên/các thứ/giờ bắt đầu–kết thúc rồi **Lưu lịch tuần**, không có trường ngày. Đọc mới khi mở, lưu có điều kiện updated_at để tránh ghi đè thay đổi mới hơn; RLS manager và trigger liên kết tên giáo viên sẵn có vẫn áp dụng. Chỉ cập nhật3trường mô tả của b2c_classes, không tạo hoặc sửa buổi theo ngày và không ghi công/lương. Giáo viên không được mở action manager này.
+
+B2C-WEEKLY-FOCUS-1: mặc định phần buổi theo ngày được đóng trong **Quản lý buổi học theo ngày (tùy chọn)**, gồm cả nút sinh/thêm/sửa buổi, lịch lặp và phân trang. Người dùng chỉ thấy lịch tuần ở vùng chính; mở phần tùy chọn khi cần xem/xử lý buổi cũ. Không xóa hoặc đổi buổi đã lưu.
+
+B2C-WEEKLY-GRID-1: lịch tuần hiển thị lưới7cột T2–CN theo ảnh user. Chỉ thứ có trong weekdays_text có thẻ giờ và giáo viên, nhãn Hằng tuần; thứ khác hiện Không có lịch tuần. Không gắn ngày/tháng hoặc số buổi vì chưa có khoảng ngày. Giữ nút Sửa lịch học hằng tuần, cuộn ngang trong khung trên điện thoại; không tự tạo bản ghi buổi học.
+
+B2C-WEEKDAY-TIMES-1: chọn các thứ học rồi nhập giờ bắt đầu/kết thúc riêng ở từng thứ. Khi tất cả giờ giống nhau giữ định dạng time_text chung cũ; khi khác nhau lưu mô tả có nhãn thứ, ví dụ `T4 19:30–21:00; T6 18:00–19:30`, trong cùng cập nhật atomic với weekdays_text/teacher_name và guard updated_at. Ví dụ chỉ minh họa, không tự ghi giờ này cho Teen3. Form và lưới dùng chung bộ đọc giờ theo thứ; lịch chung cũ được điền lại từng thứ. Dữ liệu nhiều khung giờ không có nhãn thứ không được tự đoán; yêu cầu nhập rõ. Không có ngày bắt đầu/kết thúc, không sinh buổi, không đổi schema hoặc dữ liệu thật trong quá trình triển khai.
+
+## Việc cần xử lý hôm nay (TODAY-TASKS-1, 2026-10-16)
+
+- Admin/giáo vụ mở menu **Việc hôm nay** hoặc nút ở trang Tổng quan B2C → `/admin/b2c/today`. Đọc qua session/RLS, không dùng service role; không gửi tin tự động hoặc ghi thêm bảng công việc.
+- Gọi lại B2C: lấy ngày hẹn của bản ghi chăm sóc mới nhất theo thời điểm lưu, đến hạn hoặc quá hạn, loại khách đã ghi danh/thất bại. Nhật ký mới không có ngày hẹn sẽ xóa nhắc hẹn cũ. Có thể thêm nhật ký ngay trong danh sách.
+- Học phí B2C: hạn `tuition_end_date` đến hôm nay, lớp active, ghi danh đang học/chờ tái phí/nợ phí; đây là nhắc gia hạn, không suy thành số tiền công nợ. Mở đúng lớp/tab học phí và tìm theo mã học viên.
+- Lớp B2C sắp kết thúc: active, có `end_date` từ hôm nay đến 14 ngày tới; không tự suy ngày từ lịch hoặc học phí.
+- Điểm danh B2C: buổi đã kết thúc, chưa hủy, còn học viên thuộc nhóm ghi danh trên chưa được đánh dấu; loại học viên bắt đầu sau ngày buổi học. Mở đúng lớp/tab và buổi.
+- Báo cáo lớp doanh nghiệp: buổi đã kết thúc, chưa hủy/miễn, chưa có báo cáo submitted; mở bộ lọc lớp/ngày ở màn báo cáo để giáo vụ nhắc hoặc xử lý miễn theo quyền hiện có. Không coi nhận xét B2C là báo cáo buổi dạy.
+- Sắp ngày cũ trước; lọc nhóm/tìm kiếm/phân trang 20 việc. Bấm Cập nhật hoặc mở lại trang để tính lại; lỗi đọc dữ liệu đi vào error boundary, không báo thành 0 việc.
+- Giao diện theo ảnh user (B2C-TODAY-DESIGN-1): 4 thẻ thống kê có icon/màu, bảng Học viên/Lớp–Loại việc–Hạn xử lý–Thao tác; tên và mã gốc tách2dòng, avatar chữ cái không thay logo. Lọc từ thẻ hoặc pill; bảng cuộn ngang trên mobile, ghim cột định danh; giờ cập nhật là thời điểm đọc dữ liệu từ server.
+
 ## B2C-STUDENT-SESSIONS-1 (2026-10-16)
 
 Mở lớp → Học viên → cột Buổi học xem đăng ký, đã học, nghỉ có phép/không phép, học bù và còn lại/vượt. Mở Lịch học → chọn buổi → Điểm danh; refresh sẽ tổng hợp số liệu mới. Chưa điểm danh không tính vắng hoặc đã học.

@@ -3,6 +3,7 @@ import NextLink from "next/link";
 import { createContext, useContext, type ComponentProps } from "react";
 import type { readClassWorkspaceAction } from "../server/class-workspace-read";
 import { formatInTimeZone } from "date-fns-tz";
+import { vi } from "date-fns/locale";
 import { formatCurrency, formatDate, formatDateOnly } from "@/lib/dates";
 import { PageHeader } from "@/components/shared/page-header";
 import { ClassStudentAddDialog } from "./class-student-add-dialog";
@@ -29,6 +30,8 @@ import {
   TuitionReceiptsDialog,
 } from "@/features/b2c/components/tuition-dialogs";
 import { StructuredScheduleDialog } from "@/features/b2c/components/structured-schedule-dialog";
+import { WeeklyScheduleDialog } from "./weekly-schedule-dialog";
+import { WeeklyScheduleGrid } from "./weekly-schedule-grid";
 import { WEEKDAYS } from "@/features/b2c/domain/structured-schedule";
 import type { B2CPermission } from "../domain/teacher-permissions";
 import {
@@ -40,7 +43,7 @@ type Model = Awaited<ReturnType<typeof readClassWorkspaceAction>>;
 type Navigate = (filters: Record<string, string>) => void;
 const NavigationContext = createContext<Navigate | undefined>(undefined);
 const time = (value: string) =>
-  formatInTimeZone(value, "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm");
+  formatInTimeZone(value, "Asia/Ho_Chi_Minh", "EEEE, dd/MM/yyyy HH:mm", { locale: vi });
 function Link({ href, ...props }: ComponentProps<typeof NextLink>) {
   const navigate = useContext(NavigationContext);
   return (
@@ -139,6 +142,12 @@ export function ClassWorkspaceContent({
       )}
       <div className="bg-card mb-5 grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-3">
         <p>
+          Giáo viên: <strong>{cls.teacher_name?.trim() || "Chưa phân công"}</strong>
+        </p>
+        <p className="sm:col-span-2">
+          Lịch học hằng tuần: <strong>{[cls.weekdays_text, cls.time_text].filter(Boolean).join(" · ") || "Chưa cập nhật"}</strong>
+        </p>
+        <p>
           Sĩ số ghi nhận:{" "}
           <strong>
             {cls.enrolled_count}/{cls.capacity}
@@ -233,6 +242,15 @@ export function ClassWorkspaceContent({
       )}
       {filters.tab === "schedule" && (
         <>
+          <section className="bg-card mb-5 rounded-xl border p-4" aria-label="Lịch học cố định hằng tuần">
+            <h2 className="font-semibold">Lịch học hằng tuần</h2>
+            {!permissions && <div className="mt-3"><WeeklyScheduleDialog classId={classId} /></div>}
+            <WeeklyScheduleGrid weekdays={cls.weekdays_text} time={cls.time_text} teacher={cls.teacher_name} />
+            <p className="text-muted-foreground mt-3 text-xs">Lịch cố định hằng tuần, chưa gắn ngày cụ thể. Trên điện thoại, vuốt ngang để xem đủ T2–CN.</p>
+          </section>
+          <details className="rounded-xl border p-4">
+          <summary className="cursor-pointer text-sm font-medium">Quản lý buổi học theo ngày (tùy chọn)</summary>
+          <p className="text-muted-foreground my-3 text-xs">Chỉ mở khi cần tạo hoặc xử lý một buổi có ngày cụ thể. Phần này độc lập với lịch học hằng tuần.</p>
           {can("edit_schedule") && (
             <div className="mb-4 flex flex-wrap gap-3">
               <StructuredScheduleDialog
@@ -312,6 +330,15 @@ export function ClassWorkspaceContent({
               </section>
             ))}
           </div>
+          {!scheduleRows.length && <p className="text-muted-foreground py-4 text-sm">Chưa có buổi học theo ngày cụ thể.</p>}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <p>{result.total} buổi · Trang {filters.page + 1}/{Math.max(1, Math.ceil(result.total / 25))}</p>
+            <div className="flex gap-3">
+              {filters.page > 0 && <Link href={href("schedule", filters.page - 1)}>Trang trước</Link>}
+              {(filters.page + 1) * 25 < result.total && <Link href={href("schedule", filters.page + 1)}>Trang sau</Link>}
+            </div>
+          </div>
+          </details>
         </>
       )}
       {filters.tab === "attendance" && (
@@ -606,13 +633,13 @@ export function ClassWorkspaceContent({
           </div>
         </>
       )}
-      {!result.rows.length && (
+      {!result.rows.length && filters.tab !== "schedule" && (
         <p className="text-muted-foreground py-8 text-center">
           Chưa có dữ liệu phù hợp trong mục{" "}
           {CLASS_TABS[filters.tab].toLowerCase()}.
         </p>
       )}
-      <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">
+      {filters.tab !== "schedule" && <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">
         <p>
           {result.total} kết quả · Trang {filters.page + 1}/
           {Math.max(1, Math.ceil(result.total / 25))}
@@ -629,7 +656,7 @@ export function ClassWorkspaceContent({
             </Link>
           )}
         </div>
-      </div>
+      </div>}
     </NavigationContext.Provider>
   );
 }

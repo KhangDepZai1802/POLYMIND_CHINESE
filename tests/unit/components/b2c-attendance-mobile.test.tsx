@@ -1,5 +1,6 @@
 import { render, screen, within, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/features/b2c/components/weekly-schedule-dialog", () => ({ WeeklyScheduleDialog: () => null }));
 vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
   ClassStudentAddDialog: () => <button>Thêm học viên</button>,
 }));

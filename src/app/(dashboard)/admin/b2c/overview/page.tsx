@@ -36,6 +36,7 @@ export default async function B2COverviewPage() {
       <PageHeader
         title={`Xin chào, ${user.fullName}`}
         description="Tổng quan hoạt động lớp trung tâm (B2C). Số liệu được tách riêng hoàn toàn với các lớp doanh nghiệp."
+        action={<Link href="/admin/b2c/today" className="text-primary text-sm font-medium hover:underline">Mở việc cần xử lý hôm nay →</Link>}
       />
 
       <section aria-labelledby="b2c-kpi-heading">

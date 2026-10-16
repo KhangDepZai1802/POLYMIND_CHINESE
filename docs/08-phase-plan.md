@@ -1,5 +1,59 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-PERMISSION-SUCCESS-1
+
+- [x] Lưu phân quyền thành công hiện toast top-center4500ms, bỏ dòng chữ chìm cuối trang; không báo thành công khi save lỗi. Giữ quyền/luồng lưu và embedded/dialog; lint/typecheck/build đạt,941/941tests.
+- [ ] B2C-PERMISSION-SUCCESS-1-QA: kiểm tra browser khi user lưu thay đổi quyền thực tế; chưa commit/push/deploy.
+
+## TEACHER-CHECKIN-LABEL-1
+
+- [x] Đổi nhãn giao diện giáo viên thành Chấm công, không B2C; giữ route/quyền/chức năng và nhãn quản lý. Lint/typecheck/build đạt,941/941tests; chưa QA browser/commit/push/deploy.
+
+## B2C-TEACHER-TIMETABLE-1
+
+- [x] Menu/trang Thời khóa biểu GV B2C, chọn GV/tất cả, lịch tuần dạng bảng giờ×T2–CN; giờ riêng theo thứ, link lớp, chỉ rõ thiếu lịch và trùng giờ, đọc manager/RLS có phân trang. Không ngày/DB/logo/B2B; lint/typecheck/build đạt,941/941tests (9 mới), route unauth307 đúng.
+- [ ] B2C-TEACHER-TIMETABLE-1-QA: đối chiếu browser/mobile bằng manager thật; chưa commit/push/deploy.
+
+## B2C-WEEKDAY-TIMES-1
+
+- [x] Form giờ riêng từng thứ, prefill/roundtrip và grid đúng thứ; tương thích giờ chung cũ, không tự đoán giờ chưa rõ/không sinh ngày. Server validate, lưu atomically trong trường mô tả sẵn có với timestamp/RLS. Lint/typecheck/build đạt,932/932fulltests và17targeted bản cuối; không DB schema/logo/B2B.
+- [ ] B2C-WEEKDAY-TIMES-1-QA: nhập giờ thực tế T4/T6 của Teen3 và đối chiếu browser; chưa commit/push/deploy.
+
+## B2C-WEEKLY-GRID-1
+
+- [x] Lưới T2–CN, thẻ giờ/GV đúng thứ từ Sheet, không gán ngày hoặc số buổi; cuộn ngang trên mobile, giữ nút sửa lịch tuần. Không DB/logo/B2B; lint/typecheck/build đạt,928/928tests (2UItests mới).
+- [ ] B2C-WEEKLY-GRID-1-QA: đối chiếu trực quan bằng tài khoản thật/mobile; chưa commit/push/deploy.
+
+## B2C-WEEKLY-FOCUS-1
+
+- [x] Mặc định tab Lịch học tập trung lịch tuần; buổi theo ngày/nút sinh/sửa/phân trang nằm trong phần tùy chọn thu gọn. Không xóa dữ liệu; lint/typecheck/build đạt,926/926tests.
+- [ ] B2C-WEEKLY-FOCUS-1-QA: kiểm tra mở/đóng bằng tài khoản thật; chưa commit/push/deploy.
+
+## B2C-WEEKLY-EDIT-1
+
+- [x] Manager mở tab Lịch học → Sửa lịch học hằng tuần, prefill Sheet; sửa GV/thứ/giờ không cần ngày. Server/RLS và optimistic timestamp, không tạo/đổi buổi theo ngày; lint/typecheck/build đạt,926/926tests (11 mới gồm schema/action/component). Không migration/B2B/logo/mã học viên.
+- [ ] B2C-WEEKLY-EDIT-1-QA: manager kiểm tra lưu trên dữ liệu thật, popup/trang lớp; chưa commit/push/deploy.
+
+## B2C-WEEKLY-INFO-1
+
+- [x] Tab Lịch học luôn hiện giáo viên/thứ/giờ từ thông tin lớp dù chưa có ngày bắt đầu/kết thúc; tách phần buổi theo ngày, trạng thái rỗng không phủ nhận lịch tuần. Không DB hoặc sinh lịch; lint/typecheck/build đạt,915/915tests.
+- [ ] B2C-WEEKLY-INFO-1-QA: đối chiếu popup/trang lớp bằng tài khoản thật; chưa commit/push/deploy.
+
+## B2C-SCHEDULE-WEEKDAY-1
+
+- [x] Hiển thị thứ tiếng Việt theo ngày/giờ VN của buổi học; lịch tuần và giáo viên hiện rõ trong thông tin lớp cả trang/popup. Không đổi dữ liệu/lịch/logo/B2B; lint/typecheck/build đạt,915/915tests và formatter/biên ngày VN đúng.
+- [ ] B2C-SCHEDULE-WEEKDAY-1-QA: kiểm tra browser bằng tài khoản thật; chưa commit/push/deploy.
+
+## B2C-TODAY-DESIGN-1
+
+- [x] Thẻ thống kê màu/icon, bảng công việc/avatar chữ cái, bộ lọc/tìm kiếm/hạn xử lý theo ảnh; giữ logo gốc/mã học viên/B2B, không DB; lint/typecheck/build đạt,915/915tests. Dùng bảng chung cuộn ngang/ghim định danh, giờ cập nhật từ server.
+- [ ] B2C-TODAY-DESIGN-1-QA: đối chiếu desktop/mobile với ảnh bằng tài khoản thật; chưa commit/push/deploy.
+
+## TODAY-TASKS-1 — Danh sách việc cần xử lý hôm nay
+
+- [x] DoD: manager-only/RLS; 4 nhóm B2C gọi lại, hạn học phí, lớp kết thúc trong 14 ngày, thiếu điểm danh; ngày VN, loại hủy/hoàn tất; liên kết xử lý, lọc nhóm/tìm kiếm, lỗi không giả rỗng; kiểm tra domain và lint/typecheck/test/build. Ghi rõ phạm vi chỉ B2C. Không migration hoặc gửi tin tự động. Lint/typecheck/build đạt, Vitest915/915; HTTP chưa đăng nhập redirect đúng.
+- [ ] TODAY-TASKS-1-QA: đối chiếu dữ liệu thật bằng admin/giáo vụ và kiểm tra browser/mobile; chưa commit/push/deploy.
+
 ## B2C-STUDENT-SESSIONS-1
 
 - [x] Tổng hợp đã học (có mặt/đi muộn/học bù), nghỉ, học bù và còn lại theo ghi danh; loại buổi hủy/tương lai, bảo toàn phân quyền, UI lớp admin/teacher và kiểm tra DB/unit/build. SQL05 cloud/history exact verify; 13DB/903unit tests đạt; lint/typecheck/build đạt. Chưa QA browser/commit/push/deploy.

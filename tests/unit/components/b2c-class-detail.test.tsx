@@ -7,6 +7,7 @@ import {
   act,
 } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+vi.mock("@/features/b2c/components/weekly-schedule-dialog", () => ({ WeeklyScheduleDialog: () => null }));
 vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
   ClassStudentAddDialog: () => <button>Thêm học viên</button>,
 }));

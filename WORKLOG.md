@@ -38,6 +38,32 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261016-B2C-SCHEDULE — Codex — 2026-10-16. User yêu cầu đẩy code GitHub; bundle37files gồm Việc hôm nay, lịch tuần giờ riêng từng thứ/lưới, thời khóa biểu GV, nhãn Chấm công và toast lưu phân quyền. Fetch xác nhận HEAD=origin/main trước release; rà37files không thấy credential literal. Kiểm tra gần nhất lint/typecheck/build đạt,941/941tests; không schema mới, không đổi logo/B2B. Commit/push theo yêu cầu, SHA/remote verification báo trong chat; chưa xác minh deployment online.
+
+> B2C-PERMISSION-SUCCESS-1 — hoàn thành local — Codex — 2026-10-16. Lưu phân quyền hiện toast xanh top-center4500ms, bỏ dòng cuối trang; chỉ sau server thành công. Giữ errors/editor/quyền. Lint/typecheck/build đạt,941/941tests; chưa QA browser dữ liệu thật.
+
+> TEACHER-CHECKIN-LABEL-1 — hoàn thành local — Codex — 2026-10-16. Nhãn giao diện GV Chấm công bỏ B2C; menu/title/caption/hướng dẫn/lỗi; giữ route/chức năng/quyền. Lint/typecheck/build đạt,941/941tests; chưa QA browser hoặc phát hành code.
+
+> B2C-TEACHER-TIMETABLE-1 — hoàn thành code local — Codex — 2026-10-16. /admin/b2c/timetable, menu B2C/nút Giáo viên; giờ×T2–CN, chọn GV/tìm lớp/link lớp, giờ riêng từng thứ, trùng giờ/thiếu lịch, manager/RLS. Không DB/logo/B2B. Lint/typecheck/build đạt,941/941tests; route unauth307; chưa QA browser tài khoản thật.
+
+> B2C-WEEKDAY-TIMES-1 — hoàn thành code local — Codex — 2026-10-16. Mỗi thứ có giờ riêng trong form/grid, không ngày. Giữ lịch giờ chung cũ, không tự suy giờ Teen3. Lưu time_text có nhãn thứ khi khác giờ, atomic/RLS/timestamp cũ; không schema/dữ liệu thật. Lint/typecheck/build đạt,932/932tests và17targeted bản cuối; chưa QA browser dữ liệu thật.
+
+> B2C-WEEKLY-GRID-1 — hoàn thành code local — Codex — 2026-10-16. Lưới7cột T2–CN theo ảnh, thẻ giờ/GV đúng thứ đã lưu, cuộn ngang mobile; không ngày/số buổi giả/DB/logo/B2B. Lint/typecheck/build đạt,928/928tests,2UItests đúng T2/T4 không T6; chưa QA browser dữ liệu thật.
+
+> B2C-REMOVE-DATED-MEETING-1 — hoàn thành theo yêu cầu xóa rõ ràng của user — 2026-10-16. Đã xóa đúng1buổi planned 0f12042e-02bc-4bfb-a8c6-fd52e967f881 của B2C-000001,16/10/2026 18:00–19:30 VN. Trước xóa:0điểm danh/0nhận xét/không liên kết công; transaction exact1. Sau xóa meeting_count=0, Cô Tú/T2-T4/18:00–19:30 giữ nguyên. Không sửa code hoặc migration.
+
+> B2C-WEEKLY-FOCUS-1 — hoàn thành code local — Codex — 2026-10-16. Thu gọn mặc định buổi theo ngày và các nút sinh/sửa/phân trang trong details tùy chọn; lịch tuần là chính, giữ dữ liệu cũ. Lint/typecheck/build đạt,926/926tests; chưa QA browser tài khoản thật.
+
+> B2C-WEEKLY-EDIT-1 — hoàn thành code local — Codex — 2026-10-16. Nút Sửa lịch học hằng tuần cho manager, prefill giáo viên/thứ/giờ, không ngày. Session/RLS/trigger GV và updated_at guard; không migration/đổi buổi theo ngày. Lint/typecheck/build đạt,926/926tests; UI component test mở/đổi thứ/lưu đạt, chưa QA browser với dữ liệu thật.
+
+> B2C-WEEKLY-INFO-1 — hoàn thành code local — Codex — 2026-10-16. Tab Lịch học hiện lịch tuần từ Sheet dù chưa có khoảng ngày; phần buổi theo ngày riêng/trạng thái rỗng rõ. Không DB/sinh buổi/logo/B2B. Lint/typecheck/build đạt,915/915tests; chưa QA browser tài khoản thật.
+
+> B2C-SCHEDULE-WEEKDAY-1 — hoàn thành code local — Codex — 2026-10-16. Hiện thứ tiếng Việt trước ngày buổi học; lịch tuần/giáo viên trong khung thông tin lớp, kể cả popup. Không đổi lịch/dữ liệu/logo/B2B. Lint/typecheck/build đạt,915/915tests; kiểm tra formatter Thứ Sáu16/10 và biên UTC→VN đạt; chưa QA browser tài khoản thật.
+
+> B2C-TODAY-DESIGN-1 — hoàn thành code local — Codex — 2026-10-16. Thẻ thống kê màu/icon, bảng avatar/tên/mã gốc, bộ lọc/tìm kiếm, hạn xử lý và nút thao tác theo ảnh. Giữ logo/header/sidebar chung/B2B; không DB. Lint/typecheck/build đạt,915/915tests; chưa QA browser bằng tài khoản thật.
+
+> TODAY-TASKS-1 — hoàn thành sửa phạm vi chỉ B2C — Codex — 2026-10-16. /admin/b2c/today có 4 nhóm B2C; menu/Tổng quan B2B khôi phục nguyên trạng, không truy vấn/liên kết B2B. B2C chưa có quy trình báo cáo riêng nên không tổng hợp nhóm này. Lint/typecheck/build đạt, Vitest915/915; chưa QA browser dữ liệu thật.
+
 > RELEASE-20261016 — Codex — 2026-10-16. User yêu cầu commit/push toàn bộ thay đổi phiên lên GitHub main. Fetch xác nhận HEAD=origin/main trước release; 66 file kiểm tra không thấy credential literal. Kiểm tra gần nhất: lint/typecheck/build đạt, 903/903 tests. SQL01–05 đã áp cloud, còn16 gaps history cũ; chưa QA browser độc lập.
 
 > B2C-STUDENT-SESSIONS-1 — hoàn thành code/SQL cloud — Codex — 2026-10-16. Tổng hợp điểm danh theo học viên/lớp, không tự trừ tiền.
@@ -806,6 +832,26 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-PERMISSION-SUCCESS-1-QA:** F5 trang Phân quyền, lưu thay đổi cần thiết và kiểm toast top-center; không đổi quyền thật chỉ để test. Chưa QA browser/commit/push/deploy.
+
+**TEACHER-CHECKIN-LABEL-1-QA:** F5 giao diện giáo viên, kiểm menu và tiêu đề Chấm công; route cũ giữ nguyên.
+
+**B2C-TEACHER-TIMETABLE-1-QA:** F5 → B2C → Thời khóa biểu GV, chọn từng GV/đối chiếu giờ từng thứ, tìm lớp/click lớp/cảnh báo/mobile. Chưa QA browser dữ liệu thật; chưa commit/push/deploy.
+
+**B2C-WEEKDAY-TIMES-1-QA:** F5 Teen3 → Sửa lịch tuần → chọn T4/T6 → nhập giờ thực tế từng thứ → lưu, mở lại đối chiếu lưới/prefill. Giờ thực tế chưa được user cung cấp nên không tự sửa dữ liệu.
+
+**B2C-WEEKLY-GRID-1-QA:** F5 mở lớp → Lịch học, đối chiếu lưới T2–CN/thẻ giờ-GV đúng thứ và vuốt ngang mobile; chưa QA browser dữ liệu thật hoặc phát hành code.
+
+**B2C-WEEKLY-FOCUS-1-QA:** F5 mở lớp → Lịch học: lịch tuần hiện chính, phần Quản lý buổi học theo ngày mặc định đóng, mở ra vẫn có dữ liệu/nút/phân trang cũ.
+
+**B2C-WEEKLY-EDIT-1-QA:** F5 → popup lớp → Lịch học → Sửa lịch học hằng tuần; kiểm tra prefill và lưu thứ/giờ không cần ngày bằng manager. Không sửa buổi theo ngày nếu chỉ đổi lịch tuần; chưa commit/push/deploy.
+
+**B2C-WEEKLY-INFO-1-QA:** F5 mở popup/trang lớp → Lịch học, xác nhận giáo viên/thứ/giờ có sẵn hiện ngay dù ngày bắt đầu/kết thúc trống, phần buổi cụ thể tách riêng.
+
+**B2C-SCHEDULE-WEEKDAY-1-QA:** F5 mở popup lớp → Lịch học, đối chiếu thứ/ngày/giờ và giáo viên/lịch tuần từ thông tin hiện có. Không tự thay lịch thực tế.
+
+**B2C-TODAY-DESIGN-1-QA / TODAY-TASKS-1-QA:** F5 /admin/b2c/today, đối chiếu ảnh tham chiếu, logo/mã học viên gốc, lọc/tìm/link nghiệp vụ và cuộn bảng trên mobile. Chưa QA browser bằng tài khoản thật; không tự commit/push.
+
 **B2C-STUDENT-SESSIONS-1-QA:** F5 chi tiết lớp → Học viên → Buổi học; đối chiếu điểm danh, null đăng ký và vượt số buổi; teacher theo quyền.
 
 **TEACHER-EMPLOYMENT-LABELS-1-QA:** F5 form/bảng giáo viên, đối chiếu Fulltime và Part-time.
@@ -1302,6 +1348,24 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-16] Codex — TODAY-TASKS-1 / B2C-TODAY-DESIGN-1
+- RELEASE-20261016-B2C-SCHEDULE: user yêu cầu commit/push các thay đổi phiên;37files đã rà credential literal, không thấy secret, fetch main0ahead/0behind. Lint/typecheck/build và941/941tests gần nhất đạt. Không có thay đổi app sau checks, chỉ cập nhật worklog. SHA/push verification báo trong chat; không suy deploy từ push.
+- B2C-PERMISSION-SUCCESS-1: theo ảnh user, bỏ success inline cuối trang, toast.success top-center4500ms ngay sau server save thành công trước reload. Lỗi giữ editor/no success toast; Toaster dashboard sẵn có richColors. Không DB/quyền mới. Test existing thêm assertion toast success và no-toast khi save lỗi; lint/typecheck/build đạt,941/941tests. Chưa QA browser dữ liệu thật. Next B2C-PERMISSION-SUCCESS-1-QA.
+- TEACHER-CHECKIN-LABEL-1: theo user bỏ hậu tố B2C khỏi nhãn Chấm công trên menu/metadata/header/caption/hướng dẫn/lỗi GV; giữ URL/phân quyền/nghiệp vụ và nhãn admin. Không DB. Lint/typecheck/build đạt,941/941tests; chưa QA browser hoặc commit/push/deploy. Next TEACHER-CHECKIN-LABEL-1-QA.
+- B2C-TEACHER-TIMETABLE-1: thêm route/domain/server/component thời khóa biểu GV B2C và menu/nút trang GV. Chọn GV/tìm lớp, bảng giờ×T2–CN, thẻ link lớp/giờ/GV/cơ sở, hours dự kiến không công-lương; giữ thiếu dữ liệu riêng, flag overlap cùng GV, không auto-map tên trùng. Manager/RLS, đọc phân trang2bảng B2C, không DB/logo/B2B. Lint/typecheck/build đạt,159files941/941tests (9 mới), unauth307; chưa QA browser dữ liệu thật. Next B2C-TEACHER-TIMETABLE-1-QA.
+- B2C-WEEKDAY-TIMES-1: thay giờ chung bằng từng thứ có cặp start/end; schema slots + tương thích payload cũ, serialize time_text chung khi đồng giờ/có nhãn khi khác giờ, reader dùng chung form/grid; dữ liệu không rõ không đoán. Không DB schema hoặc sửa giờ Teen3. Lint/typecheck/build đạt,932/932fulltests,17targeted cuối đạt; kiểm khác giờ T4/T6,roundtrip,invalid/duplicate,legacy/UI. Chưa QA browser dữ liệu thật; Next B2C-WEEKDAY-TIMES-1-QA.
+- B2C-WEEKLY-GRID-1: theo ảnh user, thay3ô thông tin bằng lưới T2–CN; thẻ giờ/GV/Hằng tuần đúng weekdays_text, không ngày/số buổi giả. Giữ edit và details buổi cũ; không DB/logo/B2B. Lint/typecheck/build đạt,156files928/928tests;2component tests đúng T2/T4,không T6/ngày giả, lịch trống. Chưa QA browser dữ liệu thật. Next B2C-WEEKLY-GRID-1-QA.
+- B2C-REMOVE-DATED-MEETING-1: user yêu cầu xóa buổi ngày cụ thể vì chỉ có thứ/giờ từ Sheet. Read-only kiểm tra đúng lớp/Buổi16/10/2026 18:00–19:30,planned,0attendance/0comments/no payroll. DELETE transaction ràng buộc UUID/lớp/giờ/status/no dependents, rowCount1; xác minh DB meeting_count0,giữ teacher/weekdays/time. Không sửa app/migration; không chạy lại tests/build vì chỉ xóa đúng dữ liệu user chỉ định.
+- B2C-WEEKLY-FOCUS-1: user hỏi vì sao phần ngày vẫn hiện; gói buổi theo ngày/nút sinh-thêm-sửa/lịch lặp/phân trang/empty-state trong details tùy chọn mặc định đóng. Không xóa dữ liệu hoặc đổi lịch tuần. Lint/typecheck/build đạt,926/926tests. Chưa QA browser; Next B2C-WEEKLY-FOCUS-1-QA.
+- B2C-WEEKLY-EDIT-1: sửa thiếu luồng nhập tuần (hướng dẫn cũ nhầm form lớp không có lịch). Thêm weekly-schedule domain/action/dialog, nút ở khung lịch tuần manager-only; prefill Sheet, không ngày, atomic update3fields có updated_at/RLS, trigger GV giữ nguyên. Không migration/dữ liệu thật/logo/B2B. Lint/typecheck/build đạt,155files926/926tests (11 mới gồm component mở/đổi thứ/lưu không date). Chưa QA browser dữ liệu thật. Next: B2C-WEEKLY-EDIT-1-QA.
+- B2C-WEEKLY-INFO-1: user xác nhận chỉ cần lịch tuần khi chưa biết khoảng ngày; thêm khung giáo viên/thứ/giờ trong tab schedule, phần Các buổi học theo ngày riêng và empty-state rõ. Không DB/sinh lịch/logo/B2B. Lint/typecheck/build đạt,915/915tests; chưa QA browser tài khoản thật. Next: B2C-WEEKLY-INFO-1-QA.
+- B2C-SCHEDULE-WEEKDAY-1: sửa class-workspace-content.tsx thêm locale vi/EEEE theo giờ VN, khung chung hiện giáo viên/lịch tuần cả popup. Không DB/logo/B2B. Lint/typecheck/build đạt,915/915tests; formatter16/10→Thứ Sáu và UTC18/10→Thứ Hai19/10 đúng. Chưa QA browser bằng tài khoản thật. Next: B2C-SCHEDULE-WEEKDAY-1-QA.
+- Theo ảnh user: thẻ màu/icon, bảng4cột có avatar chữ cái, tên/mã gốc, nhãn hạn đỏ/xanh, bộ lọc pill và tìm kiếm, giờ cập nhật thật từ server. Giữ logo/header/sidebar chung và B2B; không DB. Lint/typecheck/build đạt, Vitest915/915. Chưa QA browser bằng tài khoản thật; không commit/push/deploy.
+- Theo chỉnh phạm vi của user: tính năng chỉ B2C, chuyển route/mã sang B2C, khôi phục nguyên trạng Tổng quan/menu B2B; bỏ toàn bộ đọc class_sessions/session_reports và liên kết báo cáo B2B. Giữ 4 nhóm B2C hiện có, không giả lập báo cáo B2C.
+- File mới trong features/dashboard (domain/server/component), route today và 2 test; sửa navigation, Tổng quan admin/B2C, care action revalidation, docs. Không migration/dữ liệu/quyền mới; read-only qua manager/session/RLS, không service role.
+- Kiểm tra: lint/typecheck/build exit0; Vitest152files915/915 (13 mới). HTTP /admin/b2c/today chưa đăng nhập307 về login, /200. Chưa QA browser dữ liệu thật hoặc mobile; chưa commit/push/deploy.
+- Next: TODAY-TASKS-1-QA; mở http://localhost:3000/admin/b2c/today.
+
 ### [2026-10-16] Codex — B2C-STUDENT-SESSIONS-1
 - Cột Buổi học trong Học viên của popup/trang lớp: đăng ký, đã học, nghỉ phép/không phép, học bù, còn lại/vượt. Loại buổi tương lai/hủy, chưa điểm danh không tự tính vắng; không trừ tiền. Teacher cần mark_attendance.
 - SQL05 đã áp cloud và exact-history verify, 13 DB assertions đạt gồm teacher grant/deny. Dry-run trước/sau vẫn16 gaps cũ, không repair/replay.
@@ -1329,8 +1393,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - Dashboard đọc guardian_name fallback cho hồ sơ mới; Zalo từ profile/phụ huynh liên kết, dedupe; hiện bảng/chi tiết/Excel. Không đồng bộ ngược vào phụ huynh hoặc backfill dữ liệu thật.
 - SQL03 áp riêng/history exact verify; pgTAP9/9 mới+32/32ghi danh, Vitest148files894/894 (2UI/schema mới), lint/typecheck/build exit0. Dry-run trước/sau vẫn16gaps cũ, không replay/repair. Chưa QA browser hoặc commit/push/deploy.
 - Next: B2C-GUARDIAN-ZALO-1-QA; dev restart có Supabase network.
-
-### [2026-10-16] Codex — B2C-STUDENT-ADD-ENTRY-1
-- Theo ảnh user: thêm nút cạnh tiêu đề Danh sách học viên trên dashboard tổng. Shared ClassStudentAddDialog hỗ trợ chọn lớp hoặc fixed class cũ; lọc lớp hủy/hoàn thành, reset selection/search khi đổi lớp, chặn submit thiếu lớp. Giữ tất cả nút ở dòng lớp/popup/trang lớp.
-- Không DB/quyền mới. Lint/typecheck/build exit0, full Vitest148files892/892 (2UI mới); chưa QA browser/commit/push/deploy. Dev restart giữ Supabase network để user dùng ngay.
-- Next: B2C-STUDENT-ADD-ENTRY-1-QA trên /admin/b2c/students sau F5.

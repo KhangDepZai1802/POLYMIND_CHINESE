@@ -3,6 +3,8 @@ import { beforeEach,describe,expect,it,vi } from "vitest";
 import { TeacherPermissionsDialog } from "@/features/b2c/components/teacher-permissions-dialog";
 import { DEFAULT_B2C_PERMISSIONS } from "@/features/b2c/domain/teacher-permissions";
 import { readB2CPermissionAdminAction,saveB2CPermissionsAction } from "@/features/b2c/server/permission-actions";
+import { toast } from "sonner";
+vi.mock("sonner",()=>({toast:{success:vi.fn()}}));
 vi.mock("@/features/b2c/server/permission-actions",()=>({readB2CPermissionAdminAction:vi.fn(),saveB2CPermissionsAction:vi.fn()}));
 beforeEach(()=>{
  vi.clearAllMocks();
@@ -19,6 +21,7 @@ describe("Teacher permission editor",()=>{
   expect(saveB2CPermissionsAction).not.toHaveBeenCalled();
   fireEvent.click(dialog.getByRole("button",{name:"Lưu phân quyền"}));
   await waitFor(()=>expect(saveB2CPermissionsAction).toHaveBeenCalledWith({teacher_id:"b2c-a",source_teacher_id:"account-a",permissions:[...DEFAULT_B2C_PERMISSIONS.slice(0,4),"mark_attendance",...DEFAULT_B2C_PERMISSIONS.slice(4)],expected_updated_at:"2026-10-15T01:00:00Z"}));
+  await waitFor(()=>expect(toast.success).toHaveBeenCalledWith("Đã lưu phân quyền thành công",{position:"top-center",duration:4500}));
  });
  it("cascades dependencies and can link an existing unused account",async()=>{
   const dialog=await open();
@@ -37,5 +40,6 @@ describe("Teacher permission editor",()=>{
   const dialog=await open();fireEvent.click(dialog.getByRole("button",{name:"Lưu phân quyền"}));
   expect(await dialog.findByRole("alert")).toHaveTextContent("Quyền đã thay đổi");
   expect(screen.getByRole("dialog")).toBeInTheDocument();
+  expect(toast.success).not.toHaveBeenCalled();
  });
 });

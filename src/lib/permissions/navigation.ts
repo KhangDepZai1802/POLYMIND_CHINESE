@@ -82,7 +82,7 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: "Lớp của tôi", href: "/teacher/classes", icon: School },
     { label: "Điểm danh", href: "/teacher/attendance", icon: ClipboardCheck },
     {
-      label: "Chấm công B2C",
+      label: "Chấm công",
       href: "/teacher/b2c-teaching",
       icon: CalendarDays,
     },
@@ -143,10 +143,12 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
 /** Menu riêng của module trung tâm; không được trỏ sang dữ liệu doanh nghiệp. */
 export const B2C_NAVIGATION: NavItem[] = [
   { label: "Tổng quan", href: "/admin/b2c/overview", icon: LayoutDashboard },
+  { label: "Việc hôm nay", href: "/admin/b2c/today", icon: ClipboardList },
   { label: "Tuyển sinh", href: "/admin/b2c/admissions", icon: TrendingUp },
   { label: "Lớp học", href: "/admin/b2c", icon: School },
   { label: "Học viên", href: "/admin/b2c/students", icon: Users },
   { label: "Giáo viên", href: "/admin/b2c/teachers", icon: GraduationCap },
+  { label: "Thời khóa biểu GV", href: "/admin/b2c/timetable", icon: CalendarDays },
   { label: "Giờ dạy & Lương", href: "/admin/b2c/teaching", icon: CalendarDays },
   { label: "Phụ huynh", href: "/admin/b2c/parents", icon: UserCircle },
   { label: "Học phí", href: "/admin/b2c/tuition", icon: Wallet },

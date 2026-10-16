@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { requireManager } from "@/lib/auth/session";
 import { getB2CTeacherMetrics } from "@/features/b2c/server/teacher-metrics";
 import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
@@ -15,10 +17,17 @@ export default async function TeachersPage() {
     .format(new Date())
     .slice(0, 7);
   return (
-    <TeacherDashboard
-      rows={[...metrics.values()]}
-      initialMonth={month}
-      canManageAccounts={me.role === "super_admin"}
-    />
+    <>
+      <div className="mb-4 flex justify-end">
+        <Button asChild variant="outline">
+          <Link href="/admin/b2c/timetable">Xem thời khóa biểu giáo viên</Link>
+        </Button>
+      </div>
+      <TeacherDashboard
+        rows={[...metrics.values()]}
+        initialMonth={month}
+        canManageAccounts={me.role === "super_admin"}
+      />
+    </>
   );
 }

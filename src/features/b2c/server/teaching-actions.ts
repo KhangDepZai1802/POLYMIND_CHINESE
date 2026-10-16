@@ -47,7 +47,7 @@ export async function teachingPhotoTicket(
       p_key: "check_teaching",
     }))
   )
-    return { error: "Bạn chưa được cấp quyền chấm công B2C." };
+    return { error: "Bạn chưa được cấp quyền chấm công." };
   if (
     !z.uuid().safeParse(id).success ||
     !["in", "out"].includes(kind) ||

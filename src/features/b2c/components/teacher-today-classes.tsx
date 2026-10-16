@@ -84,7 +84,7 @@ export function TeacherB2CTodayClasses({
       </ul>
       {!!classes.length && <p className="text-muted-foreground px-3 pt-3 text-xs">
         Lịch tuần là lịch dự kiến. Chấm công theo buổi được phân công tại mục
-        Chấm công B2C.
+        Chấm công.
       </p>}
     </section>
   );

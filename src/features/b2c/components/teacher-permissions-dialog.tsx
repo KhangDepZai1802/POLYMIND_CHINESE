@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState, type ReactNode } from "react";
 import { ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,8 +56,7 @@ export function TeacherPermissionsDialog({
   const [permissions, setPermissions] = useState<B2CPermission[]>([]),
     [loading, setLoading] = useState(false),
     [saving, setSaving] = useState(false),
-    [error, setError] = useState(""),
-    [message, setMessage] = useState("");
+    [error, setError] = useState("");
   const sequence = useRef(0);
   const teacher = data?.teachers.find((row) => row.id === selected);
   async function load(id = selected) {
@@ -87,7 +87,6 @@ export function TeacherPermissionsDialog({
         if (saving) return;
         setOpen(value);
         if (value) {
-          setMessage("");
           void load();
         } else sequence.current++;
       }}
@@ -138,7 +137,6 @@ export function TeacherPermissionsDialog({
                   setAccount(row?.source_teacher_id ?? "");
                   setPermissions(row?.permissions ?? []);
                   setError("");
-                  setMessage("");
                 }}
               >
                 <option value="">Chọn giáo viên</option>
@@ -165,7 +163,6 @@ export function TeacherPermissionsDialog({
                   e.preventDefault();
                   setSaving(true);
                   setError("");
-                  setMessage("");
                   try {
                     const result = await saveB2CPermissionsAction({
                       teacher_id: teacher.id,
@@ -175,8 +172,8 @@ export function TeacherPermissionsDialog({
                     });
                     if (result.error) setError(result.error);
                     else {
+                      toast.success("Đã lưu phân quyền thành công", { position: "top-center", duration: 4500 });
                       await load(teacher.id);
-                      setMessage(result.success ?? "Đã lưu phân quyền.");
                     }
                   } catch {
                     setError(
@@ -254,7 +251,6 @@ export function TeacherPermissionsDialog({
                                     e.target.checked,
                                   ),
                                 );
-                                setMessage("");
                               }}
                             />
                           </td>
@@ -294,11 +290,6 @@ export function TeacherPermissionsDialog({
               </Button>
             )}
           </div>
-        )}
-        {message && (
-          <p role="status" className="text-sm text-emerald-700">
-            {message}
-          </p>
         )}
       </PermissionsContent>
     </Dialog>

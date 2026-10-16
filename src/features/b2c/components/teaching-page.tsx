@@ -26,9 +26,9 @@ export async function B2CTeachingPage({
   if (mine && !canPay && !canCheck)
     return (
       <>
-        <PageHeader title="Chấm công B2C" />
+        <PageHeader title="Chấm công" />
         <p>
-          Bạn chưa được cấp quyền chấm công hoặc xem tiền công B2C. Liên hệ quản
+          Bạn chưa được cấp quyền chấm công hoặc xem tiền công. Liên hệ quản
           lý để được phân quyền.
         </p>
       </>
@@ -89,7 +89,7 @@ export async function B2CTeachingPage({
   return (
     <>
       <PageHeader
-        title={mine ? "Chấm công B2C" : "Giờ dạy & Lương B2C"}
+        title={mine ? "Chấm công" : "Giờ dạy & Lương B2C"}
         description="Giờ dạy tính theo lịch. Có đủ ảnh check-in và check-out thì tự tính tiền công theo đơn giá của buổi."
         action={
           options ? (
@@ -139,7 +139,7 @@ export async function B2CTeachingPage({
       )}
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[950px] text-left text-sm">
-          <caption className="sr-only">Buổi dạy và chấm công B2C</caption>
+          <caption className="sr-only">{mine ? "Buổi dạy và chấm công" : "Buổi dạy và chấm công B2C"}</caption>
           <thead className="bg-muted">
             <tr>
               {[

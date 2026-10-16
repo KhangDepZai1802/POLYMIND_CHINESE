@@ -31,6 +31,7 @@ export async function saveB2CCareLogAction(_previous: ActionState, formData: For
   const { error } = await (await createClient()).from("b2c_admission_care_logs").insert({ ...parsed.data, created_by: actor.id });
   if (error) return { error: dbErrorToMessage(error) };
   revalidatePath("/admin/b2c/admissions");
+  revalidatePath("/admin/b2c/today");
   return { success: "Đã lưu nhật ký chăm sóc." };
 }
 
