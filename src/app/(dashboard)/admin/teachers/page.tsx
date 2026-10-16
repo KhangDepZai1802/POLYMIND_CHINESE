@@ -67,6 +67,9 @@ export default async function AdminTeachersPage() {
                 <tr>
                   <DataTableHead sticky>Mã</DataTableHead>
                   <DataTableHead>Họ tên</DataTableHead>
+                  {canManageAccounts && (
+                    <DataTableHead>Tài khoản</DataTableHead>
+                  )}
                   <DataTableHead>Liên hệ</DataTableHead>
                   <DataTableHead>Chuyên môn</DataTableHead>
                   <DataTableHead>Hình thức</DataTableHead>
@@ -90,6 +93,11 @@ export default async function AdminTeachersPage() {
                     <DataTableCell className="font-medium">
                       {t.profile?.full_name ?? "—"}
                     </DataTableCell>
+                    {canManageAccounts && (
+                      <DataTableCell className="font-mono text-sm">
+                        {t.profile?.username ?? "Xem trong Đặt lại mật khẩu"}
+                      </DataTableCell>
+                    )}
                     <DataTableCell>
                       <p>{t.profile?.email ?? "—"}</p>
                       {t.profile?.phone && (
@@ -101,7 +109,7 @@ export default async function AdminTeachersPage() {
                     <DataTableCell>{t.specialization ?? "—"}</DataTableCell>
                     <DataTableCell>
                       {t.employment_type === "full_time"
-                        ? "Cơ hữu"
+                        ? "Fulltime"
                         : t.employment_type === "part_time"
                           ? "Part-time"
                           : "Chưa cập nhật"}

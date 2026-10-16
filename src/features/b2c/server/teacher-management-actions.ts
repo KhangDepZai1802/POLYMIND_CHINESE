@@ -15,6 +15,7 @@ export type TeacherClassEdit = {
   campus: string | null;
   delivery_mode: string;
   start_date: string | null;
+  end_date: string | null;
   status: string;
   notes: string | null;
   updated_at: string | null;
@@ -59,7 +60,7 @@ export async function readTeacherWorkspaceAction(
   } satisfies Model;
 }
 export async function readTeacherClassEditAction(id: string) {
-  await requireTeaching();
+  await requireTeaching("super_admin");
   return permissionRpc<TeacherClassEdit>("read_teacher_b2c_class_edit", {
     p_id: z.uuid().parse(id),
   });
@@ -77,24 +78,30 @@ export async function readTeacherStudentEditAction(
     },
   );
 }
-const classSchema = z.object({
-  name: z.string().trim().min(3).max(200),
-  program_slug: z.enum([
-    "tieng-anh",
-    "tieng-trung",
-    "tieng-viet",
-    "lop-ve",
-    "kem-1-1",
-  ]),
-  capacity: z.coerce.number().int().positive(),
-  campus: z.string().max(200),
-  delivery_mode: z.enum(["offline", "online", "hybrid"]),
-  start_date: z.union([z.literal(""), z.iso.date()]),
-  status: z.enum(["planned", "active", "paused", "completed", "cancelled"]),
-  notes: z.string().max(4000),
-});
+const classSchema = z
+  .object({
+    name: z.string().trim().min(3).max(200),
+    program_slug: z.enum([
+      "tieng-anh",
+      "tieng-trung",
+      "tieng-viet",
+      "lop-ve",
+      "kem-1-1",
+    ]),
+    capacity: z.coerce.number().int().positive(),
+    campus: z.string().max(200),
+    delivery_mode: z.enum(["offline", "online", "hybrid"]),
+    start_date: z.union([z.literal(""), z.iso.date()]),
+    end_date: z.union([z.literal(""), z.iso.date()]).default(""),
+    status: z.enum(["planned", "active", "paused", "completed", "cancelled"]),
+    notes: z.string().max(4000),
+  })
+  .refine((v) => !v.start_date || !v.end_date || v.end_date >= v.start_date, {
+    path: ["end_date"],
+    message: "Ngày kết thúc khóa học không được trước ngày khai giảng.",
+  });
 export async function saveTeacherClassAction(input: unknown) {
-  await requireTeaching();
+  await requireTeaching("super_admin");
   const parsed = z
     .object({
       id: z.uuid().nullable(),
@@ -105,7 +112,7 @@ export async function saveTeacherClassAction(input: unknown) {
     .safeParse(input);
   if (!parsed.success)
     return {
-      error: "Kiểm tra tên lớp, sĩ số, chương trình và ngày khai giảng.",
+      error: parsed.error.issues[0]?.message ?? "Kiểm tra thông tin lớp.",
     };
   try {
     const v = parsed.data;
@@ -116,6 +123,7 @@ export async function saveTeacherClassAction(input: unknown) {
       p_expected_updated_at: v.expected_updated_at,
     });
     revalidatePath("/teacher", "layout");
+    revalidatePath("/admin/b2c", "layout");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Không lưu được lớp." };

@@ -38,6 +38,28 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261016 — Codex — 2026-10-16. User yêu cầu commit/push toàn bộ thay đổi phiên lên GitHub main. Fetch xác nhận HEAD=origin/main trước release; 66 file kiểm tra không thấy credential literal. Kiểm tra gần nhất: lint/typecheck/build đạt, 903/903 tests. SQL01–05 đã áp cloud, còn16 gaps history cũ; chưa QA browser độc lập.
+
+> B2C-STUDENT-SESSIONS-1 — hoàn thành code/SQL cloud — Codex — 2026-10-16. Tổng hợp điểm danh theo học viên/lớp, không tự trừ tiền.
+
+> TEACHER-EMPLOYMENT-LABELS-1 — hoàn thành — Codex — 2026-10-16. Đổi nhãn Fulltime/Part-time theo yêu cầu user.
+
+> B2C-CLASS-END-DATE-1 — hoàn thành — Codex — 2026-10-16. Ngày kết thúc khóa học tùy chọn ở thêm/sửa/chi tiết lớp; kiểm tra >= ngày khai giảng, không suy từ học phí/lịch lặp.
+
+> B2C-REQUIRED-LABELS-1 — hoàn thành local — Codex — 2026-10-16. Dấu * đỏ cho required (kể cả referral/certificate có điều kiện), bỏ chữ không bắt buộc khỏi Zalo. Không DB/validation mới; lint/typecheck/build exit0, Vitest894/894. Chưa QA browser/commit/push/deploy.
+
+> B2C-GUARDIAN-ZALO-1 — hoàn thành code/SQL cloud — Codex — 2026-10-16. Trường Zalo PH tùy chọn khi tạo mới, null nếu trống, tách SĐT, đọc bảng/chi tiết/Excel. SQL20261016000003 exact verify; pgTAP41/41, Vitest894/894, lint/typecheck/build exit0. Chưa QA browser/commit/push/deploy; dry-run16gaps cũ.
+
+> B2C-STUDENT-ADD-ENTRY-1 — hoàn thành local — Codex — 2026-10-16. Nút cạnh Danh sách học viên ở trang tổng, chọn lớp trong dialog; giữ mọi nút cũ. Chọn lại lớp reset học viên/lookup; không DB. Lint/typecheck/build exit0, Vitest892/892; chưa QA browser/commit/push/deploy.
+
+> B2C-ADD-STUDENT-ENTRY-1 — hoàn thành local — Codex — 2026-10-16. Thêm học viên trực tiếp ở dòng Danh sách lớp, sticky action column, stop propagation để không mở popup lớp chồng. Không DB; lint/typecheck/build exit0, Vitest890/890. Chưa QA browser/commit/push/deploy.
+
+> B2C-ADD-STUDENT-1 — hoàn thành code/SQL cloud — Codex — 2026-10-16. Thêm học viên trong popup/trang lớp, tạo mới hoặc lookup/chọn có sẵn; manager-only, atomic/retry/seat/unique/audit. SQL20261016000002 history exact verify/pgTAP32/32; lint/typecheck/build exit0, Vitest890/890. Chưa QA browser/mobile, commit/push/deploy; dry-run16 gaps cũ giữ nguyên.
+
+> TEACHER-ACCOUNT-MANAGEMENT-1 — hoàn thành local — Codex — 2026-10-16. B2C có nút Tài khoản, generic hiện username/menu reset dùng popup chung; super_admin-only, resolve ID qua RLS, Auth password-only, giữ role/is_active/username, xác nhận mật khẩu và kiểm expected_user_id. Không DB migration; lint/typecheck/build exit0, Vitest880/880 (14 test mới). Chưa QA browser, commit/push/deploy.
+
+> B2C-TUITION-CORRECTIONS-1 — hoàn thành code/SQL cloud — Codex — 2026-10-16. Hủy thu nhầm/hoàn từng phần/điều chỉnh có lý do, giữ chứng từ gốc, khóa gói/retry/stale/audit; số dư dùng thu ròng. SQL20261016000001 history exact verify; pgTAP118/118 + integration quyền, Vitest866/866, lint/typecheck/build exit0. Chưa QA browser/mobile hoặc commit/push/deploy; dry-run còn16 history gaps cũ.
+
 > B2C-ATTENDANCE-MOBILE-1 — hoàn thành code/SQL cloud — Codex — 2026-10-15. Thêm Học bù/Vắng không phép, giữ Đi muộn; mobile cards/nút44px, quyền/phân công/cancel/future/stale/retry/audit giữ nguyên. SQL02 áp/history exact verify + integration rollback đạt; lint/typecheck/build exit0, Vitest862/862. Chưa QA browser/điện thoại thật. User yêu cầu commit/push GitHub; SHA được xác minh và báo trong chat.
 
 > RELEASE-20261015-ALL — chuẩn bị commit/push — Codex — 2026-10-15. User chốt đưa toàn bộ code/tài nguyên hiện có lên GitHub, gồm B2C/phân quyền/Bài3/Bài4/favicon. Bản hiện tại lint/typecheck/build exit0, Vitest858/858 và Edge9audio/mobile đạt. Rà secret trước commit; kết quả SHA/push báo trong chat, không suy ra deploy thành công từ push.
@@ -784,6 +806,26 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-STUDENT-SESSIONS-1-QA:** F5 chi tiết lớp → Học viên → Buổi học; đối chiếu điểm danh, null đăng ký và vượt số buổi; teacher theo quyền.
+
+**TEACHER-EMPLOYMENT-LABELS-1-QA:** F5 form/bảng giáo viên, đối chiếu Fulltime và Part-time.
+
+**B2C-CLASS-END-DATE-1-QA:** F5 → thêm lớp hoặc mở lớp → Sửa thông tin lớp, nhập/xóa ngày kết thúc; kiểm tra hiển thị chi tiết.
+
+**B2C-REQUIRED-LABELS-1-QA:** F5 form Thêm học viên, xem dấu * đỏ/trường tùy chọn không ghi chú; giữ Zalo tùy chọn.
+
+**B2C-GUARDIAN-ZALO-1-QA:** F5 → Thêm học viên → tạo mới, nhập/bỏ trống Zalo; đối chiếu bảng/chi tiết/Excel bằng dữ liệu thử. Giữ nút cũ, không backfill Zalo từ phone.
+
+**B2C-STUDENT-ADD-ENTRY-1-QA:** user F5 trang Học viên tổng, bấm Thêm học viên góc phải Danh sách học viên, chọn lớp và nhập/chọn học viên. Giữ lối vào cũ ở lớp.
+
+**B2C-ADD-STUDENT-ENTRY-1-QA:** vào chương trình B2C → Danh sách lớp → Thao tác → Thêm học viên; user kiểm tra trên local sau F5. Không thay luồng thêm/quyền/DB.
+
+**B2C-ADD-STUDENT-1-QA:** user/QA mở lớp → Học viên → Thêm học viên, kiểm tra tạo mới/chọn có sẵn và đối chiếu roster/sĩ số/Học phí. Code local, DB đã áp; phát hành khi được yêu cầu. Không repair/replay16 migration cũ.
+
+**TEACHER-ACCOUNT-MANAGEMENT-1-QA:** admin mở B2C → Giáo viên → Tài khoản, đối chiếu login/liên kết và thử đặt mật khẩu trên tài khoản thử; QA độc lập browser/mobile. Phát hành khi user yêu cầu; không đổi mật khẩu thật chỉ để kiểm thử.
+
+**B2C-TUITION-CORRECTIONS-1-QA:** kiểm tra độc lập trên browser/mobile: Học phí → Xử lý học phí, hủy/hoàn/điều chỉnh, đối chiếu nợ/lớp/chỉ số GV/lịch sử; phát hành code khi user yêu cầu. Không replay/repair16 migration cũ thiếu history.
+
 - B2C-ATTENDANCE-MOBILE-1: QA độc lập trên điện thoại thật, cấp quyền GV thực tế theo admin; user đã yêu cầu phát hành code lên GitHub; SQL cloud đã áp.
 
 - LISTENING-LESSON-4-1: user xem /nghe → Bài4 hoặc /nghe/bai-4; chờ nội dung tiếp theo. Code/media local chưa phát hành online.
@@ -1138,6 +1180,12 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-GUARDIAN-ZALO-1-HISTORY:** SQL20261016000003 đã áp/history exact verify, dry-run vẫn16gaps cũ ngoài scope; không repair/replay. Chưa QA browser/commit/push/deploy code.
+
+- **B2C-ADD-STUDENT-1-HISTORY (2026-10-16):** migration mới đã áp/history exact verify; dry-run trước/sau còn16 gaps cũ, không repair/replay. Chưa QA browser/mobile hoặc phát hành code.
+
+- **B2C-TUITION-CORRECTIONS-1-HISTORY (2026-10-16):** SQL20261016000001 đã áp và verify exact history; CLI chưa link project nên dry-run dùng DB URL. Trước/sau vẫn16 migration cũ thiếu history, không repair/replay. Chưa QA browser/mobile; code chưa phát hành online.
+
 - **B2C migration history (2026-10-15):** sau SQL20261015000001, CLI dry-run vẫn có16 khoảng thiếu history:15 migration B2C cũ và SQL20261014000016 ngoài scope. Không repair/replay; không khẳng định toàn bộ remote up-to-date. Blocker apply phân quyền đã gỡ sau user xác nhận và apply thành công.
 
 - `B2C-CHANGE-HISTORY-1-HISTORY`: SQL06 đã áp và history xác minh, RLS bật; dry-run trước/sau vẫn chặn 15 migration B2C cũ thiếu history. Không repair/chạy lại SQL cũ. Chưa kiểm tra trực quan bằng tài khoản thật; phần test DB đã rollback toàn bộ fixture.
@@ -1254,33 +1302,35 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
-### [2026-10-15] Codex — B2C-ATTENDANCE-MOBILE-1
-- Làm được: Học bù/makeup, Vắng không phép, giữ late; thẻ mobile, nút/select44px, giữ quyền và trạng thái buổi.
-- SQL20261015000002 áp riêng sau dry-run bị16 history gaps cũ; exact SQL/history verify và integration rollback quyền/save/read/stats/retry/stale/invalid/audit đạt. Không replay/repair migration cũ, không lưu fixture hoặc bật quyền thật.
-- Test: lint/typecheck/build exit0, Vitest143files862/862. Test/build ban đầu bị sandbox esbuild/network fonts; chạy lại có escalation đạt. Chưa QA browser/điện thoại thật hoặc deploy.
-- Next: QA độc lập điện thoại, admin cấp quyền theo GV; user đã yêu cầu commit/push trong lượt phát hành tiếp theo; kết quả SHA báo trong chat.
+### [2026-10-16] Codex — B2C-STUDENT-SESSIONS-1
+- Cột Buổi học trong Học viên của popup/trang lớp: đăng ký, đã học, nghỉ phép/không phép, học bù, còn lại/vượt. Loại buổi tương lai/hủy, chưa điểm danh không tự tính vắng; không trừ tiền. Teacher cần mark_attendance.
+- SQL05 đã áp cloud và exact-history verify, 13 DB assertions đạt gồm teacher grant/deny. Dry-run trước/sau vẫn16 gaps cũ, không repair/replay.
+- Lint/typecheck/build đạt; Vitest150 files903/903 (3UI cases mới). Chưa QA browser độc lập/commit/push/deploy.
+- Next: B2C-STUDENT-SESSIONS-1-QA.
 
+### [2026-10-16] Codex — TEACHER-EMPLOYMENT-LABELS-1
+- Đổi nhãn thành Fulltime / Part-time ở form, bảng và Excel giáo viên B2C/chung. Giữ enum DB và cách tính tiền công.
+- Lint/typecheck/build đạt; Vitest150 files900/900 đạt (chạy ngoài sandbox do esbuild bị chặn đọc thư mục). Dev đã khởi động lại. Không thêm test cho sửa nhãn. Chưa QA browser độc lập/commit/push/deploy.
+- Next: TEACHER-EMPLOYMENT-LABELS-1-QA.
 
-### [2026-10-15] Codex — RELEASE-20261015-ALL
-- User yêu cầu commit/push toàn bộ thay đổi hiện có, gồm favicon/logo ngoài các tính năng B2C và bài nghe đã làm. HEAD và origin/main đang ngang nhau trước phát hành.
-- Kiểm tra code gần nhất: lint/typecheck/build exit0,858/858test; Edge9audio Bài4/phát/speed/ảnh/mobile/Bài3 đạt. Rà staged secrets và exclude env theo gitignore trước commit. SHA/push xác nhận trong chat; không tự xác nhận Vercel deploy từ gitpush.
+### [2026-10-16] Codex — B2C-CLASS-END-DATE-1
+- Đã thêm ngày kết thúc tùy chọn vào thêm/sửa/chi tiết lớp; chặn trước khai giảng, lớp cũ null. Admin có nút Sửa thông tin lớp trong popup. Không suy hạn học phí hoặc đổi lịch/trạng thái.
+- SQL04 áp cloud transactional và exact-history verify qua kết nối mới; 20 kiểm tra DB đạt, regression quyền đạt; 16 gaps migration cũ giữ nguyên.
+- Lint/typecheck/build đạt; Vitest150 files900/900. Chưa QA browser độc lập hoặc commit/push/deploy.
+- Next: B2C-CLASS-END-DATE-1-QA.
 
-### [2026-10-15] Codex — LISTENING-LESSON-4-1
-- **Làm được:** nhập ZIP user9M4A, dựng ảnh9trang từ DOCX42trang bằng nền ảnh + textboxes giữ Hán/pinyin/Việt/hình; sửa hộp tiêu đề29 bị chồng NG. /nghe có Bài3/Bài4 theo thứ tự, Bài4 riêng/index/page/back/prev-next, trình phát chung. Whitelist chính xác /audio/bai-4/ để anonymous/Range không trả HTML đăng nhập.
-- **File:** public/audio/bai-4, public/bai4, bai4-data.ts, routesB4/root, middleware +test, import/render/check scripts, assettests và docs. Không DB.
-- **Kiểm tra:** lint/typecheck/build exit0, Vitest858/858 (142files). Edge localhost phát thật đủ9audio, duration hợp lệ,1.25x/ảnh/back/prevlinks/mobile390 khôngoverflow/0pageerror và Bài3đủ22. Tài sản18files khoảng2.2MB; scratch/preview dọn sạch. Chưa commit/push, chờ QA độc lập/user xem.
+### [2026-10-16] Codex — B2C-REQUIRED-LABELS-1
+- Theo user: required marker dùng span text-red-500 ở helper và nhãn lớp/ngày nhập học; Zalo bỏ hậu tố không bắt buộc. Không đổi validation/quyền/DB.
+- File class-student-add-dialog.tsx, cập nhật expectation nhãn Zalo trong test, docs/worklog. Lint/typecheck/build exit0, full Vitest894/894. Chưa QA browser/commit/push/deploy; dev restart để user F5 kiểm tra.
+- Next: B2C-REQUIRED-LABELS-1-QA.
 
-### [2026-10-15] Codex — LISTENING-LESSON-INDEX-1
-- **Làm được:** /nghe là danh sách bài học với Bài3–Thời gian; chuyển22audio cũ sang /nghe/bai-3. Shell header/footer tổng quát hoặc nhãn bài; trang audio giữ URL/file và back về Bài3. Không DB.
-- **File:** nghe/page.tsx, nghe/bai-3/page.tsx, nghe/[page]/page.tsx, listening-shell.tsx, workflow/ledger/worklog.
-- **Kiểm tra:** localhost /nghe, /nghe/bai-3, /nghe/trang-1 HTTP200; root0audio-link, Bài3 đủ22, trang1 linkback đúng. Lint/typecheck/build exit0; Vitest854/854. Chưa commit/push; next: user gửi bài khác.
+### [2026-10-16] Codex — B2C-GUARDIAN-ZALO-1
+- User yêu cầu Zalo PH không bắt buộc: thêm field vào form tạo mới dùng chung, b2c_students.guardian_zalo nullable10digits; forward RPC trim/null/validation/atomic, không suy từ phone hoặc ghi đè hồ sơ existing.
+- Dashboard đọc guardian_name fallback cho hồ sơ mới; Zalo từ profile/phụ huynh liên kết, dedupe; hiện bảng/chi tiết/Excel. Không đồng bộ ngược vào phụ huynh hoặc backfill dữ liệu thật.
+- SQL03 áp riêng/history exact verify; pgTAP9/9 mới+32/32ghi danh, Vitest148files894/894 (2UI/schema mới), lint/typecheck/build exit0. Dry-run trước/sau vẫn16gaps cũ, không replay/repair. Chưa QA browser hoặc commit/push/deploy.
+- Next: B2C-GUARDIAN-ZALO-1-QA; dev restart có Supabase network.
 
-### [2026-10-15] Codex — B2C-PERMISSIONS-NAV-1
-- **Làm được:** đưa Phân quyền vào B2C_NAVIGATION sau Nhật ký thay đổi; trang /admin/b2c/permissions đọc quyền qua manager action và render editor inline. Bỏ nút header ở trang lớp/giáo viên. Không DB/quyền mới.
-- **File:** navigation.ts, trang permissions, teacher-permissions-dialog.tsx, trang B2C, teacher-dashboard, workflow/ledger/worklog.
-- **Kiểm tra:** lint/typecheck/build exit0; Vitest854/854. Chưa QA browser/commit/push. Next: user kiểm tra menu trái trên local.
-
-### [2026-10-15] Codex — B2C-TEACHER-PERMISSIONS-1 áp DB theo xác nhận
-- **Làm được:** user trả lời ok cho production migration; apply20261015000001 và ghi history trong cùng transaction thành công. Kết nối mới verify SQL khớp file đã duyệt và2 bảng RLS. Chạy integration thực tế6 nhóm quyền trên fixture rollback đạt; không cấp thêm quyền tài khoản thật.
-- **Kiểm tra:** scripts/b2c-permissions-db.mjs apply exit0, verify exit0. Dry-run sau exit1 do16 history gaps ngoài scope, không repair/replay. Code trước áp đã lint/typecheck/build exit0 và854/854test; phiên này chỉ sửa script verify/docs. Chưa QA browser hoặc commit/push/deploy code.
-- **Next:** dùng Phân quyền trên bản local; QA độc lập và phát hành code khi được yêu cầu. DB không còn chờ approval.
+### [2026-10-16] Codex — B2C-STUDENT-ADD-ENTRY-1
+- Theo ảnh user: thêm nút cạnh tiêu đề Danh sách học viên trên dashboard tổng. Shared ClassStudentAddDialog hỗ trợ chọn lớp hoặc fixed class cũ; lọc lớp hủy/hoàn thành, reset selection/search khi đổi lớp, chặn submit thiếu lớp. Giữ tất cả nút ở dòng lớp/popup/trang lớp.
+- Không DB/quyền mới. Lint/typecheck/build exit0, full Vitest148files892/892 (2UI mới); chưa QA browser/commit/push/deploy. Dev restart giữ Supabase network để user dùng ngay.
+- Next: B2C-STUDENT-ADD-ENTRY-1-QA trên /admin/b2c/students sau F5.

@@ -177,7 +177,7 @@ export async function getB2CClasses(programSlug: string) {
   const { data, error } = await supabase
     .from("b2c_classes")
     .select(
-      "id, code, program_slug, name, level_name, teacher_name, weekdays_text, time_text, capacity, enrolled_count, campus, delivery_mode, start_date, status, notes",
+      "id, code, program_slug, name, level_name, teacher_name, weekdays_text, time_text, capacity, enrolled_count, campus, delivery_mode, start_date, end_date, status, notes",
     )
     .eq("program_slug", programSlug)
     .order("start_date", { ascending: false, nullsFirst: false })

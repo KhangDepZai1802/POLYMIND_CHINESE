@@ -1,5 +1,25 @@
 # 04 — Kiến trúc hệ thống
 
+## B2C-STUDENT-SESSIONS-1 (2026-10-16)
+
+Shared ClassWorkspaceContent hiển thị session_summary của từng ghi danh ở tab students trong popup/trang lớp admin và teacher. Hai RPC tổng hợp từ attendance join meetings, loại tương lai và hủy, không nối thêm ở client hoặc thay đổi gói học phí. Teacher cần quyền mark_attendance để xem số liệu.
+
+## B2C class end date (2026-10-16)
+
+Form thêm lớp và editor dùng chung truyền end_date qua schema/server/RPC. Các truy vấn danh sách, chi tiết và workspace cùng đọc cột này; popup lấy bản ghi mới sau refresh. Validation Zod và DB thống nhất thứ tự ngày; manager sửa theo quyền hiện có, teacher theo permission. Kiểm tra: lint/typecheck/build đạt; 150 files, 900/900 unit tests và 20 DB assertions. Chưa QA browser độc lập.
+
+## Add student to B2C class (2026-10-16)
+
+ClassStudentAddDialog dùng chung popup lớp/trang lớp, chỉ render manager khi không có teacher permissions. FormData → manager server action → Zod → typed forward RPC, không service role. Hai chế độ new/existing; selector tìm/phân trang riêng, generation token bỏ phản hồi cũ, Enter tìm không submit ghi danh. Lỗi lưu giữ giá trị/request; đang lưu chặn đóng/gửi trùng. Sau thành công refresh parent và workspace callback, revalidate B2C layout/teacher classes/detail pattern; popup roster mặc định chuyển sang model server mới để thấy người vừa thêm. Không suy học phí hay tạo tài khoản từ ghi danh.
+
+## Teacher account management (2026-10-16)
+
+TeacherAccountDialog dùng chung B2C/generic; account-schema xác thực kind/id/expected_user_id/password/confirm. account-actions kiểm requireRole(super_admin) trước truy vấn, resolve B2C/source và teachers/profile qua server client/RLS, chỉ chấp nhận teacher/academic_manager. Auth admin.getUserById đọc login tài khoản cũ, updateUserById chỉ truyền password; không provision/upsert profile và không đổi role/is_active. expected_user_id chống thay liên kết sau khi mở; audit teacher.password_reset chỉ ghi user_id/username/source, không secret. Gửi mật khẩu bằng FormData thay vì object để dev action trace không serialize các giá trị password. UI generation token bỏ kết quả tải cũ, khóa thao tác khi đang lưu và xóa password khi unmount. Không schema/migration; không đổi quyền quản lý tài khoản D-2.
+
+## B2C tuition corrections (2026-10-16)
+
+TuitionCorrectionsDialog tại trang manager Học phí gọi manager-only server actions → typed forward RPC helper → guarded DB transaction; không service role. UI đọc phiếu/lịch sử phân trang riêng, bỏ phản hồi tải cũ bằng generation token, khóa đóng/lưu khi đang ghi, giữ retry UUID khi lỗi, preview số dư và refresh khi thành công. TuitionPackageDialog truyền expected due/paid và lý do vào save_b2c_tuition_package_with_reason; DB vẫn enforce capability theo lớp. Read phiếu dùng projection mới, teacher metrics alias amount:effective_amount. Revalidate học phí/lịch sử/học viên/tổng quan/giáo viên và cả class route patterns manager/teacher.
+
 ## B2C attendance mobile (2026-10-15)
 
 ClassWorkspaceContent dùng thẻ điểm danh dưới breakpoint md, bảng ở desktop; cùng ClassAttendanceDialog/action/schema/RPC cho cả hai. Vùng chạm nút/select tối thiểu 44px, trạng thái và ghi chú nằm trên thẻ. Permission mark_attendance kết hợp ngày VN/trạng thái buổi để hiện nút; RPC tiếp tục xác thực phân công, chống stale/retry và audit. makeup là text status riêng B2C; không thay enum B2B. Migration20261015000002 mở CHECK và thống kê ở hai read RPC.

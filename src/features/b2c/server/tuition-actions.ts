@@ -4,8 +4,11 @@ import { z } from "zod";
 import {
   b2cTuitionPackageSchema,
   b2cReceiptSchema,
+  b2cCorrectionSchema,
+  type B2CReceipt,
+  type B2CCorrectionHistory,
 } from "@/features/b2c/tuition-schema";
-import { requireTeaching } from "@/lib/auth/session";
+import { requireTeaching, requireManager } from "@/lib/auth/session";
 import { permissionRpc } from "./permission-rpc";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -24,16 +27,37 @@ export async function saveB2CTuitionPackageAction(
   );
   if (!parsed.success) return zodToActionState(parsed.error);
   const v = parsed.data;
-  const { error } = await (
-    await createClient()
-  ).rpc("save_b2c_tuition_package", {
-    p_enrollment_id: v.enrollment_id,
-    p_sessions: v.sessions,
-    p_unit_price: v.unit_price,
-    p_discount: v.discount,
-    p_discount_reason: v.discount_reason,
-  });
-  if (error) return { error: dbErrorToMessage(error) };
+  const reason = form.get("adjustment_reason");
+  const expectedDue = form.get("expected_due");
+  const expectedPaid = form.get("expected_paid");
+  const money = z.coerce.number().int().min(0).max(1000000000000);
+  const due =
+    expectedDue === "" || expectedDue === null
+      ? null
+      : money.safeParse(expectedDue);
+  const paid = money.safeParse(expectedPaid ?? 0);
+  if (
+    (due !== null && !due.success) ||
+    !paid.success ||
+    (reason !== null && typeof reason !== "string")
+  )
+    return { error: "Dữ liệu điều chỉnh không hợp lệ." };
+  try {
+    await permissionRpc<string>("save_b2c_tuition_package_with_reason", {
+      p_enrollment_id: v.enrollment_id,
+      p_sessions: v.sessions,
+      p_unit_price: v.unit_price,
+      p_discount: v.discount,
+      p_discount_reason: v.discount_reason,
+      p_reason: typeof reason === "string" ? reason : "",
+      p_expected_due: due?.success ? due.data : null,
+      p_expected_paid: paid.data,
+    });
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Không lưu được học phí.",
+    };
+  }
   revalidatePath("/admin/b2c/tuition");
   revalidatePath("/admin/b2c/classes/[classId]", "page");
   const classId = form.get("class_id");
@@ -82,14 +106,7 @@ export async function getB2CReceiptsAction(packageId: string, page: number) {
     return { receipts: [], total: 0, error: "Bộ lọc không hợp lệ." };
   try {
     return await permissionRpc<{
-      receipts: {
-        id: string;
-        code: string;
-        paid_date: string;
-        amount: number;
-        method: string;
-        collector_name: string;
-      }[];
+      receipts: B2CReceipt[];
       total: number;
       error?: string;
     }>("read_b2c_permitted_receipts", {
@@ -103,4 +120,49 @@ export async function getB2CReceiptsAction(packageId: string, page: number) {
       error: "Không tải được phiếu thu hoặc bạn chưa được cấp quyền xem.",
     };
   }
+}
+
+export async function correctB2CTuitionAction(input: unknown) {
+  await requireManager();
+  const parsed = b2cCorrectionSchema.safeParse(input);
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ.",
+    };
+  try {
+    await permissionRpc<string>("correct_b2c_tuition", {
+      p_payload: parsed.data,
+    });
+    for (const path of [
+      "/admin/b2c/tuition",
+      "/admin/b2c/history",
+      "/admin/b2c/students",
+      "/admin/b2c/overview",
+      "/admin/b2c/teachers",
+    ])
+      revalidatePath(path);
+    revalidatePath("/admin/b2c/classes/[classId]", "page");
+    revalidatePath("/teacher/b2c-classes/[classId]", "page");
+    return { success: true };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Không lưu được điều chỉnh.",
+    };
+  }
+}
+
+export async function getB2CCorrectionsAction(packageId: string, page: number) {
+  await requireManager();
+  if (
+    !z.uuid().safeParse(packageId).success ||
+    !Number.isSafeInteger(page) ||
+    page < 0 ||
+    page > 1000000
+  )
+    throw new Error("Bộ lọc không hợp lệ.");
+  return permissionRpc<B2CCorrectionHistory>("read_b2c_tuition_corrections", {
+    p_package_id: packageId,
+    p_page: page,
+  });
 }

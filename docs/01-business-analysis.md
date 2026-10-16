@@ -1,5 +1,35 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## B2C-STUDENT-SESSIONS-1 (2026-10-16)
+
+Số buổi mỗi ghi danh: đã học gồm có mặt/đi muộn/học bù, học bù là tập con của đã học; nghỉ phép và không phép riêng. Chỉ điểm danh của buổi đã kết thúc, không hủy được tính. Còn lại = registered_sessions - đã học; null khi chưa nhập, âm hiển thị vượt đăng ký. Không trừ tiền hoặc suy công nợ.
+
+Nhãn hình thức làm việc giáo viên trên giao diện và xuất Excel dùng Fulltime / Part-time (2026-10-16); giá trị full_time / part_time và cách tính tiền công giữ nguyên.
+
+## Ngày kết thúc khóa học B2C (2026-10-16)
+
+Lớp có ngày kết thúc khóa học tùy chọn, độc lập hạn học phí và lịch buổi học. Cho phép chưa biết ngày khai giảng; nếu có cả hai ngày thì kết thúc phải cùng hoặc sau khai giảng. Lớp cũ để null, không tự đổi trạng thái hay lịch.
+
+## Zalo phụ huynh khi thêm học viên (2026-10-16)
+
+Biểu mẫu tạo học viên mới có Số Zalo phụ huynh (không bắt buộc), để trống lưu null, nếu nhập dùng số10 chữ số như SĐT hệ thống. Không tự lấy từ SĐT liên hệ và không bắt buộc tên phụ huynh chỉ để lưu số Zalo. Khi chọn học viên đã có không ghi đè Zalo dùng chung. Trang Học viên tổng hiển thị Zalo dưới tên phụ huynh, có trong popup chi tiết và Excel; đọc thêm Zalo của phụ huynh đã liên kết, loại số trùng. Không tự đồng bộ sửa hồ sơ phụ huynh hoặc đoán dữ liệu cũ.
+
+## Thêm học viên vào lớp B2C (2026-10-16)
+
+Quản trị/giáo vụ mở popup hoặc trang lớp → Học viên → Thêm học viên. Chọn tạo mới (tên bắt buộc, mã B2C-HV tự sinh; ngày sinh/phụ huynh/liên hệ/nguồn tùy chọn) hoặc tìm hồ sơ đã có theo mã/tên/SĐT/phụ huynh,20 kết quả/trang. Tạo hồ sơ và ghi danh cùng transaction; chọn có sẵn giữ nguyên hồ sơ dùng chung. Người chốt/ngày nhập học bắt buộc; ngày học/hạn phí/mục tiêu/chứng chỉ/ghi chú thuộc ghi danh. Trạng thái ban đầu studying; không tạo account/phiếu thu/gói học phí tự động. Gói được lập tại mục Học phí của lớp sau ghi danh.
+
+Không ghi danh trùng cùng lớp; có thể học nhiều lớp với cùng hồ sơ. Lớp completed/cancelled không nhận mới; sĩ số tối đa dựa số ghi danh chưa withdrawn/completed. Sau thêm, enrolled_count đồng bộ số ghi danh còn chiếm chỗ của lớp. Lưu lại cùng request/payload/actor không tạo trùng; khác nội dung cùng UUID bị chặn. Học viên có cùng tên/SĐT không tự gộp (có thể là anh/chị/em dùng liên hệ chung); người nhập dùng chế độ hồ sơ có sẵn để tránh tạo trùng. Quyền edit_students của giáo viên chưa bao gồm thêm ghi danh.
+
+## Admin quản lý tài khoản giáo viên (2026-10-16)
+
+Chỉ super_admin xem/quản lý tài khoản. B2C → Giáo viên có nút Tài khoản theo từng hồ sơ; trang Giáo viên chung có cột tên đăng nhập và menu Đặt lại mật khẩu dùng cùng popup. Popup hiển thị tên giáo viên, tên đăng nhập (email Auth thực tế nếu tài khoản cũ không có username), vai trò và trạng thái khóa; nhập mật khẩu mới8–72 ký tự và xác nhận. Không xem được mật khẩu hiện tại. Đổi mật khẩu không sửa username/email/role/is_active hoặc tự mở khóa. Không lưu mật khẩu vào profile/audit. B2C resolve bằng source_teacher_id → teachers.user_id, không đoán theo tên; chưa liên kết thì hướng dẫn Phân quyền B2C để chọn tài khoản đã có. Tạo tài khoản mới vẫn theo trang Giáo viên chung.
+
+## Xử lý học phí B2C (2026-10-16)
+
+Quản trị/giáo vụ vào Học phí → Xử lý học phí. Hủy dùng cho phiếu thu ghi nhầm, giữ nguyên chứng từ/số tiền gốc, đánh dấu đã hủy và loại khỏi tổng thu; khoản phải thu không đổi. Phiếu đã có hoàn tiền không được hủy. Hoàn tiền thực tế ghi riêng theo phiếu gốc, nhiều lần nhưng tổng không vượt số thu gốc; chọn giảm khoản phải thu tương ứng hoặc giữ khoản phải thu (phần hoàn trở thành nợ). Không tự chuyển tiền ngân hàng. Điều chỉnh phải thu bằng chiết khấu: không âm, không thấp hơn thu ròng, không vượt số buổi × đơn giá; tăng tạm tính qua sửa Gói học phí. Sửa gói đã tồn tại bắt buộc lý do, gồm cả thay đổi số buổi/đơn giá/chiết khấu.
+
+Mọi xử lý bắt buộc lý do, ngày không tương lai; hủy/hoàn không trước ngày thu. Chứng từ gốc không bị xóa. Thu ròng = tổng phiếu chưa hủy trừ tiền đã hoàn; nợ = phải thu − thu ròng. Trang học phí, workspace quản lý/giáo viên và chỉ số GV dùng cùng thu ròng; báo cáo tháng nhập tay giữ nguyên. Quyền thu của giáo viên không bao gồm hủy/hoàn/điều chỉnh qua màn xử lý. Lịch sử xử lý manager xem theo gói, audit chung vẫn chỉ super_admin; actor thật từ auth.uid(). Gói có số dư thay đổi phải tải lại, retry cùng UUID/nội dung không tạo trùng.
+
 ## Điểm danh B2C trên điện thoại (2026-10-15)
 
 Theo từng buổi: Có mặt, Vắng có phép, Vắng không phép, Học bù; giữ Đi muộn để không mất dữ liệu/chức năng cũ. Học bù là trạng thái tham dự trong buổi đang chọn, không tự xếp buổi khác hoặc trừ học phí. Giáo viên cần quyền Điểm danh học viên trong lớp được phân công. Điện thoại hiện thẻ từng học viên với trạng thái, ghi chú và nút điểm danh tối thiểu 44px; chọn trạng thái rồi lưu. Chưa nhập vẫn là Chưa điểm danh.
@@ -48,7 +78,7 @@ CAC chưa tính: chờ chốt Marketing có bao gồm quảng cáo hay cộng ha
 
 Tổng học viên đếm hồ sơ duy nhất kể cả chưa ghi danh; đang học có ít nhất một ghi danh studying. Sắp hết phí đếm học viên có ghi danh chưa Nghỉ/Hoàn thành với hạn từ hôm nay đến ngày thứ 30, theo ngày Việt Nam. Lớp hoạt động có status active và ít nhất một học viên studying. Biểu đồ tình trạng mỗi người một nhóm, ưu tiên studying → overdue → awaiting_renewal → on_hold → withdrawn → completed → chưa ghi danh. Nguồn khách đếm hồ sơ duy nhất, lọc năm nếu có ghi danh trong năm đó; dùng đúng các nguồn hiện có và Chưa xác định.
 
-Bảng hiển thị từng lượt ghi danh và hồ sơ chưa ghi danh, có tìm tên/mã/phụ huynh/SĐT/email/lớp, lọc trạng thái/lớp/nguồn/khoảng ngày nhập học, phân trang 10/20/50. Chọn dòng để xuất Excel, nếu không chọn thì xuất toàn bộ kết quả lọc. Bộ lọc bảng không đổi thẻ/biểu đồ. Chi tiết hồ sơ giữ các thông tin đã có ở bảng cũ; sửa ghi danh dùng dialog/RPC cũ. Nhắc học phí chỉ mở danh sách cần liên hệ, chưa gửi tin; tiếp nhận mới dẫn tới Tuyển sinh, chưa thêm luồng tạo hồ sơ/ghi danh mới. Đọc phân trang đầy đủ profiles/enrollments/classes B2C qua manager/RLS, không dùng bảng VCB.
+Bảng hiển thị từng lượt ghi danh và hồ sơ chưa ghi danh, có tìm tên/mã/phụ huynh/SĐT/email/lớp, lọc trạng thái/lớp/nguồn/khoảng ngày nhập học, phân trang 10/20/50. Chọn dòng để xuất Excel, nếu không chọn thì xuất toàn bộ kết quả lọc. Bộ lọc bảng không đổi thẻ/biểu đồ. Chi tiết hồ sơ giữ các thông tin đã có ở bảng cũ; sửa ghi danh dùng dialog/RPC cũ. Nhắc học phí chỉ mở danh sách cần liên hệ, chưa gửi tin; tiếp nhận mới dẫn tới Tuyển sinh. Tạo hồ sơ/ghi danh mới qua Thêm học viên trong chi tiết lớp (2026-10-16). Đọc phân trang đầy đủ profiles/enrollments/classes B2C qua manager/RLS, không dùng bảng VCB.
 
 ## Chỉ số giáo viên B2C (2026-10-14)
 

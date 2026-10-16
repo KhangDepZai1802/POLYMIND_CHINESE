@@ -229,7 +229,7 @@ export function TeacherFormDialog({
                 className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
                 <option value="">Chưa cập nhật</option>
-                <option value="full_time">Cơ hữu</option>
+                <option value="full_time">Fulltime</option>
                 <option value="part_time">Part-time</option>
               </select>
               {fe["employment_type"] && (

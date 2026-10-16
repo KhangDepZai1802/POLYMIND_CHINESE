@@ -1,5 +1,48 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-STUDENT-SESSIONS-1
+
+- [x] Tổng hợp đã học (có mặt/đi muộn/học bù), nghỉ, học bù và còn lại theo ghi danh; loại buổi hủy/tương lai, bảo toàn phân quyền, UI lớp admin/teacher và kiểm tra DB/unit/build. SQL05 cloud/history exact verify; 13DB/903unit tests đạt; lint/typecheck/build đạt. Chưa QA browser/commit/push/deploy.
+
+## TEACHER-EMPLOYMENT-LABELS-1 — Nhãn Fulltime/Part-time
+
+- [x] DoD: thống nhất nhãn form, bảng và xuất Excel giáo viên B2C/chung; giữ giá trị lưu và cách tính lương; chạy checks repo. Lint/typecheck/build đạt; 900/900 tests đạt. Chưa QA browser độc lập hoặc commit/push/deploy.
+
+## B2C-CLASS-END-DATE-1 — Ngày kết thúc khóa học
+
+- [x] DoD: nullable end_date của lớp, validation UI/server/DB; thêm/sửa và chi tiết manager/teacher theo quyền cũ; lớp cũ null, không suy từ tuition/schedule; test mới+hồi quy, áp cloud và lint/typecheck/test/build. SQL04 exact-history verify, 20 DB assertions và 900/900 tests đạt. Chưa QA browser/commit/push/deploy.
+
+## B2C-REQUIRED-LABELS-1 — Dấu bắt buộc màu đỏ
+
+- [x] Trường required trong form Thêm học viên có * đỏ; trường tùy chọn không ghi chú văn bản; giữ validation/quyền/dữ liệu. Không DB; lint/typecheck/build exit0, Vitest894/894. Chưa QA browser/commit/push/deploy.
+
+## B2C-GUARDIAN-ZALO-1 — Số Zalo phụ huynh tùy chọn
+
+- [x] Form thêm hồ sơ mới có Zalo không bắt buộc; rỗng null, không tự lấy SĐT liên hệ, validation server/DB, lưu atomic cùng hồ sơ; hiển thị/export. SQL20261016000003 cloud/history exact verify, pgTAP9 mới+32hồi quy, Vitest894/894, lint/typecheck/build exit0. Chưa QA browser/commit/push/deploy.
+
+## B2C-STUDENT-ADD-ENTRY-1 — Thêm ngay trang Học viên tổng
+
+- [x] Nút cạnh tiêu đề Danh sách học viên; chọn lớp trong cùng dialog, dùng luồng mới/có sẵn hiện có; giữ nút cũ; chọn lại lớp xóa lựa chọn hồ sơ cũ, không gửi thiếu lớp. Không DB; lint/typecheck/build exit0, Vitest892/892 (2UI mới). Chưa QA browser/commit/push/deploy.
+
+## B2C-ADD-STUDENT-ENTRY-1 — Nút thêm ngay danh sách lớp
+
+- [x] Nút có nhãn trên dòng lớp còn nhận ghi danh, cột thao tác cố định; click popup thêm không kích hoạt popup chi tiết lớp; dùng luồng/quyền cũ. Không DB; lint/typecheck/build exit0, Vitest890/890. Chưa QA browser/commit/push/deploy.
+
+## B2C-ADD-STUDENT-1 — Thêm học viên/ghi danh trong lớp
+
+- [x] Nút ở popup/trang lớp; tạo hồ sơ hoặc tìm/chọn hồ sơ có sẵn, ghi danh atomic; DB kiểm manager/class/student/date/seat, unique class/student và request/payload retry; audit actor; refresh học viên/lớp/học phí. SQL20261016000002 cloud/history exact verify, pgTAP32/32; Vitest890/890 (10 mới); lint/typecheck/build exit0.
+- [ ] `B2C-ADD-STUDENT-1-QA`: QA độc lập browser/mobile và phát hành code; dry-run vẫn16 history gaps cũ ngoài scope.
+
+## TEACHER-ACCOUNT-MANAGEMENT-1 — Admin quản lý tài khoản giáo viên
+
+- [x] Admin xem đúng tài khoản liên kết giáo viên; đặt mật khẩu mới có xác nhận; server gác super_admin và resolve target qua RLS; chỉ đổi password, giữ username/role/is_active; báo hồ sơ B2C chưa liên kết; audit không chứa mật khẩu.14 test mới (server9/UI5), full Vitest880/880, lint/typecheck/build exit0; không migration.
+- [ ] `TEACHER-ACCOUNT-MANAGEMENT-1-QA`: QA browser độc lập bằng tài khoản thử; phát hành code khi user yêu cầu.
+
+## B2C-TUITION-CORRECTIONS-1 — Hủy thu, hoàn tiền, điều chỉnh
+
+- [x] Manager-only; giữ chứng từ gốc; hoàn từng phần không vượt số thực nhận; lý do bắt buộc; điều chỉnh không thấp hơn thu ròng; khóa gói/retry/stale; số dư đồng nhất trang học phí/lớp/chỉ số GV; lịch sử actor/thời gian. SQL20261016000001 cloud/history khớp; pgTAP118/118 và integration phân quyền; Vitest866/866; lint/typecheck/build exit0.
+- [ ] `B2C-TUITION-CORRECTIONS-1-QA`: QA độc lập browser/mobile và phát hành code. Dry-run vẫn16 history gaps cũ ngoài scope, không repair/replay.
+
 ## LISTENING-LESSON-4-1 — Bài4 phương hướng/địa điểm
 
 - [x] Nhập9audio từ ZIP user, ghép đúng trang2/4/5/6/7/25/26/29/30 trong Word42trang; giữ chữ Hán/pinyin/hình, routesB4/root và audio whitelist chính xác, Bài3 giữ22. Lint/typecheck/build exit0, Vitest858/858; Edge phát thật9audio/speed/ảnh/nav/mobile390/0pageerror đạt. Chưa commit/push.

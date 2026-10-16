@@ -5,7 +5,7 @@ import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
 
 export const metadata: Metadata = { title: "Giáo viên B2C" };
 export default async function TeachersPage() {
-  await requireManager();
+  const me = await requireManager();
   const metrics = await getB2CTeacherMetrics();
   const month = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -14,5 +14,11 @@ export default async function TeachersPage() {
   })
     .format(new Date())
     .slice(0, 7);
-  return <TeacherDashboard rows={[...metrics.values()]} initialMonth={month} />;
+  return (
+    <TeacherDashboard
+      rows={[...metrics.values()]}
+      initialMonth={month}
+      canManageAccounts={me.role === "super_admin"}
+    />
+  );
 }

@@ -83,6 +83,7 @@ export function B2CClassFormDialog({
                 type="date"
                 error={errors.start_date}
               />
+              <Field label="Ngày kết thúc khóa học" name="end_date" type="date" error={errors.end_date} />
               <Field
                 label="Tên lớp *"
                 name="name"

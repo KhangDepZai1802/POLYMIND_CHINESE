@@ -47,6 +47,7 @@ export function TeacherClassManageDialog({ classId }: { classId?: string }) {
               campus: "",
               delivery_mode: "offline",
               start_date: "",
+              end_date: "",
               status: "planned",
               notes: "",
               updated_at: null,
@@ -185,6 +186,14 @@ export function TeacherClassManageDialog({ classId }: { classId?: string }) {
                   name="start_date"
                   type="date"
                   defaultValue={data.start_date ?? ""}
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                Ngày kết thúc khóa học
+                <Input
+                  name="end_date"
+                  type="date"
+                  defaultValue={data.end_date ?? ""}
                 />
               </label>
               <label className="grid gap-1 text-sm">

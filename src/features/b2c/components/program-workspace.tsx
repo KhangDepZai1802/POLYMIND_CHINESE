@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ClassStudentAddDialog } from "./class-student-add-dialog";
+import { todayISO } from "@/lib/dates";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -35,6 +37,7 @@ export type ClassRow = {
   enrolled_count: number;
   status: string;
   start_date: string | null;
+  end_date: string | null;
   delivery_mode: string;
   campus: string | null;
   level_name: string | null;
@@ -202,7 +205,7 @@ export function B2CProgramWorkspace({
           )}
         </CardContent>
       </Card>
-      {selectedClass && <B2CClassDetailDialog key={selectedClass.id} classRow={selectedClass} programTitle={program.title} students={students.filter(student => student.classCode === selectedClass.code)} onClose={() => setSelectedClass(null)} />}
+      {selectedClass && <B2CClassDetailDialog key={selectedClass.id} classRow={classes.find((c) => c.id === selectedClass.id) ?? selectedClass} programTitle={program.title} students={students.filter(student => student.classCode === selectedClass.code)} onClose={() => setSelectedClass(null)} />}
     </>
   );
 }
@@ -425,7 +428,7 @@ function ClassList({
                 <th
                   key={heading}
                   scope="col"
-                  className="border-b px-3 py-2.5 font-medium"
+                  className={cn("border-b px-3 py-2.5 font-medium", heading === "Thao tác" && "bg-muted sticky right-0 z-20 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.2)]")}
                 >
                   {heading}
                 </th>
@@ -485,7 +488,9 @@ function ClassList({
                     <td className="px-3 py-3">
                       {STATUS_LABELS[item.status] ?? item.status}
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="bg-card sticky right-0 z-10 px-3 py-3 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.2)]" onClick={(event) => event.stopPropagation()}>
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                      {!["completed", "cancelled"].includes(item.status) && <ClassStudentAddDialog classId={item.id} className={item.name} today={todayISO()} />}
                       <button
                         type="button"
                         onClick={() => onSelectClass(item)}
@@ -494,6 +499,7 @@ function ClassList({
                       >
                         <Eye className="size-4 text-blue-600 dark:text-blue-400" aria-hidden />
                       </button>
+                      </div>
                     </td>
                   </tr>
                 );

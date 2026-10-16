@@ -1,5 +1,8 @@
 import { render, screen, within, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
+  ClassStudentAddDialog: () => <button>Thêm học viên</button>,
+}));
 import { ClassWorkspaceContent } from "@/features/b2c/components/class-workspace-content";
 import type { ComponentProps } from "react";
 vi.mock("@/features/b2c/components/class-workspace-dialogs", () => ({
@@ -33,6 +36,7 @@ const model: Model = {
     capacity: 15,
     enrolled_count: 1,
     start_date: null,
+    end_date: null,
     delivery_mode: "offline",
     campus: null,
     teacher_name: "GV",
@@ -86,6 +90,14 @@ const model: Model = {
 };
 afterEach(cleanup);
 describe("B2C mobile attendance", () => {
+  it.each([5, -1, null])("shows per-student attendance totals and remaining %s", (remaining) => {
+    const next: Model = { ...model, filters: { tab: "students", page: 0, q: "" }, result: { ...model.result, rows: [{ ...model.result.rows[0], session_summary: { attended: 3, absent: 1, excused: 2, makeup: 1, remaining } } as Model["result"]["rows"][number]] } };
+    render(<ClassWorkspaceContent model={next} />);
+    expect(screen.getByText("Đã học: 3")).toBeInTheDocument();
+    expect(screen.getByText("Nghỉ có phép: 2 · Không phép: 1")).toBeInTheDocument();
+    expect(screen.getByText("Học bù: 1 (đã tính trong đã học)")).toBeInTheDocument();
+    expect(screen.getByText(remaining === null ? "Còn lại: Chưa xác định" : remaining < 0 ? "Vượt đăng ký: 1" : "Còn lại: 5")).toBeInTheDocument();
+  });
   it("shows the student's status, note and attendance action in a mobile card", () => {
     render(
       <ClassWorkspaceContent

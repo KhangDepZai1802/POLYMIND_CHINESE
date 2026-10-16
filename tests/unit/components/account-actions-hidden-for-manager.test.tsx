@@ -6,6 +6,10 @@ import { ConfirmationProvider } from "@/components/shared/confirmation-provider"
 import { StudentRowActions } from "@/features/students/components/student-row-actions";
 import { TeacherRowActions } from "@/features/teachers/components/teacher-row-actions";
 
+vi.mock("@/features/teachers/server/account-actions", () => ({
+  readTeacherAccountAction: vi.fn(), changeTeacherPasswordAction: vi.fn(),
+}));
+
 vi.mock("@/features/teachers/server/actions", () => ({
   resetTeacherPasswordAction: vi.fn(),
   toggleTeacherActiveAction: vi.fn(),

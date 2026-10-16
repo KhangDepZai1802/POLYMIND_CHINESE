@@ -106,11 +106,15 @@ export const b2cClassSchema = z
     enrolled_count: z.coerce.number().int().min(0, "Số học viên không được âm"),
     campus: optionalText,
     delivery_mode: z.enum(["offline", "online", "hybrid"]),
-    start_date: optionalText,
+    start_date: optionalDate,
+    end_date: optionalDate.default(null),
     status: z.enum(["planned", "active", "paused", "completed", "cancelled"]),
     notes: optionalText,
   })
   .superRefine((data, context) => {
+    if (data.start_date && data.end_date && data.end_date < data.start_date) {
+      context.addIssue({ code: "custom", path: ["end_date"], message: "Ngày kết thúc khóa học không được trước ngày khai giảng." });
+    }
     if (data.enrolled_count > data.capacity) {
       context.addIssue({
         code: "custom",

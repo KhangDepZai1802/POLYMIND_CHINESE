@@ -77,6 +77,23 @@ export function TuitionPackageDialog({
         </DialogHeader>
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="enrollment_id" value={key} />
+          <input
+            type="hidden"
+            name="expected_due"
+            value={row.total_due ?? ""}
+          />
+          <input type="hidden" name="expected_paid" value={row.paid_amount} />
+          {row.package_id && (
+            <div className="space-y-2">
+              <Label htmlFor={`adjustment-${key}`}>Lý do điều chỉnh *</Label>
+              <Input
+                id={`adjustment-${key}`}
+                name="adjustment_reason"
+                required
+                maxLength={1000}
+              />
+            </div>
+          )}
           {classId && <input type="hidden" name="class_id" value={classId} />}
           <div className="space-y-2">
             <Label htmlFor={`sessions-${key}`}>Số buổi *</Label>
@@ -327,11 +344,33 @@ export function TuitionReceiptsDialog({
                   <tbody>
                     {history?.receipts.map((r) => (
                       <tr key={r.id} className="border-t">
-                        <td className="py-2 pr-3">{r.code}</td>
+                        <td className="py-2 pr-3">
+                          {r.code}
+                          {r.cancelled_at && (
+                            <p className="text-destructive">Đã hủy</p>
+                          )}
+                          {r.correction_reason && (
+                            <p className="text-xs">{r.correction_reason}</p>
+                          )}
+                        </td>
                         <td className="pr-3">
                           {r.paid_date.split("-").reverse().join("/")}
                         </td>
-                        <td className="pr-3">{formatCurrency(r.amount)}</td>
+                        <td className="pr-3">
+                          {formatCurrency(r.amount)}
+                          {Number(r.refunded_amount) > 0 && (
+                            <p className="text-xs">
+                              Đã hoàn{" "}
+                              {formatCurrency(Number(r.refunded_amount))}
+                            </p>
+                          )}
+                          <p className="text-xs">
+                            Thu ròng{" "}
+                            {formatCurrency(
+                              Number(r.effective_amount ?? r.amount),
+                            )}
+                          </p>
+                        </td>
                         <td className="pr-3">
                           {r.method === "cash" ? "TM" : "CK"}
                         </td>

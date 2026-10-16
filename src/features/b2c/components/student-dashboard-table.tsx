@@ -147,7 +147,14 @@ export function StudentDashboardTable({
                   </span>
                 </td>
                 {!compact && (
-                  <td className="px-2 py-2">{r.student.guardianName ?? "—"}</td>
+                  <td className="px-2 py-2">
+                    {r.student.guardianName ?? "—"}
+                    {r.student.guardianZalo && (
+                      <p className="text-muted-foreground text-[10px]">
+                        Zalo: {r.student.guardianZalo}
+                      </p>
+                    )}
+                  </td>
                 )}
                 <td className="px-2 py-2 whitespace-nowrap">
                   {r.student.phone ?? "—"}
@@ -256,6 +263,7 @@ export function StudentDashboardTable({
                     : detail.student.birth_year,
                 ],
                 ["Phụ huynh", detail.student.guardianName],
+                ["Số Zalo phụ huynh", detail.student.guardianZalo],
                 ["Điện thoại", detail.student.phone],
                 ["Email", detail.student.email],
                 ["Địa chỉ", detail.student.address],

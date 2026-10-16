@@ -5,6 +5,7 @@ import type { readClassWorkspaceAction } from "../server/class-workspace-read";
 import { formatInTimeZone } from "date-fns-tz";
 import { formatCurrency, formatDate, formatDateOnly } from "@/lib/dates";
 import { PageHeader } from "@/components/shared/page-header";
+import { ClassStudentAddDialog } from "./class-student-add-dialog";
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,6 +114,15 @@ export function ClassWorkspaceContent({
       today;
   return (
     <NavigationContext.Provider value={onNavigate}>
+      {!permissions && filters.tab === "students" && (
+        <div className="mb-3 flex justify-end">
+          <ClassStudentAddDialog
+            classId={classId}
+            className={cls.name}
+            today={today}
+          />
+        </div>
+      )}
       {!embedded && (
         <BackLink
           href={
@@ -137,6 +147,10 @@ export function ClassWorkspaceContent({
         <p>
           Khai giảng:{" "}
           {cls.start_date ? formatDate(cls.start_date) : "Chưa cập nhật"}
+        </p>
+        <p>
+          Ngày kết thúc khóa học:{" "}
+          {cls.end_date ? formatDate(cls.end_date) : "Chưa cập nhật"}
         </p>
         <p>
           Cơ sở:{" "}
@@ -183,7 +197,7 @@ export function ClassWorkspaceContent({
             ))}
         </nav>
       )}
-      {permissions && can("edit_classes") && (
+      {can("edit_classes") && (
         <div className="mb-4">
           <TeacherClassManageDialog classId={classId} />
         </div>
@@ -331,6 +345,11 @@ export function ClassWorkspaceContent({
           )}
         </div>
       )}
+      {filters.tab === "students" && can("mark_attendance") && (
+        <p className="text-muted-foreground mb-4 text-xs">
+          Đã học gồm có mặt, đi muộn và học bù của buổi đã kết thúc. Nghỉ và buổi chưa điểm danh không tính là đã học; buổi hủy không tính. Còn lại theo số buổi đăng ký, không tự trừ học phí.
+        </p>
+      )}
       {filters.tab === "tuition" && result.stats && (
         <div className="mb-4 grid gap-3 sm:grid-cols-3">
           {[
@@ -406,6 +425,7 @@ export function ClassWorkspaceContent({
                         "SĐT",
                         "Nhập học",
                         "Hết học phí",
+                        "Buổi học",
                       ]
                     : filters.tab === "attendance"
                       ? ["Trạng thái điểm danh", "Ghi chú"]
@@ -439,6 +459,17 @@ export function ClassWorkspaceContent({
                         {s.tuition_end_date
                           ? formatDate(s.tuition_end_date)
                           : "—"}
+                      </td>
+                      <td className="p-3">
+                        {s.session_summary ? (
+                          <div className="min-w-44 space-y-1 text-xs">
+                            <p>Đăng ký: {s.registered_sessions ?? "Chưa nhập"}</p>
+                            <p>Đã học: {s.session_summary.attended}</p>
+                            <p>Nghỉ có phép: {s.session_summary.excused} · Không phép: {s.session_summary.absent}</p>
+                            <p>Học bù: {s.session_summary.makeup} (đã tính trong đã học)</p>
+                            <p className="font-semibold">{s.session_summary.remaining !== null && s.session_summary.remaining < 0 ? `Vượt đăng ký: ${-s.session_summary.remaining}` : `Còn lại: ${s.session_summary.remaining ?? "Chưa xác định"}`}</p>
+                          </div>
+                        ) : "—"}
                       </td>
                     </>
                   ) : filters.tab === "attendance" ? (

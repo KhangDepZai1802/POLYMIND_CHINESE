@@ -23,7 +23,7 @@ export async function getStudentDashboard(): Promise<StudentDashboardData> {
       client
         .from("b2c_students")
         .select(
-          "id,code,full_name,phone,email,date_of_birth,birth_year,address,customer_source,referrer_name,parentLinks:b2c_student_parents(parent:b2c_parents(full_name))",
+          "id,code,full_name,phone,email,date_of_birth,birth_year,address,guardian_name,guardian_zalo,customer_source,referrer_name,parentLinks:b2c_student_parents(parent:b2c_parents(full_name,zalo))",
         )
         .order("full_name")
         .order("id")
@@ -48,14 +48,26 @@ export async function getStudentDashboard(): Promise<StudentDashboardData> {
     ),
   ]);
   return {
-    students: students.map(({ parentLinks, ...s }) => ({
-      ...s,
-      guardianName:
-        parentLinks
-          .map((p) => p.parent?.full_name)
-          .filter(Boolean)
-          .join(", ") || null,
-    })),
+    students: students.map(
+      ({ parentLinks, guardian_name, guardian_zalo, ...s }) => ({
+        ...s,
+        guardianName:
+          parentLinks
+            .map((p) => p.parent?.full_name)
+            .filter(Boolean)
+            .join(", ") ||
+          guardian_name ||
+          null,
+        guardianZalo:
+          [
+            ...new Set(
+              [guardian_zalo, ...parentLinks.map((p) => p.parent?.zalo)].filter(
+                Boolean,
+              ),
+            ),
+          ].join(", ") || null,
+      }),
+    ),
     enrollments,
     classes,
     today: new Intl.DateTimeFormat("en-CA", {

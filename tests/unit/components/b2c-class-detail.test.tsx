@@ -7,6 +7,13 @@ import {
   act,
 } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
+  ClassStudentAddDialog: () => <button>Thêm học viên</button>,
+}));
+vi.mock("@/features/b2c/components/teacher-management-dialogs", () => ({
+  TeacherClassManageDialog: () => <button>Sửa thông tin lớp</button>,
+  TeacherStudentManageDialog: () => null,
+}));
 import { readClassWorkspaceAction } from "@/features/b2c/server/class-workspace-read";
 vi.mock("@/features/b2c/server/class-workspace-read", () => ({
   readClassWorkspaceAction: vi.fn(),
@@ -47,6 +54,7 @@ const first: ClassRow = {
   enrolled_count: 1,
   status: "active",
   start_date: "2026-10-01",
+  end_date: null,
   delivery_mode: "offline",
   campus: null,
   level_name: "A1",

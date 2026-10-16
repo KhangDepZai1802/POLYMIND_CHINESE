@@ -54,3 +54,62 @@ export type B2CTuitionRow = {
   paid_amount: number;
   balance: number;
 };
+
+export const b2cCorrectionSchema = z
+  .object({
+    request_id: z.uuid(),
+    package_id: z.uuid(),
+    receipt_id: z.uuid().nullable(),
+    kind: z.enum(["cancel", "refund", "adjust"]),
+    amount: z.coerce.number().int().min(0).max(1000000000000),
+    reason: z.string().trim().min(1, "Vui lòng nhập lý do.").max(1000),
+    effective_date: z.iso.date(),
+    method: z.enum(["cash", "bank_transfer"]),
+    reduce_fee: z.boolean(),
+    expected_due: z.number().int().min(0).max(1000000000000),
+    expected_paid: z.number().int().min(0).max(1000000000000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind !== "adjust" && !v.receipt_id)
+      ctx.addIssue({
+        code: "custom",
+        path: ["receipt_id"],
+        message: "Vui lòng chọn phiếu thu.",
+      });
+    if (v.kind === "refund" && v.amount <= 0)
+      ctx.addIssue({
+        code: "custom",
+        path: ["amount"],
+        message: "Số hoàn phải lớn hơn 0.",
+      });
+  });
+
+export type B2CReceipt = {
+  id: string;
+  code: string;
+  paid_date: string;
+  amount: number;
+  method: string;
+  collector_name: string;
+  refunded_amount?: number;
+  cancelled_at?: string | null;
+  correction_reason?: string | null;
+  effective_amount?: number;
+};
+export type B2CCorrectionHistory = {
+  total: number;
+  rows: {
+    id: string;
+    kind: "cancel" | "refund" | "adjust";
+    amount: number;
+    reason: string;
+    effective_date: string;
+    method: string;
+    reduce_fee: boolean;
+    receipt_code: string | null;
+    actor_name: string | null;
+    created_at: string;
+    before_data: { total_due: number; paid_amount: number };
+    after_data: { total_due: number; paid_amount: number };
+  }[];
+};

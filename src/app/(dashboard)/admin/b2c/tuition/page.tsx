@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TuitionCorrectionsDialog } from "@/features/b2c/components/tuition-corrections-dialog";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,7 @@ export default async function B2CTuitionPage({
                         collector={actor.fullName}
                         today={todayISO()}
                       />
+                      <TuitionCorrectionsDialog row={row} today={todayISO()} />
                     </div>
                   </td>
                 </tr>

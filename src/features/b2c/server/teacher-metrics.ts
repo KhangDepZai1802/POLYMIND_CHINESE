@@ -60,7 +60,7 @@ export async function getB2CTeacherMetrics() {
       readAll((o) =>
         client
           .from("b2c_tuition_receipts")
-          .select("id,package_id,amount,paid_date")
+          .select("id,package_id,amount:effective_amount,paid_date")
           .order("id")
           .range(o, o + 999),
       ),

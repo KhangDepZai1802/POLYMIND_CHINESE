@@ -1,5 +1,35 @@
 # 02 — Thiết kế Database
 
+## B2C-STUDENT-SESSIONS-1 (2026-10-16)
+
+SQL20261016000005 enrich read_b2c_class_workspace và read_teacher_b2c_workspace bằng session_summary trên trang kết quả, truy vấn toàn lịch sử ghi danh cùng lớp. Giữ quyền/pagination/search và end_date; chỉ cấp summary khi có mark_attendance. Đã áp SQL05 transactional, exact-history verify, 13 DB assertions đạt; dry-run vẫn 16 gaps cũ, không replay/repair.
+
+## Class end date — SQL20261016000004
+
+b2c_classes.end_date date nullable, CHECK end_date >= start_date khi cả hai có giá trị. RPC lưu/đọc lớp và workspace trả thêm ngày kết thúc; payload cũ giữ ngày đã lưu, chuỗi rỗng xóa ngày. Sửa lớp hiện có theo quyền edit_classes không yêu cầu manager có hồ sơ giáo viên cá nhân; tự tạo lớp vẫn yêu cầu liên kết. Giữ kiểm tra quyền, retry, stale và audit.
+
+Đã áp SQL04 và xác minh migration history đúng SQL qua kết nối mới; 20 kiểm tra DB đạt, fixture rollback. Dry-run trước/sau vẫn 16 gaps lịch sử cũ, không replay/repair.
+
+## Optional guardian Zalo — SQL20261016000003
+
+b2c_students.guardian_zalo text nullable CHECK10 chữ số, RLS hiện có giữ nguyên; không backfill từ phone. Forward migration mở rộng add_b2c_class_student nhánh new: trim/blank→null, validation và INSERT trong cùng transaction; không đổi retry/actor/capacity/audit và không ghi đè existing. Cột này đi cùng guardian_name của hồ sơ; b2c_parents.zalo hiện có vẫn là dữ liệu phụ huynh liên kết riêng. Dashboard kết hợp đọc hai nguồn Zalo để hiển thị, không sửa ngược.
+
+SQL03 đã áp transaction/history exact verify qua kết nối mới. pgTAP9 mới và32 ghi danh hồi quy đạt; fixture rollback. Dry-run trước/sau vẫn16 gaps cũ; không repair/replay hoặc khẳng định toàn remote up-to-date.
+
+## Add B2C student — SQL20261016000002
+
+b2c_enrollment_requests có RLS manager SELECT, không quyền ghi user, request_id PK + payload/enrollment FK restrict/actor/time. add_b2c_class_student SECURITY DEFINER/search_path rỗng kiểm manager active; advisory-lock UUID, so payload/actor retry, khóa lớp FOR UPDATE, kiểm trạng thái/sĩ số/ghi danh trùng, validation hồ sơ/ngày/mục tiêu. source_key manual:UUID ở student mới và enrollment; profile dùng code default sẵn có. Insert hồ sơ/ghi danh, update enrolled_count và request ledger nguyên tử; audit trigger hiện có chụp actor/ngữ cảnh, lỗi audit rollback cả hồ sơ. Không đổi bảng B2B hoặc cấp quyền giáo viên mới.
+
+find_b2c_enrollment_students SECURITY INVOKER + manager guard/RLS; literal case-insensitive substring, bỏ học viên đã có trong lớp,20 dòng/trang và tổng. Không sửa hồ sơ cũ khi ghi danh lớp khác. Migration cloud áp riêng/history SQL exact qua kết nối mới,32/32 pgTAP fixture rollback. Dry-run trước/sau vẫn16 history gaps cũ; không repair/replay hoặc báo toàn remote up-to-date.
+
+## B2C tuition corrections — SQL20261016000001
+
+Giữ b2c_tuition_receipts.amount gốc, thêm refunded_amount/cancelled_at/correction_reason và generated effective_amount; gói thêm adjustment_reason. b2c_tuition_corrections lưu request_id unique, package/receipt FK restrict, kind cancel|refund|adjust, tiền/ngày/hình thức/lý do, reduce_fee, payload và before/after số dư, created_by/thời điểm. RLS manager SELECT, không grant ghi user; receipt INSERT chỉ grant các cột chứng từ gốc, không thể giả settlement. Thu hồi UPDATE gói trực tiếp; sửa qua scoped RPC cũ + wrapper with_reason có lý do/expected balance. Trigger chặn thay đổi gói thiếu lý do và ghi lý do vào audit hiện có.
+
+correct_b2c_tuition SECURITY DEFINER/search_path rỗng, kiểm manager active, advisory-lock UUID rồi lock gói và phiếu; kiểm UUID/payload retry, expected_due/expected_paid, chặn hoàn vượt/net âm và ngày không hợp lệ. Update số dư + ledger + audit cùng transaction. Các read RPC/guard cộng effective_amount; read_b2c_permitted_receipts thêm trạng thái/thu ròng, giữ projection và quyền cũ. read_b2c_tuition_corrections manager-only, 20 dòng/trang. Audit chung thêm metadata hủy/hoàn/lý do, giữ quyền super_admin.
+
+Migration đã áp riêng và history SQL khớp qua kết nối mới; pgTAP mới37/37, hồi quy tuition17/history24/workspace40 và integration phân quyền đạt; fixture rollback. Dry-run trước/sau vẫn báo16 history gaps cũ, không repair/replay và không khẳng định toàn remote up-to-date.
+
 ## Quyền giáo viên B2C — SQL20261015000001 (đã áp)
 
 Bảng b2c_teacher_permissions khóa theo b2c_teachers.id lưu15 capability, updated_at/actor; RLS chỉ manager đọc, không grant DML user. RPC manager-only lưu/quản lý liên kết tài khoản active, validation dependency và optimistic lock; history append-only actor thật. Thiếu bản ghi giữ6 quyền cũ; thiếu liên kết/khóa tài khoản/GV inactive deny. Helper kết hợp capability + teaches_b2c_class, không đổi role/global is_manager. Impl đọc cũ chuyển private app/revoke EXECUTE, public wrappers kiểm quyền. Teacher workspace bỏ finance ngoài tabtuition; raw tables vẫn manager-only. Check-in/view_pay tách; salary/hourly_rate/teaching_hours redacted khỏi JSON và raw session SELECT chặn teacher. Tuition RPC scoped SECURITY DEFINER; trigger balance/retry cũ giữ. Hồ sơ chung chỉ sửa tên/SĐT nếu có edit_students ở mọi lớp liên quan; trạng thái chỉ ghi danh hiện tại. Tạo lớp tự gắn teacher_id người tạo, retry/audit; không đổi phân công qua payload.

@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { StudentDashboard } from "@/features/b2c/components/student-dashboard";
+vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
+  ClassStudentAddDialog: () => <button>Thêm học viên</button>,
+}));
 import {
   studentDashboardRows,
   summarizeStudentStatus,

@@ -1,25 +1,11 @@
 "use client";
 
 import { KeyRound, Lock, MoreHorizontal, Unlock } from "lucide-react";
-import { useState } from "react";
+import { TeacherAccountDialog } from "./teacher-account-dialog";
 
 import { TeacherFormDialog } from "@/features/teachers/components/teacher-form-dialog";
-import {
-  resetTeacherPasswordAction,
-  toggleTeacherActiveAction,
-} from "@/features/teachers/server/actions";
+import { toggleTeacherActiveAction } from "@/features/teachers/server/actions";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SubmitButton } from "@/components/shared/submit-button";
 import { useConfirmSubmit } from "@/components/shared/confirmation-provider";
 import {
   DropdownMenu,
@@ -61,12 +47,7 @@ export function TeacherRowActions({
   teacher: Teacher;
   canManageAccounts: boolean;
 }) {
-  const [credentialsOpen, setCredentialsOpen] = useState(false);
   const toggle = useFormAction(toggleTeacherActiveAction, { toastError: true });
-  const credentials = useFormAction(resetTeacherPasswordAction, {
-    onSuccess: () => setCredentialsOpen(false),
-    toastError: true,
-  });
   const confirmToggle = useConfirmSubmit(
     {
       title: "Khóa tài khoản giáo viên?",
@@ -97,95 +78,47 @@ export function TeacherRowActions({
           />
 
           {canManageAccounts && (
-            <DropdownMenuItem
-              onSelect={(event) => {
-                event.preventDefault();
-                setCredentialsOpen(true);
-              }}
-            >
-              <KeyRound className="size-4" aria-hidden />
-              Đặt lại mật khẩu
-            </DropdownMenuItem>
+            <TeacherAccountDialog
+              target={{ kind: "teacher", id: teacher.id }}
+              trigger={
+                <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
+                  <KeyRound className="size-4" aria-hidden />
+                  Đặt lại mật khẩu
+                </DropdownMenuItem>
+              }
+            />
           )}
 
           {canManageAccounts && <DropdownMenuSeparator />}
 
           {canManageAccounts && (
-          <form action={toggle.formAction} onSubmit={confirmToggle}>
-            <input type="hidden" name="id" value={teacher.id} />
-            <input
-              type="hidden"
-              name="activate"
-              value={teacher.is_active ? "false" : "true"}
-            />
-            <button
-              type="submit"
-              className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-            >
-              {teacher.is_active ? (
-                <>
-                  <Lock className="text-destructive size-4" aria-hidden />
-                  <span className="text-destructive">Khóa tài khoản</span>
-                </>
-              ) : (
-                <>
-                  <Unlock className="size-4" aria-hidden />
-                  Mở khóa tài khoản
-                </>
-              )}
-            </button>
-          </form>
+            <form action={toggle.formAction} onSubmit={confirmToggle}>
+              <input type="hidden" name="id" value={teacher.id} />
+              <input
+                type="hidden"
+                name="activate"
+                value={teacher.is_active ? "false" : "true"}
+              />
+              <button
+                type="submit"
+                className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+              >
+                {teacher.is_active ? (
+                  <>
+                    <Lock className="text-destructive size-4" aria-hidden />
+                    <span className="text-destructive">Khóa tài khoản</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="size-4" aria-hidden />
+                    Mở khóa tài khoản
+                  </>
+                )}
+              </button>
+            </form>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Dialog open={credentialsOpen} onOpenChange={setCredentialsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cập nhật tài khoản giáo viên</DialogTitle>
-            <DialogDescription>
-              Đặt tên đăng nhập và mật khẩu mới cho {teacher.profile?.full_name}
-              .
-            </DialogDescription>
-          </DialogHeader>
-          <form action={credentials.formAction} className="space-y-4">
-            <input type="hidden" name="id" value={teacher.id} />
-            <div className="space-y-2">
-              <Label htmlFor={`teacher_username_${teacher.id}`}>
-                Tên đăng nhập
-              </Label>
-              <Input
-                id={`teacher_username_${teacher.id}`}
-                name="username"
-                defaultValue={teacher.profile?.username ?? ""}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`teacher_password_${teacher.id}`}>
-                Mật khẩu mới
-              </Label>
-              <Input
-                id={`teacher_password_${teacher.id}`}
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCredentialsOpen(false)}
-              >
-                Hủy
-              </Button>
-              <SubmitButton pendingText="Đang cập nhật…">Cập nhật</SubmitButton>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

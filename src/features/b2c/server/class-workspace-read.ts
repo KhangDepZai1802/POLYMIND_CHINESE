@@ -28,7 +28,7 @@ export async function readClassWorkspaceAction(
   const classResult = await client
     .from("b2c_classes")
     .select(
-      "id,code,name,program_slug,teacher_name,weekdays_text,time_text,capacity,enrolled_count,start_date,campus,delivery_mode,notes",
+      "id,code,name,program_slug,teacher_name,weekdays_text,time_text,capacity,enrolled_count,start_date,end_date,campus,delivery_mode,notes",
     )
     .eq("id", classId)
     .maybeSingle();

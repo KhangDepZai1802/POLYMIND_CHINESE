@@ -112,7 +112,7 @@ export function B2CTeacherDialog({ teacher }: { teacher?: B2CTeacher }) {
               <option value="" disabled>
                 Chọn hình thức
               </option>
-              <option value="full_time">Cơ hữu</option>
+              <option value="full_time">Fulltime</option>
               <option value="part_time">Part-time</option>
             </select>
             {state.fieldErrors?.employment_type && (

@@ -1,5 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
+import { ClassStudentAddDialog } from "./class-student-add-dialog";
+import { TeacherClassManageDialog } from "./teacher-management-dialogs";
+import { todayISO } from "@/lib/dates";
 import { CLASS_TABS, type ClassTab } from "../domain/class-workspace";
 import { readClassWorkspaceAction } from "../server/class-workspace-read";
 import { ClassWorkspaceContent } from "./class-workspace-content";
@@ -89,6 +92,7 @@ export function B2CClassDetailDialog({
         .join(" · ") || "Chưa xếp lịch",
     ],
     ["Ngày khai giảng", date(classRow.start_date)],
+    ["Ngày kết thúc khóa học", date(classRow.end_date)],
     ["Hình thức", modes[classRow.delivery_mode] ?? classRow.delivery_mode],
     ["Cơ sở", classRow.campus ?? "Chưa cập nhật"],
     ["Sĩ số ghi nhận", `${classRow.enrolled_count}/${classRow.capacity}`],
@@ -161,6 +165,17 @@ export function B2CClassDetailDialog({
             </ClassWorkspaceRefreshContext.Provider>
           ) : (
             <>
+              <div className="flex justify-end">
+                <TeacherClassManageDialog classId={classRow.id} />
+                <ClassStudentAddDialog
+                  classId={classRow.id}
+                  className={classRow.name}
+                  today={todayISO()}
+                  onAdded={() => {
+                    void navigate({ tab: "students", page: "0" });
+                  }}
+                />
+              </div>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {fields.map(([label, value]) => (
                   <div key={label} className="bg-muted/40 rounded-lg p-3">

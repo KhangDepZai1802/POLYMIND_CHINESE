@@ -25,6 +25,11 @@ export const HISTORY_ENTITY_LABELS = {
   tuition_receipt: "Phiếu thu",
 };
 const fields: Record<string, string> = {
+  adjustment_reason: "Lý do điều chỉnh",
+  refunded_amount: "Đã hoàn",
+  effective_amount: "Thu ròng",
+  cancelled_at: "Thời điểm hủy",
+  correction_reason: "Lý do xử lý",
   status: "Trạng thái",
   withdrawal_reason: "Lý do nghỉ",
   class_id: "Mã định danh lớp",
@@ -78,7 +83,14 @@ export function historyValue(key: string, value: unknown): string {
       ] ?? String(value)
     );
   if (
-    ["unit_price", "discount", "total_due", "amount"].includes(key) &&
+    [
+      "unit_price",
+      "discount",
+      "total_due",
+      "amount",
+      "refunded_amount",
+      "effective_amount",
+    ].includes(key) &&
     Number.isFinite(Number(value))
   )
     return formatCurrency(Number(value));

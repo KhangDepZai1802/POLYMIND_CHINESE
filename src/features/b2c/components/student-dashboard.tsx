@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ClassStudentAddDialog } from "./class-student-add-dialog";
 import { useRef, useState } from "react";
 import {
   Users,
@@ -242,6 +243,7 @@ export function StudentDashboard({
         "Trạng thái",
         "Lớp",
         "Phụ huynh",
+        "Zalo phụ huynh",
         "Điện thoại",
         "Ngày nhập học",
         "Hết học phí",
@@ -259,6 +261,7 @@ export function StudentDashboard({
             : "Chưa ghi danh",
           r.classInfo?.name,
           r.student.guardianName,
+          r.student.guardianZalo ?? "",
           r.student.phone,
           studentDate(r.enrollment?.enrollment_date ?? null),
           studentDate(r.enrollment?.tuition_end_date ?? null),
@@ -571,9 +574,12 @@ export function StudentDashboard({
         </section>
       </div>
       <section id="student-list" className={`${panel} scroll-mt-4`}>
-        <h2 className="mb-3 font-semibold text-[#102752] dark:text-white">
-          Danh sách học viên
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold text-[#102752] dark:text-white">
+            Danh sách học viên
+          </h2>
+          <ClassStudentAddDialog classes={data.classes} today={data.today} />
+        </div>
         <div className="mb-3 flex flex-wrap items-end gap-3">
           <label className="relative min-w-52 flex-1">
             <Search className="absolute top-2.5 left-3 size-4 text-blue-600 dark:text-blue-400" />

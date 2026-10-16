@@ -20,7 +20,7 @@ select ok((select actor_id is null from public.b2c_change_history where enrollme
 select set_config('request.jwt.claims','{"sub":"50000000-0000-4000-8000-000000000010","role":"authenticated"}',true);
 set local role authenticated;
 select lives_ok($$select public.save_b2c_tuition_package('50000000-0000-4000-8000-000000000003',10,100000,0,'')$$,'Manager creates tuition without direct log permissions');
-select lives_ok($$select public.save_b2c_tuition_package('50000000-0000-4000-8000-000000000003',12,110000,20000,'TEST PROMO')$$,'Manager changes tuition');
+select lives_ok($$select public.save_b2c_tuition_package_with_reason('50000000-0000-4000-8000-000000000003',12,110000,20000,'TEST PROMO','Adjust package',1000000,0)$$,'Manager changes tuition with required reason');
 select lives_ok($$select public.save_b2c_tuition_package('50000000-0000-4000-8000-000000000003',12,110000,20000,'TEST PROMO')$$,'No-op save succeeds');
 select lives_ok($$update public.b2c_enrollments set status='on_hold' where id='50000000-0000-4000-8000-000000000003'$$,'Manager changes status');
 select lives_ok($$select public.record_b2c_tuition_receipt((select id from public.b2c_tuition_packages where enrollment_id='50000000-0000-4000-8000-000000000003'),'50000000-0000-4000-8000-000000000004','2026-10-14',100000,'cash','DECLARED COLLECTOR')$$,'Receipt creation recorded');

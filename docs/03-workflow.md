@@ -1,5 +1,35 @@
 # 03 — Workflow nghiệp vụ
 
+## B2C-STUDENT-SESSIONS-1 (2026-10-16)
+
+Mở lớp → Học viên → cột Buổi học xem đăng ký, đã học, nghỉ có phép/không phép, học bù và còn lại/vượt. Mở Lịch học → chọn buổi → Điểm danh; refresh sẽ tổng hợp số liệu mới. Chưa điểm danh không tính vắng hoặc đã học.
+
+## Ngày kết thúc khóa học (2026-10-16)
+
+Thêm lớp mới: nhập Ngày kết thúc khóa học cạnh Ngày khai giảng, có thể bỏ trống. Lớp đã tạo: mở chi tiết lớp → Sửa thông tin lớp, hoặc phần sửa trên trang lớp. Ngày được hiển thị trong thông tin lớp; xóa giá trị để bỏ ngày đã lưu. Chặn ngày kết thúc trước khai giảng.
+
+## Thêm học viên B2C sau tạo lớp (2026-10-16)
+
+Nhãn trường bắt buộc trong biểu mẫu dùng dấu * màu đỏ (gồm Người giới thiệu/Chứng chỉ khi được yêu cầu theo lựa chọn). Trường tùy chọn chỉ có tên trường, không thêm chữ “không bắt buộc”; Zalo vẫn tùy chọn.
+
+Tạo mới có thêm Số Zalo phụ huynh không bắt buộc, ngay cạnh thông tin phụ huynh/liên hệ. Để trống vẫn lưu; nhập số10 chữ số, tách SĐT liên hệ. Sau lưu, xem dưới Phụ huynh trên bảng/chi tiết và trong file Excel. Khi chọn hồ sơ có sẵn giữ Zalo đang lưu.
+
+Trang Học viên tổng (/admin/b2c/students) có thêm nút Thêm học viên ở góc phải tiêu đề Danh sách học viên. Dialog cho chọn Lớp ghi danh rồi dùng cùng hai chế độ mới/có sẵn; bỏ lớp hủy/hoàn thành. Đổi lớp xóa lựa chọn học viên cũ và tìm lại theo lớp mới, chưa chọn lớp không cho lưu. Tất cả nút cũ ở danh sách lớp/popup/trang lớp vẫn giữ nguyên.
+
+Lối vào trực tiếp: B2C → chọn chương trình (Tiếng Anh/Tiếng Trung/...) → Danh sách lớp → cột Thao tác → Thêm học viên trên dòng lớp. Cột thao tác cố định bên phải khi cuộn ngang; lớp completed/cancelled không có nút. Vẫn giữ nút trong popup/trang lớp. Click biểu mẫu không mở chồng popup chi tiết lớp.
+
+Mở chương trình B2C → bấm tên lớp → Học viên → Thêm học viên (hoặc trang chi tiết lớp, mục Học viên). Tạo mới: nhập tên, liên hệ/phụ huynh/ngày sinh/nguồn nếu có; hoặc chuyển Chọn học viên đã có → tìm/chọn đúng mã. Nhập ngày nhập học/người chốt, ngày học/hạn phí và mục tiêu nếu có → Lưu học viên vào lớp. Thành công cập nhật roster/sĩ số, học viên xuất hiện tại Học viên và Học phí; gói phí hiện Chưa có gói cho đến khi lập riêng. Lỗi giữ biểu mẫu và request UUID; lớp đầy yêu cầu tăng sức chứa/chọn lớp khác. Học viên đã có cùng lớp phải sửa ghi danh cũ. Lookup lỗi có thử lại; kết quả tải cũ bị bỏ khi đổi chế độ/đóng popup. Chưa QA browser/mobile thật; có test tương tác component.
+
+## Xem tài khoản/đổi mật khẩu giáo viên (2026-10-16)
+
+Admin đăng nhập → B2C → Giáo viên → Tài khoản tại dòng giáo viên → xem tên đăng nhập/trạng thái → nhập mật khẩu mới và xác nhận → Đổi mật khẩu. Trang Giáo viên chung: tên đăng nhập ở cột Tài khoản, menu Đặt lại mật khẩu mở cùng popup. Hồ sơ B2C chưa liên kết hiện link Phân quyền B2C. Lỗi tải có Thử lại; lỗi đổi mật khẩu giữ popup; đóng/mở lại xóa trường mật khẩu. Đang lưu không cho đóng hoặc gửi trùng. Server resolve lại liên kết, nếu user ID khác lúc mở popup thì yêu cầu mở lại. Giáo vụ không thấy thao tác tài khoản; gọi action trực tiếp vẫn bị chặn bởi super_admin guard.
+
+## Hủy thu, hoàn tiền, điều chỉnh B2C (2026-10-16)
+
+Học phí → dòng học viên → Xử lý học phí → chọn thao tác. Hủy: chọn phiếu chưa hoàn, nhập lý do/ngày, xem trước nợ mới rồi xác nhận. Hoàn: chọn phiếu còn số được hoàn, nhập tiền, hình thức/ngày/lý do và chọn giảm hay giữ khoản phải thu; xem trước số dư rồi xác nhận. Điều chỉnh: nhập tổng phải thu mới trong giới hạn tạm tính và thu ròng, lý do/ngày rồi xác nhận. Đổi số buổi/đơn giá qua Gói học phí, bắt buộc lý do. Lịch sử xử lý ngay trong popup có người thực hiện, thời điểm, chứng từ gốc và số dư trước/sau; Phiếu thu hiện Đã hủy/Đã hoàn/Thu ròng.
+
+Lỗi lưu giữ nội dung và UUID để thử lại; số dư đã thay đổi thì đóng popup/tải lại để lấy số mới. Lỗi tải có nút thử lại, chưa tải thành công không cho lưu. Không xóa/sửa phiếu gốc và không chuyển tiền tự động. Giáo viên vẫn chỉ có quyền thu/sửa gói theo phân quyền cũ; luồng xử lý chỉ manager. Chưa QA browser/điện thoại thật; UI đã kiểm tra tương tác qua Vitest.
+
 ## B2C — Điểm danh trên điện thoại
 
 Quản lý cấp quyền Điểm danh học viên trong Phân quyền B2C. Giáo viên vào lớp được phân công → Lịch học → Mở điểm danh tại buổi → thẻ học viên → Điểm danh → chọn Có mặt / Vắng có phép / Vắng không phép / Học bù (giữ thêm Đi muộn) → Lưu. Có thể sửa trạng thái và ghi chú; lỗi lưu giữ popup để thử lại. Không tự đánh dấu người chưa nhập. Buổi tương lai/đã hủy chỉ xem; thu hồi quyền chặn ghi cả server/DB. Học bù chỉ ghi nhận tham dự tại buổi đang chọn.

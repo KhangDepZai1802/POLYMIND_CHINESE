@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TeacherAccountDialog } from "@/features/teachers/components/teacher-account-dialog";
 import { useRef, useState } from "react";
 import {
   Users,
@@ -50,9 +51,11 @@ const select =
 export function TeacherDashboard({
   rows,
   initialMonth,
+  canManageAccounts = false,
 }: {
   rows: Row[];
   initialMonth: string;
+  canManageAccounts?: boolean;
 }) {
   const [month, setMonth] = useState(initialMonth);
   const [specialization, setSpecialization] = useState("");
@@ -115,7 +118,7 @@ export function TeacherDashboard({
     [r.teacher.phone, r.teacher.email].filter(Boolean).join(" · ") || "—",
     r.teacher.specialization || "Chưa cập nhật",
     r.teacher.employment_type === "full_time"
-      ? "Cơ hữu"
+      ? "Fulltime"
       : r.teacher.employment_type === "part_time"
         ? "Part-time"
         : "Chưa cập nhật",
@@ -520,6 +523,11 @@ export function TeacherDashboard({
                   ))}
                   <td className="px-2 print:hidden">
                     <B2CTeacherDialog teacher={r.teacher} />
+                    {canManageAccounts && (
+                      <TeacherAccountDialog
+                        target={{ kind: "b2c", id: r.teacher.id }}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}

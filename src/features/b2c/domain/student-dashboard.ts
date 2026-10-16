@@ -12,6 +12,7 @@ export type StudentDashboardProfile = {
   customer_source: string | null;
   referrer_name: string | null;
   guardianName: string | null;
+  guardianZalo?: string | null;
 };
 export type StudentDashboardEnrollment = {
   id: string;

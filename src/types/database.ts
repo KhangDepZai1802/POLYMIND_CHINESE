@@ -686,6 +686,7 @@ export type Database = {
           source_key: string | null
           time_text: string | null
           start_date: string | null
+          end_date: string | null
           status: string
           teacher_id: string | null
           teacher_name: string | null
@@ -708,6 +709,7 @@ export type Database = {
           source_key?: string | null
           time_text?: string | null
           start_date?: string | null
+          end_date?: string | null
           status?: string
           teacher_id?: string | null
           teacher_name?: string | null
@@ -730,6 +732,7 @@ export type Database = {
           source_key?: string | null
           time_text?: string | null
           start_date?: string | null
+          end_date?: string | null
           status?: string
           teacher_id?: string | null
           teacher_name?: string | null
@@ -765,7 +768,7 @@ export type Database = {
         Relationships: [];
       };
       b2c_tuition_receipts: {
-        Row: { id: string; code: string; package_id: string; request_id: string; paid_date: string; amount: number; method: string; collector_name: string; created_by: string; created_at: string };
+        Row: { id: string; code: string; package_id: string; request_id: string; paid_date: string; amount: number; effective_amount: number; refunded_amount: number; cancelled_at: string | null; correction_reason: string | null; method: string; collector_name: string; created_by: string; created_at: string };
         Insert: { package_id: string; request_id: string; paid_date: string; amount: number; method: string; collector_name: string; created_by?: string };
         Update: never;
         Relationships: [];
@@ -799,6 +802,7 @@ export type Database = {
           email: string | null
           full_name: string
           guardian_name: string | null
+          guardian_zalo: string | null
           id: string
           notes: string | null
           phone: string | null
@@ -818,6 +822,7 @@ export type Database = {
           email?: string | null
           full_name: string
           guardian_name?: string | null
+          guardian_zalo?: string | null
           id?: string
           notes?: string | null
           phone?: string | null
@@ -837,6 +842,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           guardian_name?: string | null
+          guardian_zalo?: string | null
           id?: string
           notes?: string | null
           phone?: string | null

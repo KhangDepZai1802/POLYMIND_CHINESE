@@ -34,6 +34,13 @@ export type ClassMeeting = {
   updated_at: string;
 };
 export type ClassStudent = {
+  session_summary?: {
+    attended: number;
+    absent: number;
+    excused: number;
+    makeup: number;
+    remaining: number | null;
+  } | null;
   enrollment_id: string;
   student_id: string;
   student_code: string;
