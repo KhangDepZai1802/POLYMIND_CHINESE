@@ -38,6 +38,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261016-B2C-ATTENDANCE — Codex — 2026-10-16. User yêu cầu đưa bản sửa điểm danh B2C lên GitHub;11files đã rà không thấy secret, fetch HEAD=origin/main. Kiểm tra gần nhất lint/typecheck/build đạt,947/947tests; không thay code sau checks. Không DB/migration/quyền mới; commit/push theo yêu cầu, SHA/remote verification báo chat; chưa xác minh deploy online.
+
+> B2C-TEACHER-ATTENDANCE-ENTRY-1 — hoàn thành code local — Codex — 2026-10-16. Menu Điểm danh thêm panel B2C hôm nay theo quyền, dashboard link thẳng class/meeting; giữ RPC/ghi điểm danh và B2B. Read-only cloud cole có quyền, Pre-Movers17:30–19:30/5HV/0marked đọc đúng qua workspace. Lint/typecheck/build đạt,947/947tests; chưa QA browser/commit/push/deploy.
+
 > RELEASE-20261016-B2C-SCHEDULE — Codex — 2026-10-16. User yêu cầu đẩy code GitHub; bundle37files gồm Việc hôm nay, lịch tuần giờ riêng từng thứ/lưới, thời khóa biểu GV, nhãn Chấm công và toast lưu phân quyền. Fetch xác nhận HEAD=origin/main trước release; rà37files không thấy credential literal. Kiểm tra gần nhất lint/typecheck/build đạt,941/941tests; không schema mới, không đổi logo/B2B. Commit/push theo yêu cầu, SHA/remote verification báo trong chat; chưa xác minh deployment online.
 
 > B2C-PERMISSION-SUCCESS-1 — hoàn thành local — Codex — 2026-10-16. Lưu phân quyền hiện toast xanh top-center4500ms, bỏ dòng cuối trang; chỉ sau server thành công. Giữ errors/editor/quyền. Lint/typecheck/build đạt,941/941tests; chưa QA browser dữ liệu thật.
@@ -832,6 +836,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-TEACHER-ATTENDANCE-ENTRY-1-QA:** cole mở Điểm danh → Lớp trung tâm · Hôm nay → Pre-Movers17:30–19:30 → Điểm danh học viên, hoặc nút trên Hôm nay. Chưa commit/push/deploy; không ghi điểm danh thật chỉ để test.
+
 **B2C-PERMISSION-SUCCESS-1-QA:** F5 trang Phân quyền, lưu thay đổi cần thiết và kiểm toast top-center; không đổi quyền thật chỉ để test. Chưa QA browser/commit/push/deploy.
 
 **TEACHER-CHECKIN-LABEL-1-QA:** F5 giao diện giáo viên, kiểm menu và tiêu đề Chấm công; route cũ giữ nguyên.
@@ -1349,6 +1355,8 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ## 📖 NHẬT KÝ SESSION
 
 ### [2026-10-16] Codex — TODAY-TASKS-1 / B2C-TODAY-DESIGN-1
+- RELEASE-20261016-B2C-ATTENDANCE: user yêu cầu push bản sửa điểm danh;11files đã kiểm secret, fetch0ahead/0behind; lint/typecheck/build và947/947tests gần nhất đạt. Đối chiếu read-only8GV liên kết đúng tài khoản/19lớp B2C,0phân công B2B. SHA/remote verification báo chat, không suy deploy từ push.
+- B2C-TEACHER-ATTENDANCE-ENTRY-1: rootcause menu chỉ đọc B2B,không phải thiếu quyền hiện tại. Thêm helper/panel buổi B2C hôm nay gate mark_attendance/RPC assignment/loại hủy, link đúng attendance meeting; Hôm nay thêm nút direct theo quyền. B2B query/session/ghi giữ nguyên. Read-only cloud dưới JWTclaims cole xác nhận Pre-Movers16/10 17:30–19:30 có5HV/0marked và workspace đọc đúng; không ghi DB. Lint/typecheck/build đạt,161files947/947tests (6 mới). Chưa QA browser/commit/push/deploy. Next B2C-TEACHER-ATTENDANCE-ENTRY-1-QA.
 - RELEASE-20261016-B2C-SCHEDULE: user yêu cầu commit/push các thay đổi phiên;37files đã rà credential literal, không thấy secret, fetch main0ahead/0behind. Lint/typecheck/build và941/941tests gần nhất đạt. Không có thay đổi app sau checks, chỉ cập nhật worklog. SHA/push verification báo trong chat; không suy deploy từ push.
 - B2C-PERMISSION-SUCCESS-1: theo ảnh user, bỏ success inline cuối trang, toast.success top-center4500ms ngay sau server save thành công trước reload. Lỗi giữ editor/no success toast; Toaster dashboard sẵn có richColors. Không DB/quyền mới. Test existing thêm assertion toast success và no-toast khi save lỗi; lint/typecheck/build đạt,941/941tests. Chưa QA browser dữ liệu thật. Next B2C-PERMISSION-SUCCESS-1-QA.
 - TEACHER-CHECKIN-LABEL-1: theo user bỏ hậu tố B2C khỏi nhãn Chấm công trên menu/metadata/header/caption/hướng dẫn/lỗi GV; giữ URL/phân quyền/nghiệp vụ và nhãn admin. Không DB. Lint/typecheck/build đạt,941/941tests; chưa QA browser hoặc commit/push/deploy. Next TEACHER-CHECKIN-LABEL-1-QA.

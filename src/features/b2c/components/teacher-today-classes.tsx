@@ -9,9 +9,11 @@ import { formatTime } from "@/lib/dates";
 export function TeacherB2CTodayClasses({
   classes,
   meetings = [],
+  canMarkAttendance = false,
 }: {
   classes: TeacherB2CClass[];
   meetings?: TeacherB2CMeetingToday[];
+  canMarkAttendance?: boolean;
 }) {
   if (!classes.length && !meetings.length) return null;
   return (
@@ -41,6 +43,7 @@ export function TeacherB2CTodayClasses({
                         : "Theo lịch"}
                   </p>
                 </div>
+                {canMarkAttendance && m.status !== "cancelled" && <Button asChild size="sm" className="min-h-11 w-full sm:min-h-8 sm:w-auto"><Link href={`/teacher/b2c-classes/${m.class_id}?tab=attendance&meeting=${m.id}`}>Điểm danh học viên</Link></Button>}
                 <Button asChild size="sm" className="min-h-11 w-full sm:min-h-8 sm:w-auto">
                   <Link
                     href={`/teacher/b2c-classes/${m.class_id}?tab=schedule`}

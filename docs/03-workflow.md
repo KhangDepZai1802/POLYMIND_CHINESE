@@ -1,5 +1,11 @@
 # 03 — Workflow nghiệp vụ
 
+## Điểm danh lớp trung tâm từ menu giáo viên (B2C-TEACHER-ATTENDANCE-ENTRY-1)
+
+Menu **Điểm danh** hiển thị thêm khối **Lớp trung tâm · Hôm nay**, lấy buổi có ngày cụ thể từ read_my_b2c_today theo giáo viên được phân công và quyền mark_attendance, loại buổi hủy. Nút **Điểm danh học viên** dẫn thẳng `/teacher/b2c-classes/[classId]?tab=attendance&meeting=[meetingId]`, dùng nguyên đọc/ghi điểm danh có kiểm quyền và khóa stale sẵn có. Trang Hôm nay cũng có nút này trên thẻ buổi thực tế khi có quyền. Không tạo buổi từ lịch tuần hoặc ghi điểm danh tự động.
+
+Không có quyền thì hiện giải thích, không đọc danh sách buổi B2C; chưa có buổi thực tế hôm nay thì báo đúng trạng thái. Các buổi B2B và đường session cũ giữ nguyên, nằm riêng dưới Lớp doanh nghiệp; không báo mọi lớp đã đủ điểm danh chỉ vì danh sách B2B rỗng. Có liên kết Lớp của tôi để mở buổi ngày khác.
+
 ## Phản hồi lưu phân quyền (B2C-PERMISSION-SUCCESS-1)
 
 Sau server xác nhận Lưu phân quyền thành công, hiện toast xanh **Đã lưu phân quyền thành công** ở top-center4500ms qua Toaster sẵn có, áp dụng cả trang Phân quyền và dialog. Bỏ dòng success cuối trang; lỗi vẫn hiện tại editor và không kích hoạt toast thành công. Không thay đổi dữ liệu/quyền hay luồng lưu/tải lại.

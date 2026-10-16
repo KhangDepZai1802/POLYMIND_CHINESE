@@ -13,6 +13,7 @@ import {
 } from "@/features/b2c/server/teacher-class-queries";
 import { getB2CClassesToday } from "@/features/b2c/domain/teacher-today";
 import { TeacherHomeDashboard } from "@/features/dashboard/components/teacher-home-dashboard";
+import { getMyB2CPermissionsAction } from "@/features/b2c/server/permission-actions";
 export const metadata: Metadata = { title: "Hôm nay" };
 export default async function TeacherDashboardPage() {
   const [
@@ -24,6 +25,7 @@ export default async function TeacherDashboardPage() {
     myClasses,
     b2cClasses,
     b2cMeetings,
+    b2cPermissions,
   ] = await Promise.all([
     requireTeaching(),
     getTeacherSessionsToday(),
@@ -33,6 +35,7 @@ export default async function TeacherDashboardPage() {
     getMyClasses(),
     getMyB2CClasses(),
     getMyB2CToday(),
+    getMyB2CPermissionsAction(),
   ]);
   const now = new Date();
   const b2cToday = getB2CClassesToday(
@@ -56,6 +59,7 @@ export default async function TeacherDashboardPage() {
       b2cToday={b2cToday}
       meetings={b2cMeetings.rows}
       todayCount={todayCount}
+      canMarkB2CAttendance={b2cPermissions.includes("mark_attendance")}
     />
   );
 }

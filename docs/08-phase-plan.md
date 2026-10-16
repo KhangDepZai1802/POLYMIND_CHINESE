@@ -1,5 +1,10 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TEACHER-ATTENDANCE-ENTRY-1
+
+- [x] Menu Điểm danh hiện buổi B2C hôm nay theo quyền/phân công, loại hủy; link đúng class/meeting/tab attendance. Dashboard có lối vào trực tiếp; không đổi RPC/quyền/ghi điểm danh/B2B; không tự tạo buổi. Lint/typecheck/build đạt,947/947tests (6 mới); cloud read-only cole/workspace5HV đúng.
+- [ ] B2C-TEACHER-ATTENDANCE-ENTRY-1-QA: browser cole mở và lưu điểm danh nghiệp vụ thực tế; chưa commit/push/deploy.
+
 ## B2C-PERMISSION-SUCCESS-1
 
 - [x] Lưu phân quyền thành công hiện toast top-center4500ms, bỏ dòng chữ chìm cuối trang; không báo thành công khi save lỗi. Giữ quyền/luồng lưu và embedded/dialog; lint/typecheck/build đạt,941/941tests.

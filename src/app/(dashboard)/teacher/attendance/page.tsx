@@ -20,6 +20,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireTeaching } from "@/lib/auth/session";
 import { formatDate, formatTime } from "@/lib/dates";
+import { getB2CAttendanceOptions } from "@/features/b2c/server/attendance-options";
+import { B2CAttendanceOptionsPanel } from "@/features/b2c/components/attendance-options";
 
 export const metadata: Metadata = { title: "Điểm danh" };
 
@@ -33,9 +35,10 @@ export default async function TeacherAttendancePage({
 
   // --- Chưa chọn buổi → cho chọn -------------------------------------------
   if (!sessionId) {
-    const [today, needAttendance] = await Promise.all([
+    const [today, needAttendance, b2cAttendance] = await Promise.all([
       getTeacherSessionsToday(),
       getSessionsNeedingAttendance(20),
+      getB2CAttendanceOptions(),
     ]);
 
     const seen = new Set<string>();
@@ -52,13 +55,15 @@ export default async function TeacherAttendancePage({
           description="Chọn buổi cần điểm danh. Chỉ hiện buổi của lớp bạn dạy."
         />
 
+        <B2CAttendanceOptionsPanel data={b2cAttendance} />
+        {b2cAttendance && <h2 className="mb-3 font-semibold">Lớp doanh nghiệp</h2>}
         <Card className="overflow-hidden">
           <CardContent className="p-0">
             {options.length === 0 ? (
               <EmptyState
                 icon={CheckCircle2}
                 title="Không còn buổi nào cần điểm danh"
-                description="Mọi buổi đã dạy đều đã điểm danh đủ."
+                description="Không có buổi của lớp doanh nghiệp cần điểm danh trong danh sách này."
               />
             ) : (
               <ul className="divide-y">

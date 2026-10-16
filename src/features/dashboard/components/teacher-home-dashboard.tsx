@@ -43,6 +43,7 @@ type Props = {
   b2cToday: TeacherB2CClass[];
   meetings: TeacherB2CMeetingToday[];
   todayCount: number;
+  canMarkB2CAttendance?: boolean;
 };
 const panel =
   "min-w-0 rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_3px_14px_-8px_rgba(30,80,160,0.22)] dark:border-slate-800 dark:bg-slate-900";
@@ -255,6 +256,7 @@ export function TeacherHomeDashboard(p: Props) {
             <TeacherB2CTodayClasses
               classes={p.b2cToday}
               meetings={p.meetings}
+              canMarkAttendance={p.canMarkB2CAttendance}
             />
           </Panel>
           <Panel
