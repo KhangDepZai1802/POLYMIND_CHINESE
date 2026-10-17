@@ -8,6 +8,32 @@ const row: TuitionDashboardRow = { enrollment_id: "e1", student_code: "HV1", ful
 const other: TuitionDashboardRow = { ...row, enrollment_id: "e2", student_code: "HV2", full_name: "Bình", class_id: "c2", class_name: "Flyers", package_id: null, sessions: null, total_due: null, unit_price: null, discount: null, paid_amount: 0, balance: 0, tuition_end_date: null, enrollment_date: "2026-09-01" };
 afterEach(cleanup);
 function mount(rows = [row, other]) { render(<TuitionDashboard rows={rows} collector="Quản lý" canReadHistory today="2026-10-17" />); }
+it.each(["Tổng phải thu", "Đã thu", "Còn phải thu"])("opens a matching financial list for the %s card", (label) => {
+  mount([row, other, { ...row, enrollment_id: "e3", student_code: "HV3", full_name: "Chi", paid_amount: 1000000, balance: 0 }]);
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${label}\\s*\\d`) }));
+  const popup = within(screen.getByRole("dialog"));
+  expect(popup.getByText("An")).toBeInTheDocument(); expect(popup.queryByText("Bình")).not.toBeInTheDocument();
+  if (label === "Còn phải thu") expect(popup.queryByText("Chi")).not.toBeInTheDocument();
+  else expect(popup.getByText("Chi")).toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Lọc trạng thái học phí", hidden: true })).toHaveValue("all");
+});
+it("opens an empty money card and preserves the table when the popup closes", () => {
+  mount([other]); fireEvent.click(screen.getByRole("button", { name: /^Đã thu\s*0/ }));
+  const popup = within(screen.getByRole("dialog"));
+  expect(popup.getByText("Chưa có ghi danh trong nhóm này.")).toBeInTheDocument();
+  fireEvent.click(popup.getByRole("button", { name: "Close" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(within(screen.getByRole("table")).getByText("Bình")).toBeInTheDocument();
+});
+it("paginates and searches the financial card list", () => {
+  mount(Array.from({ length: 21 }, (_, i) => ({ ...row, enrollment_id: `p${i}`, student_code: `HV${i}`, full_name: `Học viên ${String(i).padStart(2, "0")}` })));
+  fireEvent.click(screen.getByRole("button", { name: /^Còn phải thu/ }));
+  const popup = within(screen.getByRole("dialog"));
+  expect(popup.getAllByRole("row")).toHaveLength(21);
+  fireEvent.click(popup.getByRole("button", { name: "Sau" })); expect(popup.getAllByRole("row")).toHaveLength(2);
+  fireEvent.change(popup.getByRole("textbox", { name: "Tìm trong danh sách học phí" }), { target: { value: "Học viên 00" } });
+  expect(popup.getByText("Học viên 00")).toBeInTheDocument(); expect(popup.getAllByRole("row")).toHaveLength(2);
+});
 it("opens an accurate attention list and leaves unconfigured rows out of debt", () => {
   mount(); fireEvent.click(screen.getByRole("button", { name: /Học viên cần xử lý\s*1 học viên/ }));
   const dialog = within(screen.getByRole("dialog"));

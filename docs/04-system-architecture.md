@@ -410,3 +410,14 @@ B2C-PARENT-DESIGN-1: ParentDashboard client nhận đầy đủ parents từ man
 
 
 B2C-PARENT-CARD-POPUPS: Cả4KPI mở popup danh sách đúng nhóm theo tổng toàn bộ hồ sơ, không thay trạng thái bảng ngoài. Popup có tìm kiếm,20/trang, trạng thái rỗng kể cả0hồsơ, Xem/Sửa; Xem đóng danh sách rồi mở chi tiết. Không API/DB/quyền mới. Thay hành vi KPI lọc bảng trong mô tả trước.
+
+
+B2C-TEACHER-DESIGN-2: Giữ dashboard/charts/lọc/thống kê/export/print/KPIpopup hiện có; đồng bộ ảnh với4màuKPI và nềncong, viền mảnh/bo16, link thời khóa biểu cùngheader, avatar chữcái màu trong bảng và action cùnghàng. Giá trị chuyên môn cũ chỉ ghi B2C hiển thị Chưa cập nhật thay vì lộ nhãn phạm vi; không sửaDB hoặc dựng chuyên môn giả. Không đổi sidebar/logo hoặc quyền tài khoản.
+
+
+B2C-TUITION-CARD-POPUPS: Cả4KPI học phí là button mở popup. Tổng phải thu liệt kê ghi danh có gói; Đã thu là thu ròng dương (gồm trả một phần); Còn phải thu là số dư dương; Cần xử lý giữ nợ/tái phí. Popup theo bộ lọc ngoài, tìm/page20/empty/gói-phiếu thu, đóng không đổi bảng; không API/DB/quyền mới.
+
+
+### B2C-REPORT-DESIGN-1
+
+Trang Báo cáo theo ảnh: bộ chọn kỳ có icon lịch,4thẻKPI xanh lá/xanh dương/cam/hồng và nền trang trí không biểu diễn dữ liệu, chương trình avatar/màu cột/sort thật, chi phí icon từng dòng/tổng nền xanh/lương cũ màucam, thanh sửa có icon và chevron. Giữ số liệu tổng hợp thủ công/cách tính cũ/ghi chú/nhập lưu tháng/quyền; không tự dựng lịch sử giao dịch hoặc dùng số mẫu. Không đổi sidebar/logo; không viền trên dày.

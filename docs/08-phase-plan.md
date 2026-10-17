@@ -1535,3 +1535,23 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 
 - [x] Bốn KPI mở danh sách popup đúng nhóm/tìm/page20/empty/Xem-Sửa, giữ bộ lọc bảng.
 - [x] Lint/typecheck/build đạt,1024/1024tests; dev restart.
+
+
+## B2C-TEACHER-DESIGN-2
+
+- [x] Trang Giáo viên theo ảnh:KPI4màu/nềncong, header timetable-tháng-chuyên môn-thêm, chart/lối tắt, avatar/bảng gọn. Giữ thao tác và dữ liệu thật.
+- [x] Lint/typecheck/test/build.
+- [ ] QA browser độc lập; chưa commit/push/deploy bản này.
+
+
+## B2C-TUITION-CARD-POPUPS
+
+- [x] Cả4thẻ mở popup đúng nhóm, tìm/page20/empty, giữ bộ lọc và thao tác phí.
+- [x] Lint/typecheck/build đạt,1030/1030tests; dev restart.
+
+
+## B2C-REPORT-DESIGN-1
+
+- [x] Báo cáo theo ảnh:KPI4màu/selector tháng/bảng chương trình avatar-sort/costicons/editbar, không số liệu giả/không viền trên dày.
+- [x] Giữ cách tính/nhập/lưu tháng, null chi phí lương và notes; lint/typecheck/test/build.
+- [ ] QA browser độc lập; chưa commit/push/deploy bản này.

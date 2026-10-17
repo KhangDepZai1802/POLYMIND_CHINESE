@@ -10,6 +10,7 @@ import type { TuitionDashboardRow } from "../domain/tuition-dashboard";
 import { needsRenewal, needsTuitionAttention, tuitionStatusMatches, tuitionSummary, type TuitionStatusFilter } from "../domain/tuition-dashboard";
 import { TuitionPackageDialog, TuitionReceiptsDialog } from "./tuition-dialogs";
 import { TuitionCorrectionsDialog } from "./tuition-corrections-dialog";
+import { TuitionCardList, type TuitionCardKind } from "./tuition-card-list";
 
 const tones = ["bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200", "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200", "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200", "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200", "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"];
 function tone(value: string) { return tones[Array.from(value).reduce((n, c) => n + c.charCodeAt(0), 0) % tones.length]; }
@@ -30,6 +31,7 @@ export function TuitionDashboard({ rows, today, collector, canReadHistory, initi
     });
   }, [rows, query, status, classId, period, sort, descending, today]);
   const stats = tuitionSummary(filtered, today), attention = filtered.filter(r => needsTuitionAttention(r, today));
+  const [moneyCard, setMoneyCard] = useState<TuitionCardKind | null>(null);
   const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 25) - 1)), visible = filtered.slice(currentPage * 25, currentPage * 25 + 25);
   const selectedRows = filtered.filter(r => selected.includes(r.enrollment_id)), selectedBalance = selectedRows.reduce((n, r) => n + r.balance, 0);
   function reset() { setPage(0); setSelected([]); }
@@ -40,7 +42,8 @@ export function TuitionDashboard({ rows, today, collector, canReadHistory, initi
     { label: "Còn phải thu", value: formatCurrency(stats.balance), Icon: Clock3, icon: "from-orange-400 to-amber-500", text: "text-orange-700 dark:text-orange-300", wave: "bg-orange-100/60 dark:bg-orange-900/30" },
   ];
   return <div className="space-y-4">
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{cards.map(({ label, value, Icon, icon, text, wave }) => <div key={label} className="relative isolate flex min-w-0 items-center gap-4 overflow-hidden rounded-2xl border border-blue-100 bg-card px-5 py-5 shadow-sm dark:border-border"><span aria-hidden className={`absolute -right-6 -bottom-10 -z-10 h-24 w-44 -rotate-12 rounded-[50%] ${wave}`} /><span className={`flex size-13 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br text-white shadow-sm ${icon}`}><Icon className="size-6" aria-hidden /></span><div><p className="text-sm text-muted-foreground">{label}</p><p className={`mt-1 text-xl font-bold tabular-nums ${text}`}>{value}</p></div></div>)}
+    {moneyCard && <TuitionCardList key={moneyCard} kind={moneyCard} rows={filtered} collector={collector} today={today} onClose={() => setMoneyCard(null)} />}
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{cards.map(({ label, value, Icon, icon, text, wave }) => <button type="button" aria-haspopup="dialog" onClick={() => setMoneyCard(label === "Tổng phải thu" ? "due" : label === "Đã thu" ? "paid" : "balance")} key={label} className="text-left transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring relative isolate flex min-w-0 items-center gap-4 overflow-hidden rounded-2xl border border-blue-100 bg-card px-5 py-5 shadow-sm dark:border-border"><span aria-hidden className={`absolute -right-6 -bottom-10 -z-10 h-24 w-44 -rotate-12 rounded-[50%] ${wave}`} /><span className={`flex size-13 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br text-white shadow-sm ${icon}`}><Icon className="size-6" aria-hidden /></span><div><p className="text-sm text-muted-foreground">{label}</p><p className={`mt-1 text-xl font-bold tabular-nums ${text}`}>{value}</p></div></button>)}
       <button type="button" onClick={() => { setAttentionOpen(true); setAttentionPage(0); }} className="relative isolate flex min-w-0 items-center gap-4 overflow-hidden rounded-2xl border border-blue-100 bg-card px-5 py-5 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring dark:border-border"><span aria-hidden className="absolute -right-6 -bottom-10 -z-10 h-24 w-44 -rotate-12 rounded-[50%] bg-rose-100/50 dark:bg-rose-900/20" /><span className="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"><Users className="size-6" aria-hidden /></span><span><span className="block text-sm text-muted-foreground">Học viên cần xử lý</span><span className="mt-1 block text-xl font-bold text-rose-700 dark:text-rose-300">{stats.attention} học viên</span></span><ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" aria-hidden /></button>
     </div>
     <form className="flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100 bg-card p-4 shadow-sm dark:border-border" onSubmit={(e) => { e.preventDefault(); setQuery(String(new FormData(e.currentTarget).get("q") ?? "")); reset(); }}>

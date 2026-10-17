@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Banknote, BookOpenCheck, PiggyBank, Users } from "lucide-react";
+import { Banknote, BookOpenCheck, ChartColumn, Users, CalendarDays, ChevronRight, Pencil, Settings, Zap, Droplet, Wifi, User, House, Megaphone, Target, Ellipsis, Database, Calculator, ArrowUpDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +58,14 @@ const COSTS = [
   ["advertising", "Quảng cáo", "advertising_cost"],
   ["other", "Chi phí khác", "other_cost"],
 ] as const;
+const COST_ICONS = [Zap, Droplet, Wifi, User, Users, House, Megaphone, Target, Ellipsis];
+const programTones: Record<string, { initials: string; color: string }> = {
+  "tieng-anh": { initials: "TA", color: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-200" },
+  "tieng-trung": { initials: "TT", color: "bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-200" },
+  "tieng-viet": { initials: "TV", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200" },
+  "lop-ve": { initials: "VẼ", color: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200" },
+  "kem-1-1": { initials: "1–1", color: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-200" },
+};
 
 export function B2CMonthlyReportDashboard({
   reports,
@@ -90,12 +98,13 @@ export function B2CMonthlyReportDashboard({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <label className="grid gap-1.5 text-sm font-medium">
+        <label className="flex flex-wrap items-center gap-3 text-sm font-semibold">
           Kỳ báo cáo
+          <span className="flex items-center gap-2 rounded-xl border border-blue-100 bg-card px-3 dark:border-border"><CalendarDays className="size-4 text-blue-600" aria-hidden />
           <select
             value={selectedId}
             onChange={(event) => setSelectedId(event.target.value)}
-            className="border-input bg-background h-10 min-w-56 rounded-md border px-3"
+            className="h-11 min-w-44 bg-transparent pr-3 text-sm font-normal"
           >
             {reports.map((item) => (
               <option key={item.id} value={item.id}>
@@ -104,6 +113,7 @@ export function B2CMonthlyReportDashboard({
             ))}
             <option value="new">Tạo báo cáo tháng mới</option>
           </select>
+          </span>
         </label>
         {report && (
           <p className="text-muted-foreground text-sm">
@@ -120,29 +130,33 @@ export function B2CMonthlyReportDashboard({
               value={summary.students.toLocaleString("vi-VN")}
               note={`${signed(summary.netStudents)} học viên ròng`}
               icon={Users}
+              tone="green"
             />
             <StatCard
               label="Số tiết đã học"
               value={summary.lessonsTaught.toLocaleString("vi-VN")}
               note={`${summary.lessonsRemaining.toLocaleString("vi-VN")} tiết còn lại`}
               icon={BookOpenCheck}
+              tone="blue"
             />
             <StatCard
               label="Doanh thu"
               value={money.format(report.revenue)}
               note={trend(report.revenue, previous?.revenue)}
               icon={Banknote}
+              tone="orange"
             />
             <StatCard
               label="Lợi nhuận tạm tính"
               value={money.format(summary.profit)}
               note={`Chi phí ${money.format(summary.totalCost)}`}
-              icon={PiggyBank}
+              icon={ChartColumn}
+              tone="rose"
               danger={summary.profit < 0}
             />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
+          <div className="grid items-stretch gap-4 xl:grid-cols-[1.28fr_1fr]">
             <ProgramTable report={report} />
             <CostTable report={report} total={summary.totalCost} />
           </div>
@@ -165,9 +179,9 @@ export function B2CMonthlyReportDashboard({
         </Card>
       )}
 
-      <details className="group rounded-xl border bg-white" open={!report}>
-        <summary className="cursor-pointer list-none px-5 py-4 font-semibold">
-          {report ? "Chỉnh sửa số liệu tháng này" : "Nhập báo cáo tháng mới"}
+      <details className="group rounded-2xl border border-blue-100 bg-card shadow-sm dark:border-border" open={!report}>
+        <summary className="flex cursor-pointer list-none items-center gap-4 rounded-2xl px-5 py-4 font-semibold focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-blue-950 dark:text-blue-300"><Pencil className="size-5" aria-hidden /></span><span>{report ? "Chỉnh sửa số liệu tháng này" : "Nhập báo cáo tháng mới"}</span><ChevronRight className="ml-auto size-5 transition-transform group-open:rotate-90" aria-hidden />
         </summary>
         <form
           key={report?.id ?? "new"}
@@ -333,48 +347,40 @@ function summarize(report: MonthlyReport | null) {
 }
 
 function ProgramTable({ report }: { report: MonthlyReport }) {
+  const [sort, setSort] = useState<number | null>(null), [descending, setDescending] = useState(false);
+  const programs = B2C_PROGRAMS.flatMap(program => {
+    const item = report.metrics.find(m => m.program_slug === program.slug);
+    return item ? [{ program, values: [program.title, item.opening_students + item.new_students - item.departed_students, item.new_students, item.departed_students, item.lessons_taught, item.lessons_paid - item.lessons_taught] }] : [];
+  }).sort((a, b) => {
+    if (sort === null) return 0;
+    return (descending ? -1 : 1) * (sort === 0 ? a.program.title.localeCompare(b.program.title, "vi") : Number(a.values[sort]) - Number(b.values[sort]));
+  });
   return (
-    <Card>
+    <Card className="gap-4 rounded-2xl border-blue-100 py-5 shadow-sm dark:border-border">
       <CardHeader>
-        <CardTitle className="text-base">Học viên và số tiết</CardTitle>
+        <CardTitle className="flex items-center gap-3 text-lg"><span className="rounded-xl bg-blue-50 p-2 text-blue-600 dark:bg-blue-950 dark:text-blue-300"><Users className="size-5" aria-hidden /></span>Học viên và số tiết</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full min-w-[42rem] text-sm">
-          <thead className="text-muted-foreground text-left">
+        <div className="min-w-[35rem] overflow-hidden rounded-xl border border-blue-50 dark:border-border"><table className="w-full text-sm"><caption className="sr-only">Học viên và số tiết theo chương trình</caption>
+          <thead className="bg-blue-50/70 text-left dark:bg-blue-950/30">
             <tr>
-              <th className="pb-2">Chương trình</th>
-              <th>Cuối tháng</th>
-              <th>Tăng</th>
-              <th>Giảm</th>
-              <th>Đã học</th>
-              <th>Còn lại</th>
+              {["Chương trình", "Cuối tháng", "Tăng", "Giảm", "Đã học", "Còn lại"].map((label, index) => <th key={label} scope="col" aria-sort={sort === index ? descending ? "descending" : "ascending" : "none"} className={`px-3 py-3 font-semibold ${index === 2 ? "text-emerald-600 dark:text-emerald-300" : index === 3 ? "text-rose-600 dark:text-rose-300" : index === 4 ? "text-blue-600 dark:text-blue-300" : index === 5 ? "text-violet-600 dark:text-violet-300" : ""}`}><button type="button" className="inline-flex items-center gap-1 whitespace-nowrap rounded focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { if (sort === index) setDescending(!descending); else { setSort(index); setDescending(false); } }}>{label}<ArrowUpDown className="size-3" aria-hidden /></button></th>)}
             </tr>
           </thead>
           <tbody>
-            {B2C_PROGRAMS.map((program) => {
-              const item = report.metrics.find(
-                (metric) => metric.program_slug === program.slug,
-              );
-              if (!item) return null;
+            {programs.map(({ program, values }) => {
+              const badge = programTones[program.slug];
               return (
-                <tr key={program.slug} className="border-t">
-                  <th className="py-3 text-left font-medium">
-                    {program.title}
+                <tr key={program.slug} className="border-t border-blue-50 hover:bg-blue-50/20 dark:border-border dark:hover:bg-blue-950/10">
+                  <th scope="row" className="px-3 py-3 text-left font-medium">
+                    <span className="inline-flex items-center gap-3"><span aria-hidden className={`flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${badge?.color ?? "bg-slate-100 text-slate-700"}`}>{badge?.initials ?? "CT"}</span>{program.title}</span>
                   </th>
-                  <td>
-                    {item.opening_students +
-                      item.new_students -
-                      item.departed_students}
-                  </td>
-                  <td>{item.new_students}</td>
-                  <td>{item.departed_students}</td>
-                  <td>{item.lessons_taught}</td>
-                  <td>{item.lessons_paid - item.lessons_taught}</td>
+                  {values.slice(1).map((value, index) => <td key={index} className="px-3 py-3 text-center tabular-nums">{value}</td>)}
                 </tr>
               );
             })}
           </tbody>
-        </table>
+        </table></div>
       </CardContent>
     </Card>
   );
@@ -388,30 +394,31 @@ function CostTable({
   total: number;
 }) {
   return (
-    <Card>
+    <Card className="gap-4 rounded-2xl border-blue-100 py-5 shadow-sm dark:border-border">
       <CardHeader>
-        <CardTitle className="text-base">Cơ cấu chi phí</CardTitle>
+        <CardTitle className="flex items-center gap-3 text-lg"><span className="rounded-xl bg-blue-50 p-2 text-blue-600 dark:bg-blue-950 dark:text-blue-300"><Settings className="size-5" aria-hidden /></span>Cơ cấu chi phí</CardTitle>
       </CardHeader>
       <CardContent>
-        <dl className="space-y-2 text-sm">
-          {COSTS.map(([, label, key]) => (
-            <div key={key} className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">{label}</dt>
+        <dl className="text-sm">
+          {COSTS.map(([, label, key], index) => {
+            const Icon = COST_ICONS[index] ?? Ellipsis;
+            return <div key={key} className="flex justify-between gap-4 border-b border-blue-50 py-2 dark:border-border">
+              <dt className="flex items-center gap-3 text-muted-foreground"><Icon className="size-4 shrink-0" aria-hidden />{label}</dt>
               <dd className="font-medium tabular-nums">
                 {report[key] === null
                   ? "Chưa phân loại"
                   : money.format(report[key])}
               </dd>
-            </div>
-          ))}
+            </div>;
+          })}
           {report.teacher_payroll_cost === null && (
-            <div className="flex justify-between gap-4 text-amber-700">
-              <dt>Lương gộp chưa phân loại (dữ liệu cũ)</dt>
+            <div className="flex justify-between gap-4 py-2 text-orange-600 dark:text-orange-300">
+              <dt className="flex items-center gap-3"><Database className="size-4 shrink-0" aria-hidden />Lương gộp chưa phân loại (dữ liệu cũ)</dt>
               <dd>{money.format(report.payroll_cost)}</dd>
             </div>
           )}
-          <div className="flex justify-between gap-4 border-t pt-3 font-semibold">
-            <dt>Tổng chi phí</dt>
+          <div className="mt-1 flex justify-between gap-4 rounded-xl bg-blue-50 px-3 py-3 font-semibold dark:bg-blue-950/30">
+            <dt className="flex items-center gap-3"><Calculator className="size-5 text-blue-600 dark:text-blue-300" aria-hidden />Tổng chi phí</dt>
             <dd>{money.format(total)}</dd>
           </div>
         </dl>
@@ -455,28 +462,31 @@ function StatCard({
   note,
   icon: Icon,
   danger = false,
+  tone,
 }: {
   label: string;
   value: string;
   note: string;
   icon: typeof Users;
   danger?: boolean;
+  tone: "green" | "blue" | "orange" | "rose";
 }) {
+  const surface = { green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300", blue: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300", orange: "bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-300", rose: "bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300" }[tone];
+  const wave = { green: "text-emerald-200 dark:text-emerald-900", blue: "text-blue-200 dark:text-blue-900", orange: "text-orange-200 dark:text-orange-900", rose: "text-rose-200 dark:text-rose-900" }[tone];
   return (
-    <Card>
-      <CardContent className="flex items-start justify-between gap-3">
-        <div>
+    <Card className="relative isolate overflow-hidden rounded-2xl border-blue-100 py-5 shadow-sm dark:border-border">
+      <svg aria-hidden focusable="false" viewBox="0 0 160 80" className={`pointer-events-none absolute right-0 bottom-0 -z-10 h-20 w-36 opacity-50 ${wave}`}><path fill="currentColor" d="M0 80 Q30 25 58 42 T105 28 T160 20 V80Z" /></svg>
+      <CardContent className="flex items-start gap-4 px-5">
+        <span className={`shrink-0 rounded-2xl p-3.5 ${surface}`}><Icon className="size-7" aria-hidden /></span>
+        <div className="min-w-0">
           <p className="text-muted-foreground text-sm">{label}</p>
           <p
-            className={`mt-2 text-2xl font-bold ${danger ? "text-destructive" : ""}`}
+            className={`mt-2 text-2xl font-bold tabular-nums ${danger ? "text-red-600 dark:text-red-400" : ""}`}
           >
             {value}
           </p>
           <p className="text-muted-foreground mt-1 text-xs">{note}</p>
         </div>
-        <span className="bg-primary/10 text-primary rounded-lg p-2">
-          <Icon className="size-5" />
-        </span>
       </CardContent>
     </Card>
   );

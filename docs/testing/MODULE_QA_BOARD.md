@@ -269,3 +269,8 @@ B2C-CLASS-DETAIL-1 validation: lint/typecheck/build exit0, Vitest807/807 gồm2 
 ## B2C-CLASS-WORKSPACE-1 — 2026-10-14
 
 Codex Status: Implemented; Verification: Not Started (chờ QA độc lập). SQL13 cloud/history xác minh, pgTAP40/40 (RLS/manager/roster class/attendance/comments/tuition/retry/stale/future/history). Vitest811/811, build exit0. Edge production cuối3112 temporary academic_manager/lớp fixture: mở từ popup5 tabs, thêm lịch, điểm danh present→late, nhận xét theo buổi, gói/phiếu thu1m-400k=600k, history4actor, mirrorpayroll1, cross-class/anonymous deny,390px không tràn,0pageerror; fixtures/account dọn sạch. Lint/typecheck/build exit0. Verification vẫn Not Started. Không mở quyền teacher/XKLĐ, không tự trừ học phí hoặc thay tiền công.
+
+
+## B2C-TUITION-CARD-POPUPS — 2026-10-17
+
+Bug:3thẻ tiền chỉ là div, click không mở danh sách. Codex Status: Fixed — đổi button và popup đúng nhóm/tìm/page20/empty/gói-phiếu thu, giữ bảng ngoài và popup cần xử lý. Verification: Not Started (chờ QA độc lập). Không API/DB/quyền mới.

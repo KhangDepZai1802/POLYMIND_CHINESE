@@ -69,6 +69,15 @@ const rows = [
   },
 ];
 describe("B2C teacher dashboard", () => {
+  it("keeps legacy scope labels out of specialty display and preserves timetable access", () => {
+    render(<TeacherDashboard rows={rows.map(r => ({ ...r, teacher: { ...r.teacher, specialization: "B2C" } }))} initialMonth="2026-10" />);
+    expect(screen.getByRole("link", { name: "Xem thời khóa biểu giáo viên" })).toHaveAttribute("href", "/admin/b2c/timetable");
+    expect(screen.getByRole("combobox", { name: "Lọc chuyên môn" })).toContainHTML("Chưa cập nhật");
+    expect(screen.queryByRole("option", { name: "B2C" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Lọc chuyên môn"), { target: { value: "Chưa cập nhật" } });
+    expect(within(screen.getByRole("table")).getByText("Cô An")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("Cô Bình")).toBeInTheDocument();
+  });
   it("opens each card with the matching teacher group or class list", () => {
     render(<TeacherDashboard rows={rows} initialMonth="2026-10" />);
     for (const [card, included, excluded] of [

@@ -44,9 +44,11 @@ const number = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 const percent = (value: number | null) =>
   value === null ? "—" : `${number.format(value)}%`;
 const panel =
-  "rounded-xl border border-slate-100 bg-white p-5 shadow-[0_3px_16px_-8px_rgba(32,72,120,0.2)] dark:border-slate-800 dark:bg-slate-900";
+  "rounded-2xl border border-blue-100/60 bg-white p-5 shadow-[0_3px_16px_-8px_rgba(32,72,120,0.2)] dark:border-slate-800 dark:bg-slate-900";
 const select =
   "h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
+const avatarTones = ["bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-200", "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-200", "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200", "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200", "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-200"];
+const specialtyLabel = (value: string | null | undefined) => !value?.trim() || value.trim().toUpperCase() === "B2C" ? "Chưa cập nhật" : value.trim();
 
 export function TeacherDashboard({
   rows,
@@ -68,13 +70,13 @@ export function TeacherDashboard({
   const detailTrigger = useRef<HTMLButtonElement | null>(null);
   const specialties = [
     ...new Set(
-      rows.map((r) => r.teacher.specialization?.trim() || "Chưa cập nhật"),
+      rows.map((r) => specialtyLabel(r.teacher.specialization)),
     ),
   ].sort((a, b) => a.localeCompare(b, "vi"));
   const base = rows.filter(
     (r) =>
       !specialization ||
-      (r.teacher.specialization?.trim() || "Chưa cập nhật") === specialization,
+      specialtyLabel(r.teacher.specialization) === specialization,
   );
   const scheduled = (r: Row) => r.teachingMonths.includes(month);
   const teaching = base.filter(scheduled).length;
@@ -84,7 +86,7 @@ export function TeacherDashboard({
     .map((name) => ({
       name,
       count: base.filter(
-        (r) => (r.teacher.specialization?.trim() || "Chưa cập nhật") === name,
+        (r) => specialtyLabel(r.teacher.specialization) === name,
       ).length,
     }))
     .filter((r) => r.count);
@@ -116,7 +118,7 @@ export function TeacherDashboard({
     index + 1,
     r.teacher.full_name,
     [r.teacher.phone, r.teacher.email].filter(Boolean).join(" · ") || "—",
-    r.teacher.specialization || "Chưa cập nhật",
+    specialtyLabel(r.teacher.specialization),
     r.teacher.employment_type === "full_time"
       ? "Fulltime"
       : r.teacher.employment_type === "part_time"
@@ -161,7 +163,7 @@ export function TeacherDashboard({
       );
       const a = document.createElement("a");
       a.href = url;
-      a.download = `giao-vien-b2c-${month}.xlsx`;
+      a.download = `giao-vien-${month}.xlsx`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
@@ -182,6 +184,7 @@ export function TeacherDashboard({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 print:hidden">
+          <Link href="/admin/b2c/timetable" className={`${select} inline-flex items-center gap-2 font-medium text-blue-800 dark:text-blue-200`}><CalendarDays className="size-4" aria-hidden />Xem thời khóa biểu giáo viên</Link>
           <label className={`${select} flex items-center gap-2`}>
             <CalendarDays className="size-4" />
             <input
@@ -221,6 +224,7 @@ export function TeacherDashboard({
             note: "Hồ sơ trong danh sách",
             icon: Users,
             color: "text-emerald-600 bg-emerald-50",
+            wave: "bg-emerald-100/60 dark:bg-emerald-900/25",
           },
           {
             kind: "teaching" as const,
@@ -229,6 +233,7 @@ export function TeacherDashboard({
             note: `${base.length ? number.format((teaching / base.length) * 100) : 0}% giáo viên · tháng ${month.slice(5)}/${month.slice(0, 4)}`,
             icon: BookOpen,
             color: "text-blue-500 bg-blue-50",
+            wave: "bg-blue-100/60 dark:bg-blue-900/25",
           },
           {
             kind: "waiting" as const,
@@ -237,6 +242,7 @@ export function TeacherDashboard({
             note: `${base.length ? number.format((waiting / base.length) * 100) : 0}% giáo viên trong tháng`,
             icon: Clock3,
             color: "text-amber-500 bg-amber-50",
+            wave: "bg-orange-100/60 dark:bg-orange-900/25",
           },
           {
             kind: "classes" as const,
@@ -244,9 +250,10 @@ export function TeacherDashboard({
             value: totalClasses,
             note: "Lũy kế các lớp đã liên kết",
             icon: ChartColumn,
-            color: "text-teal-500 bg-teal-50",
+            color: "text-violet-500 bg-violet-50",
+            wave: "bg-violet-100/60 dark:bg-violet-900/25",
           },
-        ].map(({ kind, label, value, note, icon: Icon, color }) => (
+        ].map(({ kind, label, value, note, icon: Icon, color, wave }) => (
           <button
             type="button"
             key={label}
@@ -256,8 +263,9 @@ export function TeacherDashboard({
               detailTrigger.current = event.currentTarget;
               setDetail(kind);
             }}
-            className={`${panel} flex gap-5 py-6 text-left transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
+            className={`${panel} relative isolate flex gap-5 overflow-hidden py-6 text-left transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
           >
+            <span aria-hidden className={`absolute -right-6 -bottom-11 -z-10 h-24 w-48 -rotate-12 rounded-[50%] ${wave}`} />
             <div
               className={`flex size-14 shrink-0 items-center justify-center rounded-xl ${color}`}
             >
@@ -518,16 +526,18 @@ export function TeacherDashboard({
                       key={j}
                       className={`px-2 py-1.5 ${j === 1 ? "font-medium whitespace-nowrap text-[#183764] dark:text-slate-100" : ""}`}
                     >
-                      {v}
+                      {j === 1 ? <span className="inline-flex items-center gap-2"><span aria-hidden className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${avatarTones[Array.from(r.teacher.id).reduce((n, c) => n + c.charCodeAt(0), 0) % avatarTones.length]}`}>{r.teacher.full_name.trim().split(/\s+/).slice(-2).map(w => w[0]).join("").toUpperCase()}</span><span>{v}</span></span> : v}
                     </td>
                   ))}
                   <td className="px-2 print:hidden">
+                    <div className="flex items-center gap-1 whitespace-nowrap">
                     <B2CTeacherDialog teacher={r.teacher} />
                     {canManageAccounts && (
                       <TeacherAccountDialog
                         target={{ kind: "b2c", id: r.teacher.id }}
                       />
                     )}
+                    </div>
                   </td>
                 </tr>
               ))}

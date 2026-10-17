@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { hydrateRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
@@ -29,6 +29,21 @@ const report: MonthlyReport = {
   metrics: [],
 };
 describe("monthly finance form", () => {
+  it("preserves program figures and sorts the report table without changing the edit form", () => {
+    render(<B2CMonthlyReportDashboard reports={[{ ...report, metrics: [
+      { report_id: "r1", program_slug: "tieng-anh", opening_students: 10, new_students: 2, departed_students: 1, lessons_taught: 8, lessons_paid: 10 },
+      { report_id: "r1", program_slug: "tieng-trung", opening_students: 20, new_students: 1, departed_students: 3, lessons_taught: 5, lessons_paid: 9 },
+    ] }]} />);
+    const table = within(screen.getByRole("table", { name: "Học viên và số tiết theo chương trình" }));
+    expect(table.getAllByRole("row")[1]).toHaveTextContent("Tiếng Anh");
+    fireEvent.click(table.getByRole("button", { name: "Giảm" }));
+    fireEvent.click(table.getByRole("button", { name: "Giảm" }));
+    const first = table.getAllByRole("row")[1]!;
+    expect(first).toHaveTextContent("Tiếng Trung");
+    expect(within(first).getAllByRole("cell").map(c => c.textContent)).toEqual(["18", "1", "3", "5", "4"]);
+    expect(screen.getByLabelText("Doanh thu (VNĐ)")).toHaveValue(200);
+    expect(screen.getByText("Chỉnh sửa số liệu tháng này").closest("details")).not.toHaveAttribute("open");
+  });
   it("hydrates the server period even when the client clock crosses a year", async () => {
     const props = { reports: [report], initialPeriod: { month: 12, year: 2026 } };
     vi.useFakeTimers();

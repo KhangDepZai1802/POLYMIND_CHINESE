@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { requireManager } from "@/lib/auth/session";
 import { getB2CTeacherMetrics } from "@/features/b2c/server/teacher-metrics";
 import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
@@ -18,11 +16,6 @@ export default async function TeachersPage() {
     .slice(0, 7);
   return (
     <>
-      <div className="mb-4 flex justify-end">
-        <Button asChild variant="outline">
-          <Link href="/admin/b2c/timetable">Xem thời khóa biểu giáo viên</Link>
-        </Button>
-      </div>
       <TeacherDashboard
         rows={[...metrics.values()]}
         initialMonth={month}

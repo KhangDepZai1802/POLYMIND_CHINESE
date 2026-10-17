@@ -38,6 +38,14 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261017-DASHBOARDS — Codex — 2026-10-17. User yêu cầu commit/push:Giáo viên/Báo cáo và popup thẻ học phí. Fetch HEAD=origin/main; rà12files không secret literal/private key, diff-check đạt. Kiểm tra code gần nhất lint/typecheck/build đạt,183files1031/1031tests; không DB/migration. SHA/remote xác minh báo trong chat, chưa xác minh deploy online.
+
+> B2C-REPORT-DESIGN-1 — hoàn thành local — Codex — 2026-10-17. Báo cáo theo ảnh:4KPI màu, picker tháng, avatar/sort/costicons/editbar; giữ số liệu/form. Lint/typecheck/build đạt,183files1031/1031tests; dev restart. Chưa QA browser độc lập/commit/push/deploy bản này.
+
+> B2C-TUITION-CARD-POPUPS — hoàn thành local — Codex — 2026-10-17. Bổ sung popup cho3thẻ tiền, giữ popup cần xử lý; nhóm đúng dữ liệu và bộ lọc hiện tại.
+
+> B2C-TEACHER-DESIGN-2 — hoàn thành local — Codex — 2026-10-17. Đồng bộ Giáo viên theo ảnh:4KPI nềncong/4màu, timetable cùng header, avatar/bảng gọn; giữ charts/export/KPIpopup/quyền. Lint/typecheck/build đạt;full1024tests và teacher5tests đạt. Dev restart, chưa commit/push/deploy bản này.
+
 > RELEASE-20261017-CENTER — Codex — 2026-10-17. User yêu cầu đưa code lên GitHub; gói151file đã rà không có environment secret literal/private key. HEAD=origin/main trước release. Code gần nhất lint/typecheck/build đạt,183files1024/1024tests; chỉ docs thay sau checks. Commit/push được user cho phép; SHA/remote xác minh báo trong chat, chưa xác minh deploy online.
 
 > B2C-PARENT-CARD-POPUPS — hoàn thành local — Codex — 2026-10-17. Bốn KPI Phụ huynh mở popup danh sách đúng nhóm, giữ bảng và bộ lọc ngoài.
@@ -1430,6 +1438,26 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-17] Codex — RELEASE-20261017-DASHBOARDS
+- User yêu cầu đưa code GitHub: giao diện Giáo viên/Báo cáo theo ảnh,3popup tiền học phí và regressions/docs/QAboard. Không DB/migration/quyền mới.
+- Fetch main trước release=HEAD, rà12files không environment secret literal/private key; diff-check đạt. Code mới nhất lint/typecheck/build exit0,183files1031/1031tests; chỉ cập nhật log sau checks.
+- Commit/push theo user; kết quả SHA/remote xác minh báo trong chat. Chưa xác minh deployment online hoặc QA browser độc lập.
+
+### [2026-10-17] Codex — B2C-REPORT-DESIGN-1
+- Theo ảnh:4KPI xanh lá/xanh/cam/hồng/icon trái/nền trang trí, calendar kỳ báo cáo, chương trình avatar5màu/cột màu/sort thật, chi phí icon từng dòng/tổng nền xanh/lương cũ cam, editbar icon/chevron. Không viền trên dày/sidebar/logo.
+- Giữ tổng/công thức/chọn tháng/trend/chi phí null/ghi chú/form lưu cũ. Nền SVG chỉ trang trí không biểu diễn số liệu giả. Bảng mobile outer scroll/inner minwidth để không cắt nội dung. Không DB/API hoặc tự lấy CRM. File monthly-report-dashboard/test/docs04/08/WORKLOG.
+- Lint/typecheck/build exit0;183files1031/1031tests, có regression số liệu/sort và giữ biểu mẫu. Build lại bản cuối sau chỉnh minwidth mobile, không thay logic sau tests. Dev restartlocalhost3000; chưa QA browser độc lập/commit/push/deploy bản này. Next xem Báo cáo theo phản hồi user.
+
+### [2026-10-17] Codex — B2C-TUITION-CARD-POPUPS
+- User báo click thẻ tiền không mở:3card làdiv. Đổi button/focus/dialog và thêm TuitionCardList: Tổng phải thu ghi danh cógói; Đãthu thu ròng>0 gồm trảmộtphần; Cònphảithu sốdư>0. Giữ4thẻ cần xử lý hiện có. Popup khớp filter/tổng, tìm/page20/empty/gói-phiếu thu, không đổi bảng ngoài. Không DB/API/quyền mới.
+- File dashboard/cardlist/test/docs04/08/QAboard/WORKLOG. Lint/typecheck/build exit0;183files1030/1030fulltests. Lượt đầu2testfail do regex Đãthu trùng nút sort; matcher thêm sốtiền để chọncard, targeted9/9 và full chạy lại đạt, giữ expectation hành vi.
+- Dev restartlocalhost3000; QAboard Codex Fixed/Verification Not Started. Chưa QA browser độc lập/commit/push/deploy bản này. Next kiểm popup các thẻ học phí.
+
+### [2026-10-17] Codex — B2C-TEACHER-DESIGN-2
+- User muốn Giáo viên theo ảnh: đồng bộ4KPI màu xanh lá/xanh dương/vàng/tím và nềncong nhẹ, panelbo16/viềnmảnh, avatar chữcái/bảng/actiongọn. Đưa link thời khóa biểu vào cùng header tháng/chuyên môn/thêm. Giữ donut/bar/tảiExcel/print/lịch dạy/KPIpopup/filter/paging và quyền account.
+- Giá trị specialization cũ chỉ ghi B2C hiển thị Chưa cập nhật ở bảng/chart/filter/export; không ghi DB/giả chuyên môn. FilenameExcel bỏ b2c theo preference. Sửa dashboard/teacherpage/test/docs04/08/WORKLOG; không DB/sidebar/logo.
+- Lint/typecheck/build exit0;183files1024/1024fulltests, sau thêm1case nhãnlegacy/timetable chạy focused5/5 và typecheck đạt. Không cộng tests trùng. Dev restartlocalhost3000; chưa QA browser độc lập/commit/push/deploy bản này. Next kiểm trực quan Giáo viên theo phản hồi user.
+
 ### [2026-10-17] Codex — RELEASE-20261017-CENTER
 - User yêu cầu commit/push GitHub. Bundle gồm lifecycle ghi danh, kiểm tra, nhận xét tháng, chứng chỉ/marketing, NPS, KPI thấp sĩ số, đổi nhãn và giao diện Tổng quan/Học phí/Phụ huynh/popup thẻ. Giữ các kiểm tra/quyền và tài liệu đi kèm.
 - Fetch origin: HEAD=origin/main trước release. Rà151file không environment secret literal/private key. Không thêm .env, ảnh dữ liệu hoặc secret. Sửa dòng trống EOF trong WORKLOG.
@@ -1438,23 +1466,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ### [2026-10-17] Codex — B2C-PARENT-CARD-POPUPS
 - User đổi4KPI thành danh sách popup: tổng/cóSĐT/cóZalo/thiếu. Popup tìm/page20/empty0/Xem-Sửa; Xem đónglist rồi mởdetail. Bảng và bộ lọc ngoài giữ nguyên, aria-haspopup thay pressed.
 - File parent-dashboard,ParentCardList,tests,docs03/04/08/WORKLOG; không API/DB/quyền mới. Lint/typecheck/build exit0;183files1024/1024tests, gồm cả4thẻ/empty/tìm/page/detail/mainfilter không đổi. Dev restartlocalhost3000; chưa QA browser độc lập/commit/push/deploy. Next xem popup theo phản hồi user.
-
-### [2026-10-17] Codex — B2C-PARENT-DESIGN-1
-- Theo ảnh user:4KPI màu/nềncong/tỷlệ thật, tìm tên/contact/con/lớp, lọc trạng thái-quan hệ-lớp, sort tên/avatar/contactmissing/quan hệ/Xem-Sửa-menu-copy, chọn hồ sơ và trang10/25/50. Chi tiết riêng hiện tất cảcon/lớp liên kết. Không viền trên dày/đổi logo-sidebar-header.
-- Manager/RLS loader đọc đủRPC50/page có email, enrich lớp bằng childcode→student→enrollment mở→class, không service-role/DB/migration. KPI toàn danh sách; thiếu thông tin là thiếuSĐT hoặcZalo, emailtùychọn. Giữ liên kết nhiều con và form cũ, showLabel tùychọn; không gửi tin hoặc sửa dữ liệu thật để QA.
-- File: parents/page,parent-dashboard component/domain/server,ParentDialog,3tests,docs01–04/08/WORKLOG. Lint/typecheck/build exit0,183files1019/1019tests (11mới). HTTP anonymousparents307 về login; dev restartlocalhost3000. Chưa QA browser độc lập/commit/push/deploy. Next B2C-PARENT-DESIGN-1-QA.
-
-### [2026-10-17] Codex — B2C-TUITION-DESIGN-1
-- Theo ảnh user chỉnh trang Học phí:4KPI iconmàu/nềncong, popup học viên cần xử lý20/page, bộ tìm/trạng thái/lớp/kỳ ghi danh, sortable table25/page, avatar/chip lớp/chưa gói/nợ đỏ. Checkbox tổng nợ chọn, không bulk mutation; không đổi logo/sidebar ngoài trang.
-- Manager session/RLS loader đọc đủ trangRPC hiệu lực (hủy/hoàn/điều chỉnh) và metadata ghi danh; lỗi không trả thiếu tổng, không service role/DB/migration. Tất cả KPI theo bộ lọc, attention đếm HV duy nhất nhưng popup theo ghi danh. Chưa gói không là nợ/miễn phí. Tái phí theo trạng thái/ngày, không giả đã có nhắc2buổi; kỳ dùng tháng ghi danh vì chưa có semester.
-- File: page, tuition-dashboard component/domain/server,3testfiles,docs01–04/08/WORKLOG. Giữ gói/phiếu thu/xử lý học phí/history và quyền cũ.
-- Lint/typecheck/build exit0,180files1008/1008tests. Test đầu1fail do span nối text thiếu khoảngtrắng; matcher whitespace linh hoạt, không đổi logic/expectation. HTTP anonymoustuition307 về login; dev restartlocalhost3000. Chưa QA browser độc lập/commit/push/deploy. Next B2C-TUITION-DESIGN-1-QA.
-
-### [2026-10-17] Codex — B2C-DISPLAY-LABELS-1
-- User xác nhận B2C chỉ là phạm vi, không phải nhãn: bỏ ở metadata/heading/label/button/description/caption/aria và thông báo trong module, trang lớp/giờ dạy GV; badge riêng đổi Trung tâm. Làm sạch97text bằng AST rồi rà thủ công; giữ identifier/route/RPC/mã hồ sơ/phân quyền/bộ chọn module. Liên kết tài khoản GV và mô tả dashboard liên quan đồng bộ.
-- File: pages admin/teacher, components/domain/server hiển thị thuộc b2c, teacher-account và teacher-home, docs kiến trúc/phase/WORKLOG; không DB. Test selectors cập nhật nhãn mới, giữ assertion hành vi; lượt đầu4fail do nhãn cũ, sau cập nhật177files998/998đạt. Lint/typecheck/build exit0; dev restartlocalhost3000.
-- Chưa QA browser độc lập/commit/push/deploy. Next B2C-DISPLAY-LABELS-1-QA: rà nội dung trong từng mục module.
-
-### [2026-10-17] Codex — B2C-OVERVIEW-NO-TOP-BORDERS
-- User yêu cầu mọi viền trên: gỡ border-t4 ở KPI và viền xanh lá Kết quả tháng còn lại. Tổng quan còn0class border-t; giữ nền màu/viền mảnh đồng đều/chấm màu/thanh tỷ lệ. Không DB.
-- Lint/typecheck/build exit0,177files998/998tests; dev restartlocalhost3000. Chưa QA browser độc lập/commit/push/deploy. Next xem Tổng quan theo phản hồi user.
