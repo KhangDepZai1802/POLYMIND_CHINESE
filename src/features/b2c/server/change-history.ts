@@ -41,6 +41,6 @@ export async function getB2CChangeHistory(input: B2CHistoryFilters) {
     );
   const { data, error, count } = await request;
   if (error)
-    throw new Error("Không tải được nhật ký thay đổi B2C. Vui lòng thử lại.");
+    throw new Error("Không tải được nhật ký thay đổi. Vui lòng thử lại.");
   return { rows: data ?? [], total: count ?? 0 };
 }

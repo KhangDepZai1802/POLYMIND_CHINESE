@@ -11,7 +11,7 @@ export const B2C_PROGRAMS = [
   {
     slug: "tieng-trung",
     title: "Tiếng Trung",
-    description: "Các lớp tiếng Trung B2C, tách biệt với chương trình doanh nghiệp VCB.",
+    description: "Các lớp tiếng Trung, tách biệt với chương trình doanh nghiệp VCB.",
     icon: BookOpen,
     iconClassName: "bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400",
   },

@@ -1,5 +1,33 @@
 # 02 — Thiết kế Database
 
+## B2C certificate results (2026-10-17)
+
+Migration SQL20261017000005 thêm b2c_certificate_results FKstudent restrict (loại/cấp độ/scoretext/ngày/marketing/notes/archive/actor), partialunique cho (student,lower(type),lower(level),exam_date) khi chưaarchive; b2c_certificate_history snapshot append-only và b2c_certificate_requests UUIDledger. Cả3bảng RLS, authenticated chỉmanager-read, requests khôngread, không directwrite. Quyền qua app.is_manager, không thêm quyền hoặc cấp dữ liệu marketing cho teacher.
+
+WriteRPC validates học viên/field/date thực tế/booleanmarketing, IDowner bất biến, expected_updated_at, advisory requestlock, rowlock, ledger unique và historyatomic. Duplicate attempt trả lỗi nghiệp vụ. ReadRPC filter literal search/caseinsens type/date/marketing/archive/student, counts distinctstudent, page25 (export5000). History20/page. Exportserveraction bắt buộc marketingyes/archivefalse/page0, giới hạn5000 khôngtruncate, projection6cột; không tiếp xúc bảng học phí/điểm danh hoặc publicpost.
+
+## B2C monthly comments (2026-10-17)
+
+SQL20261017000003 thêm b2c_monthly_comments unique(enrollment_id,report_month), mẫu JSON6mục/statusdraft-ready; bảng history append-only; deliveries snapshot message/recipient/version có delivery_method=manual_confirmation; requests UUID unique retry ledger. Cả4bảng RLS, authenticated không direct-write, requests không đọc. Reports/history theo view_comments và lớp; deliveries/parent-contact projection cần share_monthly_comments. Helper render message và resolve parent contacts chỉ gọi qua RPC được kiểm quyền.
+
+Write save/confirm_delivery enforce permission, khóa lớp/ghi danh/report, stalecheck, nội dung/month/ready, retryUUID/actor/payload và atomic history. Không-op giữ nguyênversion. Confirm phải có confirmed=true, version hiện tại và bảnready; DB resolve người nhận đã liên kết/guardian_zalo, không tin destination/messageclient. Snapshot message/recipient bất biến. Read RPC phân trangHV20, detailhistory/deliveries20; thông tin liên hệ redacted nếu thiếu share quyền.
+
+Thêm b2c_parents.email nullable validated; RPC save_b2c_parent_with_email gọi save_parent và updateemail trong cùngtransaction, manager-only. get_parents_page trả email. Không suy email HV hoặc sửa dữ liệu liên hệ hiện có. Capability share_monthly_comments mở whitelist/dependency, defaults/grants cũ giữ nguyên.
+
+Forward migration SQL20261017000004 kiểm expected_message/expected_destination khớp nội dung bản xem trước và liên hệ phụ huynh hiện tại khi xác nhận gửi. Report version, tên HV/lớp hoặc địa chỉ liên hệ thay đổi khi cửa sổ đang mở sẽ báo tải lại thay vì ghi nhận nhầm bản/địa chỉ mới. Không sửa migration03 đã áp.
+
+## B2C assessments (2026-10-17)
+
+Migration `20261017000002_b2c_assessments.sql`: b2c_assessments (lớp, loại midterm/final, ngày, max_score), b2c_assessment_results (unique exam/enrollment, score nullable, feedback), b2c_assessment_history (before/after, actor/name, lý do, học viên), b2c_assessment_requests (UUID primary key, payload/actor/result). Tất cả bật RLS; authenticated chỉ đọc theo capability và lớp, requests không cấp quyền đọc. Không cấp direct write, FK restrict giữ lịch sử. Điểm được DB kiểm theo max_score, ngày thi, precision và eligibility của ghi danh.
+
+Hai capability opt-in view_assessments/grade_assessments mở rộng whitelist và dependency trong save permissions, không đổi default/grant cũ. RPC write có permission fail-closed, khóa lớp/bài/ghi danh/kết quả, expected_updated_at chống stale, advisory request lock + ledger unique chống retry trùng, lịch sử và kết quả cùng transaction. RPC read/history phân quyền trước query, phân trang bài10/HV20/lịch sử20. Không dùng service role hoặc sửa các bảng thi chung B2B.
+
+## B2C enrollment lifecycle (2026-10-17)
+
+Migration `20261017000001_b2c_enrollment_lifecycle.sql` thêm trạng thái ghi danh `transferred`, thay unique toàn lịch sử `(class_id, student_id)` bằng unique partial cho ghi danh chưa kết thúc để cho phép quay lại lớp cũ. Bảng `b2c_enrollment_events` bật RLS, manager chỉ đọc, không cấp ghi/sửa/xóa; lưu request UUID duy nhất, payload, hai enrollment, hai lớp và snapshot tên, ngày hiệu lực/dự kiến quay lại, trạng thái trước/sau, lý do, actor thật và thời gian. FK restrict giữ lịch sử. Không backfill từ ghi chú.
+
+RPC write kiểm manager fail-closed, stale `updated_at`, khóa lớp theo thứ tự và ghi danh, xác thực chuyển/giữ chỗ/sức chứa; ghi danh đích + event + trạng thái cũ + sĩ số cùng transaction, retry UUID trả cùng kết quả. Trigger chặn đổi lớp trực tiếp và đổi trạng thái bảo lưu/chuyển lớp thiếu event trong transaction, không cho mở lại ghi danh transferred. Read RPC security invoker manager-only trả lịch sử học viên 20 dòng/trang, kể cả các lớp trước. Không dùng service role; không ghi vào gói học phí/phiếu thu/điểm danh.
+
 ## B2C-UNPRICED-CHECKIN-1 — SQL20261016000006
 
 b2c_teaching_sessions.hourly_rate nullable; teaching_hours vẫn sinh từ lịch khi checkout, salary null khi đã checkout nhưng chưa có giá. Giữ constraints ảnh, unique(class_id,starts_at), RLS và snapshot giá đã có. create_b2c_teaching_session cho manager tạo khi tài khoản hoạt động dù chưa có giá. prepare_b2c_meeting_checkin kiểm quyền check_teaching, mapping tài khoản B2C, ngày VN/phân công/trạng thái và trùng; khóa teacher/class/meeting cùng thứ tự trigger rồi INSERT có unique/on conflict; retry trả ID đã liên kết. Không tự materialize lịch tuần hoặc backfill dữ liệu thật. read_b2c_checkin_meetings chỉ đọc buổi hôm nay của người hiện tại. price_b2c_teaching_session chỉ manager bổ sung giá null có audit; không cho sửa giá đã chốt. get_b2c_teaching_page giữ lọc quyền và ẩn tiền, thêm pending_price_count cho người có view_pay.
@@ -863,3 +891,18 @@ CHECK b2c_student_attendance.status thêm makeup; absent đổi nhãn thành V�
 ### B2C-CLASS-WORKSPACE-1 — SQL13
 
 Bảng b2c_class_meetings, b2c_student_attendance, b2c_student_comments, b2c_class_requests, b2c_class_history đều RLS, không direct write/delete cho authenticated. SELECT manager, riêng requests không grant read; comments/history append-only. Read/write RPC security definer/search_path rỗng, guard manager, UUID replay cùng actor/payload, advisory UUID lock + unique request, parent class/meeting lock, expected_updated_at cho sửa. Attendance unique(meeting_id,enrollment_id), kiểm enrollment.class_id bằng meeting.class_id. Không mở raw B2C cho XKLĐ hoặc teacher. Read server25/trang, class-only fee aggregates từ packages/receipts; missing package null. SQL13 backfill actual b2c_teaching_sessions với source/creator gốc, trigger insert payroll mirror hoặc gắn buổi trùng thời gian; buổi linked chỉ xem trên trang này. Không tạo event lịch sử giả khi backfill. SQL13 cloud/history đã xác minh, pgTAP40/40 rollback;15 B2C history gap cũ không replay/repair.
+
+
+### B2C-PARENT-NPS-1 — Khảo sát hài lòng phụ huynh
+
+SQL20261017000006: b2c_nps_surveys/invitations/responses/history/requests đều RLS. Unique lớp/khảo sát, phụ huynh/khảo sát, invitation/response, request UUID. Không direct mutation; manager RPC có guard active role, khóa khảo sát rồi phiếu, stale updated_at, lịch sử actor thật và ledger transaction. Token ngẫu nhiên 256 bit chỉ lưu SHA256, không expose bảng invitation. Public RPC kiểm token/hash/đóng/hết hạn/thu hồi/liên kết; projection công khai không chứa tên phụ huynh, học viên, điểm hoặc ID. Retry đúng UUID/nội dung không lặp, response bất biến. Tổng NPS không phụ thuộc bộ tìm phụ huynh.
+
+
+### B2C-TUITION-DESIGN-1
+
+Không migration. Giữ RPC get_b2c_tuition_page hiện có làm nguồn số dư hiệu lực đã tính hủy/hoàn/điều chỉnh; đọc hết trang50 qua session manager/RLS, không service-role. Bổ sung đọc id/class_id/enrollment_date/tuition_end_date/status cùng quyền. Lỗi/mất trang/ghi danh thay đổi dừng hiển thị, không trả tổng tiền thiếu.
+
+
+### B2C-PARENT-DESIGN-1
+
+Không migration; reuse get_b2c_parents_page có email và liên kết nhiều con, đọc đủ trang50 dưới session manager/RLS. Metadata lớp lấy bằng code→student→enrollment→class, chỉ studying/on_hold/awaiting_renewal/overdue; không service-role. Lỗi đọc không trả coverage giả.

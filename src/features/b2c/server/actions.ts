@@ -12,14 +12,15 @@ import {
 import { requireManager } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { B2C_CUSTOMER_SOURCES } from "@/features/b2c/domain/customer-source";
+import { permissionRpc } from "./permission-rpc";
 
 export async function saveB2CParentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
   await requireManager();
   const parsed = b2cParentSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return zodToActionState(parsed.error);
   const v = parsed.data;
-  const { error } = await (await createClient()).rpc("save_b2c_parent", { p_id: v.id || null, p_name: v.full_name, p_phone: v.phone, p_zalo: v.zalo, p_student_codes: v.student_codes, p_relationship: v.relationship });
-  if (error) return { error: dbErrorToMessage(error) };
+  try { await permissionRpc("save_b2c_parent_with_email", { p_data: v }); }
+  catch (e) { return { error: e instanceof Error ? e.message : "Không lưu được phụ huynh." }; }
   revalidatePath("/admin/b2c", "layout");
   return { success: "Đã lưu thông tin phụ huynh." };
 }

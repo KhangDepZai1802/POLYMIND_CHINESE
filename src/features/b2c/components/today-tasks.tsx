@@ -208,7 +208,7 @@ export function TodayTasks({
                 </Button>
               ))}
             <span className="text-muted-foreground dark:border-border dark:bg-muted inline-flex items-center rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs">
-              B2C
+              Trung tâm
             </span>
           </div>
           <div className="relative w-full sm:max-w-md">
@@ -243,7 +243,7 @@ export function TodayTasks({
         ) : (
           <div className="dark:border-border overflow-hidden rounded-lg border border-blue-100">
             <DataTable
-              caption="Công việc cần xử lý của trung tâm B2C"
+              caption="Công việc cần xử lý của trung tâm"
               minWidthClass="min-w-[48rem]"
             >
               <DataTableHeader className="dark:bg-muted bg-blue-50/60">
@@ -294,7 +294,7 @@ export function TodayTasks({
                             {TASK_GROUPS[t.group]}
                           </span>
                           <span className="bg-muted text-muted-foreground rounded-md px-2.5 py-1 text-xs">
-                            B2C
+                            Trung tâm
                           </span>
                         </div>
                       </DataTableCell>

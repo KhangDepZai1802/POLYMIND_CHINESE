@@ -57,7 +57,7 @@ export function TeacherTimetable({ data }: { data: Model }) {
   return (
     <>
       <PageHeader
-        title="Thời khóa biểu giáo viên · B2C"
+        title="Thời khóa biểu giáo viên"
         description="Xem lịch dạy cố định hằng tuần theo giáo viên, lớp và khung giờ. Không cần ngày bắt đầu hoặc kết thúc."
       />
       <div className="bg-card mb-4 flex flex-wrap items-end gap-3 rounded-xl border p-4">
@@ -149,7 +149,7 @@ export function TeacherTimetable({ data }: { data: Model }) {
           </p>
         ) : (
           <DataTable
-            caption="Thời khóa biểu giáo viên B2C theo giờ bắt đầu và thứ học"
+            caption="Thời khóa biểu giáo viên theo giờ bắt đầu và thứ học"
             minWidthClass="min-w-[72rem]"
           >
             <DataTableHeader>

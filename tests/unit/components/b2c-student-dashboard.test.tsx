@@ -1,5 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/features/b2c/server/enrollment-lifecycle-actions", () => ({
+  readEnrollmentLifecycleAction: vi.fn(), saveEnrollmentLifecycleAction: vi.fn(),
+}));
 import { StudentDashboard } from "@/features/b2c/components/student-dashboard";
 vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
   ClassStudentAddDialog: () => <button>Thêm học viên</button>,
@@ -149,7 +153,7 @@ describe("student dashboard interactions", () => {
     fireEvent.change(screen.getByLabelText("Tìm học viên"), {
       target: { value: "Mẹ An" },
     });
-    const table = screen.getByRole("table", { name: "Danh sách học viên B2C" });
+    const table = screen.getByRole("table", { name: "Danh sách học viên" });
     expect(within(table).getAllByRole("row")).toHaveLength(2);
     expect(within(table).getByText("Lớp Hai")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Ngày nhập học từ"), {

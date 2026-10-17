@@ -20,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { program: slug } = await params;
   const program = getB2CProgram(slug);
-  return { title: program ? `${program.title} · B2C` : "Chương trình B2C" };
+  return { title: program ? `${program.title}` : "Chương trình" };
 }
 
 export default async function B2CProgramPage({

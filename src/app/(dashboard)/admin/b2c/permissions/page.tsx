@@ -2,7 +2,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { TeacherPermissionsDialog } from "@/features/b2c/components/teacher-permissions-dialog";
 import { readB2CPermissionAdminAction } from "@/features/b2c/server/permission-actions";
 
-export const metadata = { title: "Phân quyền B2C" };
+export const metadata = { title: "Phân quyền" };
 export const dynamic = "force-dynamic";
 
 export default async function B2CPermissionsPage() {
@@ -11,7 +11,7 @@ export default async function B2CPermissionsPage() {
     <>
       <PageHeader
         title="Phân quyền"
-        description="Quản lý quyền truy cập B2C theo từng giáo viên."
+        description="Quản lý quyền truy cập theo từng giáo viên."
       />
       <TeacherPermissionsDialog embedded initialData={data} />
     </>

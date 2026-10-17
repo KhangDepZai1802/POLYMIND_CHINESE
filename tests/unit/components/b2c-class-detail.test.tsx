@@ -7,6 +7,11 @@ import {
   act,
 } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+vi.mock("@/features/b2c/server/monthly-comment-actions", () => ({ readMonthlyCommentsAction: vi.fn(), readMonthlyCommentDetailAction: vi.fn(), saveMonthlyCommentAction: vi.fn(), confirmMonthlyCommentDeliveryAction: vi.fn() }));
+vi.mock("@/features/b2c/server/assessment-actions", () => ({ readB2CAssessmentsAction: vi.fn(), readB2CAssessmentHistoryAction: vi.fn(), saveB2CAssessmentAction: vi.fn() }));
+vi.mock("@/features/b2c/server/enrollment-lifecycle-actions", () => ({
+  readEnrollmentLifecycleAction: vi.fn(), saveEnrollmentLifecycleAction: vi.fn(),
+}));
 vi.mock("@/features/b2c/components/weekly-schedule-dialog", () => ({ WeeklyScheduleDialog: () => null }));
 vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
   ClassStudentAddDialog: () => <button>Thêm học viên</button>,

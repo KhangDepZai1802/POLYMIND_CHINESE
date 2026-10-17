@@ -855,7 +855,7 @@ export type Database = {
         Row: {
           learning_goal: string | null
           certificate_goal: string | null
-          status: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          status: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed" | "transferred"
           withdrawal_reason: string | null
           class_id: string
           created_at: string
@@ -878,7 +878,7 @@ export type Database = {
         Insert: {
           learning_goal?: string | null
           certificate_goal?: string | null
-          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed" | "transferred"
           withdrawal_reason?: string | null
           class_id: string
           created_at?: string
@@ -901,7 +901,7 @@ export type Database = {
         Update: {
           learning_goal?: string | null
           certificate_goal?: string | null
-          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed"
+          status?: "studying" | "on_hold" | "awaiting_renewal" | "overdue" | "withdrawn" | "completed" | "transferred"
           withdrawal_reason?: string | null
           class_id?: string
           created_at?: string

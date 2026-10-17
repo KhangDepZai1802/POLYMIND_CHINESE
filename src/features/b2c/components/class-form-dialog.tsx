@@ -47,7 +47,7 @@ export function B2CClassFormDialog({
         <DialogHeader>
           <DialogTitle>Thêm lớp {programTitle}</DialogTitle>
           <DialogDescription>
-            Dữ liệu được lưu riêng trong khu vực B2C, không ghi vào các lớp
+            Dữ liệu được lưu riêng trong khu vực trung tâm, không ghi vào các lớp
             doanh nghiệp VCB.
           </DialogDescription>
         </DialogHeader>

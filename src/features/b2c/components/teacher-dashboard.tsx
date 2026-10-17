@@ -138,9 +138,9 @@ export function TeacherDashboard({
     try {
       const { default: ExcelJS } = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("Giáo viên B2C");
+      const sheet = workbook.addWorksheet("Giáo viên");
       sheet.addRow([
-        `Giáo viên B2C — tình trạng lịch tháng ${month}; chỉ số lũy kế`,
+        `Giáo viên — tình trạng lịch tháng ${month}; chỉ số lũy kế`,
       ]);
       sheet.addRow(headings);
       filtered.forEach((r, i) => sheet.addRow(values(r, i)));
@@ -175,7 +175,7 @@ export function TeacherDashboard({
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[#102752] dark:text-white">
-            Giáo viên B2C
+            Giáo viên
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Quản lý, theo dõi tình trạng giáo viên tại trung tâm.
@@ -495,7 +495,7 @@ export function TeacherDashboard({
         <div className="overflow-x-auto rounded-lg border border-slate-100 dark:border-slate-800 print:overflow-visible">
           <table className="w-full min-w-[1150px] text-left text-[11px] print:min-w-0">
             <caption className="sr-only">
-              Giáo viên B2C và các chỉ số lũy kế
+              Giáo viên và các chỉ số lũy kế
             </caption>
             <thead className="bg-[#edf3fb] text-[#4c638a] dark:bg-slate-800 dark:text-slate-300">
               <tr>
@@ -582,7 +582,7 @@ export function TeacherDashboard({
             khi chưa có ghi danh. Chi phí GV / doanh thu = tiền công đủ chấm
             công / học phí thực thu các lớp phụ trách. Hết hạn rồi đóng tiếp đối
             chiếu hạn hiện tại, chưa có lịch sử đổi hạn. Đóng từ 2 lần bao gồm
-            đóng nhiều đợt. Chuyên cần chưa có điểm danh học viên B2C; mẫu số
+            đóng nhiều đợt. Chuyên cần chưa có điểm danh học viên; mẫu số
             rỗng và dữ liệu thiếu hiển thị —. Lớp được đối chiếu tên giáo viên
             duy nhất, hồ sơ trùng tên không tự gán chỉ số.
           </p>

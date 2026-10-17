@@ -5,7 +5,7 @@ import { B2CMonthlyReportDashboard } from "@/features/b2c/components/monthly-rep
 import { getB2CMonthlyReports } from "@/features/b2c/server/queries";
 import { requireManager } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Báo cáo hoạt động B2C" };
+export const metadata: Metadata = { title: "Báo cáo hoạt động" };
 
 export default async function B2CReportsPage() {
   await requireManager();
@@ -20,7 +20,7 @@ export default async function B2CReportsPage() {
   return (
     <>
       <PageHeader
-        title="Báo cáo hoạt động B2C"
+        title="Báo cáo hoạt động"
         description="Theo dõi học viên, số tiết, doanh thu, chi phí và lợi nhuận theo tháng của riêng khối trung tâm."
       />
       <B2CMonthlyReportDashboard reports={reports} initialPeriod={initialPeriod} />

@@ -9,7 +9,7 @@ async function readAll<T>(
   const rows: T[] = [];
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await read(offset);
-    if (error) throw new Error("Không tải được chỉ số giáo viên B2C.");
+    if (error) throw new Error("Không tải được chỉ số giáo viên.");
     rows.push(...(data ?? []));
     if (!data || data.length < 1000) return rows;
   }

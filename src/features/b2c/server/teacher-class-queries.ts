@@ -45,7 +45,7 @@ export async function getMyB2CToday() {
   const { data, error } = await (
     await createClient()
   ).rpc("read_my_b2c_today", {});
-  if (error) throw new Error("Không tải được lịch buổi B2C hôm nay.");
+  if (error) throw new Error("Không tải được lịch buổi hôm nay.");
   return data as unknown as {
     rows: TeacherB2CMeetingToday[];
     override_class_ids: string[];
@@ -57,7 +57,7 @@ export async function getMyB2CClasses() {
   const { data, error } = await (
     await createClient()
   ).rpc("read_my_b2c_classes", {});
-  if (error) throw new Error("Không tải được lớp B2C được phân công.");
+  if (error) throw new Error("Không tải được lớp được phân công.");
   return (data as unknown as { rows: TeacherB2CClass[] }).rows;
 }
 
@@ -77,7 +77,7 @@ export async function getMyB2CClass(
     p_query: query,
   });
   if (error?.code === "42501") return null;
-  if (error) throw new Error("Không tải được chi tiết lớp B2C.");
+  if (error) throw new Error("Không tải được chi tiết lớp.");
   return data as unknown as {
     class: TeacherB2CClass;
     rows: TeacherB2CRow[];

@@ -35,7 +35,7 @@ export function TeachingSessionDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Buổi dạy B2C</DialogTitle>
+          <DialogTitle>Buổi dạy</DialogTitle>
           <DialogDescription>
             Giờ Việt Nam. Đơn giá hiện tại được lưu riêng cho buổi này.
           </DialogDescription>

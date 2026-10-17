@@ -1,5 +1,7 @@
 import { CustomerSourceCard } from "@/features/b2c/components/customer-source-card";
 import { ClassOccupancyProgress } from "@/features/b2c/components/class-occupancy-progress";
+import { LowEnrollmentCard } from "@/features/b2c/components/low-enrollment-card";
+import { isLowEnrollment } from "@/features/b2c/domain/class-enrollment-warning";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart3, BookOpen, School, TrendingUp, Users } from "lucide-react";
@@ -22,7 +24,7 @@ import {
 import { requireManager } from "@/lib/auth/session";
 import { formatCurrency } from "@/lib/dates";
 
-export const metadata: Metadata = { title: "Tổng quan B2C" };
+export const metadata: Metadata = { title: "Tổng quan" };
 
 export default async function B2COverviewPage() {
   const [user, overview, customerSources] = await Promise.all([
@@ -31,37 +33,43 @@ export default async function B2COverviewPage() {
     getB2CCustomerSourceOverview(),
   ]);
   const report = overview.latestReport;
+  const lowEnrollmentClasses = overview.classes
+    .filter((item) => isLowEnrollment(item.actualEnrollmentCount, item.status))
+    .sort((a, b) => a.actualEnrollmentCount - b.actualEnrollmentCount);
 
   return (
     <>
       <PageHeader
         title={`Xin chào, ${user.fullName}`}
-        description="Tổng quan hoạt động lớp trung tâm (B2C). Số liệu được tách riêng hoàn toàn với các lớp doanh nghiệp."
+        description="Tổng quan hoạt động lớp trung tâm. Số liệu được tách riêng hoàn toàn với các lớp doanh nghiệp."
         action={<Link href="/admin/b2c/today" className="text-primary text-sm font-medium hover:underline">Mở việc cần xử lý hôm nay →</Link>}
       />
 
       <section aria-labelledby="b2c-kpi-heading">
         <h2 id="b2c-kpi-heading" className="sr-only">
-          Số liệu tổng quan B2C
+          Số liệu tổng quan
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <Stat
             icon={Users}
+            cardClassName="border-teal-200 bg-linear-to-br from-teal-50 to-white dark:border-teal-900 dark:from-teal-950/60 dark:to-card"
             iconClassName="bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-400"
-            label="Học viên B2C"
+            label="Học viên"
             value={overview.studentCount}
             hint={`${overview.enrollmentCount} lượt ghi danh`}
             href="/admin/b2c/students"
           />
           <Stat
             icon={School}
+            cardClassName="border-blue-200 bg-linear-to-br from-blue-50 to-white dark:border-blue-900 dark:from-blue-950/60 dark:to-card"
             label="Lớp đang hoạt động"
             value={overview.activeClassCount}
-            hint="Chỉ tính lớp B2C"
+            hint="Đang tổ chức giảng dạy"
             href="/admin/b2c"
           />
           <Stat
             icon={BookOpen}
+            cardClassName="border-violet-200 bg-linear-to-br from-violet-50 to-white dark:border-violet-900 dark:from-violet-950/60 dark:to-card"
             iconClassName="bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400"
             label="Nhóm đang có lớp"
             value={overview.programCount}
@@ -70,6 +78,7 @@ export default async function B2COverviewPage() {
           />
           <Stat
             icon={TrendingUp}
+            cardClassName="border-emerald-200 bg-linear-to-br from-emerald-50 to-white dark:border-emerald-900 dark:from-emerald-950/60 dark:to-card"
             iconClassName="bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
             label="Doanh thu gần nhất"
             value={report ? formatCurrency(report.revenue) : "—"}
@@ -80,10 +89,11 @@ export default async function B2COverviewPage() {
             }
             href="/admin/b2c/reports"
           />
+          <LowEnrollmentCard classes={lowEnrollmentClasses} />
         </div>
       </section>
 
-      <Card className="mt-4 gap-4 py-4">
+      <Card className="mt-4 gap-4 border-amber-200 bg-linear-to-br from-amber-50/80 to-card py-4 dark:border-amber-900 dark:from-amber-950/30">
         <CardHeader className="px-4">
           <CardTitle asChild className="text-base">
             <h2>Điểm hòa vốn ước tính</h2>
@@ -163,7 +173,7 @@ export default async function B2COverviewPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-4 gap-4 py-4">
+      <Card className="mt-4 gap-4 border-sky-200 bg-linear-to-br from-sky-50/60 to-card py-4 dark:border-sky-900 dark:from-sky-950/20">
         <CardHeader className="px-4">
           <CardTitle asChild className="text-base">
             <h2 className="flex items-center gap-2">
@@ -193,6 +203,16 @@ export default async function B2COverviewPage() {
               other: "bg-rose-500",
               unknown: "bg-slate-400",
             };
+            const sourceSurfaceMap: Record<string, string> = {
+              facebook: "border-blue-200 bg-blue-50/80 dark:border-blue-900 dark:bg-blue-950/30",
+              zalo: "border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30",
+              tiktok: "border-slate-300 bg-slate-100/80 dark:border-slate-700 dark:bg-slate-800/50",
+              referral: "border-violet-200 bg-violet-50/80 dark:border-violet-900 dark:bg-violet-950/30",
+              walk_in: "border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30",
+              school: "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30",
+              other: "border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/30",
+              unknown: "border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/40",
+            };
             return (
               <CustomerSourceCard
                 key={row.source ?? "unknown"}
@@ -201,6 +221,7 @@ export default async function B2COverviewPage() {
                 count={row.count}
                 percent={percent}
                 color={sourceColorMap[row.source ?? "unknown"] ?? "bg-slate-400"}
+                className={sourceSurfaceMap[row.source ?? "unknown"] ?? sourceSurfaceMap.unknown}
               />
             );
           })}
@@ -214,12 +235,12 @@ export default async function B2COverviewPage() {
               <h2>Tổng hợp theo chương trình</h2>
             </CardTitle>
             <p className="text-text-secondary mt-1 text-sm">
-              Số lớp, lượt ghi danh và sức chứa của từng nhóm B2C.
+              Số lớp, lượt ghi danh và sức chứa của từng nhóm.
             </p>
           </CardHeader>
           <CardContent className="p-0">
             <DataTable
-              caption="Tổng hợp hoạt động theo nhóm chương trình B2C"
+              caption="Tổng hợp hoạt động theo nhóm chương trình"
               minWidthClass="min-w-[34rem]"
             >
               <DataTableHeader>
@@ -229,6 +250,7 @@ export default async function B2COverviewPage() {
                   <DataTableHead numeric>Tổng số lớp</DataTableHead>
                   <DataTableHead numeric>Ghi danh</DataTableHead>
                   <DataTableHead numeric>Sức chứa</DataTableHead>
+                  <DataTableHead>Tỷ lệ lấp đầy</DataTableHead>
                 </tr>
               </DataTableHeader>
               <DataTableBody>
@@ -237,8 +259,9 @@ export default async function B2COverviewPage() {
                     <DataTableCell sticky>
                       <Link
                         href={`/admin/b2c/${program.slug}`}
-                        className="focus-visible:ring-ring rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                        className="focus-visible:ring-ring inline-flex items-center gap-2 rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
                       >
+                        <span aria-hidden className={`size-2.5 shrink-0 rounded-full ${program.slug === "tieng-anh" ? "bg-blue-500" : program.slug === "tieng-trung" ? "bg-amber-500" : program.slug === "tieng-viet" ? "bg-emerald-500" : program.slug === "lop-ve" ? "bg-violet-500" : "bg-pink-500"}`} />
                         {program.title}
                       </Link>
                     </DataTableCell>
@@ -250,6 +273,7 @@ export default async function B2COverviewPage() {
                       {program.enrollmentCount}
                     </DataTableCell>
                     <DataTableCell numeric>{program.capacity}</DataTableCell>
+                    <DataTableCell><ProgramOccupancy count={program.enrollmentCount} capacity={program.capacity} name={program.title} slug={program.slug} /></DataTableCell>
                   </DataTableRow>
                 ))}
               </DataTableBody>
@@ -257,7 +281,7 @@ export default async function B2COverviewPage() {
           </CardContent>
         </Card>
 
-        <Card className="min-w-0 gap-4 py-4">
+        <Card className="min-w-0 gap-4 bg-linear-to-br from-emerald-50/80 to-card py-4 dark:from-emerald-950/20">
           <CardHeader className="px-4">
             <CardTitle asChild className="text-base">
               <h2>Kết quả tháng gần nhất</h2>
@@ -286,7 +310,7 @@ export default async function B2COverviewPage() {
               </dl>
             ) : (
               <p className="text-text-secondary text-sm">
-                Chưa có báo cáo tháng B2C để tổng hợp.
+                Chưa có báo cáo tháng để tổng hợp.
               </p>
             )}
             <Link
@@ -294,21 +318,21 @@ export default async function B2COverviewPage() {
               className="text-primary mt-4 inline-flex items-center gap-1 text-sm font-medium hover:underline"
             >
               <BarChart3 className="size-4" aria-hidden />
-              Xem báo cáo B2C
+              Xem báo cáo
             </Link>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mt-4 gap-4 py-4">
+      <Card className="mt-4 gap-4 bg-linear-to-br from-blue-50/60 to-card py-4 dark:from-blue-950/20">
         <CardHeader className="px-4">
           <CardTitle asChild className="text-base">
-            <h2>Các lớp B2C đang hoạt động</h2>
+            <h2>Các lớp đang hoạt động</h2>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <DataTable
-            caption="Danh sách lớp B2C đang hoạt động"
+            caption="Danh sách lớp đang hoạt động"
             minWidthClass="min-w-[46rem]"
           >
             <DataTableHeader>
@@ -357,12 +381,20 @@ export default async function B2COverviewPage() {
   );
 }
 
+function ProgramOccupancy({ count, capacity, name, slug }: { count: number; capacity: number; name: string; slug: string }) {
+  if (capacity <= 0) return <span className="text-muted-foreground text-xs">Chưa có sức chứa</span>;
+  const percent = count / capacity * 100;
+  const color = slug === "tieng-viet" ? "from-emerald-500 to-teal-400" : slug === "lop-ve" || slug === "kem-1-1" ? "from-pink-500 to-fuchsia-400" : "from-blue-500 to-sky-400";
+  return <div className="flex min-w-36 items-center gap-3"><span role="progressbar" aria-label={`Tỷ lệ lấp đầy ${name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, percent)} aria-valuetext={`${percent.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}%`} className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><span className={`block h-full rounded-full bg-linear-to-r ${color}`} style={{ width: `${Math.min(100, percent)}%` }} /></span><span className="min-w-9 text-right text-xs tabular-nums">{percent.toLocaleString("vi-VN", { maximumFractionDigits: 0 })}%</span></div>;
+}
+
 function Stat({
   icon: Icon,
   label,
   value,
   hint,
   href,
+  cardClassName = "",
   iconClassName = "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
 }: {
   icon: typeof Users;
@@ -371,13 +403,14 @@ function Stat({
   hint: string;
   href: string;
   iconClassName?: string;
+  cardClassName?: string;
 }) {
   return (
     <Link
       href={href}
       className="focus-visible:ring-ring min-w-0 rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
     >
-      <Card className="hover:border-primary/40 h-full py-0 transition-colors">
+      <Card className={`hover:border-primary/40 h-full py-0 transition-colors hover:shadow-md ${cardClassName}`}>
         <CardContent className="flex items-start gap-3 p-4">
           <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${iconClassName}`}>
             <Icon className="size-5" aria-hidden />

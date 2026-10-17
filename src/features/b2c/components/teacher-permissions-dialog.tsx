@@ -102,7 +102,7 @@ export function TeacherPermissionsDialog({
       <PermissionsContent embedded={embedded}>
         <DialogHeader>
           <Title className="text-lg font-semibold">
-            Phân quyền giáo viên B2C
+            Phân quyền giáo viên
           </Title>
           <Description className="text-muted-foreground text-sm">
             Chọn giáo viên và tài khoản đã có. Các quyền áp dụng trong lớp được
@@ -123,10 +123,10 @@ export function TeacherPermissionsDialog({
               onChange={(e) => setQuery(e.target.value)}
             />
             <label className="grid gap-2 text-sm">
-              Giáo viên B2C
+              Giáo viên
               <select
                 className="h-10 rounded-md border px-3"
-                aria-label="Giáo viên B2C"
+                aria-label="Giáo viên"
                 value={selected}
                 disabled={saving}
                 onChange={(e) => {
@@ -220,7 +220,7 @@ export function TeacherPermissionsDialog({
                   <table className="w-full text-left text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="p-3">Nghiệp vụ B2C</th>
+                        <th className="p-3">Nghiệp vụ</th>
                         <th className="p-3 text-center">Cho phép</th>
                       </tr>
                     </thead>

@@ -37,7 +37,7 @@ export async function saveB2CPermissionsAction(input: unknown) {
     });
     revalidatePath("/admin/b2c/teachers");
     revalidatePath("/teacher", "layout");
-    return { success: "Đã lưu phân quyền giáo viên B2C." };
+    return { success: "Đã lưu phân quyền giáo viên." };
   } catch (error) {
     return {
       error:

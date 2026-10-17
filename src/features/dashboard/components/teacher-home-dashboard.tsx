@@ -355,7 +355,7 @@ export function TeacherHomeDashboard(p: Props) {
               <Empty
                 icon={Users}
                 title="Chưa có lớp doanh nghiệp được phân công"
-                description="Các lớp trung tâm B2C của bạn hiển thị ở phía trên."
+                description="Các lớp trung tâm của bạn hiển thị ở phía trên."
               />
             ) : (
               <ul className="divide-y dark:divide-slate-800">

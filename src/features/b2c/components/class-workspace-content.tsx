@@ -3,6 +3,8 @@ import NextLink from "next/link";
 import { ClassOccupancyProgress } from "./class-occupancy-progress";
 import { createContext, useContext, type ComponentProps } from "react";
 import type { readClassWorkspaceAction } from "../server/class-workspace-read";
+import { AssessmentsPanel } from "./assessments-panel";
+import { MonthlyCommentsPanel } from "./monthly-comments-panel";
 import { formatInTimeZone } from "date-fns-tz";
 import { vi } from "date-fns/locale";
 import { formatCurrency, formatDate, formatDateOnly } from "@/lib/dates";
@@ -93,6 +95,8 @@ export function ClassWorkspaceContent({
     attendance: "mark_attendance",
     tuition: "view_tuition",
     comments: "view_comments",
+    assessments: "view_assessments",
+    monthly_comments: "view_comments",
   } as const;
   const {
     cls,
@@ -635,13 +639,15 @@ export function ClassWorkspaceContent({
           </div>
         </>
       )}
-      {!result.rows.length && filters.tab !== "schedule" && (
+      {filters.tab === "assessments" && can("view_assessments") && <AssessmentsPanel key={classId} classId={classId} today={today} canGrade={can("grade_assessments")} />}
+      {filters.tab === "monthly_comments" && can("view_comments") && <MonthlyCommentsPanel key={classId} classId={classId} today={today} canWrite={can("write_comments")} canShare={can("share_monthly_comments")} />}
+      {!result.rows.length && !["schedule", "assessments", "monthly_comments"].includes(filters.tab) && (
         <p className="text-muted-foreground py-8 text-center">
           Chưa có dữ liệu phù hợp trong mục{" "}
           {CLASS_TABS[filters.tab].toLowerCase()}.
         </p>
       )}
-      {filters.tab !== "schedule" && <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">
+      {!["schedule", "assessments", "monthly_comments"].includes(filters.tab) && <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">
         <p>
           {result.total} kết quả · Trang {filters.page + 1}/
           {Math.max(1, Math.ceil(result.total / 25))}

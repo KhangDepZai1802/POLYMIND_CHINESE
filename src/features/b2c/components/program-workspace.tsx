@@ -19,6 +19,7 @@ import { B2CClassFormDialog } from "@/features/b2c/components/class-form-dialog"
 import { B2CClassDetailDialog } from "@/features/b2c/components/class-detail-dialog";
 import { cn } from "@/lib/utils";
 import { B2CStudentStatusDialog } from "@/features/b2c/components/student-status-dialog";
+import { EnrollmentLifecycleDialog } from "./enrollment-lifecycle-dialog";
 import { B2C_CUSTOMER_SOURCE_LABELS } from "@/features/b2c/domain/customer-source";
 import { B2C_LEARNING_GOAL_LABELS } from "@/features/b2c/domain/learning-goal";
 import { B2C_STUDENT_STATUS_LABELS, B2C_STUDENT_STATUS_COLORS, type B2CStudentStatus } from "@/features/b2c/domain/student-status";
@@ -134,7 +135,7 @@ export function B2CProgramWorkspace({
           href="/admin/b2c"
           className="hover:text-foreground hover:underline"
         >
-          Lớp trung tâm (B2C)
+          Lớp trung tâm
         </Link>
         <ChevronRight className="size-4" aria-hidden />
         <span className="text-foreground">{program.title}</span>
@@ -351,6 +352,7 @@ export function B2CStudentsTable({ students }: { students: StudentRow[] }) {
                   <td className="px-3 py-3">{item.learningGoal ? B2C_LEARNING_GOAL_LABELS[item.learningGoal] : "Chưa xác định"}</td>
                   <td className="px-3 py-3">{item.certificateGoal ?? "—"}</td>
                   <td className="bg-card sticky right-0 z-10 px-3 py-3 text-right shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.2)]">
+                    <EnrollmentLifecycleDialog enrollmentId={item.id} fullName={item.fullName} className={item.className} />
                     <B2CStudentStatusDialog enrollmentId={item.id} fullName={item.fullName} className={item.className} status={item.studentStatus} reason={item.withdrawalReason}
                       programSlug={item.programSlug} phone={item.phone} salesperson={item.salesperson} enrollmentDate={item.enrollmentDate}
                       learningStartDate={item.learningStartDate} tuitionEndDate={item.tuitionEndDate} customerSource={item.customerSource} referrerName={item.referrerName} learningGoal={item.learningGoal} certificateGoal={item.certificateGoal} />
@@ -558,7 +560,7 @@ function EmptyTab({
       </p>
       <p className="text-muted-foreground mt-1 max-w-md text-sm">
         Dữ liệu {programTitle} sẽ được hiển thị tại đây sau khi hoàn tất bước
-        nhập danh sách B2C.
+        nhập danh sách.
       </p>
     </div>
   );

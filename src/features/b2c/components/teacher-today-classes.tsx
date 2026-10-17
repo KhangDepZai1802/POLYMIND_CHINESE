@@ -17,10 +17,10 @@ export function TeacherB2CTodayClasses({
 }) {
   if (!classes.length && !meetings.length) return null;
   return (
-    <section aria-label="Lịch B2C hôm nay theo lịch tuần">
+    <section aria-label="Lịch hôm nay theo lịch tuần">
       {!!meetings.length && (
         <>
-          <p className="sr-only">Buổi học B2C hôm nay</p>
+          <p className="sr-only">Buổi học hôm nay</p>
           <ul className="space-y-3">
             {meetings.map((m) => (
               <li
@@ -58,7 +58,7 @@ export function TeacherB2CTodayClasses({
       )}
       {!!classes.length && (
         <p className="text-muted-foreground px-6 pt-4 text-sm">
-          Lớp trung tâm B2C · Theo lịch tuần
+          Lớp trung tâm · Theo lịch tuần
         </p>
       )}
       <ul className="mt-3 space-y-3">

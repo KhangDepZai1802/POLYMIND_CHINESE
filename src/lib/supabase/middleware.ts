@@ -85,9 +85,9 @@ export async function updateSession(request: NextRequest) {
   // Đây là TỐI ƯU, không phải phân quyền — quyền vẫn do RLS quyết định, và
   // route `/t` nằm ngoài `(dashboard)` nên không có `requireUser()` bị bỏ qua.
   //
-  // Chỉ áp cho `/t`, KHÔNG áp cho các path public khác: `/login` vẫn phải đọc
-  // phiên để đá người đã đăng nhập về đúng trang chủ.
-  if (isPublicFlashcardPath(request.nextUrl.pathname)) {
+  // `/nps/[token]` cũng dùng client riêng không cookie và RPC kiểm token.
+  // `/login` vẫn phải đọc phiên để chuyển người đã đăng nhập về trang chủ.
+  if (isPublicFlashcardPath(request.nextUrl.pathname) || request.nextUrl.pathname === "/nps" || request.nextUrl.pathname.startsWith("/nps/")) {
     return NextResponse.next({ request });
   }
 

@@ -4,6 +4,24 @@ import type { Json } from "@/types/database";
 
 // Forward migration RPCs, typed here until the next full database type generation.
 type PermissionRpc =
+  | "read_b2c_nps_admin"
+  | "find_b2c_nps_classes"
+  | "save_b2c_nps_survey"
+  | "issue_b2c_nps_invitation"
+  | "revoke_b2c_nps_invitation"
+  | "read_b2c_certificate_results"
+  | "write_b2c_certificate_result"
+  | "read_b2c_certificate_history"
+  | "find_b2c_certificate_students"
+  | "read_b2c_monthly_comments"
+  | "read_b2c_monthly_comment_detail"
+  | "write_b2c_monthly_comment"
+  | "save_b2c_parent_with_email"
+  | "read_b2c_assessments"
+  | "write_b2c_assessment"
+  | "read_b2c_assessment_history"
+  | "read_b2c_enrollment_lifecycle"
+  | "write_b2c_enrollment_lifecycle"
   | "read_b2c_checkin_meetings"
   | "prepare_b2c_meeting_checkin"
   | "price_b2c_teaching_session"
@@ -34,7 +52,7 @@ export async function permissionRpc<T>(
         error.code,
       )
         ? error.message
-        : "Không xử lý được yêu cầu B2C. Vui lòng thử lại.",
+        : "Không xử lý được yêu cầu. Vui lòng thử lại.",
     );
   return data as T;
 }

@@ -20,7 +20,7 @@ export function TeacherB2CClassCards({
   return (
     <section
       className="space-y-3"
-      aria-label="Lớp trung tâm B2C được phân công"
+      aria-label="Lớp trung tâm được phân công"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-[#102752] dark:text-white">
@@ -28,7 +28,7 @@ export function TeacherB2CClassCards({
             className="size-5 text-blue-600 dark:text-blue-400"
             aria-hidden
           />
-          Lớp trung tâm B2C ({classes.length})
+          Lớp trung tâm ({classes.length})
         </h2>
         {compact && (
           <Link

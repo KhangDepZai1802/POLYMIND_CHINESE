@@ -57,6 +57,7 @@ export const STATUS_PRIORITY: (B2CStudentStatus | "unassigned")[] = [
   "on_hold",
   "withdrawn",
   "completed",
+  "transferred",
   "unassigned",
 ];
 export function summarizeStudentStatus(
@@ -74,7 +75,7 @@ export function tuitionExpiring(
 ) {
   if (
     !enrollment.tuition_end_date ||
-    ["withdrawn", "completed"].includes(enrollment.status)
+    ["withdrawn", "completed", "transferred"].includes(enrollment.status)
   )
     return false;
   const end = new Date(`${today}T00:00:00Z`);

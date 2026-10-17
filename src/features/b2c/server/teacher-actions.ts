@@ -26,5 +26,5 @@ export async function saveB2CTeacherAction(
   if (!data)
     return { error: "Không tìm thấy giáo viên hoặc bạn không có quyền sửa." };
   revalidatePath("/admin/b2c/teachers");
-  return { success: "Đã lưu hồ sơ giáo viên B2C." };
+  return { success: "Đã lưu hồ sơ giáo viên." };
 }

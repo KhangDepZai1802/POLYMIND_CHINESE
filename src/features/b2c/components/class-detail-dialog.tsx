@@ -110,7 +110,7 @@ export function B2CClassDetailDialog({
         <DialogHeader>
           <DialogTitle>{classRow.name}</DialogTitle>
           <DialogDescription>
-            Mã lớp {classRow.code} · Chi tiết lớp trung tâm (B2C)
+            Mã lớp {classRow.code} · Chi tiết lớp trung tâm
           </DialogDescription>
         </DialogHeader>
         <nav aria-label="Các mục chi tiết lớp" className="flex flex-wrap gap-2">

@@ -7,7 +7,7 @@ import { B2C_PROGRAMS } from "@/features/b2c/domain/programs";
 import { getB2CStudentCounts } from "@/features/b2c/server/queries";
 import { requireManager } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Lớp trung tâm (B2C)" };
+export const metadata: Metadata = { title: "Lớp trung tâm" };
 
 export default async function B2CDashboardPage() {
   await requireManager();
@@ -16,7 +16,7 @@ export default async function B2CDashboardPage() {
   return (
     <>
       <PageHeader
-        title="Lớp trung tâm (B2C)"
+        title="Lớp trung tâm"
         description="Không gian quản lý riêng cho học viên lẻ và các lớp mở trực tiếp tại trung tâm."
       />
 

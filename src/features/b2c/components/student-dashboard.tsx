@@ -65,6 +65,7 @@ const palette = [
   "#fbbf24",
   "#94a3b8",
   "#a78bfa",
+  "#818cf8",
   "#cbd5e1",
 ];
 type Group = "all" | "studying" | "expiring" | "classes";
@@ -236,7 +237,7 @@ export function StudentDashboard({
     try {
       const { default: ExcelJS } = await import("exceljs");
       const book = new ExcelJS.Workbook();
-      const sheet = book.addWorksheet("Học viên B2C");
+      const sheet = book.addWorksheet("Học viên");
       sheet.addRow([
         "Mã học viên",
         "Học viên",
@@ -326,7 +327,7 @@ export function StudentDashboard({
     <div className="-m-4 min-h-full space-y-4 bg-gradient-to-br from-blue-50/80 via-slate-50/60 to-sky-50/70 p-4 text-slate-700 md:-m-6 md:p-6 dark:from-slate-950 dark:to-slate-900 dark:text-slate-200">
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-[#102752] dark:text-white">
-          Học viên trung tâm (B2C)
+          Học viên trung tâm
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           Quản lý toàn bộ học viên thuộc các lớp Anh, Trung, Việt, Vẽ và Kèm 1-1

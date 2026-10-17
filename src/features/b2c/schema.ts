@@ -10,6 +10,7 @@ export const b2cParentSchema = z.object({
   full_name: z.string().trim().min(1, "Vui lòng nhập tên phụ huynh").max(200),
   phone: z.union([z.literal(""), z.string().regex(/^[0-9]{10}$/, "SĐT phải có đúng 10 chữ số")]),
   zalo: z.string().trim().max(200),
+  email: z.union([z.literal(""), z.email().max(254)]).default(""),
   relationship: z.enum(PARENT_RELATIONSHIPS),
   student_codes: z.string().max(20000).transform((value) => [...new Set(value.split(/[\s,;]+/).filter(Boolean).map((code) => code.toUpperCase()))]).pipe(z.array(z.string().regex(/^B2C-HV\d{6,}$/, "Mã học viên không hợp lệ")).max(100)),
 });

@@ -1,5 +1,5 @@
 export const B2C_STUDENT_STATUSES = [
-  "studying", "on_hold", "awaiting_renewal", "overdue", "withdrawn", "completed",
+  "studying", "on_hold", "awaiting_renewal", "overdue", "withdrawn", "completed", "transferred",
 ] as const;
 
 export type B2CStudentStatus = (typeof B2C_STUDENT_STATUSES)[number];
@@ -11,6 +11,7 @@ export const B2C_STUDENT_STATUS_LABELS: Record<B2CStudentStatus, string> = {
   overdue: "Nợ phí",
   withdrawn: "Nghỉ",
   completed: "Hoàn thành",
+  transferred: "Đã chuyển lớp",
 };
 
 export const B2C_STUDENT_STATUS_COLORS: Record<B2CStudentStatus, string> = {
@@ -20,4 +21,5 @@ export const B2C_STUDENT_STATUS_COLORS: Record<B2CStudentStatus, string> = {
   overdue: "bg-rose-100 text-rose-800",
   withdrawn: "bg-slate-100 text-slate-700",
   completed: "bg-violet-100 text-violet-800",
+  transferred: "bg-indigo-100 text-indigo-800",
 };

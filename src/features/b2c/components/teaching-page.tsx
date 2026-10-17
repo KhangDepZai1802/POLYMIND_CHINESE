@@ -48,7 +48,7 @@ export async function B2CTeachingPage({
     p_page: page,
     p_mine: mine,
   });
-  if (error) throw Error("Không tải được giờ dạy B2C.");
+  if (error) throw Error("Không tải được giờ dạy.");
   const result = data as unknown as TeachingPage;
   const meetings =
     mine && canCheck
@@ -105,7 +105,7 @@ export async function B2CTeachingPage({
   return (
     <>
       <PageHeader
-        title={mine ? "Chấm công" : "Giờ dạy & Lương B2C"}
+        title={mine ? "Chấm công" : "Giờ dạy & Lương"}
         description="Đủ ảnh check-in và check-out sẽ ghi nhận giờ dạy theo lịch. Chưa có đơn giá vẫn chấm công được; tiền công chờ quản lý cập nhật đơn giá cho buổi."
         action={
           options ? (
@@ -193,7 +193,7 @@ export async function B2CTeachingPage({
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[950px] text-left text-sm">
           <caption className="sr-only">
-            {mine ? "Buổi dạy và chấm công" : "Buổi dạy và chấm công B2C"}
+            {mine ? "Buổi dạy và chấm công" : "Buổi dạy và chấm công"}
           </caption>
           <thead className="bg-muted">
             <tr>

@@ -64,6 +64,44 @@ Ghi tự động tại DB khi tạo/sửa/xóa ghi danh, gói học phí hoặc 
 
 Nhật ký không cho user insert/update/delete trực tiếp; ghi lỗi thì rollback cùng thay đổi nghiệp vụ. Tìm học viên/lớp, người sửa, loại thay đổi, khoảng ngày; 30 sự kiện/trang, có lọc theo ghi danh. Bắt đầu từ lúc bật tính năng; không khôi phục lịch sử cũ hoặc gán actor cho dữ liệu cũ. Chưa theo dõi sửa hồ sơ liên hệ học viên hay báo cáo tài chính tháng trong phạm vi này.
 
+## Kết quả thi chứng chỉ B2C và tư liệu marketing (2026-10-17)
+
+Quản trị/giáo vụ quản lý tại B2C → Kết quả chứng chỉ; mỗi dòng liên kết hồ sơ học viên B2C có sẵn, giữ khi chuyển lớp. Có loại chứng chỉ nhập linh hoạt (gợi ý Cambridge/IELTS/TOEIC/TOEFL/HSK/HSKK/YCT), cấp độ/bài thi tùy chọn, điểm/xếp loại bắt buộc và ngày thi thực tế không trong tương lai. Điểm giữ dạng chữ để bảo toàn thang điểm (6.5,180/200,Pass...), không tự quy đổi/trung bình/đánh giá đạt. Có nhiều kết quả cho một HV; chặn trùng cùng HV/loại/cấp độ/ngày thi, sửa kết quả đã có thay vì tạo trùng.
+
+Quản lý chủ động chọn “Chọn làm tư liệu marketing”, mặc định tắt. Chỉ chọn sau khi trung tâm xác nhận được phép dùng thông tin HV; có ghi chú nội bộ. Lọc theo loại, ngày, mã/tên/điểm, học viên, trạng thái chọn marketing và lưu trữ. Các số tổng hợp theo bộ lọc gồm số kết quả, số HV phân biệt, số được chọn và số loại chứng chỉ; không gọi mọi kết quả là đỗ hoặc thành tích cao.
+
+Xuất Excel marketing chỉ lấy bản đang sử dụng được chọn, theo bộ lọc học viên/loại/ngày/tìm kiếm, không phụ thuộc checkbox/lựa chọn giả từ client. File6cột: mãHV,tênHV,loại,cấp độ,điểm/nguyên bản,ngày thi. Không SĐT/email/ghi chú; không tự đăng lên kênh công khai. Tối đa5000kết quả một file, vượt thì yêu cầu thu hẹp bộ lọc, không cắt thầm. Lưu trữ không xóa, loại khỏi xuấtmarketing; khôi phục trả trạng thái chọn marketing đã lưu. Lịch sử tạo/sửa/chọn/lưu trữ/khôi phục có actor thật và trước/sau. Giáo viên/học viên không có quyền vào module marketing này.
+
+## Nhận xét tháng và chia sẻ phụ huynh B2C (2026-10-17)
+
+Tab Nhận xét tháng trong popup/trang lớp B2C, chọn tháng hiện tại hoặc trước đó, mỗi ghi danh một bản/tháng. Mẫu sáu mục: chuyên cần, thái độ học tập, nội dung/tiến bộ, điểm mạnh, cần cải thiện, kế hoạch tháng tới/phối hợp phụ huynh. GV tự viết, không tự sinh nhận xét hoặc suy dữ liệu điểm danh. Bản nháp cho phép thiếu mục; hoàn tất cần đủ sáu mục, tối đa1000ký tự/mục. Lưu giữ lịch sử sửa và người thực hiện thật. Lưu nội dung không đổi giữ nguyên phiên bản.
+
+User chọn gửi thủ công: bản hoàn tất có nội dung soạn sẵn để sao chép sang Zalo hoặc mở mailto trong ứng dụng email của người dùng. Không có gửi tự động, không tự ghi đã gửi khi sao chép/mở email. Chỉ sau khi người dùng chọn phụ huynh, kênh và xác nhận đã gửi, DB lưu lịch sử xác nhận thủ công: người xác nhận, thời gian, người nhận/địa chỉ, bản nội dung và phiên bản. Không xác minh trạng thái giao/nhận/đọc từ Zalo/email. Sửa nhận xét sau gửi giữ nguyên bản gửi cũ, bảng cảnh báo nội dung đã đổi.
+
+Người nhận lấy từ phụ huynh đã liên kết đúng học viên; Zalo phụ huynh đã nhập trực tiếp ở hồ sơ HV dùng như liên hệ guardian khi chưa trùng phụ huynh liên kết. Không suy email/SĐT HV là liên hệ phụ huynh. Bổ sung email tùy chọn vào hồ sơ phụ huynh và danh sách phụ huynh. Thiếu liên hệ kênh đã chọn thì không ghi nhận gửi.
+
+Quản lý dùng ngay. GV lớp được phân công dùng view_comments để đọc, write_comments để nhập; share_monthly_comments opt-in (phụ thuộc write_comments) để xem liên hệ phụ huynh/chuẩn bị gửi/ghi nhận gửi. Không tự cấp quyền GV thật. Danh sách HV20/trang, lịch sử sửa/gửi20/trang; kết quả các tháng vẫn được giữ khi chuyển lớp. Chưa có mẫu tùy chỉnh qua UI hoặc nhắc tự động theo lịch.
+
+## Kiểm tra giữa kỳ / cuối kỳ B2C (2026-10-17)
+
+Tab Kiểm tra trong popup/trang lớp B2C là sổ điểm nhập tay, gồm tên bài, loại Giữa kỳ/Cuối kỳ, ngày kiểm tra và thang điểm dương tối đa 1000 (hai số lẻ). Mỗi học viên có điểm và nhận xét; điểm trống là chưa chấm, 0 là đã chấm. Không tự tạo đề thi online, tự chấm hoặc xếp loại đỗ/trượt. Chưa đến ngày kiểm tra thì chưa nhập kết quả. Có thể tạo nhiều bài cùng loại trong lớp.
+
+Quản lý tạo/sửa bài và nhập/sửa kết quả. Giáo viên chỉ được xem khi có quyền `view_assessments` (phụ thuộc xem học viên/lớp), tạo bài/nhập điểm khi có thêm `grade_assessments`, luôn giới hạn lớp được phân công. Hai quyền mới mặc định tắt, quản lý cấp tại Phân quyền B2C. Học viên chưa có luồng tự xem sổ điểm B2C.
+
+Danh sách lấy ghi danh của đúng lớp, ngày nhập học không sau ngày kiểm tra; học viên đã chuyển lớp chỉ có thể nhập mới cho bài trước ngày chuyển, học viên nghỉ không thêm kết quả mới. Các kết quả đã lưu luôn giữ trong danh sách dù sau này đổi trạng thái/chuyển lớp. Lưu điểm không thay đổi học phí, sĩ số hoặc điểm danh. Khi có bất kỳ kết quả đã lưu, không sửa ngày/thang điểm của bài; vẫn sửa tên/loại và lưu lịch sử. Sửa/đưa điểm về trống cần lý do; lịch sử lưu người thực hiện thật, giờ và điểm/nhận xét trước/sau. Không xóa bài/kết quả/lịch sử qua giao diện.
+
+## Chuyển lớp và bảo lưu B2C (2026-10-17)
+
+Quản trị và giáo vụ dùng nút “Chuyển lớp / Bảo lưu” ở danh sách học viên hoặc tab học viên của chương trình. Mỗi thao tác có ngày hiệu lực không trong tương lai, lý do bắt buộc, người thực hiện và thời điểm ghi nhận. Popup lịch sử hiển thị toàn bộ các lớp của cùng học viên, có phân trang; ghi chú cũ không tự chuyển thành lịch sử vì không biết người/ngày thực hiện thật.
+
+Chuyển lớp chỉ đến lớp đang hoạt động hoặc sắp khai giảng, không vượt sức chứa hoặc trùng ghi danh đang mở. Ghi danh cũ được giữ với trạng thái “Đã chuyển lớp”, tạo ghi danh mới “Đang học”; có thể chuyển trở lại lớp cũ bằng ghi danh mới, không sửa/xóa lịch sử điểm danh cũ. Lớp cũ giảm một chỗ, lớp mới tăng một chỗ. Bảo lưu chuyển sang “Bảo lưu”, giữ chỗ và có ngày dự kiến học lại tùy chọn; “Đi học lại” chỉ dành cho ghi danh bảo lưu và lớp còn mở. Không tự học lại theo ngày dự kiến. Ngày hiệu lực không trước ngày ghi danh/lần xử lý gần nhất.
+
+User chốt học phí xử lý riêng: gói học phí, phiếu thu, hạn phí, số buổi đăng ký cũ giữ nguyên tại ghi danh cũ; không tự chuyển tiền/quyền lợi hoặc gia hạn. Ghi danh đích chưa có gói phí, không tự sao chép số buổi đã mua. Trạng thái “Đã chuyển lớp” loại khỏi sĩ số hiện tại và nhắc tái phí, vẫn hiển thị trong hồ sơ/lịch sử. Các lượt ghi danh tổng cộng vẫn bao gồm lịch sử.
+
+## Cảnh báo sĩ số lớp B2C (2026-10-17)
+
+Tổng quan B2C có thẻ số liệu “Lớp dưới 5 học viên” cùng hàng với các thẻ tổng quan. Bấm thẻ mở popup danh sách các lớp đang hoạt động (`active`) có dưới 5 học viên, sắp xếp sĩ số tăng dần, kèm giáo viên, số học viên còn thiếu và liên kết mở lớp. Khi số lớp bằng 0, thẻ vẫn mở popup trạng thái trống. Không hiển thị cảnh báo trong các hàng danh sách lớp. Lớp 0 học viên vẫn được tính; lớp sắp khai giảng, tạm dừng, hoàn thành hoặc hủy không được tính. Giữ nguồn sĩ số Tổng quan hiện có, không đổi dữ liệu ghi danh. Ngưỡng 5 HV là quy ước quản lý, chưa phải điểm hòa vốn theo chi phí từng lớp; quản lý tự quyết định gộp/đóng, hệ thống không tự thay đổi trạng thái. Chưa có cấu hình ngưỡng riêng từng lớp.
+
 ## Lương và điểm hòa vốn B2C (2026-10-14)
 
 Báo cáo tháng tách lương giáo viên và lương NV văn phòng, nhập Marketing bắt buộc (0 nếu xác nhận không phát sinh). payroll_cost là tổng hai thành phần và chỉ cộng một lần vào chi phí. Hai báo cáo lịch sử giữ nguyên số tiền, thành phần chưa biết để null; lưu qua biểu mẫu mới phải nhập rõ cả hai. Không tự phân chia hoặc cộng chồng tiền công từ chấm công vào số liệu tháng nhập tay.
@@ -529,3 +567,18 @@ Tại chương trình B2C, bấm tên lớp hoặc con mắt mở popup gồm m�
 ### B2C-CLASS-WORKSPACE-1 — Trang chi tiết đủ5 mục
 
 Trang /admin/b2c/classes/[classId] có Học viên, Lịch học từng buổi, Điểm danh, Học phí, Nhận xét; mở từ5 nút trong popup lớp. Quyền super_admin/academic_manager theo requireManager + app.is_manager/RLS, không mở quyền giáo viên/nhóm XKLĐ ở bước này. Lịch học độc lập công/lương: nhập ngày/giờ/giáo viên/trạng thái/ghi chú, không tạo tiền công. Lịch dạy đã có được mirror giữ nguồn/creator; lịch mới từ giờ dạy tự liên kết, không nhập trùng cùng lớp/giờ. Điểm danh từng ghi danh/buổi gồm có mặt/đi muộn/vắng/vắng phép; chưa nhập là Chưa điểm danh, không tự coi vắng. Chặn tương lai, nhầm lớp, buổi hủy, ghi đè stale; buổi có điểm danh/nhận xét không đổi giờ hoặc hủy. Nhận xét chung hoặc theo buổi giữ nội dung/actor/thời điểm, bổ sung mới thay vì xóa lịch sử. Học phí dùng gói/phiếu thu hiện có của đúng ghi danh, có thêm/sửa gói và thu tiền; chưa có gói hiện rõ, không coi miễn phí. Điểm danh không tự trừ học phí hoặc cập nhật lương.
+
+
+### B2C-PARENT-NPS-1 — Khảo sát hài lòng phụ huynh
+
+Mỗi lớp B2C đại diện một khóa khảo sát NPS. Quản trị/giáo vụ tạo, đóng/mở/gia hạn tối đa 90 ngày. Một phụ huynh đã liên kết với học viên của lớp chỉ có một phiếu, kể cả nhiều con; không suy liên hệ từ ghi chú. Phụ huynh chấm 0–10, góp ý lý do/giáo viên/chăm sóc. NPS = 100 × (số điểm 9–10 trừ số điểm 0–6) / toàn bộ phản hồi, làm tròn một chữ số; 7–8 trung lập, chưa có phản hồi là chưa có NPS. Chỉ quản lý đọc góp ý, không sửa/xóa phản hồi; đóng/thu hồi không loại kết quả cũ.
+
+
+### B2C-TUITION-DESIGN-1
+
+Trang Học phí theo mẫu user: tổng phải thu/đã thu/còn phải thu theo bộ lọc, học viên cần xử lý đếm hồ sơ duy nhất đang có ít nhất một ghi danh nợ tiền hoặc đến hạn tái phí. Chưa có gói tách riêng, không tự coi miễn phí hay nợ. Tái phí theo trạng thái awaiting_renewal hoặc ngày hết học phí đã đến, loại bảo lưu/nghỉ/hoàn thành/chuyển lớp khỏi nhắc tái phí; nợ tiền cũ vẫn theo dõi. Không suy ngưỡng2buổi.
+
+
+### B2C-PARENT-DESIGN-1
+
+Trang Phụ huynh theo ảnh:4thẻ Tổng/Có SĐT/Có Zalo/Thiếu thông tin, đếm hồ sơ duy nhất không theo số con. Thiếu là SĐT hoặc Zalo trống, email vẫn tùy chọn; không đổi sang yêu cầu2SĐT hoặc tự bổ sung liên hệ. KPI dùng toàn bộ danh sách, bộ lọc chỉ thay bảng/số hồ sơ.

@@ -107,8 +107,9 @@ export function B2CStudentStatusDialog({ enrollmentId, fullName, className, stat
           </div>
           <Label htmlFor={`status-${enrollmentId}`}>Trạng thái HV</Label>
           <select id={`status-${enrollmentId}`} name="status" value={selected} onChange={(e) => setSelected(e.target.value as B2CStudentStatus)} className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm">
-            {B2C_STUDENT_STATUSES.map((value) => <option key={value} value={value}>{B2C_STUDENT_STATUS_LABELS[value]}</option>)}
+            {B2C_STUDENT_STATUSES.filter((value) => value === status || (value !== "on_hold" && value !== "transferred" && status !== "on_hold" && status !== "transferred")).map((value) => <option key={value} value={value}>{B2C_STUDENT_STATUS_LABELS[value]}</option>)}
           </select>
+          <p className="text-muted-foreground text-xs">Chọn thao tác Chuyển lớp / Bảo lưu tại danh sách học viên để lưu ngày hiệu lực, lý do và lịch sử.</p>
           {selected === "withdrawn" ? <div className="space-y-2">
             <Label htmlFor={`reason-${enrollmentId}`}>Lý do nghỉ (nếu có)</Label>
             <Textarea id={`reason-${enrollmentId}`} name="withdrawal_reason" defaultValue={reason ?? ""} maxLength={1000} rows={3} />

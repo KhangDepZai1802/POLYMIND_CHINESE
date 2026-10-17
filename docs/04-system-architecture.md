@@ -1,5 +1,21 @@
 # 04 — Kiến trúc hệ thống
 
+## B2C certificate marketing data (2026-10-17)
+
+Route/admin/b2c/certificates manager-only; panel client đọc filters via manager serveraction → typed permissionRpc. Student picker query/paging và generation guard bỏ responsecũ. Editor UUIDretry, fieldvalidation, class-independent studentlink; archive dialog xác nhận. History business riêng append-only. ExcelJS lazy-load trên client sau manager exportaction đọc snapshot5000bản, ép approvedactive và projection6cột. Workbook ghi cell dạngstring, không công thức từ input; file không bao gồm liên hệ/ghi chú. MenuB2C và icontrên bảngHV liên kết route; không thay menuB2B hoặc teacher.
+
+## Monthly comments B2C (2026-10-17)
+
+MonthlyCommentsPanel trong ClassWorkspaceContent dùng chung popup/admin/teacher. Editor6fields/save draft-ready; detailpreview/history/contact picker/copy/mailto/manual-confirm. Server requireTeaching(super_admin) → Zod → permissionRpc, DB enforce scope/version/idempotency/atomic history. React effects bỏ stale/unmounted responses. Clipboard/mailto chỉ do user click; không gọi dịch vụ gửi hoặc connectors. Xác nhận gửi độc lập, hiển thị rõ manual. ParentDialog/action dùng wrapper RPC atomic có email; không dùng email học viên fallback.
+
+## B2C assessments (2026-10-17)
+
+ClassWorkspaceContent dùng AssessmentsPanel chung popup/admin/teacher. Tab assessment không chuyển payload sang RPC workspace cũ; panel gọi read RPC riêng có kiểm capability. Teacher loader dùng context lớp theo quyền xem học viên, page/nav kiểm view_assessments; read/write assessment RPC luôn tự kiểm quyền/lớp. React effect bỏ response sau unmount/thay bộ lọc. Editors giữ UUID và form khi lỗi, khóa đóng/lưu trong pending, parent tải lại sau lưu. History dialog bỏ response cũ, diễn giải before/after tiếng Việt. Server requireTeaching(super_admin) → Zod → typed forward RPC, không service role; revalidate B2C layout và lớp teacher.
+
+## B2C enrollment lifecycle (2026-10-17)
+
+EnrollmentLifecycleDialog dùng chung bảng học viên Tổng quan và chương trình, đọc context/lịch sử khi mở, form có trạng thái chờ/lỗi/thành công. Server action requireManager → Zod → permissionRpc → RPC manager-only. DB enforce idempotency, khóa, stale-check và lịch sử atomic; không service role. Sau lưu refresh B2C layout và lớp/điểm danh teacher. Domain status/nhắc tái phí và Tổng quan hiểu trạng thái transferred; form sửa ghi danh thường không cung cấp bảo lưu/đi học lại thay cho workflow có lý do. Lịch sử ghi danh cũ và học phí giữ nguyên, ghi danh mới chưa tạo gói học phí.
+
 ## B2C-STUDENT-SESSIONS-1 (2026-10-16)
 
 Shared ClassWorkspaceContent hiển thị session_summary của từng ghi danh ở tab students trong popup/trang lớp admin và teacher. Hai RPC tổng hợp từ attendance join meetings, loại tương lai và hủy, không nối thêm ở client hoặc thay đổi gói học phí. Teacher cần quyền mark_attendance để xem số liệu.
@@ -357,3 +373,40 @@ Chi tiết: [`06-deployment-vercel-supabase.md`](06-deployment-vercel-supabase.m
 | DB | migration 66 `flashcards` + 67 `wrong_answer_review`; tables/RPC/trigger/RLS/Storage policy + pgTAP riêng |
 | Điều hướng | `lib/permissions/navigation.ts`; menu chỉ là UX, route/server/RLS vẫn tự chặn |
 | Test | `tests/unit/components`, `tests/unit/server`, `supabase/tests/database`, Playwright 3 role/IDOR |
+
+
+### B2C-PARENT-NPS-1 — Khảo sát hài lòng phụ huynh
+
+Route quản lý /admin/b2c/nps dùng requireManager và RPC guard/RLS; nav chỉ B2C. Route /nps/[token] nằm ngoài dashboard, middleware bỏ session đúng prefix /nps/, client Supabase riêng publishable key không cookie/persist/refresh; không service-role. Public page force-dynamic/no-store, noindex/nofollow/no-referrer; không log token/PII. Token raw chỉ giữ trong popup lấy link, đóng là bỏ; DB chỉ hash. Link lấy origin hiện tại; localhost phải triển khai online trước khi phụ huynh mở ngoài máy. Không triển khai hoặc gửi tin tự động trong task.
+
+
+### B2C-OVERVIEW-COLOR-1 — Màu sắc Tổng quan
+
+KPI có nền chuyển sắc nhẹ xanh ngọc/xanh dương/tím/xanh lá và viền nhấn; thẻ lớp dưới ngưỡng giữ đỏ. Các vùng hòa vốn/nguồn khách/kết quả tháng/lớp có điểm nhấn vàng/xanh/lá/xanh dương. Khung Tổng hợp theo chương trình dùng nền và viền trung tính, bỏ viền/nền tím theo phản hồi người dùng. Nguồn khách có nền theo kênh; màu chỉ trang trí, số/nhãn/cách mở popup giữ nguyên. Có biến thể dark mode, không đổi dữ liệu/DB hoặc theme toàn hệ thống.
+
+
+B2C-PROGRAM-COLOR-1: Bảng Tổng hợp theo chương trình bổ sung chấm màu xanh dương/vàng/xanh lá/tím/hồng theo chương trình, cột Tỷ lệ lấp đầy có thanh chuyển sắc xanh/lá/hồng và phần trăm. Tính bằng ghi danh chia sức chứa hiện có, không sao chép phần trăm minh họa trong ảnh; thanh giới hạn100, số thực giữ nếu vượt. Khung giữ trung tính, không viền tím.
+
+
+B2C-OVERVIEW-BORDER-3: Theo ảnh khoanh đỏ, bỏ viền trên dày màu vàng ở hòa vốn, xanh ở nguồn khách và danh sách lớp; giữ nền chuyển sắc, viền mảnh, KPI/chấm màu/thanh tỷ lệ và viền xanh lá kết quả tháng.
+
+
+B2C-OVERVIEW-NO-TOP-BORDERS: User chốt bỏ toàn bộ viền nhấn phía trên trang Tổng quan, gồm KPI và kết quả tháng. Giữ viền mảnh đồng đều, nền màu nhẹ và chấm màu/thanh tỷ lệ; thay thế mô tả viền màu trước đó.
+
+
+### B2C-DISPLAY-LABELS-1
+
+B2C là phạm vi kỹ thuật, không thêm vào tiêu đề/nhãn/nút/mô tả/thông báo trong module trung tâm và giao diện giáo viên liên quan. Nhãn riêng B2C đổi Trung tâm; giữ mã hồ sơ có sẵn, URL, tên hàm/bảng/quyền, bộ chọn module và phân biệt phạm vi dữ liệu.
+
+
+### B2C-TUITION-DESIGN-1
+
+Giao diện theo ảnh: thẻ trắng icon màu/nền cong nhẹ, bảng avatar chữ cái/badge lớp/nợ đỏ/Chưa có gói xám, dark mode và cuộn ngang mobile; không viền trên dày, không đổi logo/sidebar toàn hệ thống. Server read bảo vệ manager, dùng effective-balance RPC; client lọc/sort/tổng hợp từ đầy đủ danh sách cùng quyền, trang25 và popup20. Không dùng số giả trong ảnh hoặc thêm nút chưa hoạt động.
+
+
+### B2C-PARENT-DESIGN-1
+
+B2C-PARENT-DESIGN-1: ParentDashboard client nhận đầy đủ parents từ manager serverloader, không public API mới. Trang dynamic/no-store; avatar chữ cái, bảng contact missing/chip quan hệ, thẻ icon màu/nền cong nhẹ, không viền trên dày; dark mode/mobile cuộn ngang. Form ParentDialog thêm showLabel tùy chọn để hiện Sửa, giữ defaulticon cho chỗ cũ. Không thay logo/sidebar/header chung.
+
+
+B2C-PARENT-CARD-POPUPS: Cả4KPI mở popup danh sách đúng nhóm theo tổng toàn bộ hồ sơ, không thay trạng thái bảng ngoài. Popup có tìm kiếm,20/trang, trạng thái rỗng kể cả0hồsơ, Xem/Sửa; Xem đóng danh sách rồi mở chi tiết. Không API/DB/quyền mới. Thay hành vi KPI lọc bảng trong mô tả trước.

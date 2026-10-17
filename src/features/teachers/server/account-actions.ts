@@ -23,7 +23,7 @@ async function resolveTeacher(target: TeacherAccountTarget) {
       .eq("id", target.id)
       .maybeSingle();
     if (error) throw new Error("Không tải được liên kết tài khoản giáo viên.");
-    if (!data) throw new Error("Không tìm thấy giáo viên B2C.");
+    if (!data) throw new Error("Không tìm thấy giáo viên.");
     if (!data.source_teacher_id) return null;
     teacherId = data.source_teacher_id;
   }
@@ -95,7 +95,7 @@ export async function changeTeacherPasswordAction(
     };
   try {
     const teacher = await resolveTeacher(parsed.data);
-    if (!teacher) return { error: "Giáo viên B2C chưa liên kết tài khoản." };
+    if (!teacher) return { error: "Giáo viên chưa liên kết tài khoản." };
     if (teacher.user_id !== parsed.data.expected_user_id)
       return {
         error: "Liên kết tài khoản đã thay đổi. Vui lòng đóng và mở lại.",

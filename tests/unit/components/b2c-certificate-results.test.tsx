@@ -1,0 +1,40 @@
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+const api = vi.hoisted(() => ({ read: vi.fn(), find: vi.fn(), save: vi.fn(), archive: vi.fn(), history: vi.fn(), export: vi.fn() }));
+vi.mock("@/features/b2c/server/certificate-actions", () => ({ readCertificateResultsAction: api.read, findCertificateStudentsAction: api.find, saveCertificateResultAction: api.save, archiveCertificateResultAction: api.archive, readCertificateHistoryAction: api.history, exportCertificateMarketingAction: api.export }));
+import { CertificateResultsPanel } from "@/features/b2c/components/certificate-results-panel";
+const row = { id: "r", student_id: "s", student_code: "HV1", full_name: "An", certificate_type: "IELTS", level: "Academic", score: "6.5", exam_date: "2026-10-17", marketing_allowed: true, marketing_note: "", notes: "", is_archived: false, updated_at: "2026-10-17T00:00:00Z" };
+const model = { rows: [row], total: 1, student_count: 1, marketing_count: 1, type_count: 1, types: ["IELTS"], student_filter: null };
+beforeEach(() => { vi.clearAllMocks(); api.read.mockResolvedValue(model); api.save.mockResolvedValue({ id: "r" }); api.archive.mockResolvedValue({ success: true }); });
+afterEach(cleanup);
+it("adds certificate results to a selected profile without automatically choosing marketing", async () => {
+  api.find.mockResolvedValue({ rows: [{ id: "s", code: "HV1", full_name: "An" }], total: 1 });
+  render(<CertificateResultsPanel today="2026-10-17" />);
+  fireEvent.click(screen.getByRole("button", { name: "Thêm kết quả chứng chỉ" }));
+  fireEvent.change(screen.getByLabelText("Tìm học viên chứng chỉ"), { target: { value: "An" } });
+  fireEvent.click(screen.getByRole("button", { name: "Tìm học viên" }));
+  fireEvent.click(await screen.findByRole("button", { name: "HV1 · An" }));
+  expect(screen.getByRole("checkbox", { name: "Chọn làm tư liệu marketing" })).not.toBeChecked();
+  const form = within(screen.getByRole("dialog"));
+  fireEvent.change(form.getByLabelText("Loại chứng chỉ"), { target: { value: "Cambridge" } });
+  fireEvent.change(form.getByLabelText("Điểm / Xếp loại"), { target: { value: "Pass" } });
+  fireEvent.click(screen.getByRole("button", { name: "Lưu kết quả chứng chỉ" }));
+  await waitFor(() => expect(api.save).toHaveBeenCalledWith(expect.objectContaining({ student_id: "s", score: "Pass", certificate_type: "Cambridge", marketing_allowed: false })));
+});
+it("requires an explicit confirmation before archiving", async () => {
+  render(<CertificateResultsPanel today="2026-10-17" />);
+  fireEvent.click(await screen.findByRole("button", { name: "Lưu trữ" }));
+  expect(api.archive).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
+  await waitFor(() => expect(api.archive).toHaveBeenCalledWith(expect.objectContaining({ id: "r", action: "archive", expected_updated_at: row.updated_at })));
+});
+it("applies certificate and date filters and does not export unselected data", async () => {
+  api.read.mockResolvedValue({ ...model, marketing_count: 0 });
+  render(<CertificateResultsPanel today="2026-10-17" />);
+  await screen.findByText("6.5");
+  expect(screen.getByRole("button", { name: "Xuất Excel marketing" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Tư liệu marketing"), { target: { value: "yes" } });
+  fireEvent.change(screen.getByLabelText("Từ ngày thi"), { target: { value: "2026-10-01" } });
+  fireEvent.click(screen.getByRole("button", { name: "Lọc kết quả" }));
+  await waitFor(() => expect(api.read).toHaveBeenLastCalledWith(expect.objectContaining({ from: "2026-10-01", marketing: "yes", page: 0 })));
+});

@@ -253,6 +253,11 @@
 - [x] `B2C-CHANGE-HISTORY-1`: nhật ký tạo/sửa/xóa ghi danh/gói học phí/phiếu thu từ trigger DB, actor thật và snapshot trước/sau/context, không log trùng no-op/retry; app không sửa/xóa/giả log. Super-admin-only theo D-2, menu/link học viên/học phí, lọc và phân trang 30. SQL06 áp/history xác minh, pgTAP24/24; lint/typecheck/build exit0, Vitest760/760. Chưa kiểm tra trực quan bằng manager thật.
 
 - [x] `B2C-FINANCE-2`: tách lương GV/NV văn phòng, giữ tổng cũ không tự phân loại; Marketing nhập rõ; hòa vốn ước tính báo cáo tháng trên Tổng quan với lý do khi thiếu dữ liệu. Migration 05 áp cloud/history xác minh, pgTAP 14/14, lint/typecheck/build exit 0, Vitest 754/754.
+- [x] `B2C-CERTIFICATE-RESULTS-1`: loại/cấp độ/điểm/ngàythi theo hồ sơHV, chọnmarketing/lọc/exportExcel6cột, history/archive. DoD: manager-only/RLS, duplicate/stale/retry/atomic history, scoretext đúngthang, ngày thực tế; export ép approvedactive/limit/projection; SQLcloud exact-history, lint/typecheck/test/build đạt.
+- [x] `B2C-MONTHLY-COMMENTS-1`: mẫu nhận xét6mục/HV-lớp-tháng, nháp/hoàn tất/lịch sử; chọn phụ huynh/copyZalo/mailto/xác nhận gửi thủ công, snapshot và redaction quyền. DoD: đủmẫu/stale/retry/atomic history; copy/mailto không tính đãgửi, parent đúng liên kết/email riêng; RLS/permission tests, migrationcloud exact-history, lint/typecheck/test/build đạt.
+- [x] `B2C-ASSESSMENTS-1`: tab Kiểm tra ở popup/trang lớp admin/teacher, giữa kỳ/cuối kỳ/ngày/thang điểm, điểm/nhận xét/lịch sử. DoD: phân quyền opt-in và đúng lớp; null khác0, giới hạn điểm/ngày, sửa có lý do/stale/retry/atomic history; phân trang bài/HV/history; SQL áp cloud exact-history, lint/typecheck/test/build đạt.
+- [x] `B2C-LOW-ENROLLMENT-1`: thẻ số lớp active dưới 5 HV ở hàng KPI Tổng quan; bấm mở popup danh sách, giáo viên, sĩ số, số thiếu và liên kết lớp. DoD: 0/4 HV được tính, 5 trở lên và lớp ngoài active không tính; popup mở/đóng và trạng thái trống hoạt động; bỏ cảnh báo từng hàng; không tự gộp/đóng hoặc ghi DB.
+- [x] `B2C-ENROLLMENT-LIFECYCLE-1`: manager chuyển lớp/bảo lưu/học lại có lịch sử riêng. DoD: ngày/lý do/actor thật; bảo toàn ghi danh/điểm danh/học phí cũ, học phí quản lý xử lý riêng; kiểm sức chứa/stale/retry/quyền/atomic rollback; lịch sử phân trang; migration áp cloud và history exact, lint/typecheck/test/build đạt.
 - [ ] `B2C-CAC-1`: chờ user chốt cách gộp Marketing/quảng cáo và mẫu số HV mới; chưa tính CAC. Chưa kiểm tra trực quan báo cáo/hòa vốn bằng manager.
 
 | ID | Task | Definition of Done | Trạng thái |
@@ -1462,3 +1467,71 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 - [x] Lịch học CRUD trạng thái/không xóa, liên kết lịch dạy; roll-call explicit/stale/actor/history/UUID; nhận xét chung hoặc theo buổi. Dùng gói/phiếu thu cũ, không tự trừ học phí hoặc đổi lương.
 - [x] SQL13 cloud/history, pgTAP40/40, Vitest811/811, lint/typecheck/build exit0. Edge production cuối3112 lịch/điểm danh save-edit/nhận xét/học phí1m-thu400k-còn600k/mirror1 nguồn/anonymous deny/mobile đạt,0pageerror; fixture và tài khoản thử dọn sạch.
 - [ ] QA độc lập/phiên manager thật; chưa commit/push/deploy.
+
+
+## B2C-PARENT-NPS-1 — Khảo sát phụ huynh mỗi khóa
+
+- [x] Manager tạo/đóng/gia hạn khảo sát theo lớp; phụ huynh liên kết nhận link riêng, một phản hồi/khóa, dedup nhiều con.
+- [x] Public form 0–10/góp ý không đăng nhập, NPS đúng nhóm/denominator/null, dữ liệu manager-only, phân trang.
+- [x] Tokenhash/RLS/RPC/stale/retry/immutable responses; SQL test, dry-run/apply cloud/exact-history.
+- [x] Lint/typecheck/build exit0;177files998/998tests;59/59 DB cloud exact-history. HTTP admin307/publicinvalid200/noindex, dev restart.
+- [ ] QA browser độc lập/commit/push/deploy; dry-run còn16gaps cũ ngoài scope.
+
+
+## B2C-OVERVIEW-COLOR-1 — Màu sắc Tổng quan
+
+- [x] KPI xanh ngọc/xanh dương/tím/xanh lá, giữ thẻ dưới ngưỡng đỏ; nền màu nhẹ cho khu vực và nguồn khách, có dark mode.
+- [x] Chỉ giao diện Tổng quan B2C; giữ dữ liệu và hành vi; lint/typecheck/test/build.
+- [ ] QA browser độc lập/light-dark/mobile; chưa commit/push/deploy.
+
+
+## B2C-OVERVIEW-NEUTRAL-PROGRAM-1
+
+- [x] Bỏ viền/nền tím khung Tổng hợp theo chương trình; giữ Card trung tính sáng/tối. Lint/typecheck/build đạt,998/998tests; không DB.
+
+
+## B2C-PROGRAM-COLOR-1
+
+- [x] Chấm màu theo chương trình và thanh tỷ lệ lấp đầy như ảnh, tỷ lệ theo dữ liệu thật; khung trung tính.
+- [x] Lint/typecheck/test/build.
+
+
+## B2C-OVERVIEW-BORDER-3
+
+- [x] Bỏ đúng ba viền khoanh đỏ, giữ nền và màu khác.
+- [x] Lint/typecheck/build đạt,998/998tests; dev restart.
+
+
+## B2C-OVERVIEW-NO-TOP-BORDERS
+
+- [x] Gỡ viền trên dày còn lại KPI/kết quả tháng, giữ nền màu.
+- [x] Lint/typecheck/build đạt,998/998tests; dev restart.
+
+
+## B2C-DISPLAY-LABELS-1
+
+- [x] Bỏ chữ B2C khỏi nội dung hiển thị nội bộ module trung tâm/admin/teacher; giữ kỹ thuật và mã dữ liệu.
+- [x] Lint/typecheck/build đạt,177files998/998tests; dev restart.
+- [ ] QA browser độc lập; chưa commit/push/deploy.
+
+
+## B2C-TUITION-DESIGN-1
+
+- [x] Giao diện học phí theo ảnh,4thẻ/popup cần xử lý/lọc trạng thái-lớp-kỳ ghi danh/sort/chọn dòng/tổng nợ chọn/trang25; không số mẫu.
+- [x] Tái dùng RPC số dư hiệu lực, RLS/manager; giữ tạo gói/phiếu thu/điều chỉnh/history. Không làm giả nhắc2buổi/kỳ học chưa có.
+- [x] Tests nghiệp vụ/UI/loader, lint/typecheck/test/build.
+- [ ] QA browser độc lập; chưa commit/push/deploy.
+
+
+## B2C-PARENT-DESIGN-1
+
+- [x] Trang Phụ huynh theo ảnh4KPI/tìm-lọc trạng thái-quan hệ-lớp/avatar/contact missing/chi tiết/sửa/menu/chọn dòng/phân trang10-25-50.
+- [x] Dữ liệu thực/đủ trang/quyền manager-RLS, không fake stats hoặc thêm tự gửi; giữ liên kết nhiều con.
+- [x] Unit/component/loader tests, lint/typecheck/fulltest/build.
+- [ ] QA browser độc lập; chưa commit/push/deploy.
+
+
+## B2C-PARENT-CARD-POPUPS
+
+- [x] Bốn KPI mở danh sách popup đúng nhóm/tìm/page20/empty/Xem-Sửa, giữ bộ lọc bảng.
+- [x] Lint/typecheck/build đạt,1024/1024tests; dev restart.

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { B2CTeachingPage } from "@/features/b2c/components/teaching-page";
-export const metadata: Metadata = { title: "Giờ dạy & Lương B2C" };
+export const metadata: Metadata = { title: "Giờ dạy & Lương" };
 export default async function Page({
   searchParams,
 }: {

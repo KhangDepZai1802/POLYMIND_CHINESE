@@ -104,7 +104,7 @@ export function buildTodayTasks(
   const classes = new Map(data.classes.map((c) => [c.id, c]));
   const students = new Map(data.students.map((s) => [s.id, s]));
   const open = data.enrollments.filter(
-    (e) => !["withdrawn", "completed", "on_hold"].includes(e.status),
+    (e) => !["withdrawn", "completed", "transferred", "on_hold"].includes(e.status),
   );
   for (const e of open) {
     const cls = classes.get(e.class_id),

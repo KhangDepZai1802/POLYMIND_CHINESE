@@ -7,7 +7,7 @@ import { getMyB2CClasses } from "@/features/b2c/server/teacher-class-queries";
 import { getMyB2CPermissionsAction } from "@/features/b2c/server/permission-actions";
 import { readTeacherWorkspaceAction } from "@/features/b2c/server/teacher-management-actions";
 import { ClassWorkspaceContent } from "@/features/b2c/components/class-workspace-content";
-export const metadata = { title: "Chi tiết lớp B2C" };
+export const metadata = { title: "Chi tiết lớp" };
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export default async function TeacherB2CClassPage({
@@ -33,6 +33,8 @@ export default async function TeacherB2CClassPage({
     attendance: "mark_attendance",
     tuition: "view_tuition",
     comments: "view_comments",
+    assessments: "view_assessments",
+    monthly_comments: "view_comments",
   } as const;
   const allowed = Object.keys(tabs).filter((tab) =>
     permissions.includes(tabs[tab as keyof typeof tabs]),

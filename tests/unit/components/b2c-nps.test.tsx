@@ -1,0 +1,50 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+const api = vi.hoisted(() => ({ submit: vi.fn(), read: vi.fn(), issue: vi.fn(), revoke: vi.fn(), find: vi.fn(), save: vi.fn() }));
+vi.mock("@/features/b2c/server/nps-public-actions", () => ({ submitPublicNpsAction: api.submit }));
+vi.mock("@/features/b2c/server/nps-actions", () => ({ readNpsAdminAction: api.read, issueNpsInvitationAction: api.issue, revokeNpsInvitationAction: api.revoke, findNpsClassesAction: api.find, saveNpsSurveyAction: api.save }));
+import { NpsParentForm } from "@/features/b2c/components/nps-parent-form";
+import { NpsAdminPanel } from "@/features/b2c/components/nps-admin-panel";
+const parent = { parent_id: "p", parent_name: "Phụ huynh An", children: "HV1 · An", email: null, zalo: null, invite_id: null, invite_updated_at: null, revoked: false, score: null, answered_at: null };
+const model = { surveys: [{ id: "s", class_id: "c", title: "Cuối khóa", class_code: "L1", class_name: "Lớp Anh", status: "open", expires_at: "2099-01-01T00:00:00Z", updated_at: "2026-10-17T00:00:00Z" }], survey_total: 1, selected: null as unknown, rows: [parent], total: 1, unlinked_students: 0, stats: { nps: null, responses: 0, invitations: 0, promoters: 0, passives: 0, detractors: 0 }, responses: [], response_total: 0 };
+beforeEach(() => { vi.clearAllMocks(); api.submit.mockResolvedValue({ success: true }); api.read.mockResolvedValue({ ...model, selected: model.surveys[0] }); });
+afterEach(cleanup);
+it("does not preselect a score, accepts explicit zero and thanks parent", async () => {
+  render(<NpsParentForm token={"a".repeat(64)} />);
+  expect(screen.getAllByRole("radio").every((r) => !(r as HTMLInputElement).checked)).toBe(true);
+  fireEvent.click(screen.getByRole("radio", { name: "0 điểm" }));
+  fireEvent.click(screen.getByRole("button", { name: "Gửi phản hồi" }));
+  await screen.findByText("Cảm ơn Quý phụ huynh!");
+  const payload = api.submit.mock.calls[0]![0] as FormData;
+  expect(payload.get("score")).toBe("0"); expect(payload.get("token")).toBe("a".repeat(64));
+  expect(screen.queryByRole("button", { name: "Gửi phản hồi" })).not.toBeInTheDocument();
+});
+it("keeps score and feedback on a failed request for safe retry", async () => {
+  api.submit.mockResolvedValue({ error: "Thử lại" });
+  render(<NpsParentForm token={"a".repeat(64)} />);
+  fireEvent.click(screen.getByRole("radio", { name: "9 điểm" }));
+  fireEvent.change(screen.getByLabelText("Lý do chấm điểm / Góp ý"), { target: { value: "Hài lòng" } });
+  fireEvent.click(screen.getByRole("button", { name: "Gửi phản hồi" })); await screen.findByRole("alert");
+  expect(screen.getByLabelText("Lý do chấm điểm / Góp ý")).toHaveValue("Hài lòng");
+  expect(screen.getByRole("radio", { name: "9 điểm" })).toBeChecked();
+  fireEvent.click(screen.getByRole("button", { name: "Gửi phản hồi" }));
+  await waitFor(() => expect(api.submit).toHaveBeenCalledTimes(2));
+  expect(api.submit.mock.calls[0]![0].get("request_id")).toBe(api.submit.mock.calls[1]![0].get("request_id"));
+});
+it("shows no NPS rather than zero before any responses and confirms link creation", async () => {
+  api.issue.mockResolvedValue({ token: "b".repeat(64) });
+  render(<NpsAdminPanel today="2026-10-17" />);
+  await screen.findByText("Chưa có phản hồi");
+  fireEvent.click(screen.getByRole("button", { name: "Tạo link" })); expect(api.issue).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
+  await screen.findByLabelText("Nội dung gửi phụ huynh");
+  expect(api.issue).toHaveBeenCalledWith("s", "p", null);
+  expect((screen.getByLabelText("Nội dung gửi phụ huynh") as HTMLTextAreaElement).value).toContain(`/nps/${"b".repeat(64)}`);
+  expect(screen.queryByRole("button", { name: /Đã gửi/ })).not.toBeInTheDocument();
+});
+it("treats zero as an answered survey and prevents another invitation", async () => {
+  api.read.mockResolvedValue({ ...model, selected: model.surveys[0], rows: [{ ...parent, score: 0, invite_id: "i" }], stats: { ...model.stats, nps: -100, responses: 1, invitations: 1 } });
+  render(<NpsAdminPanel today="2026-10-17" />);
+  await screen.findByText("0/10 · Chưa hài lòng");
+  expect(screen.getByRole("button", { name: "Cấp lại link" })).toBeDisabled();
+});

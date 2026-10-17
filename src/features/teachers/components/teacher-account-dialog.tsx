@@ -92,10 +92,10 @@ export function TeacherAccountDialog({
         {loading && <p role="status">Đang tải tài khoản…</p>}
         {loaded && !account && (
           <div className="space-y-3">
-            <p>Hồ sơ B2C chưa liên kết tài khoản giáo viên.</p>
+            <p>Hồ sơ chưa liên kết tài khoản giáo viên.</p>
             <Button variant="outline" asChild>
               <Link href="/admin/b2c/permissions">
-                Mở Phân quyền B2C để liên kết
+                Mở Phân quyền để liên kết
               </Link>
             </Button>
           </div>

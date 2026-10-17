@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CustomerSourceIcon } from "@/features/b2c/components/customer-source-icons";
 import { getB2CSourceStudentsAction } from "@/features/b2c/server/actions";
+import { cn } from "@/lib/utils";
 
 type Student = { id: string; code: string; full_name: string; phone: string | null; referrer_name: string | null };
 
-export function CustomerSourceCard({ source, label, count, percent, color }: {
-  source: string | null; label: string; count: number; percent: number; color: string;
+export function CustomerSourceCard({ source, label, count, percent, color, className }: {
+  source: string | null; label: string; count: number; percent: number; color: string; className?: string;
 }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [total, setTotal] = useState(count);
@@ -28,7 +29,7 @@ export function CustomerSourceCard({ source, label, count, percent, color }: {
   }
   return <Dialog onOpenChange={(open) => { if (open) { setStudents([]); setPage(0); load(0); } }}>
     <DialogTrigger asChild>
-      <button type="button" className="hover:border-primary/50 focus-visible:ring-ring rounded-lg border p-3 text-left transition-colors hover:shadow-sm focus-visible:ring-2" aria-label={`Xem học viên từ ${label}`}>
+      <button type="button" className={cn("hover:border-primary/50 focus-visible:ring-ring rounded-lg border p-3 text-left transition-colors hover:shadow-sm focus-visible:ring-2", className)} aria-label={`Xem học viên từ ${label}`}>
         <span className="flex items-center justify-between gap-2 text-sm">
           <span className="flex items-center gap-2 font-medium">
             <CustomerSourceIcon source={source} className="h-4 w-4 shrink-0" />

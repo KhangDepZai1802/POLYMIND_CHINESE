@@ -5,7 +5,7 @@ import { requireManager } from "@/lib/auth/session";
 import { getB2CTeacherMetrics } from "@/features/b2c/server/teacher-metrics";
 import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
 
-export const metadata: Metadata = { title: "Giáo viên B2C" };
+export const metadata: Metadata = { title: "Giáo viên" };
 export default async function TeachersPage() {
   const me = await requireManager();
   const metrics = await getB2CTeacherMetrics();

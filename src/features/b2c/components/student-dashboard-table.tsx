@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, History } from "lucide-react";
+import { Eye, History, Award } from "lucide-react";
 import Link from "next/link";
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { B2CStudentStatusDialog } from "@/features/b2c/components/student-status-dialog";
+import { EnrollmentLifecycleDialog } from "./enrollment-lifecycle-dialog";
 import {
   B2C_STUDENT_STATUS_COLORS,
   B2C_STUDENT_STATUS_LABELS,
@@ -80,7 +81,7 @@ export function StudentDashboardTable({
           className={`w-full text-left text-[11px] ${compact ? "min-w-[650px]" : "min-w-[1250px]"}`}
         >
           <caption className="sr-only">
-            {compact ? "Chi tiết nhóm học viên" : "Danh sách học viên B2C"}
+            {compact ? "Chi tiết nhóm học viên" : "Danh sách học viên"}
           </caption>
           <thead className="bg-[#edf3fb] text-[#4c638a] dark:bg-slate-800 dark:text-slate-300">
             <tr>
@@ -184,6 +185,7 @@ export function StudentDashboardTable({
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center">
+                        <Link href={`/admin/b2c/certificates?student=${r.student.id}`} aria-label={`Kết quả chứng chỉ ${r.student.full_name}`} title="Kết quả chứng chỉ" className="rounded p-2 text-emerald-600 hover:bg-emerald-50"><Award className="size-4" aria-hidden /></Link>
                         <button
                           type="button"
                           aria-label={`Xem hồ sơ ${r.student.full_name}`}
@@ -200,6 +202,9 @@ export function StudentDashboardTable({
                           >
                             <History className="size-4 text-violet-600 dark:text-violet-400" />
                           </Link>
+                        )}
+                        {r.enrollment && r.classInfo && (
+                          <EnrollmentLifecycleDialog enrollmentId={r.enrollment.id} fullName={r.student.full_name} className={r.classInfo.name} />
                         )}
                         {r.enrollment && r.classInfo && (
                           <B2CStudentStatusDialog

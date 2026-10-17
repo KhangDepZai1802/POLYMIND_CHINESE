@@ -32,7 +32,7 @@ export async function readClassWorkspaceAction(
     )
     .eq("id", classId)
     .maybeSingle();
-  if (classResult.error) throw new Error("Không tải được lớp B2C.");
+  if (classResult.error) throw new Error("Không tải được lớp.");
   if (!classResult.data) notFound();
   const cls = classResult.data;
   const schedules =
@@ -45,7 +45,7 @@ export async function readClassWorkspaceAction(
           .limit(100)
       : null;
   if (schedules?.error) throw new Error("Không tải được lịch lặp.");
-  const { data, error } = await client.rpc("read_b2c_class_workspace", {
+  const { data, error } = ["assessments", "monthly_comments"].includes(filters.tab) ? { data: { rows: [], total: 0, stats: null }, error: null } : await client.rpc("read_b2c_class_workspace", {
     p_class_id: classId,
     p_tab: filters.tab,
     p_page: filters.page,

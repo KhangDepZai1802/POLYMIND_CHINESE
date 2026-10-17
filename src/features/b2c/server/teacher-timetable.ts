@@ -10,7 +10,7 @@ async function readAll<T>(
     const { data, error } = await read(offset);
     if (error)
       throw new Error(
-        "Không tải được thời khóa biểu giáo viên B2C. Vui lòng thử lại.",
+        "Không tải được thời khóa biểu giáo viên. Vui lòng thử lại.",
       );
     rows.push(...(data ?? []));
     if (!data || data.length < 500) return rows;

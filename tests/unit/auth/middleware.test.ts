@@ -35,6 +35,19 @@ function createSupabaseMock(claims: unknown) {
 describe("updateSession JWT verification", () => {
   beforeEach(() => createServerClient.mockReset());
 
+  it("allows parent survey token pages without constructing a session client", async () => {
+    const response = await updateSession(new NextRequest(`https://polymind.test/nps/${"a".repeat(64)}`));
+    expect(response.status).toBe(200);
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
+  it("does not expose paths merely starting with nps", async () => {
+    createServerClient.mockReturnValue(createSupabaseMock({ data: null, error: new Error("No JWT") }));
+    const response = await updateSession(new NextRequest("https://polymind.test/nps-private"));
+    expect(response.status).toBe(307);
+    expect(createServerClient).toHaveBeenCalledOnce();
+  });
+
   it("để landing page công khai đi thẳng, không dựng Supabase client", async () => {
     const response = await updateSession(
       new NextRequest("https://polymind.test/"),

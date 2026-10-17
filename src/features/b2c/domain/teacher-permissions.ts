@@ -3,9 +3,12 @@ import { z } from "zod";
 export const B2C_PERMISSION_LABELS = {
   view_classes: "Xem các lớp được phân công",
   view_students: "Xem danh sách học viên",
+  view_assessments: "Xem kiểm tra giữa kỳ / cuối kỳ",
+  grade_assessments: "Tạo bài kiểm tra và nhập điểm",
   view_schedule: "Xem lịch học của lớp",
   view_comments: "Xem nhận xét học viên",
   write_comments: "Nhập nhận xét học viên",
+  share_monthly_comments: "Chuẩn bị gửi và ghi nhận gửi nhận xét tháng cho phụ huynh",
   mark_attendance: "Điểm danh học viên",
   check_teaching: "Chấm công buổi dạy của mình",
   view_pay: "Xem giờ dạy, đơn giá và tiền công của mình",
@@ -33,9 +36,12 @@ export const B2C_PERMISSION_DEPENDENCIES: Partial<
   Record<B2CPermission, B2CPermission[]>
 > = {
   view_students: ["view_classes"],
+  view_assessments: ["view_students"],
+  grade_assessments: ["view_assessments"],
   view_schedule: ["view_classes"],
   view_comments: ["view_classes"],
   write_comments: ["view_comments", "view_students"],
+  share_monthly_comments: ["write_comments"],
   mark_attendance: ["view_students", "view_schedule"],
   create_classes: ["view_classes"],
   edit_classes: ["view_classes"],

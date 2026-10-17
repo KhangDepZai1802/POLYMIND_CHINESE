@@ -1,5 +1,31 @@
 # 03 — Workflow nghiệp vụ
 
+## Kết quả chứng chỉ → marketing B2C (2026-10-17)
+
+Manager mở Kết quả chứng chỉ trong menuB2C hoặc biểu tượng chứng chỉ tại dòngHV → Thêm → tìm/chọn hồ sơ HV → loại/cấp độ/điểm/ngày → chọnmarketing khi phù hợp → Lưu. Sửa giữ nguyên HV và có lịch sử. Bộ lọc tìm/loại/ngày/marketing/archive, thống kê theo bộ lọc và phân trang25dòng. Lưu trữ có xác nhận, không xóa; có thể khôi phục và kiểm lịch sử20dòng/trang.
+
+Xuất Excel marketing tải snapshot kết quả đang dùng đã chọn phù hợp bộ lọc. Không tự đăng bài hoặc gửi dữ liệu. Dữ liệu >5000bản ghi yêu cầu thu hẹp; thay đổi lựa chọn trước khi xuất sẽ được server kiểm lại. Điểm khác thang giữ nguyên, không suy “đạt” hoặc tạo xếp hạng.
+
+## Nhận xét tháng B2C → phụ huynh (2026-10-17)
+
+Lớp B2C → Nhận xét tháng → chọn tháng/tìmHV → Nhập/Sửa nhận xét → lưu nháp hoặc Hoàn tất đủ6mục. Xem/Chuẩn bị gửi mở nội dung theo mẫu và lịch sử. Chọn phụ huynh đã liên kết/kênh → sao chép gửi Zalo hoặc mở email soạn sẵn → người dùng thực sự gửi trong ứng dụng ngoài → tick xác nhận → Ghi nhận đã gửi thủ công. Sao chép/mởemail không tự tạo lịch sử gửi.
+
+Thiếu liên hệ: quản lý vào Phụ huynh cập nhật Zalo/email, liên kết mãHV đúng. Không dùng emailHV. Bảnnháp, staleversion, ngườinhận không liên kết, kênh thiếu liên hệ, thiếu xác nhận hoặc quyền đều bị chặnDB. Retry không nhân đôi; gửi cũ giữ nguyên khi nhận xét mới đổi. Lỗi lưu giữ form; nội dung gửi chỉ là tự xác nhận, không có receipt giao/đọc từ provider.
+
+Xác nhận gửi kèm đúng nội dung và địa chỉ đã xem. Nếu nội dung, tên học viên/lớp hoặc liên hệ phụ huynh thay đổi, người dùng mở lại bản chuẩn bị gửi và kiểm tra trước khi xác nhận.
+
+## Kiểm tra B2C (2026-10-17)
+
+Mở popup/trang lớp → Kiểm tra → Thêm bài kiểm tra → chọn Giữa kỳ/Cuối kỳ, tên, ngày, điểm tối đa → Lưu. Chọn bài trong danh sách có phân trang, tìm học viên, Nhập điểm/Sửa kết quả → điểm và nhận xét → Lưu; sửa kết quả cần lý do. Lịch sử chỉnh sửa mở popup hiển thị nội dung trước/sau, người thực hiện và giờ VN, có phân trang.
+
+Điểm trống không tự thành0. Điểm vượt thang/âm/thừa số lẻ, học viên sai lớp/không đủ điều kiện, bài chưa đến ngày, dữ liệu stale và thiếu quyền đều bị từ chối. Lỗi giữ form để sửa/thử lại; retry cùng UUID không nhân đôi bản ghi/lịch sử. Khi đã lưu kết quả không đổi ngày/thang điểm; sửa tên/loại vẫn được lưu lịch sử. Giáo viên cần quản lý cấp quyền xem/nhập điểm B2C trước khi tab xuất hiện.
+
+## Chuyển lớp / Bảo lưu B2C (2026-10-17)
+
+Manager mở Học viên B2C (hoặc tab Học viên chương trình) → nút hai mũi tên “Chuyển lớp / Bảo lưu” → chọn thao tác, ngày hiệu lực, lý do. Chuyển lớp chọn lớp đích, bảo lưu có ngày dự kiến học lại; đi học lại chỉ xuất hiện khi đang bảo lưu. Lưu thành công tải lại dữ liệu và lịch sử trong popup; ghi danh đã chuyển lớp chỉ xem lịch sử. Học phí quản lý xử lý riêng theo lựa chọn user, không tự sao chép hoặc gia hạn.
+
+Lớp đích đầy/đã kết thúc/trùng ghi danh, ngày không hợp lệ, thiếu lý do hoặc dữ liệu đã đổi đều bị chặn tại DB, UI giữ thông tin và hiện lỗi. Event lỗi thì toàn bộ thao tác rollback; retry request không tạo lịch sử hoặc ghi danh trùng. Lịch sử có người thực hiện và giờ VN, liên tục qua các lần chuyển/bảo lưu/học lại, phân trang 20 dòng.
+
 ## Chấm công khi chưa biết đơn giá (B2C-UNPRICED-CHECKIN-1)
 
 Giáo viên mở Chấm công → Buổi dạy hôm nay → Mở check-in trên buổi thực tế đã phân công, chọn ảnh và Check-in; sau giờ kết thúc chọn ảnh Check-out. Thẻ hôm nay nằm trước bộ lọc tháng để dễ thấy trên điện thoại. Chưa có đơn giá vẫn thực hiện cả hai bước; đủ hai ảnh ghi giờ theo thời lượng lịch, tiền công hiển thị Chờ cập nhật đơn giá. Tổng tháng có cảnh báo số buổi đã đủ công còn chờ giá, tổng tiền chưa gồm các buổi đó.
@@ -566,3 +592,18 @@ Popup lớp → chọn một trong5 mục → trang chi tiết. Lịch → thêm
 
 
 B2C-CLASS-WORKSPACE-1 cache: route force-dynamic/force-no-store cho dữ liệu riêng tư và kết quả RPC luôn mới; revalidate concrete class path sau lưu. Biểu mẫu học phí trong trang lớp truyền class_id chỉ phục vụ cache invalidation (không quyết định phân quyền/mutation); UUID được kiểm trước dùng path. Không refresh client trùng, tránh RSC cập nhật chồng.
+
+
+### B2C-PARENT-NPS-1 — Khảo sát hài lòng phụ huynh
+
+B2C → Khảo sát phụ huynh → Tạo khảo sát → chọn lớp/tên/hạn → Tạo link cho từng phụ huynh liên kết → xác nhận → copy lời mời gửi Zalo hoặc mở email thủ công. Link chỉ hiện một lần; cấp lại vô hiệu link cũ. Không tự gửi hoặc đánh dấu đã gửi. Phụ huynh mở link riêng không đăng nhập, tự chọn điểm (không mặc định 0), góp ý tùy chọn rồi gửi một lần; lỗi giữ nội dung để retry. Link là quyền trả lời, không chuyển tiếp. Quản lý xem tổng NPS, nhóm điểm và góp ý phân trang. Đóng/gia hạn giữ dữ liệu, phụ huynh đã trả lời không tạo phiếu thứ hai. Học viên chưa liên kết phụ huynh được báo để bổ sung.
+
+
+### B2C-TUITION-DESIGN-1
+
+Học phí →4thẻ → lọc tìm kiếm/trạng thái/lớp/kỳ ghi danh (tháng ngày ghi danh, không giả kỳ học) → sort cột/page25. Checkbox chọn trang/dòng chỉ tổng hợp còn nợ đã chọn, không thu hàng loạt. Click Học viên cần xử lý mở popup phân trang20, có tạo/sửa gói và phiếu thu. Giữ các flow gói/thu/hoàn/hủy/điều chỉnh/history cùng quyền cũ, chỉ super_admin có link nhật ký.
+
+
+### B2C-PARENT-DESIGN-1
+
+Phụ huynh →4KPI mở popup danh sách theo nhóm, tìm/page20/Xem-Sửa, giữ bảng ngoài → tìm tên/SĐT/Zalo/email/tên-mã con/lớp, lọc trạng thái liên hệ/quan hệ/lớp → sort tên, trang10/25/50. Xem mở chi tiết liên hệ/các con/lớp; Sửa giữ form và liên kết hiện có. Menu xem các con/copy liên hệ thủ công; không gửi tin tự động/xóa hồ sơ/bulk mutation. Checkbox chỉ đánh dấu hồ sơ, có Bỏ chọn.

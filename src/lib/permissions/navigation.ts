@@ -18,6 +18,7 @@ import {
   UserCircle,
   TrendingUp,
   History,
+  Award,
   type LucideIcon,
 } from "lucide-react";
 
@@ -151,6 +152,8 @@ export const B2C_NAVIGATION: NavItem[] = [
   { label: "Thời khóa biểu GV", href: "/admin/b2c/timetable", icon: CalendarDays },
   { label: "Giờ dạy & Lương", href: "/admin/b2c/teaching", icon: CalendarDays },
   { label: "Phụ huynh", href: "/admin/b2c/parents", icon: UserCircle },
+  { label: "Kết quả chứng chỉ", href: "/admin/b2c/certificates", icon: Award },
+  { label: "Khảo sát phụ huynh", href: "/admin/b2c/nps", icon: ClipboardList },
   { label: "Học phí", href: "/admin/b2c/tuition", icon: Wallet },
   { label: "Báo cáo", href: "/admin/b2c/reports", icon: BarChart3 },
   {

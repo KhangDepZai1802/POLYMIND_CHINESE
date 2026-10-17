@@ -13,7 +13,7 @@ import {
 } from "@/features/b2c/domain/change-history";
 import { getB2CChangeHistory } from "@/features/b2c/server/change-history";
 
-export const metadata: Metadata = { title: "Nhật ký thay đổi B2C" };
+export const metadata: Metadata = { title: "Nhật ký thay đổi" };
 export default async function B2CChangeHistoryPage({
   searchParams,
 }: {
@@ -31,7 +31,7 @@ export default async function B2CChangeHistoryPage({
   if (!parsed.success)
     return (
       <>
-        <PageHeader title="Nhật ký thay đổi B2C" />
+        <PageHeader title="Nhật ký thay đổi" />
         <p role="alert" className="text-destructive">
           Bộ lọc không hợp lệ: {parsed.error.issues[0]?.message}
         </p>
@@ -51,7 +51,7 @@ export default async function B2CChangeHistoryPage({
   return (
     <>
       <PageHeader
-        title="Nhật ký thay đổi B2C"
+        title="Nhật ký thay đổi"
         description="Ai sửa học phí, trạng thái, thời điểm và dữ liệu trước/sau. Chỉ quản trị viên được xem."
       />
       <form
@@ -117,7 +117,7 @@ export default async function B2CChangeHistoryPage({
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[950px] text-left text-sm">
           <caption className="sr-only">
-            Lịch sử thay đổi học phí và ghi danh B2C
+            Lịch sử thay đổi học phí và ghi danh
           </caption>
           <thead className="bg-muted">
             <tr>
@@ -219,7 +219,7 @@ export default async function B2CChangeHistoryPage({
         </table>
       </div>
       <nav
-        aria-label="Phân trang nhật ký B2C"
+        aria-label="Phân trang nhật ký"
         className="mt-4 flex items-center justify-between gap-3 text-sm"
       >
         <span>

@@ -70,13 +70,13 @@ export function TeacherClassManageDialog({ classId }: { classId?: string }) {
     >
       <DialogTrigger asChild>
         <Button variant="outline">
-          {classId ? "Sửa thông tin lớp" : "Tạo lớp B2C"}
+          {classId ? "Sửa thông tin lớp" : "Tạo lớp"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {classId ? "Sửa thông tin lớp" : "Tạo lớp B2C"}
+            {classId ? "Sửa thông tin lớp" : "Tạo lớp"}
           </DialogTitle>
           <DialogDescription>
             {classId
@@ -362,7 +362,7 @@ export function TeacherStudentManageDialog({
                   className={selectClass}
                   defaultValue={data.status}
                 >
-                  {Object.entries(B2C_STUDENT_STATUS_LABELS).map(([k, v]) => (
+                  {Object.entries(B2C_STUDENT_STATUS_LABELS).filter(([k]) => k === data.status || (k !== "on_hold" && k !== "transferred" && data.status !== "on_hold" && data.status !== "transferred")).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
                     </option>

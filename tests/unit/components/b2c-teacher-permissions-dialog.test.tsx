@@ -11,7 +11,7 @@ beforeEach(()=>{
  vi.mocked(readB2CPermissionAdminAction).mockResolvedValue({teachers:[{id:"b2c-a",full_name:"Cô A",source_teacher_id:"account-a",account_name:"Tài khoản A",active:true,permissions:[...DEFAULT_B2C_PERMISSIONS],updated_at:"2026-10-15T01:00:00Z"},{id:"b2c-b",full_name:"Thầy B",source_teacher_id:null,account_name:null,active:false,permissions:[...DEFAULT_B2C_PERMISSIONS],updated_at:null}],accounts:[{id:"account-a",full_name:"Tài khoản A"},{id:"account-b",full_name:"Tài khoản B"}]});
  vi.mocked(saveB2CPermissionsAction).mockResolvedValue({success:"Đã lưu phân quyền."});
 });
-async function open(){render(<TeacherPermissionsDialog/>);fireEvent.click(screen.getByRole("button",{name:"Phân quyền"}));await screen.findByRole("combobox",{name:"Giáo viên B2C"});fireEvent.change(screen.getByRole("combobox",{name:"Giáo viên B2C"}),{target:{value:"b2c-a"}});return within(screen.getByRole("dialog"));}
+async function open(){render(<TeacherPermissionsDialog/>);fireEvent.click(screen.getByRole("button",{name:"Phân quyền"}));await screen.findByRole("combobox",{name:"Giáo viên"});fireEvent.change(screen.getByRole("combobox",{name:"Giáo viên"}),{target:{value:"b2c-a"}});return within(screen.getByRole("dialog"));}
 describe("Teacher permission editor",()=>{
  it("loads current rights, stages checkbox changes and saves the selected teacher/account/version",async()=>{
   const dialog=await open();
@@ -29,7 +29,7 @@ describe("Teacher permission editor",()=>{
   fireEvent.click(dialog.getByRole("checkbox",{name:"Thu học phí, lập phiếu thu"}));
   expect(dialog.getByRole("checkbox",{name:"Xem học phí và phiếu thu của lớp"})).toBeChecked();
   expect(dialog.getByRole("checkbox",{name:"Tạo/sửa gói học phí"})).not.toBeChecked();
-  fireEvent.change(dialog.getByRole("combobox",{name:"Giáo viên B2C"}),{target:{value:"b2c-b"}});
+  fireEvent.change(dialog.getByRole("combobox",{name:"Giáo viên"}),{target:{value:"b2c-b"}});
   expect(dialog.getByRole("button",{name:"Lưu phân quyền"})).toBeDisabled();
   fireEvent.change(dialog.getByRole("combobox",{name:"Tài khoản giáo viên hiện có"}),{target:{value:"account-b"}});
   fireEvent.click(dialog.getByRole("button",{name:"Lưu phân quyền"}));

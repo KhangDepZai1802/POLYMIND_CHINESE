@@ -42,7 +42,7 @@ export async function readTeacherWorkspaceAction(
     Model["result"] & { class: Model["cls"]; schedules: Model["schedules"] }
   >("read_teacher_b2c_workspace", {
     p_class_id: id,
-    p_tab: filters.tab,
+    p_tab: filters.tab === "assessments" ? "students" : filters.tab === "monthly_comments" ? "comments" : filters.tab,
     p_page: filters.page,
     p_query: filters.q,
     p_meeting_id: filters.meeting,

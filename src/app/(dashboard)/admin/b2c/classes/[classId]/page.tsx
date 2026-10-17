@@ -9,7 +9,7 @@ import {
   CLASS_WORKSPACE_PATH,
   classFiltersSchema,
 } from "@/features/b2c/domain/class-workspace";
-export const metadata = { title: "Chi tiết lớp B2C" };
+export const metadata = { title: "Chi tiết lớp" };
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export default async function ClassWorkspacePage({

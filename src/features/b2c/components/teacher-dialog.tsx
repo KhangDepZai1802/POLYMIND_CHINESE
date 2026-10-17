@@ -45,7 +45,7 @@ export function B2CTeacherDialog({ teacher }: { teacher?: B2CTeacher }) {
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {teacher ? "Sửa hồ sơ giáo viên B2C" : "Thêm giáo viên B2C"}
+            {teacher ? "Sửa hồ sơ giáo viên" : "Thêm giáo viên"}
           </DialogTitle>
           <DialogDescription>
             Thông tin liên hệ và giảng dạy tại trung tâm.

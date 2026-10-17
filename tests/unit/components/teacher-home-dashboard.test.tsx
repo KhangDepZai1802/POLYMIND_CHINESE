@@ -75,7 +75,7 @@ describe("Teacher dashboard reference layout", () => {
       screen.getByRole("heading", { name: "Lịch dạy hôm nay (0)" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText("Lớp trung tâm B2C · Theo lịch tuần"),
+      screen.queryByText("Lớp trung tâm · Theo lịch tuần"),
     ).not.toBeInTheDocument();
   });
 });

@@ -1,0 +1,94 @@
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+insert into auth.users(id) values('17300000-0000-4000-8000-000000000001'),('17300000-0000-4000-8000-000000000002');
+insert into public.profiles(id,role,full_name,is_active) values
+ ('17300000-0000-4000-8000-000000000001','academic_manager','TEST-MONTH-MANAGER',true),
+ ('17300000-0000-4000-8000-000000000002','teacher','TEST-MONTH-TEACHER',true);
+insert into public.teachers(id,user_id) values('17300000-0000-4000-8000-000000000003','17300000-0000-4000-8000-000000000002');
+insert into public.b2c_teachers(id,full_name,source_teacher_id) values('17300000-0000-4000-8000-000000000004','TEST-MONTH-TEACHER','17300000-0000-4000-8000-000000000003');
+insert into public.b2c_classes(id,program_slug,name,teacher_name) values
+ ('17300000-0000-4000-8000-000000000010','tieng-anh','TEST-MONTH-CLASS','TEST-MONTH-TEACHER'),
+ ('17300000-0000-4000-8000-000000000011','tieng-anh','TEST-MONTH-OTHER','UNASSIGNED');
+insert into public.b2c_students(id,source_key,full_name,guardian_name,guardian_zalo,email) values
+ ('17300000-0000-4000-8000-000000000020','test-month-student','TEST-MONTH-STUDENT','TEST-GUARDIAN','0901234567','student-must-not-use@example.test');
+insert into public.b2c_enrollments(id,source_key,class_id,student_id,enrollment_date) values
+ ('17300000-0000-4000-8000-000000000030','test-month-enrollment','17300000-0000-4000-8000-000000000010','17300000-0000-4000-8000-000000000020','2026-01-01');
+insert into public.b2c_parents(id,full_name,zalo,email) values
+ ('17300000-0000-4000-8000-000000000040','TEST-PARENT','0901111222','parent@example.test'),
+ ('17300000-0000-4000-8000-000000000041','TEST-OTHER-PARENT','0903333444','other@example.test');
+insert into public.b2c_student_parents(parent_id,student_id) values('17300000-0000-4000-8000-000000000040','17300000-0000-4000-8000-000000000020');
+select is((select count(*)::integer from pg_class where oid in ('public.b2c_monthly_comments'::regclass,'public.b2c_monthly_comment_history'::regclass,'public.b2c_monthly_comment_deliveries'::regclass,'public.b2c_monthly_comment_requests'::regclass) and relrowsecurity),4,'All monthly tables enable RLS');
+select ok(not has_function_privilege('anon','public.write_b2c_monthly_comment(text,jsonb)','EXECUTE'),'Anon cannot save comments');
+select set_config('request.jwt.claims','{"sub":"17300000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+select set_config('test.content','{"attendance":"TEST-ATTENDANCE","attitude":"TEST-ATTITUDE","learning":"TEST-LEARNING","strengths":"TEST-STRENGTH","improvements":"TEST-IMPROVE","next_plan":"TEST-PLAN"}',true);
+select set_config('test.month',jsonb_build_object('request_id','17300000-0000-4000-8000-000000000050','class_id','17300000-0000-4000-8000-000000000010','enrollment_id','17300000-0000-4000-8000-000000000030','month','2026-10','status','draft','expected_updated_at',null,'content',current_setting('test.content')::jsonb)::text,true);
+select throws_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb||'{"month":"2099-01"}')$$,'22023',null,'Future report month rejected');
+select throws_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb||'{"class_id":"17300000-0000-4000-8000-000000000011"}')$$,'22023',null,'Foreign enrollment rejected');
+select throws_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb||'{"content":{"attendance":"only one field"}}')$$,'22023',null,'Malformed template rejected');
+select lives_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb)$$,'Draft saved');
+select lives_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb)$$,'Exact draft retry succeeds');
+select is((select count(*)::integer from public.b2c_monthly_comments where class_id='17300000-0000-4000-8000-000000000010'),1,'One report per student and month');
+select is((select count(*)::integer from public.b2c_monthly_comment_history),1,'Retry does not duplicate history');
+select set_config('test.report_id',(select id::text from public.b2c_monthly_comments where class_id='17300000-0000-4000-8000-000000000010'),true);
+select set_config('test.delivery',jsonb_build_object('request_id','17300000-0000-4000-8000-000000000051','class_id','17300000-0000-4000-8000-000000000010','report_id',current_setting('test.report_id'),'expected_updated_at',(select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),'recipient_key','17300000-0000-4000-8000-000000000040','channel','email','confirmed',true)::text,true);
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb)$$,'22023',null,'Draft cannot be recorded as sent');
+select set_config('test.month',(current_setting('test.month')::jsonb||jsonb_build_object('request_id','17300000-0000-4000-8000-000000000052','status','ready','expected_updated_at',(select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid)))::text,true);
+select throws_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb||jsonb_build_object('content',current_setting('test.content')::jsonb||'{"attitude":" "}'))$$,'22023',null,'Ready requires all six fields');
+select lives_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb)$$,'Report finalized');
+select set_config('test.ready_version',(select updated_at::text from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),true);
+select lives_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb||jsonb_build_object('request_id',gen_random_uuid(),'expected_updated_at',current_setting('test.ready_version')))$$,'Saving unchanged report succeeds');
+select is((select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),current_setting('test.ready_version')::timestamptz,'Unchanged save preserves version');
+select is((select count(*)::integer from public.b2c_monthly_comment_history),2,'Unchanged save does not invent edit history');
+select is((select count(*)::integer from public.b2c_monthly_comment_deliveries),0,'Finalizing is not sending');
+select is(jsonb_array_length(public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->'recipients'),2,'Linked parent plus explicit guardian Zalo available');
+select ok(position('student-must-not-use@example.test' in (public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->'recipients')::text)=0,'Student email never inferred as parent email');
+select ok(position('TEST-MONTH-STUDENT' in public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->>'message')>0,'Message includes correct student');
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb)$$,'40001',null,'Stale prepared report rejected');
+select set_config('test.delivery',(current_setting('test.delivery')::jsonb||jsonb_build_object('expected_updated_at',(select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),'expected_message',public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->>'message','expected_destination','parent@example.test'))::text,true);
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||'{"confirmed":false}')$$,'22023',null,'Explicit confirmation required');
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||'{"recipient_key":"17300000-0000-4000-8000-000000000041"}')$$,'22023',null,'Unlinked parent cannot be recipient');
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||'{"recipient_key":"guardian","channel":"email"}')$$,'22023',null,'Guardian has no inferred email');
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||jsonb_build_object('expected_message','STALE-PREVIEW'))$$,'40001',null,'Changed preview rejected');
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||jsonb_build_object('expected_destination','old@example.test'))$$,'40001',null,'Changed recipient address rejected');
+select lives_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||'{"destination":"attacker@example.test","message":"FORGED"}')$$,'Email send manually confirmed');
+select is((select destination from public.b2c_monthly_comment_deliveries where report_id=current_setting('test.report_id')::uuid),'parent@example.test','Recipient resolved from linked parent, not client');
+select ok((select position('FORGED' in message)=0 and position('TEST-LEARNING' in message)>0 from public.b2c_monthly_comment_deliveries where report_id=current_setting('test.report_id')::uuid),'Saved message is actual ready report');
+select is((select delivery_method from public.b2c_monthly_comment_deliveries where report_id=current_setting('test.report_id')::uuid),'manual_confirmation','Delivery clearly records manual confirmation');
+select lives_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb||'{"destination":"attacker@example.test","message":"FORGED"}')$$,'Exact delivery retry succeeds');
+select is((select count(*)::integer from public.b2c_monthly_comment_deliveries),1,'Retry does not duplicate manual send');
+select throws_ok($$update public.b2c_monthly_comment_deliveries set destination='changed'$$,'42501',null,'Delivery history cannot be rewritten');
+select throws_ok($$delete from public.b2c_monthly_comment_history$$,'42501',null,'Comment history cannot be deleted');
+select set_config('test.month',(current_setting('test.month')::jsonb||jsonb_build_object('request_id','17300000-0000-4000-8000-000000000053','expected_updated_at',(select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),'content',current_setting('test.content')::jsonb||'{"learning":"NEW-LEARNING"}'))::text,true);
+select lives_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb)$$,'Comment can be revised after send');
+select ok((select position('NEW-LEARNING' in message)=0 from public.b2c_monthly_comment_deliveries),'Previously sent content snapshot preserved');
+select set_config('request.jwt.claims','{"sub":"17300000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+select lives_ok($$select public.read_b2c_monthly_comments('17300000-0000-4000-8000-000000000010','2026-10')$$,'Assigned teacher with default comment read can read reports');
+select is(jsonb_array_length(public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->'recipients'),0,'Contact details hidden without share permission');
+select is((select count(*)::integer from public.b2c_monthly_comment_deliveries),0,'Delivery table RLS hides parent contacts');
+select throws_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb)$$,'42501',null,'Default teacher cannot edit report');
+select throws_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb)$$,'42501',null,'Default teacher cannot confirm send');
+select throws_ok($$select public.read_b2c_monthly_comments('17300000-0000-4000-8000-000000000011','2026-10')$$,'42501',null,'Foreign class denied');
+select set_config('request.jwt.claims','{"sub":"17300000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+select throws_ok($$select public.save_b2c_teacher_permissions('17300000-0000-4000-8000-000000000004','17300000-0000-4000-8000-000000000003',array['share_monthly_comments'],null)$$,'P0001',null,'Share requires comment write dependencies');
+select lives_ok($$select public.save_b2c_teacher_permissions('17300000-0000-4000-8000-000000000004','17300000-0000-4000-8000-000000000003',array['view_classes','view_students','view_comments','write_comments','share_monthly_comments'],null)$$,'Manager grants monthly sharing with dependencies');
+select set_config('request.jwt.claims','{"sub":"17300000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+select is(jsonb_array_length(public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->'recipients'),2,'Granted teacher sees linked contacts');
+select set_config('test.delivery',(current_setting('test.delivery')::jsonb||jsonb_build_object('request_id','17300000-0000-4000-8000-000000000054','expected_updated_at',(select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),'recipient_key','guardian','channel','zalo','expected_message',public.read_b2c_monthly_comment_detail(current_setting('test.report_id')::uuid)->>'message','expected_destination','0901234567'))::text,true);
+select lives_ok($$select public.write_b2c_monthly_comment('confirm_delivery',current_setting('test.delivery')::jsonb)$$,'Granted teacher confirms Zalo send');
+select is((select actor_id from public.b2c_monthly_comment_deliveries where recipient_key='guardian'),'17300000-0000-4000-8000-000000000002'::uuid,'Delivery captures actual teacher');
+reset role;
+select is((select count(*)::integer from public.b2c_monthly_comment_requests where request_id='17300000-0000-4000-8000-000000000054'),1,'Delivery ledger exists once');
+alter table public.b2c_monthly_comment_history add constraint test_month_fail check(after_data->'content'->>'learning'<>'FAIL-HISTORY') not valid;
+select set_config('test.month',(current_setting('test.month')::jsonb||jsonb_build_object('request_id','17300000-0000-4000-8000-000000000055','expected_updated_at',(select updated_at from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),'content',current_setting('test.content')::jsonb||'{"learning":"FAIL-HISTORY"}'))::text,true);
+set local role authenticated;
+select throws_ok($$select public.write_b2c_monthly_comment('save',current_setting('test.month')::jsonb)$$,'23514',null,'History failure rolls back revision');
+select is((select content->>'learning' from public.b2c_monthly_comments where id=current_setting('test.report_id')::uuid),'NEW-LEARNING','History failure preserves old comment');
+reset role;
+select set_config('request.jwt.claims','{"sub":"17300000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select public.save_b2c_parent_with_email('{"full_name":"INVALID EMAIL","phone":"","zalo":"","email":"bad email","student_codes":[],"relationship":"unknown"}')$$,'22023',null,'Invalid parent email rejected');
+select lives_ok($$select public.save_b2c_parent_with_email('{"full_name":"TEST NEW PARENT EMAIL","phone":"","zalo":"","email":"new-parent@example.test","student_codes":[],"relationship":"unknown"}')$$,'Parent email saved atomically with parent');
+select is((select email from public.b2c_parents where full_name='TEST NEW PARENT EMAIL'),'new-parent@example.test','Email stored on actual parent');
+reset role;
+select * from finish();

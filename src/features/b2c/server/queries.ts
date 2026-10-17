@@ -9,7 +9,7 @@ export async function getB2CAdmissionsPage(stage: string | null, program: string
   const { data, error } = await (await createClient()).rpc("get_b2c_admissions_page", {
     p_stage: stage ?? undefined, p_program: program || undefined, p_query: query, p_page: page, p_limit: limit,
   });
-  if (error) throw new Error("Không tải được danh sách tuyển sinh B2C. Vui lòng thử lại.");
+  if (error) throw new Error("Không tải được danh sách tuyển sinh. Vui lòng thử lại.");
   return data as unknown as { leads: import("@/features/b2c/domain/admissions").AdmissionLead[]; total: number };
 }
 
@@ -32,7 +32,7 @@ export async function getB2CStudentCounts() {
   const { count, error } = await supabase
     .from("b2c_students")
     .select("id", { count: "exact", head: true });
-  if (error) throw new Error(`Không tải được số học viên B2C: ${error.message}`);
+  if (error) throw new Error(`Không tải được số học viên: ${error.message}`);
 
   const studentsByProgram = new Map<string, Set<string>>();
   const pageSize = 1000;
@@ -43,7 +43,7 @@ export async function getB2CStudentCounts() {
       .order("id")
       .range(offset, offset + pageSize - 1);
     if (enrollmentError) {
-      throw new Error(`Không tải được số học viên B2C: ${enrollmentError.message}`);
+      throw new Error(`Không tải được số học viên: ${enrollmentError.message}`);
     }
     for (const enrollment of data ?? []) {
       const slug = enrollment.b2c_classes.program_slug;
@@ -76,7 +76,7 @@ export async function getB2COverview() {
       supabase
         .from("b2c_students")
         .select("id", { count: "exact", head: true }),
-      supabase.from("b2c_enrollments").select("class_id, student_id"),
+      supabase.from("b2c_enrollments").select("class_id, student_id, status"),
       supabase
         .from("b2c_monthly_reports")
         .select(
@@ -95,13 +95,14 @@ export async function getB2COverview() {
     reportResult.error,
   ].find(Boolean);
   if (firstError) {
-    throw new Error(`Không tải được tổng quan B2C: ${firstError.message}`);
+    throw new Error(`Không tải được tổng quan: ${firstError.message}`);
   }
 
   const classes = classesResult.data ?? [];
   const enrollments = enrollmentsResult.data ?? [];
   const enrollmentCountByClass = new Map<string, number>();
   for (const enrollment of enrollments) {
+    if (enrollment.status === "transferred") continue;
     enrollmentCountByClass.set(
       enrollment.class_id,
       (enrollmentCountByClass.get(enrollment.class_id) ?? 0) + 1,
@@ -135,7 +136,7 @@ export async function getB2COverview() {
   let breakEven: ReturnType<typeof estimateBreakEven> | null = null;
   if (latestReport) {
     const { data: metrics, error: metricsError } = await supabase.from("b2c_monthly_program_metrics").select("opening_students,new_students,departed_students").eq("report_id",latestReport.id);
-    if (metricsError) throw new Error("Không tải được dữ liệu tính hòa vốn B2C.");
+    if (metricsError) throw new Error("Không tải được dữ liệu tính hòa vốn.");
     breakEven = estimateBreakEven(latestReport, (metrics ?? []).reduce((sum,m) => sum+m.opening_students+m.new_students-m.departed_students,0));
   }
   const totalCost = latestReport
@@ -185,7 +186,7 @@ export async function getB2CClasses(programSlug: string) {
 
   // Cho phép giao diện mở trước khi quản trị viên chạy migration mới.
   if (error) {
-    console.error("Không tải được danh sách lớp B2C", {
+    console.error("Không tải được danh sách lớp", {
       code: error.code,
       message: error.message,
       programSlug,
@@ -221,12 +222,12 @@ export async function getB2CStudentRows(programSlug?: string) {
     .order("source_row");
 
   if (error) {
-    console.error("Không tải được học viên B2C", {
+    console.error("Không tải được học viên", {
       code: error.code,
       message: error.message,
       programSlug,
     });
-    throw new Error("Không tải được học viên B2C. Kiểm tra kết nối và migration trạng thái học viên.");
+    throw new Error("Không tải được học viên. Kiểm tra kết nối và migration trạng thái học viên.");
   }
 
   return (data ?? []).flatMap((item) => {
@@ -278,7 +279,7 @@ export async function getB2CMonthlyReports() {
 
   if (error || !reports?.length) {
     if (error) {
-      console.error("Không tải được báo cáo tháng B2C", {
+      console.error("Không tải được báo cáo tháng", {
         code: error.code,
         message: error.message,
       });
@@ -296,7 +297,7 @@ export async function getB2CMonthlyReports() {
       reports.map((report) => report.id),
     );
   if (metricError) {
-    console.error("Không tải được chỉ số chương trình B2C", {
+    console.error("Không tải được chỉ số chương trình", {
       code: metricError.code,
       message: metricError.message,
     });

@@ -82,7 +82,7 @@ describe("teacher account dialog", () => {
     mocks.read.mockResolvedValue({ account: null });
     render(<TeacherAccountDialog target={target} />);
     fireEvent.click(screen.getByRole("button", { name: "Tài khoản" }));
-    await screen.findByText("Hồ sơ B2C chưa liên kết tài khoản giáo viên.");
+    await screen.findByText("Hồ sơ chưa liên kết tài khoản giáo viên.");
     expect(screen.getByRole("link", { name: /Mở Phân quyền/ })).toHaveAttribute(
       "href",
       "/admin/b2c/permissions",
