@@ -38,6 +38,16 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261019-LISTENING — Codex — 2026-10-19. User yêu cầu đưa code GitHub: /nghe chia hai lớp, ngân hàng bài 7–10 từ Word và bốn mục mỗi bài, giữ bài/audio cũ/logo; giao diện banner và hai thẻ không thống kê. Fetch HEAD=origin/main trước release; rà8file không secret literal, diff-check đạt. Code mới nhất lint/typecheck/test/build đạt (1031 tests); chỉ docs thay sau checks. Commit/push được user cho phép; kết quả SHA/remote báo trong chat. Chưa xác minh deploy online; audio ngân hàng chờ cung cấp.
+
+> LISTENING-CLASS-DESIGN — hoàn thành local — Codex — 2026-10-19. Theo ảnh mới: banner xanh/tai nghe, hai thẻ lớp minh họa xanh/tím. Logo/component/header giữ nguyên; không số bài/audio/tài liệu/chủ đề, không chú thích/mũi tên trên thẻ. Browser desktop1440/mobile390 không tràn, logo logopolymind.png/42px như cũ. Lint/typecheck/test/build đạt; không DB/migration/commit/push. Giữ route và bài cũ.
+
+> LISTENING-CLASS-TITLES — hoàn thành local — Codex — 2026-10-19. Theo ảnh/user: hai ô /nghe chỉ giữ tên lớp, bỏ icon/chú thích/Vào lớp học/mũi tên và câu hướng dẫn dưới tiêu đề trang. Browser xác minh đúng hai link/tựa đề, không icon/chú thích; lint/typecheck/build và 1031/1031 tests đạt. Không DB/migration/commit/push.
+
+> LISTENING-BANK-1 — hoàn thành local — Codex — 2026-10-19. /nghe có hai lớp; nhập đủ Word bài 7–10, giữ route/audio bài 3–4. Lint/typecheck/build đạt, 1031/1031 tests; browser 10 route200/mobile390. Không DB/migration/commit/push. Next: user xem /nghe, bổ sung audio khi có.
+
+> LISTENING-BANK-SECTIONS — hoàn thành local — Codex — 2026-10-19. Theo user, mỗi bài có bốn nút Từ vựng/Ngữ pháp/Bài khóa 1/Bài khóa 2; anchor riêng và tránh header che. Browser mobile kiểm 16 liên kết/đích bài 7–10 đạt; lint/typecheck/test/build đạt. Chưa có công cụ tạo file giọng AI trong phiên, user sẽ cung cấp audio sau. Không DB/migration/commit/push.
+
 > RELEASE-20261017-DASHBOARDS — Codex — 2026-10-17. User yêu cầu commit/push:Giáo viên/Báo cáo và popup thẻ học phí. Fetch HEAD=origin/main; rà12files không secret literal/private key, diff-check đạt. Kiểm tra code gần nhất lint/typecheck/build đạt,183files1031/1031tests; không DB/migration. SHA/remote xác minh báo trong chat, chưa xác minh deploy online.
 
 > B2C-REPORT-DESIGN-1 — hoàn thành local — Codex — 2026-10-17. Báo cáo theo ảnh:4KPI màu, picker tháng, avatar/sort/costicons/editbar; giữ số liệu/form. Lint/typecheck/build đạt,183files1031/1031tests; dev restart. Chưa QA browser độc lập/commit/push/deploy bản này.
@@ -1438,6 +1448,12 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-19] Codex — LISTENING-BANK-1
+- /nghe chia hai lớp, Học viện lãnh đạo giữ bài 3–4 và route/audio cũ. Tiếng Trung ngân hàng có bốn bài 7–10 từ Word, 82 mục từ vựng, ngữ pháp/hội thoại; đối chiếu 959 đoạn nguồn không thiếu. File Word không có audio.
+- Thay đổi: trang chọn lớp, trang danh sách và bài ngân hàng, bank-lessons.json, ListeningShell và docs. Không DB/migration, không commit/push.
+- Kiểm tra: lint/typecheck/build đạt; 183 file, 1031/1031 tests đạt. Browser Edge 10 route HTTP200, hai nút lớp, mobile390 không tràn ngang.
+- Next: user xem /nghe; bổ sung audio khi được cung cấp.
+
 ### [2026-10-17] Codex — RELEASE-20261017-DASHBOARDS
 - User yêu cầu đưa code GitHub: giao diện Giáo viên/Báo cáo theo ảnh,3popup tiền học phí và regressions/docs/QAboard. Không DB/migration/quyền mới.
 - Fetch main trước release=HEAD, rà12files không environment secret literal/private key; diff-check đạt. Code mới nhất lint/typecheck/build exit0,183files1031/1031tests; chỉ cập nhật log sau checks.
@@ -1462,7 +1478,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - User yêu cầu commit/push GitHub. Bundle gồm lifecycle ghi danh, kiểm tra, nhận xét tháng, chứng chỉ/marketing, NPS, KPI thấp sĩ số, đổi nhãn và giao diện Tổng quan/Học phí/Phụ huynh/popup thẻ. Giữ các kiểm tra/quyền và tài liệu đi kèm.
 - Fetch origin: HEAD=origin/main trước release. Rà151file không environment secret literal/private key. Không thêm .env, ảnh dữ liệu hoặc secret. Sửa dòng trống EOF trong WORKLOG.
 - Code mới nhất lint/typecheck/build exit0,183files1024/1024tests;6SQL mới đã áp cloud/exact-history trong các task trước, không replay16gaps cũ. Không đổi code sau checks. Thực hiện commit/push theo user; kết quả SHA/remote báo trong chat, chưa xác minh deployment online.
-
-### [2026-10-17] Codex — B2C-PARENT-CARD-POPUPS
-- User đổi4KPI thành danh sách popup: tổng/cóSĐT/cóZalo/thiếu. Popup tìm/page20/empty0/Xem-Sửa; Xem đónglist rồi mởdetail. Bảng và bộ lọc ngoài giữ nguyên, aria-haspopup thay pressed.
-- File parent-dashboard,ParentCardList,tests,docs03/04/08/WORKLOG; không API/DB/quyền mới. Lint/typecheck/build exit0;183files1024/1024tests, gồm cả4thẻ/empty/tìm/page/detail/mainfilter không đổi. Dev restartlocalhost3000; chưa QA browser độc lập/commit/push/deploy. Next xem popup theo phản hồi user.

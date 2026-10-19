@@ -6,9 +6,11 @@ import { Logo } from "@/components/shared/logo";
 export function ListeningShell({
   children,
   lesson,
+  classNameLabel = "Học viện lãnh đạo",
 }: {
   children: React.ReactNode;
   lesson?: string;
+  classNameLabel?: string;
 }) {
   return (
     <div className="bg-surface-page flex min-h-screen flex-col text-[#10243f]">
@@ -22,7 +24,7 @@ export function ListeningShell({
             <Logo height={42} priority />
             <span className="hidden sm:block">
               <span className="block text-xs font-bold tracking-[0.12em] text-[#1a5fa8] uppercase">
-                Lớp Ban Giám đốc
+                {classNameLabel}
               </span>
               <span className="block text-sm font-semibold text-[#10243f]">
                 {lesson ?? "Danh sách bài nghe"}

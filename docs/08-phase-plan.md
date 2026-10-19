@@ -1555,3 +1555,14 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 - [x] Báo cáo theo ảnh:KPI4màu/selector tháng/bảng chương trình avatar-sort/costicons/editbar, không số liệu giả/không viền trên dày.
 - [x] Giữ cách tính/nhập/lưu tháng, null chi phí lương và notes; lint/typecheck/test/build.
 - [ ] QA browser độc lập; chưa commit/push/deploy bản này.
+
+
+## LISTENING-BANK-1
+
+- [x] Theo ảnh mới: banner xanh/tai nghe và hai thẻ minh họa xanh/tím; giữ logo hiện có, bỏ toàn bộ badge thống kê số bài/tài liệu/chủ đề. Thẻ chỉ có tên lớp và minh họa, giữ liên kết cũ.
+
+- [x] Theo ảnh/user: ô chọn lớp chỉ có tựa đề; bỏ chú thích/icon/mũi tên/Vào lớp học và câu hướng dẫn dưới tiêu đề trang. Giữ hai liên kết lớp.
+
+- [x] Bổ sung bốn nút điều hướng Từ vựng/Ngữ pháp/Bài khóa 1/Bài khóa 2 theo user; browser mobile 16 anchor đúng cho bài 7–10. Audio hai bài khóa chờ user cung cấp.
+
+- [x] /nghe có hai lối vào Tiếng Trung ngân hàng/Học viện lãnh đạo; giữ bài 3–4 và toàn bộ route/audio cũ. Nhập đầy đủ bài 7–10 gồm bảng từ vựng, ngữ pháp, hội thoại từ MSUTONG SC Q1.docx. Đối chiếu 959 đoạn nguồn không thiếu; browser 10 route200/mobile390, lint/typecheck/build và 1031/1031 tests đạt.
