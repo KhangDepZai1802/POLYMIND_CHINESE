@@ -40,7 +40,7 @@ export function ListeningShell({
           </Link>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="min-w-0 flex-1 break-words">{children}</main>
       <footer className="mt-12 bg-[#0c2c4d] px-4 py-6 text-center text-xs text-white/65">
         POLYMIND
       </footer>

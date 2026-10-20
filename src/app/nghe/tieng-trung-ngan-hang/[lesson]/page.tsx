@@ -126,16 +126,16 @@ export default async function BankLessonPage({ params }: Props) {
               return (
                 <div
                   key={index}
-                  className="my-6 overflow-x-auto rounded-xl border border-emerald-200"
+                  className="my-6 min-w-0 rounded-xl border border-emerald-200"
                   role="region"
                   aria-label={`Bảng từ vựng bài ${lesson.number}`}
                   tabIndex={0}
                 >
-                  <table className="w-full min-w-190 border-collapse text-sm">
+                  <table className="block w-full border-collapse text-sm md:table [&_td]:block [&_td]:min-w-0 [&_td]:break-words [&_td]:before:mb-1 [&_td]:before:block [&_td]:before:text-xs [&_td]:before:font-semibold [&_td]:before:text-emerald-800 [&_td]:before:content-[attr(data-label)] md:[&_td]:table-cell md:[&_td]:before:hidden">
                     <caption className="sr-only">
                       Từ vựng bài {lesson.number}
                     </caption>
-                    <thead className="bg-emerald-800 text-white">
+                    <thead className="sr-only bg-emerald-800 text-white md:not-sr-only">
                       <tr>
                         {block.rows[0]?.map((cell, i) => (
                           <th
@@ -148,11 +148,11 @@ export default async function BankLessonPage({ params }: Props) {
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="block md:table-row-group">
                       {block.rows.slice(1).map((row, i) => (
                         <tr
                           key={i}
-                          className="border-t border-emerald-100 odd:bg-emerald-50/40"
+                          className="block border-t border-emerald-200 py-2 first:border-t-0 odd:bg-emerald-50/40 md:table-row md:py-0"
                         >
                           {row.map((cell, j) => {
                             if (j === 1 && hasChinese(cell)) {
@@ -163,6 +163,7 @@ export default async function BankLessonPage({ params }: Props) {
                               return (
                                 <td
                                   key={j}
+                                  data-label={block.rows?.[0]?.[j]}
                                   className="px-4 py-3 text-xl leading-7 font-semibold text-emerald-900"
                                 >
                                   {variants.length > 1 ? (
@@ -170,7 +171,7 @@ export default async function BankLessonPage({ params }: Props) {
                                       {variants.map((variant, vIdx) => (
                                         <span
                                           key={vIdx}
-                                          className="inline-flex items-center gap-1.5"
+                                          className="inline-flex min-w-0 flex-wrap items-center gap-1.5"
                                         >
                                           <span>{variant}</span>
                                           <ChineseSpeakButton
@@ -187,7 +188,7 @@ export default async function BankLessonPage({ params }: Props) {
                                       ))}
                                     </span>
                                   ) : (
-                                    <span className="flex items-center gap-2">
+                                    <span className="flex min-w-0 flex-wrap items-center gap-2">
                                       <span>{cell}</span>
                                       <ChineseSpeakButton
                                         text={cell}
@@ -204,10 +205,11 @@ export default async function BankLessonPage({ params }: Props) {
                               return (
                                 <td
                                   key={j}
+                                  data-label={block.rows?.[0]?.[j]}
                                   className="px-4 py-3 leading-7 whitespace-pre-line"
                                 >
                                   <span className="flex items-start justify-between gap-2">
-                                    <span>{cell}</span>
+                                    <span className="min-w-0 flex-1 break-words">{cell}</span>
                                     <ChineseSpeakButton
                                       text={cell}
                                       size="sm"
@@ -222,6 +224,7 @@ export default async function BankLessonPage({ params }: Props) {
                             return (
                               <td
                                 key={j}
+                                data-label={block.rows?.[0]?.[j]}
                                 className="px-4 py-3 leading-7 whitespace-pre-line"
                               >
                                 {cell}
@@ -278,7 +281,7 @@ export default async function BankLessonPage({ params }: Props) {
                   id={`bai-khoa-${text.match(/\d+/)?.[0]}`}
                   className="mt-6 mb-3 flex scroll-mt-24 flex-wrap items-center justify-between gap-3 border-b border-[#dde5ee] pb-3 text-lg font-bold text-[#0d3f78]"
                 >
-                  <span>{text}</span>
+                  <span className="min-w-0 flex-1 break-words">{text}</span>
                   {dialogueLines.length > 0 ? (
                     <ChineseSequenceButton
                       items={dialogueLines}

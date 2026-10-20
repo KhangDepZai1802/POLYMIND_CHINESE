@@ -82,7 +82,7 @@ export default function ListeningIndexPage() {
                 strokeWidth={1.5}
               />
             </span>
-            <div>
+            <div className="min-w-0 flex-1">
               <span
                 aria-hidden
                 className={`mb-5 block h-1 w-10 rounded-full ${accent}`}
