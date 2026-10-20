@@ -42,7 +42,7 @@ export function ListeningShell({
       </header>
       <main className="flex-1">{children}</main>
       <footer className="mt-12 bg-[#0c2c4d] px-4 py-6 text-center text-xs text-white/65">
-        POLYMIND · {lesson ? `Tài liệu nghe ${lesson}` : "Tài liệu luyện nghe"}
+        POLYMIND
       </footer>
     </div>
   );

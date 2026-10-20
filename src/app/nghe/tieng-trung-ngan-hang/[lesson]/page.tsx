@@ -79,7 +79,7 @@ export default async function BankLessonPage({ params }: Props) {
   return (
     <ListeningShell
       classNameLabel="Tiếng Trung ngân hàng"
-      lesson={`MSUTONG · Bài ${lesson.number}`}
+      lesson={`Bài ${lesson.number}`}
     >
       <article className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <Link
@@ -91,7 +91,7 @@ export default async function BankLessonPage({ params }: Props) {
         </Link>
         <header className="my-5 rounded-2xl bg-[#0d3f78] p-6 text-white sm:p-8">
           <p className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-[#91bbe8]">
-            <span>Bài {lesson.number} · MSUTONG sơ cấp · Quyển 1</span>
+            <span>Bài {lesson.number}</span>
             <ChineseSpeakButton text={lesson.title} variant="header" />
           </p>
           <h1 className="text-2xl leading-relaxed font-bold sm:text-3xl">

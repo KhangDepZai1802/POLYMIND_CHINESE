@@ -14,12 +14,12 @@ export default function BankIndexPage() {
   return (
     <ListeningShell
       classNameLabel="Tiếng Trung ngân hàng"
-      lesson="MSUTONG sơ cấp · Quyển 1"
+      lesson="Tiếng Trung ngân hàng"
     >
       <section className="bg-[#0d3f78] px-4 py-12 text-white">
         <div className="mx-auto max-w-5xl">
           <p className="text-sm font-bold tracking-widest text-[#91bbe8] uppercase">
-            MSUTONG · Sơ cấp · Quyển 1
+            POLYMIND
           </p>
           <h1 className="mt-3 text-3xl font-bold">Tiếng Trung ngân hàng</h1>
           <p className="mt-4 leading-7 text-white/75">
