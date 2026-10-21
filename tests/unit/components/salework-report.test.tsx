@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { SaleWorkReport } from "@/features/b2c/components/salework-report";
 import {
   readSaleWorkReport,
@@ -19,8 +21,28 @@ const snapshot = {
   callDurationSeconds: 90,
   syncedAt: "2026-10-21T08:00:00Z",
 };
+const fillText = vi.fn();
 describe("Daily SaleWork report", () => {
   beforeEach(() => {
+    fillText.mockClear();
+    vi.stubGlobal("Path2D", class {});
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      fillText,
+      beginPath: vi.fn(),
+      roundRect: vi.fn(),
+      fill: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      stroke: vi.fn(),
+      arc: vi.fn(),
+      moveTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      clip: vi.fn(),
+      createLinearGradient: () => ({ addColorStop: vi.fn() }),
+      measureText: (value: string) => ({ width: value.length * 15 }),
+    } as unknown as CanvasRenderingContext2D);
     vi.mocked(readSaleWorkReport)
       .mockReset()
       .mockResolvedValue({ report: null, snapshot });
@@ -86,11 +108,6 @@ describe("Daily SaleWork report", () => {
       report: null,
       snapshot: null,
     });
-    const fillText = vi.fn();
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
-      fillRect: vi.fn(),
-      fillText,
-    } as unknown as CanvasRenderingContext2D);
     let dimensions: number[] = [];
     vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(
       function (this: HTMLCanvasElement, callback) {
@@ -122,9 +139,15 @@ describe("Daily SaleWork report", () => {
     );
     await screen.findByRole("button", { name: "Sao chép báo cáo" });
     fireEvent.click(screen.getByRole("button", { name: "Sao chép báo cáo" }));
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Đã sao chép ảnh báo cáo.", {
+        description: "Bạn có thể dán ảnh vào tin nhắn.",
+        duration: 4000,
+      }),
+    );
     expect(
-      await screen.findByText("Đã sao chép ảnh báo cáo."),
-    ).toBeInTheDocument();
+      screen.queryByText("Đã sao chép ảnh báo cáo."),
+    ).not.toBeInTheDocument();
     expect(write).toHaveBeenCalledTimes(1);
     expect(dimensions).toEqual([1080, 1920]);
     const drawn = fillText.mock.calls.map(([text]) => text);

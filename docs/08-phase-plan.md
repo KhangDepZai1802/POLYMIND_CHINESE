@@ -1584,12 +1584,25 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 
 ## SALEWORK-DAILY-REPORT-1
 
+### SALEWORK-REPORT-DESIGN-4
+
+- [x] Mẫu theo ảnh: nền xanh nhạt, tai nghe vector, thẻ hai cột màu, ghi chú, tiêu đề BÁO CÁO.
+- [x] Preview và PNG9:16 chung renderer; giữ số liệu thật và popup sao chép.
+- [x] Edge local ảnh/copy/popup/mobile390 đạt; lint/typecheck/build và1074tests đạt.
+- [ ] Phát hành mẫu+popup và kiểm production (chờ xác nhận sau auto-review từ chối lần phát hành popup trước).
+
+### SALEWORK-COPY-POPUP-3
+
+- [x] Sao chép ảnh thành công/lỗi dùng toast nổi của dashboard.
+- [x] Lint/typecheck/build/1074tests và Edge local popup trong viewport, clipboard9:16 đạt.
+- [ ] Phát hành popup và kiểm production.
+
 ### SALEWORK-REPORT-IMAGE-2
 
 - [x] Nhãn Báo cáo; bỏ dòng BikeForce đồng bộ trong báo cáo và ảnh.
 - [x] Sao chép ảnh PNG và tải PNG dùng chung bản 1080×1920 (9:16); giữ dữ liệu/ngày/người và trạng thái nháp.
 - [x] Edge local đọc lại clipboard PNG1080×1920, tải ảnh/mobile390; lint/typecheck/build và1074tests đạt.
-- [ ] Phát hành và kiểm tra production.
+- [x] Release977aa7f; Edge production cothy xác minh clipboard PNG1080×1920, tải ảnh, nhãn Báo cáo, không dòng đồng bộ, mobile390/0pageerror.
 
 - [x] Báo cáo theo ngày cho cole/cothy: khách chốt, tiền thực thu, khóa chốt, đọc snapshot cùng ngày, sao chép và xuất PNG.
 - [x] SQL03 người dùng chạy production, mapping UUID và RLS identity kiểm thử bằng rollback; admin chỉ đọc, cấm sửa chéo.

@@ -38,7 +38,13 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> SALEWORK-REPORT-IMAGE-2 — Codex — 2026-10-21. User xác nhận rõ “đẩy lên đi hỏi nữa”: phát hành bản sửa đã kiểm tra. Nhãn Báo cáo, bỏ dòng thời gian đồng bộ; clipboard/tải PNG1080×1920. Edge local đọc lại clipboard/kích thước/ảnh/mobile390 đạt; lint/typecheck/build và1074tests đạt. Next: push main và kiểm tra production. Không SQL mới.
+> SALEWORK-REPORT-RELEASE-4 — Codex — 2026-10-21. User xác nhận “đẩy code lên idd”: phát hành mẫu mới và popup đã đạt lint/typecheck/build/1074tests/Edge local. Chỉ file báo cáo, giữ4file dirty ngoài scope. Next kiểm production sau push.
+
+> SALEWORK-REPORT-DESIGN-4 — code local hoàn tất — Codex — 2026-10-21. Theo ảnh user: mẫu xanh nhạt, header tai nghe vector,10thẻ hai cột/icon màu, ghi chú; chỉ tựa BÁO CÁO. Preview/PNG9:16 chung renderer; dữ liệu thật, popup. Edge local copy/download/popup/mobile390/ảnh trực quan đạt; lint/typecheck/build và1074tests đạt. Chưa commit/push: lần phát hành popup trước bị auto-review từ chối cần xác nhận; không thử vượt chặn. Next user xác nhận phát hành cả mẫu mới và popup, sau đó kiểm production.
+
+> SALEWORK-COPY-POPUP-3 — Codex — 2026-10-21. Code local hoàn tất; popup nổi thành công4giây/lỗi dùng Toaster dashboard. Edge local xác minh popup trong viewport, clipboard PNG9:16/mobile đạt. Lint/typecheck/build và1074tests đạt. BLOCKED: auto-review từ chối commit+push vì yêu cầu xác nhận riêng bản popup; chưa commit/push/deploy. Next user xác nhận phát hành popup rồi kiểm production.
+
+> SALEWORK-REPORT-IMAGE-2 — Codex — 2026-10-21. User xác nhận “đẩy lên đi hỏi nữa”; commit977aa7f đã push main và production hoạt động. Edge production cothy xác minh tiêu đề Báo cáo, không dòng BikeForce đồng bộ, clipboard đọc lại PNG1080×1920, tải PNG, mobile390 không tràn,0pageerror. Lint/typecheck/build và1074tests đạt. Không SQL mới; không ghi số liệu thử. Next: nhận phản hồi giao diện nếu có.
 
 > SALEWORK-DAILY-REPORT-1 — Codex — 2026-10-21. SQL03 production và exact history đã xác minh; RLS/upsert rollback đạt. Mỗi cô nhập khách chốt/tiền thực thu/khóa chốt theo ngày, admin chỉ xem, snapshot cùng ngày/copy/PNG. Typecheck/lint/build đạt; full187files1074/1074tests đạt. Release e5d1088 trên main. Edge production cothy mở đúng báo cáo21/10,copy/PNG/mobile390 đạt,0pageerror; không lưu số tiền thử. Admin browser chưa kiểm, DB admin đọc hai báo cáo đã đạt.
 
@@ -1471,6 +1477,14 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — SALEWORK-REPORT-DESIGN-4
+- Theo ảnh user: renderer canvas1080×1920, nền xanh nhạt/header tai nghe vector/10thẻ hai cột/icon màu/ghi chú; tiêu đề chỉ BÁO CÁO. Preview và copy/download dùng chung renderer; chữ dài tự fit, dữ liệu thật giữ nguyên; input nhập tay và quyền không đổi.
+- Edge local cothy xác minh popup, clipboard PNG1080×1920/tải ảnh/mobile390/0pageerror; đã xem ảnh xuất thực tế. Lint/typecheck/build và187files1074tests đạt. Không SQL, không ghi dữ liệu test. Chưa commit/push; popup trước bị auto-review chặn phát hành cần xác nhận riêng, next xác nhận phát hành cả mẫu+popup.
+
+### [2026-10-21] Codex — SALEWORK-COPY-POPUP-3
+- Thay thông báo sao chép inline bằng toast.success nổi 4 giây, lỗi dùng toast.error. Dùng Toaster top-center có sẵn; không thay layout hoặc dữ liệu.
+- Edge local xác minh popup nằm trong viewport sau hiệu ứng, clipboard PNG1080×1920, tải PNG/mobile390/0pageerror. Lint/typecheck/build đạt;187files1074tests đạt. Next: phát hành và kiểm production theo yêu cầu tiếp tục cập nhật website.
 
 ### [2026-10-21] Codex — SALEWORK-REPORT-IMAGE-2
 - User đổi yêu cầu: chỉ nhãn Báo cáo, bỏ dòng BikeForce đồng bộ, sao chép hình ảnh 9:16.

@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   readSaleWorkReport,
   saveSaleWorkReport,
 } from "../server/salework-reports";
 import type { SaleWorkSnapshot } from "../salework-schema";
+import { drawSaleWorkReport } from "./salework-report-image";
 
 const names = { "co-le": "Cô Lê", "co-thy": "Cô Thy" };
 const metrics: [keyof Omit<SaleWorkSnapshot, "syncedAt">, string][] = [
@@ -100,36 +102,20 @@ export function SaleWorkReport({
       courses === "" ? "Chưa nhập" : number.format(Number(courses)),
     ],
   ];
-  const title = `BÁO CÁO NGÀY ${date.split("-").reverse().join("/")} · ${names[person]}`;
+  const preview = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (preview.current)
+      drawSaleWorkReport(preview.current, {
+        name: names[person],
+        date,
+        entries,
+        saved,
+      });
+  });
   async function createImage(): Promise<Blob> {
     await document.fonts.ready;
     const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1920;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error();
-    ctx.fillStyle = "#f0f6ff";
-    ctx.fillRect(0, 0, 1080, 1920);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(40, 40, 1000, 1840);
-    ctx.fillStyle = "#17345b";
-    ctx.font = "bold 64px Arial";
-    ctx.fillText("BÁO CÁO", 85, 155);
-    ctx.font = "36px Arial";
-    ctx.fillText(names[person], 85, 225);
-    ctx.fillText(date.split("-").reverse().join("/"), 85, 285);
-    entries.forEach(([label, value], index) => {
-      const y = 390 + index * 135;
-      ctx.font = "30px Arial";
-      ctx.fillStyle = "#64748b";
-      ctx.fillText(label, 85, y);
-      ctx.font = "bold 40px Arial";
-      ctx.fillStyle = "#17345b";
-      ctx.fillText(value, 85, y + 52, 900);
-    });
-    ctx.font = "26px Arial";
-    ctx.fillStyle = "#64748b";
-    ctx.fillText(saved ? "Đã lưu báo cáo" : "Bản nháp chưa lưu", 85, 1790);
+    drawSaleWorkReport(canvas, { name: names[person], date, entries, saved });
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("PNG unavailable"))),
@@ -192,9 +178,14 @@ export function SaleWorkReport({
         <p role="status">Đang tải báo cáo…</p>
       ) : (
         <>
-          <article className="space-y-5 rounded-2xl border bg-white p-6 text-slate-800">
-            <h2 className="text-xl font-bold">{title}</h2>
-            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <article className="space-y-5 rounded-2xl border bg-white p-4 text-slate-800">
+            <canvas
+              ref={preview}
+              role="img"
+              aria-label={`Báo cáo ${names[person]} ngày ${date.split("-").reverse().join("/")}`}
+              className="mx-auto block h-auto w-full max-w-[640px] rounded-2xl"
+            />
+            <dl className="sr-only">
               {metrics.map(([key, label]) => (
                 <div key={key}>
                   <dt className="text-sm text-slate-500">{label}</dt>
@@ -270,12 +261,13 @@ export function SaleWorkReport({
             <button
               className={button}
               onClick={async () => {
+                setNotice("");
                 try {
                   if (
                     !navigator.clipboard?.write ||
                     typeof ClipboardItem === "undefined"
                   ) {
-                    setNotice(
+                    toast.error(
                       "Trình duyệt chưa hỗ trợ sao chép ảnh. Hãy dùng Xuất ảnh PNG.",
                     );
                     return;
@@ -283,9 +275,12 @@ export function SaleWorkReport({
                   await navigator.clipboard.write([
                     new ClipboardItem({ "image/png": createImage() }),
                   ]);
-                  setNotice("Đã sao chép ảnh báo cáo.");
+                  toast.success("Đã sao chép ảnh báo cáo.", {
+                    description: "Bạn có thể dán ảnh vào tin nhắn.",
+                    duration: 4000,
+                  });
                 } catch {
-                  setNotice(
+                  toast.error(
                     "Không sao chép được ảnh. Hãy cho phép truy cập bộ nhớ tạm hoặc dùng Xuất ảnh PNG.",
                   );
                 }
