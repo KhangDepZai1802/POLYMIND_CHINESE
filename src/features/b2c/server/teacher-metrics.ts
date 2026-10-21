@@ -9,6 +9,44 @@ const saleWorkSlugByTeacherName: Record<string, "co-le" | "co-thy"> = {
   "cô thy": "co-thy",
 };
 
+export type BikeForceSaleWorkRow = {
+  person: "co-le" | "co-thy";
+  displayName: "Cô Lê" | "Cô Thy";
+  workDate: string;
+  receivedAt: string;
+  snapshot: ReturnType<typeof saleWorkSnapshotSchema.parse>;
+};
+
+export async function getBikeForceSaleWorkSnapshots(): Promise<BikeForceSaleWorkRow[]> {
+  await requireManager();
+  const client = await createClient();
+  const { data, error } = await client
+    .from("bikeforce_salework_snapshots")
+    .select("person_slug,work_date,snapshot,received_at")
+    .order("work_date", { ascending: false })
+    .order("received_at", { ascending: false });
+  if (error) throw new Error("Không tải được số liệu SaleWork.");
+
+  const latest = new Map<string, BikeForceSaleWorkRow>();
+  for (const row of data ?? []) {
+    if (latest.has(row.person_slug)) continue;
+    const parsed = saleWorkSnapshotSchema.safeParse(row.snapshot);
+    if (!parsed.success || !["co-le", "co-thy"].includes(row.person_slug)) continue;
+    const person = row.person_slug as "co-le" | "co-thy";
+    latest.set(person, {
+      person,
+      displayName: person === "co-le" ? "Cô Lê" : "Cô Thy",
+      workDate: row.work_date,
+      receivedAt: row.received_at,
+      snapshot: parsed.data,
+    });
+  }
+  return (["co-le", "co-thy"] as const).flatMap((person) => {
+    const row = latest.get(person);
+    return row ? [row] : [];
+  });
+}
+
 async function readAll<T>(
   read: (offset: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
 ) {

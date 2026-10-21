@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import { B2CTeacherDialog } from "@/features/b2c/components/teacher-dialog";
 import type { getB2CTeacherMetrics } from "@/features/b2c/server/teacher-metrics";
+import type { BikeForceSaleWorkRow } from "@/features/b2c/server/teacher-metrics";
 import { formatCurrency } from "@/lib/dates";
 import {
   TeacherSummaryDialog,
@@ -59,10 +60,12 @@ export function TeacherDashboard({
   rows,
   initialMonth,
   canManageAccounts = false,
+  saleWorkRows = [],
 }: {
   rows: Row[];
   initialMonth: string;
   canManageAccounts?: boolean;
+  saleWorkRows?: BikeForceSaleWorkRow[];
 }) {
   const [month, setMonth] = useState(initialMonth);
   const [specialization, setSpecialization] = useState("");
@@ -301,26 +304,29 @@ export function TeacherDashboard({
           <p className="mt-1 text-xs text-slate-500">Snapshot mới nhất của Cô Lê và Cô Thy; đồng bộ lại cùng ngày sẽ thay thế số cũ.</p>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">
-          {rows.filter((r) => ["cô lê", "cô thy"].includes(r.teacher.full_name.trim().toLocaleLowerCase("vi"))).map((r) => (
-            <article key={r.teacher.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          {(["co-le", "co-thy"] as const).map((person) => {
+            const row = saleWorkRows.find((item) => item.person === person);
+            const displayName = person === "co-le" ? "Cô Lê" : "Cô Thy";
+            return (
+            <article key={person} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-semibold text-[#183764] dark:text-slate-100">{r.teacher.full_name}</h3>
-                <span className="text-xs text-slate-500">{r.saleWork ? `Ngày ${r.saleWork.workDate.split("-").reverse().join("/")}` : "Chưa đồng bộ"}</span>
+                <h3 className="font-semibold text-[#183764] dark:text-slate-100">{displayName}</h3>
+                <span className="text-xs text-slate-500">{row ? `Ngày ${row.workDate.split("-").reverse().join("/")}` : "Chưa đồng bộ"}</span>
               </div>
-              {r.saleWork ? <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+              {row ? <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
                 {[
-                  ["Hội thoại", number.format(r.saleWork.snapshot.conversations)],
-                  ["Tin đã gửi", number.format(r.saleWork.snapshot.sentMessages)],
-                  ["Tin đã nhận", number.format(r.saleWork.snapshot.receivedMessages)],
-                  ["Cuộc gọi đến", number.format(r.saleWork.snapshot.incomingCalls)],
-                  ["Cuộc gọi đi", number.format(r.saleWork.snapshot.outgoingCalls)],
-                  ["Cuộc gọi nhỡ", number.format(r.saleWork.snapshot.missedCalls)],
-                  ["Thời lượng gọi", duration(r.saleWork.snapshot.callDurationSeconds)],
-                  ["BikeForce đồng bộ", new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short" }).format(new Date(r.saleWork.snapshot.syncedAt))],
+                  ["Hội thoại", number.format(row.snapshot.conversations)],
+                  ["Tin đã gửi", number.format(row.snapshot.sentMessages)],
+                  ["Tin đã nhận", number.format(row.snapshot.receivedMessages)],
+                  ["Cuộc gọi đến", number.format(row.snapshot.incomingCalls)],
+                  ["Cuộc gọi đi", number.format(row.snapshot.outgoingCalls)],
+                  ["Cuộc gọi nhỡ", number.format(row.snapshot.missedCalls)],
+                  ["Thời lượng gọi", duration(row.snapshot.callDurationSeconds)],
+                  ["BikeForce đồng bộ", new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short" }).format(new Date(row.snapshot.syncedAt))],
                 ].map(([label, value]) => <div key={label}><dt className="text-xs text-slate-500">{label}</dt><dd className="mt-1 font-semibold tabular-nums text-slate-800 dark:text-slate-100">{value}</dd></div>)}
               </dl> : <p className="text-sm text-slate-500">BikeForce chưa gửi snapshot cho giáo viên này.</p>}
-            </article>
-          ))}
+            </article>);
+          })}
         </div>
       </section>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
