@@ -101,65 +101,58 @@ export function SaleWorkReport({
     ],
   ];
   const title = `BÁO CÁO NGÀY ${date.split("-").reverse().join("/")} · ${names[person]}`;
-  const text = [
-    title,
-    ...entries.map(([label, value]) => `${label}: ${value}`),
-    snapshot
-      ? `Đồng bộ: ${new Date(snapshot.syncedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`
-      : "Chưa có dữ liệu BikeForce",
-    saved ? "Đã lưu" : "Bản nháp chưa lưu",
-  ].join("\n");
+  async function createImage(): Promise<Blob> {
+    await document.fonts.ready;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error();
+    ctx.fillStyle = "#f0f6ff";
+    ctx.fillRect(0, 0, 1080, 1920);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(40, 40, 1000, 1840);
+    ctx.fillStyle = "#17345b";
+    ctx.font = "bold 64px Arial";
+    ctx.fillText("BÁO CÁO", 85, 155);
+    ctx.font = "36px Arial";
+    ctx.fillText(names[person], 85, 225);
+    ctx.fillText(date.split("-").reverse().join("/"), 85, 285);
+    entries.forEach(([label, value], index) => {
+      const y = 390 + index * 135;
+      ctx.font = "30px Arial";
+      ctx.fillStyle = "#64748b";
+      ctx.fillText(label, 85, y);
+      ctx.font = "bold 40px Arial";
+      ctx.fillStyle = "#17345b";
+      ctx.fillText(value, 85, y + 52, 900);
+    });
+    ctx.font = "26px Arial";
+    ctx.fillStyle = "#64748b";
+    ctx.fillText(saved ? "Đã lưu báo cáo" : "Bản nháp chưa lưu", 85, 1790);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("PNG unavailable"))),
+        "image/png",
+      );
+    });
+  }
   async function exportImage() {
     try {
-      await document.fonts.ready;
-      const canvas = document.createElement("canvas");
-      canvas.width = 1200;
-      canvas.height = 1120;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error();
-      ctx.fillStyle = "#f0f6ff";
-      ctx.fillRect(0, 0, 1200, 1120);
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(35, 35, 1130, 1050);
-      ctx.fillStyle = "#17345b";
-      ctx.font = "bold 32px Arial";
-      ctx.fillText(title, 65, 100);
-      ctx.font = "25px Arial";
-      entries.forEach(([label, value], index) => {
-        const y = 165 + index * 72;
-        ctx.fillStyle = "#64748b";
-        ctx.fillText(label, 65, y);
-        ctx.fillStyle = "#17345b";
-        ctx.fillText(value, 730, y);
-      });
-      ctx.font = "20px Arial";
-      ctx.fillStyle = "#64748b";
-      ctx.fillText(saved ? "Đã lưu báo cáo" : "Bản nháp chưa lưu", 65, 970);
-      if (snapshot)
-        ctx.fillText(
-          `BikeForce đồng bộ: ${new Date(snapshot.syncedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`,
-          65,
-          1020,
-        );
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          setNotice("Không xuất được ảnh.");
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `bao-cao-${person}-${date}.png`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, "image/png");
+      const blob = await createImage();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bao-cao-${person}-${date}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
-      setNotice("Không xuất được ảnh. Bạn có thể sao chép báo cáo.");
+      setNotice("Không xuất được ảnh. Vui lòng thử lại.");
     }
   }
   return (
     <section className="mx-auto max-w-5xl space-y-5 p-4">
-      <h1 className="text-2xl font-bold">Báo cáo ngày · SaleWork</h1>
+      <h1 className="text-2xl font-bold">Báo cáo</h1>
       <div className="flex flex-wrap gap-4">
         {manager && (
           <label>
@@ -239,9 +232,6 @@ export function SaleWorkReport({
             </div>
             <p className="text-sm text-slate-500">
               {saved ? "Đã lưu báo cáo" : "Chưa lưu báo cáo"}
-              {snapshot
-                ? ` · BikeForce đồng bộ ${new Date(snapshot.syncedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`
-                : " · Chưa có snapshot trong ngày này"}
             </p>
           </article>
           <div className="flex flex-wrap gap-3">
@@ -281,10 +271,23 @@ export function SaleWorkReport({
               className={button}
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(text);
-                  setNotice("Đã sao chép báo cáo.");
+                  if (
+                    !navigator.clipboard?.write ||
+                    typeof ClipboardItem === "undefined"
+                  ) {
+                    setNotice(
+                      "Trình duyệt chưa hỗ trợ sao chép ảnh. Hãy dùng Xuất ảnh PNG.",
+                    );
+                    return;
+                  }
+                  await navigator.clipboard.write([
+                    new ClipboardItem({ "image/png": createImage() }),
+                  ]);
+                  setNotice("Đã sao chép ảnh báo cáo.");
                 } catch {
-                  setNotice("Trình duyệt không cho phép sao chép.");
+                  setNotice(
+                    "Không sao chép được ảnh. Hãy cho phép truy cập bộ nhớ tạm hoặc dùng Xuất ảnh PNG.",
+                  );
                 }
               }}
             >

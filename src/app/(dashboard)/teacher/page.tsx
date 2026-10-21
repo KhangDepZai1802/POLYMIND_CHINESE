@@ -49,7 +49,7 @@ export default async function TeacherDashboardPage() {
     b2cMeetings.rows.filter((m) => m.status !== "cancelled").length;
   return (
     <>
-    <Link className="mb-4 inline-flex rounded-lg border bg-white px-4 py-2 text-blue-700" href="/teacher/salework">Báo cáo SaleWork hằng ngày</Link>
+    <Link className="mb-4 inline-flex rounded-lg border bg-white px-4 py-2 text-blue-700" href="/teacher/salework">Báo cáo</Link>
     <TeacherHomeDashboard
       fullName={user.fullName}
       now={now.toISOString()}

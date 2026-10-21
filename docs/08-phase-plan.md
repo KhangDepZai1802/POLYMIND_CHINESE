@@ -1584,10 +1584,17 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 
 ## SALEWORK-DAILY-REPORT-1
 
+### SALEWORK-REPORT-IMAGE-2
+
+- [x] Nhãn Báo cáo; bỏ dòng BikeForce đồng bộ trong báo cáo và ảnh.
+- [x] Sao chép ảnh PNG và tải PNG dùng chung bản 1080×1920 (9:16); giữ dữ liệu/ngày/người và trạng thái nháp.
+- [x] Edge local đọc lại clipboard PNG1080×1920, tải ảnh/mobile390; lint/typecheck/build và1074tests đạt.
+- [ ] Phát hành và kiểm tra production.
+
 - [x] Báo cáo theo ngày cho cole/cothy: khách chốt, tiền thực thu, khóa chốt, đọc snapshot cùng ngày, sao chép và xuất PNG.
 - [x] SQL03 người dùng chạy production, mapping UUID và RLS identity kiểm thử bằng rollback; admin chỉ đọc, cấm sửa chéo.
 - [x] Typecheck/lint/build; unit báo cáo; Edge local copy/PNG và mobile390.
-- [ ] Release và xác minh trang báo cáo production.
+- [x] Release e5d1088 và xác minh Edge production: cothy đăng nhập, snapshot đúng ngày, copy/PNG/mobile390 đạt.
 
 - [x] API nhận snapshot SaleWork cho `co-le` và `co-thy`, API key trong header, upsert theo người + ngày và không cộng dồn.
 - [x] RLS, RPC service-role-only, pgTAP và unit test.

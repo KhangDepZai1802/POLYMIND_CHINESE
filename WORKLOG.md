@@ -38,7 +38,9 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> SALEWORK-DAILY-REPORT-1 — Codex — 2026-10-21. User đã chạy SQL03 production; xác minh RLS và upsert bằng transaction rollback đạt. Mỗi cô nhập khách chốt/tiền thực thu/khóa chốt theo ngày; admin chọn hai cô chỉ xem, snapshot BikeForce cùng ngày, copy và PNG. Typecheck/lint/build đạt; full187files1074/1074tests đạt. Edge local Cô Thy đọc snapshot thật/copy/downloadPNG/mobile390 đạt. Release riêng13file task; chờ smoke production.
+> SALEWORK-REPORT-IMAGE-2 — Codex — 2026-10-21. User xác nhận rõ “đẩy lên đi hỏi nữa”: phát hành bản sửa đã kiểm tra. Nhãn Báo cáo, bỏ dòng thời gian đồng bộ; clipboard/tải PNG1080×1920. Edge local đọc lại clipboard/kích thước/ảnh/mobile390 đạt; lint/typecheck/build và1074tests đạt. Next: push main và kiểm tra production. Không SQL mới.
+
+> SALEWORK-DAILY-REPORT-1 — Codex — 2026-10-21. SQL03 production và exact history đã xác minh; RLS/upsert rollback đạt. Mỗi cô nhập khách chốt/tiền thực thu/khóa chốt theo ngày, admin chỉ xem, snapshot cùng ngày/copy/PNG. Typecheck/lint/build đạt; full187files1074/1074tests đạt. Release e5d1088 trên main. Edge production cothy mở đúng báo cáo21/10,copy/PNG/mobile390 đạt,0pageerror; không lưu số tiền thử. Admin browser chưa kiểm, DB admin đọc hai báo cáo đã đạt.
 
 > BIKEFORCE-SALEWORK-SYNC-1 — migration production đã áp, code sẵn sàng release — Codex — 2026-10-21. POST API key, chỉ `co-le`/`co-thy`, 8 trường snapshot, khóa người+ngày và replace snapshot; middleware miễn cookie đúng endpoint nhưng route vẫn kiểm `x-api-key`. 11/11pgTAP,26/26targeted, full186files1071/1071tests,lint/typecheck/build đạt. Chờ push/deploy và smoke production 401/200.
 
@@ -1469,6 +1471,11 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — SALEWORK-REPORT-IMAGE-2
+- User đổi yêu cầu: chỉ nhãn Báo cáo, bỏ dòng BikeForce đồng bộ, sao chép hình ảnh 9:16.
+- UI và link đổi nhãn; createImage dùng chung PNG1080×1920 cho ClipboardItem và tải ảnh, xử lý trình duyệt không hỗ trợ/từ chối. Giữ ngày/người/chỉ số/trạng thái nháp.
+- Lint/typecheck/build đạt,187files1074tests đạt. Edge local clipboard đọc lại image/png1080×1920, tải PNG và xem ảnh tiếng Việt, mobile390 không tràn/0pageerror. Không ghi số liệu thử; không DB/migration. Auto-review từ chối commit+push main do cần user xác nhận riêng lần phát hành, dù D-44 ghi tự phát hành. Chưa commit/push/deploy; next user xác nhận phát hành; giữ4file dirty ngoài scope.
 
 ### [2026-10-21] Codex — SALEWORK-DAILY-REPORT-1
 - User chốt tiền thực thu, yêu cầu gửi SQL tự chạy; SQL20261021000003 đã được user áp production, hai mappings cole/cothy đúng và RLS bật.

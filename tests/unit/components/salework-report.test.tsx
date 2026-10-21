@@ -81,15 +81,37 @@ describe("Daily SaleWork report", () => {
       expect(readSaleWorkReport).toHaveBeenCalledWith("co-thy", "2026-10-20"),
     );
   });
-  it("copies a draft with missing sync explicitly labelled", async () => {
+  it("copies a portrait PNG with draft values and no sync timestamp", async () => {
     vi.mocked(readSaleWorkReport).mockResolvedValue({
       report: null,
       snapshot: null,
     });
-    const writeText = vi.fn().mockResolvedValue(undefined);
+    const fillText = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      fillRect: vi.fn(),
+      fillText,
+    } as unknown as CanvasRenderingContext2D);
+    let dimensions: number[] = [];
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(
+      function (this: HTMLCanvasElement, callback) {
+        dimensions = [this.width, this.height];
+        callback(new Blob(["png"], { type: "image/png" }));
+      },
+    );
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    });
+    class ImageClipboardItem {
+      constructor(public data: Record<string, Promise<Blob>>) {}
+    }
+    vi.stubGlobal("ClipboardItem", ImageClipboardItem);
+    const write = vi.fn(async (items: ImageClipboardItem[]) => {
+      expect((await items[0]!.data["image/png"]!).type).toBe("image/png");
+    });
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
-      value: { writeText },
+      value: { write },
     });
     render(
       <SaleWorkReport
@@ -100,12 +122,21 @@ describe("Daily SaleWork report", () => {
     );
     await screen.findByRole("button", { name: "Sao chép báo cáo" });
     fireEvent.click(screen.getByRole("button", { name: "Sao chép báo cáo" }));
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining("Tiền thực thu: Chưa nhập"),
+    expect(
+      await screen.findByText("Đã sao chép ảnh báo cáo."),
+    ).toBeInTheDocument();
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(dimensions).toEqual([1080, 1920]);
+    const drawn = fillText.mock.calls.map(([text]) => text);
+    expect(drawn).toContain("BÁO CÁO");
+    expect(drawn).toContain("Tiền thực thu");
+    expect(drawn).toContain("Chưa nhập");
+    expect(drawn).toContain("Bản nháp chưa lưu");
+    expect(drawn.join(" ")).not.toMatch(/BikeForce|SaleWork|Đồng bộ:/);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /^Báo cáo$/,
     );
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining("Bản nháp chưa lưu"),
-    );
-    expect(await screen.findByText("Đã sao chép báo cáo.")).toBeInTheDocument();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 });
