@@ -1,5 +1,9 @@
 # 02 — Thiết kế Database
 
+## Weekly check-in (2026-10-21)
+
+Migration `20261021000001_b2c_weekly_checkin.sql`: helper private app.b2c_weekly_slot đọc giờ chung/giờ riêng từng thứ; read_b2c_checkin_meetings kết hợp buổi theo ngày và lịch tuần hôm nay, không ghi dữ liệu khi đọc. prepare_b2c_weekly_checkin lấy lớp từ DB, khóa giáo viên rồi lớp, kiểm capability/identity/ngày/trạng thái/giờ, tạo buổi theo ngày và gọi prepare_b2c_meeting_checkin hiện có. Unique(class_id, starts_at), kiểm trùng giờ và retry giữ nguyên. Không thêm bảng, không bypass RLS/service role trong user flow. Public checkpoint kiểm cửa sổ [start−15 phút,end) bằng giờ máy chủ, giữ kiểm ảnh/ngày/check-out và retry ảnh cũ. Mọi ghi actor=auth.uid().
+
 ## B2C certificate results (2026-10-17)
 
 Migration SQL20261017000005 thêm b2c_certificate_results FKstudent restrict (loại/cấp độ/scoretext/ngày/marketing/notes/archive/actor), partialunique cho (student,lower(type),lower(level),exam_date) khi chưaarchive; b2c_certificate_history snapshot append-only và b2c_certificate_requests UUIDledger. Cả3bảng RLS, authenticated chỉmanager-read, requests khôngread, không directwrite. Quyền qua app.is_manager, không thêm quyền hoặc cấp dữ liệu marketing cho teacher.

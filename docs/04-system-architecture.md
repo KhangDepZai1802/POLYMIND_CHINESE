@@ -1,5 +1,9 @@
 # 04 — Kiến trúc hệ thống
 
+## Check-in time window (2026-10-21)
+
+CheckinWindow client tự cập nhật mỗi giây, khóa controls ngoài cửa sổ theo giờ VN; đây chỉ là hướng dẫn giao diện. RPC check_b2c_teaching_session kiểm lại theo clock_timestamp trong DB sau khi khóa session. Weekly RPC không nhận giờ từ client, tự đọc lịch và phân công hiện tại; permissionRpc khai báo endpoint mới. Thẻ không tạo bản ghi khi render; chỉ thao tác Mở check-in mới materialize buổi. Giao diện và máy chủ cùng quy tắc [start−15 phút,end), trong ngày dạy.
+
 ## B2C certificate marketing data (2026-10-17)
 
 Route/admin/b2c/certificates manager-only; panel client đọc filters via manager serveraction → typed permissionRpc. Student picker query/paging và generation guard bỏ responsecũ. Editor UUIDretry, fieldvalidation, class-independent studentlink; archive dialog xác nhận. History business riêng append-only. ExcelJS lazy-load trên client sau manager exportaction đọc snapshot5000bản, ép approvedactive và projection6cột. Workbook ghi cell dạngstring, không công thức từ input; file không bao gồm liên hệ/ghi chú. MenuB2C và icontrên bảngHV liên kết route; không thay menuB2B hoặc teacher.

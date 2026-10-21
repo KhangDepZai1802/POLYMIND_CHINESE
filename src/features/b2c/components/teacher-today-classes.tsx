@@ -43,8 +43,24 @@ export function TeacherB2CTodayClasses({
                         : "Theo lịch"}
                   </p>
                 </div>
-                {canMarkAttendance && m.status !== "cancelled" && <Button asChild size="sm" className="min-h-11 w-full sm:min-h-8 sm:w-auto"><Link href={`/teacher/b2c-classes/${m.class_id}?tab=attendance&meeting=${m.id}`}>Điểm danh học viên</Link></Button>}
-                <Button asChild size="sm" className="min-h-11 w-full sm:min-h-8 sm:w-auto">
+                {canMarkAttendance && m.status !== "cancelled" && (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="min-h-11 w-full sm:min-h-8 sm:w-auto"
+                  >
+                    <Link
+                      href={`/teacher/b2c-classes/${m.class_id}?tab=attendance&meeting=${m.id}`}
+                    >
+                      Điểm danh học viên
+                    </Link>
+                  </Button>
+                )}
+                <Button
+                  asChild
+                  size="sm"
+                  className="min-h-11 w-full sm:min-h-8 sm:w-auto"
+                >
                   <Link
                     href={`/teacher/b2c-classes/${m.class_id}?tab=schedule`}
                   >
@@ -77,7 +93,11 @@ export function TeacherB2CTodayClasses({
                 {item.weekdays_text} · {item.student_count} học viên
               </p>
             </div>
-            <Button asChild size="sm" className="min-h-11 w-full sm:min-h-8 sm:w-auto">
+            <Button
+              asChild
+              size="sm"
+              className="min-h-11 w-full sm:min-h-8 sm:w-auto"
+            >
               <Link href={`/teacher/b2c-classes/${item.id}?tab=schedule`}>
                 Xem lịch lớp
               </Link>
@@ -85,10 +105,12 @@ export function TeacherB2CTodayClasses({
           </li>
         ))}
       </ul>
-      {!!classes.length && <p className="text-muted-foreground px-3 pt-3 text-xs">
-        Lịch tuần là lịch dự kiến. Chấm công theo buổi được phân công tại mục
-        Chấm công.
-      </p>}
+      {!!classes.length && (
+        <p className="text-muted-foreground px-3 pt-3 text-xs">
+          Buổi theo lịch tuần hôm nay cũng hiển thị tại mục Chấm công. Check-in
+          mở trước giờ dạy 15 phút.
+        </p>
+      )}
     </section>
   );
 }

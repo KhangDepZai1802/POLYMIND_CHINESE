@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-WEEKLY-CHECKIN-2
+
+- [x] Lịch tuần hôm nay có giờ hợp lệ tự hiện chấm công; buổi theo ngày ưu tiên, gồm hủy. Chỉ tạo buổi khi giáo viên mở check-in; giữ ảnh/quyền/giá null, khóa và unique chống trùng.
+- [x] Check-in cùng ngày từ 15 phút trước giờ bắt đầu đến trước giờ kết thúc; UI tự mở/khóa và DB chặn ngoài giờ. Check-out sau giờ kết thúc đến hết ngày; giữ retry ảnh đã ghi nhận.
+- [ ] Hoàn tất kiểm tra và phát hành; kết quả tại WORKLOG. Camera điện thoại thật chưa xác minh.
+- User cho phép push ngày2026-10-21 sau khi đã được thông báo full suite còn11ca lỗi; ngoại lệ release này không thay kết quả test. Camera/deploy online vẫn cần xác minh riêng.
+
 ## B2C-UNPRICED-CHECKIN-1
 
 - [x] Cho tạo/liên kết buổi chấm công khi đơn giá null; thẻ hôm nay trước bộ lọc tháng, nút mở/check-in/out, kiểm quyền/phân công/ngày/hủy/trùng và retry tại DB. Đủ ảnh tính giờ, tiền chờ đơn giá/cảnh báo tổng tháng; manager cập nhật riêng buổi còn thiếu có audit. SQL06 cloud exact-history; pgTAP28/28, Vitest950/950, lint/build đạt.

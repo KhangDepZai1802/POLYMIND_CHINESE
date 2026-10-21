@@ -1,5 +1,14 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-WEEKLY-CHECKIN-2 — 2026-10-21
+
+- **Codex Status:** Fixed, đang chạy cổng phát hành; **Verification:** Not Started. Khắc phục lịch tuần hiện ở Hôm nay nhưng mất tại Chấm công; thêm cửa sổ check-in từ start−15 phút đến trước end ở UI và DB.
+- **DB:** 28/28 assertion mới rollback và 28/28 regression unpriced đạt. SQL20261021000001 áp cloud, history đúng; RPC dưới identity cole trả Starter Hero hôm nay 18:00–19:30. Chưa ghi check-in thật/ảnh thật của cô. Dry-run trước/sau còn16gaps cũ ngoài scope, không replay/repair.
+- **Cần QA:** điện thoại/camera thực, tự mở nút lúc17:45, check-in/check-out đúng giờ; không tự tuyên bố Verified.
+- **Cổng release:** lint/typecheck/build đạt;12/12unit chấm công đạt. Chưa commit/push theo D-44 vì full suite có lỗi ngoài task ở wrong-answer-review và timeout dashboard/certificate; chạy riêng xác nhận wrong-answer-review vẫn lỗi, certificate đạt. Xem blocker WORKLOG.
+- **Full suite:** 184files,1026passed/11failed trên1037tests;7files lỗi. Giữ nguyên test và timeout, không báo full pass.
+- **Cho phép release:** user yêu cầu push ngày2026-10-21 sau khi được thông báo lỗi và D-44; phát hành riêng chấm công theo ngoại lệ này. Không đánh dấu Verified/deployed khi chưa QA thật.
+
 ## B2C-UNPRICED-CHECKIN-1 — 2026-10-16
 
 - **Codex Status:** Fixed; **Verification:** Not Started. Giá null không chặn tạo/liên kết buổi/check-in/out; thẻ hôm nay hiện trước bộ lọc tháng, nhập giá riêng từng buổi còn thiếu có audit, tổng tiền cảnh báo chưa gồm buổi chờ giá. Giữ ảnh/ngày/quyền/RLS/phân công và B2B/logo.

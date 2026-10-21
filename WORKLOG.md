@@ -38,6 +38,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-WEEKLY-CHECKIN-2-RELEASE — Codex — 2026-10-21. Sau khi được thông báo11fulltests lỗi và quy định D-44, user yêu cầu rõ “đẩy code lên github đi”: cho phép phát hành riêng bản chấm công dù cổng full test còn đỏ. Giữ nguyên kết quả kiểm tra đã ghi; chỉ stage file chấm công/docs/tests/migration liên quan, không4file dirty có từ trước. Commit/push main trong phiên này; chưa xác minh Vercel deploy hoặc camera thật.
+
+> B2C-WEEKLY-CHECKIN-2 — code local + SQL cloud, phát hành bị chặn — Codex — 2026-10-21. Lịch tuần hôm nay tự hiện; check-in [start−15 phút,end), cùng ngày; UI tự mở/khóa, DB kiểm giờ. SQL20261021000001 áp cloud/history xác minh,28/28DB mới +28/28regression,12/12unit tập trung đạt; lint/typecheck/build đạt. Full test có lỗi ngoài scope (wrong-answer-review tái hiện khi chạy riêng, student-dashboard timeout). Chưa commit/push theo D-44; không tuyên bố deploy giao diện.
+
 > RELEASE-20261019-LISTENING — Codex — 2026-10-19. User yêu cầu đưa code GitHub: /nghe chia hai lớp, ngân hàng bài 7–10 từ Word và bốn mục mỗi bài, giữ bài/audio cũ/logo; giao diện banner và hai thẻ không thống kê. Fetch HEAD=origin/main trước release; rà8file không secret literal, diff-check đạt. Code mới nhất lint/typecheck/test/build đạt (1031 tests); chỉ docs thay sau checks. Commit/push được user cho phép; kết quả SHA/remote báo trong chat. Chưa xác minh deploy online; audio ngân hàng chờ cung cấp.
 
 > LISTENING-CLASS-DESIGN — hoàn thành local — Codex — 2026-10-19. Theo ảnh mới: banner xanh/tai nghe, hai thẻ lớp minh họa xanh/tím. Logo/component/header giữ nguyên; không số bài/audio/tài liệu/chủ đề, không chú thích/mũi tên trên thẻ. Browser desktop1440/mobile390 không tràn, logo logopolymind.png/42px như cũ. Lint/typecheck/test/build đạt; không DB/migration/commit/push. Giữ route và bài cũ.
@@ -894,6 +898,12 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-WEEKLY-CHECKIN-2-RELEASE:** cần xử lý lỗi full test ngoài scope hoặc user cho phép ngoại lệ D-44 trước commit/push bản sửa chấm công. DB đã có migration mới, giao diện còn local. Không replay/repair16gaps history cũ. Khi phát hành chỉ stage file task, giữ nguyên4file thay đổi sẵn của user.
+
+**Cập nhật release 2026-10-21:** user đã cho phép push sau khi biết test lỗi; phát hành riêng bản chấm công. Next: xác minh deploy và thử camera/check-in đúng giờ, xử lý lỗi full suite trong task riêng.
+
+Kết quả cổng cuối: lint/typecheck/build exit0; full Vitest184files,1026passed/11failed trên1037tests (7files lỗi).12/12ca chấm công chạy tập trung đạt. Không nâng timeout/sửa test để che lỗi; wrong-answer-review vẫn lỗi khi chạy riêng, certificate chạy riêng đạt, student-dashboard vẫn timeout.
+
 - B2C-PARENT-DESIGN-1-QA: F5 Phụ huynh, xem4KPI/lọc/chi tiết/Sửa/nhiều con/phân trang/mobile; không cập nhật contact thật chỉ để test.
 
 - B2C-TUITION-DESIGN-1-QA: F5 Học phí, xem4KPI/bộ lọc/popup cần xử lý/sort/chọn dòng/mobile và dữ liệu thật theo quyền, không tạo khoản thu thử trên HV thật.
@@ -1316,6 +1326,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-WEEKLY-CHECKIN-2-RELEASE (2026-10-21):** typecheck/build và12tests chấm công đạt; full suite không xanh. `wrong-answer-review.test.tsx` không thấy “Bạn đã ôn xong”, tái hiện khi chạy riêng, code/test module này không đổi so với HEAD. `b2c-student-dashboard.test.tsx` timeout5000ms cả khi chạy riêng; certificate timeout ở full suite nhưng chạy riêng đạt. Theo D-44 không tự commit/push khi full test đỏ. Cloud đã áp riêng SQL20261021000001 và xác minh history/RPC cole; dry-run trước/sau còn16gaps cũ, không replay/repair hoặc tuyên bố toàn remote up-to-date. Chưa QA camera/browser thật.
+
 - B2C-PARENT-NPS-1-HISTORY: SQL20261017000006 đã áp riêng/exact-history qua kết nối mới,59/59 DB rollback. Dry-run trước/sau vẫn16gaps cũ; không replay/repair, không tuyên bố toàn remote up-to-date. Chưa QA browser độc lập hoặc phát hành code online.
 
 - B2C-CERTIFICATE-RESULTS-1-HISTORY: SQL20261017000005 áp riêng và exact-history verified qua kết nối mới42/42DB rollback; dry-run trước/sau16gaps cũ,không replay/repair. Chưa QA browser thật/commit/push/deploy.
@@ -1447,6 +1459,12 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — B2C-WEEKLY-CHECKIN-2
+- **Làm được:** đồng bộ lịch tuần hôm nay sang chấm công bằng read-only fallback, ưu tiên buổi theo ngày/hủy. Materialize chỉ khi mở check-in, server đọc giờ/phân công hiện tại; giữ ảnh, giá null, idempotency, khóa và unique. UI tự mở/khóa theo giờ; DB check-in từ15phút trước start đến trước end trong cùng ngày. Check-out giữ sau end đến hết ngày.
+- **Migration:** SQL20261021000001 áp cloud bằng transaction riêng kèm exact history; không áp16migration cũ thiếu history. RPC dưới authenticated identity cole trả Starter Hero21/10/2026 18:00–19:30, can_start=false buổi sáng; không tạo chấm công thật cho cô. Fixtures DB đều rollback.
+- **Đã kiểm tra:** 28/28DB mới,28/28regression unpriced,12/12unit chấm công; lint/typecheck/build đạt. Full test có lỗi cũ ngoài phạm vi, chạy riêng vẫn lỗi wrong-answer-review và timeout student-dashboard; certificate chạy riêng đạt. Lint toàn repo chạy lại exit0 sau xóa script chẩn đoán tạm (lượt đầu chỉ lỗi require trong script tạm đã xóa).
+- **Bàn giao:** code/dữ liệu yêu cầu đã sửa nhưng chưa commit/push vì D-44 yêu cầu test xanh. Next B2C-WEEKLY-CHECKIN-2-RELEASE: xử lý cổng kiểm thử hoặc user cho phép ngoại lệ rõ ràng. Giữ nguyên4file dirty có từ trước. Chưa QA browser/camera hoặc deploy giao diện.
 
 ### [2026-10-19] Codex — LISTENING-BANK-1
 - /nghe chia hai lớp, Học viện lãnh đạo giữ bài 3–4 và route/audio cũ. Tiếng Trung ngân hàng có bốn bài 7–10 từ Word, 82 mục từ vựng, ngữ pháp/hội thoại; đối chiếu 959 đoạn nguồn không thiếu. File Word không có audio.

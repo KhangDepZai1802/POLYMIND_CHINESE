@@ -1,12 +1,20 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TeachingSetup } from "@/features/b2c/components/teaching-setup";
-const mocks = vi.hoisted(() => ({ prepare: vi.fn(), price: vi.fn(), refresh: vi.fn(), success: vi.fn(), error: vi.fn() }));
+const mocks = vi.hoisted(() => ({ prepare: vi.fn(), weekly: vi.fn(), price: vi.fn(), refresh: vi.fn(), success: vi.fn(), error: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
 vi.mock("sonner", () => ({ toast: { success: mocks.success, error: mocks.error } }));
-vi.mock("@/features/b2c/server/teaching-actions", () => ({ prepareMeetingCheckin: mocks.prepare, priceTeachingSession: mocks.price }));
+vi.mock("@/features/b2c/server/teaching-actions", () => ({ prepareMeetingCheckin: mocks.prepare, prepareWeeklyCheckin: mocks.weekly, priceTeachingSession: mocks.price }));
 beforeEach(() => vi.clearAllMocks());
 describe("mở chấm công và bổ sung giá", () => {
+  it("mở buổi từ lịch tuần bằng mã lớp, không gửi giờ từ máy người dùng", async () => {
+    mocks.weekly.mockResolvedValue({ success: "OK" });
+    render(<TeachingSetup classId="weekly-class" />);
+    fireEvent.click(screen.getByRole("button", { name: "Mở check-in" }));
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalled());
+    expect(mocks.weekly).toHaveBeenCalledWith("weekly-class");
+    expect(mocks.prepare).not.toHaveBeenCalled();
+  });
   it("mở buổi thực tế không yêu cầu nhập đơn giá", async () => {
     mocks.prepare.mockResolvedValue({ success: "OK" });
     render(<TeachingSetup meetingId="meeting" />);

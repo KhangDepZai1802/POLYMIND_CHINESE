@@ -1,5 +1,9 @@
 # 03 — Workflow nghiệp vụ
 
+## Chấm công từ lịch tuần (2026-10-21)
+
+Giáo viên mở Chấm công → thấy buổi hôm nay từ lịch tuần hoặc buổi theo ngày đã điều chỉnh. Trước mốc start−15 phút thẻ vẫn hiện, nút khóa kèm giờ mở; đến mốc nút tự mở. Mở check-in tạo/liên kết buổi thực bằng lịch DB → chọn ảnh → check-in trước giờ kết thúc. Check-out có ảnh riêng từ giờ kết thúc đến hết ngày. Hủy/đổi buổi theo ngày ưu tiên hơn lịch tuần, không sinh lại buổi hủy. Chưa có giờ hợp lệ thì quản lý cần cập nhật giờ trong lịch tuần.
+
 ## Kết quả chứng chỉ → marketing B2C (2026-10-17)
 
 Manager mở Kết quả chứng chỉ trong menuB2C hoặc biểu tượng chứng chỉ tại dòngHV → Thêm → tìm/chọn hồ sơ HV → loại/cấp độ/điểm/ngày → chọnmarketing khi phù hợp → Lưu. Sửa giữ nguyên HV và có lịch sử. Bộ lọc tìm/loại/ngày/marketing/archive, thống kê theo bộ lọc và phân trang25dòng. Lưu trữ có xác nhận, không xóa; có thể khôi phục và kiểm lịch sử20dòng/trang.

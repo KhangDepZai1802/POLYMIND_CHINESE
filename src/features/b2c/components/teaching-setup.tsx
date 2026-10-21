@@ -6,23 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   prepareMeetingCheckin,
+  prepareWeeklyCheckin,
   priceTeachingSession,
 } from "../server/teaching-actions";
 
 export function TeachingSetup({
   meetingId,
+  classId,
   sessionId,
 }: {
   meetingId?: string;
+  classId?: string;
   sessionId?: string;
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
   function run(form?: FormData) {
     start(async () => {
-      const result = meetingId
-        ? await prepareMeetingCheckin(meetingId)
-        : await priceTeachingSession(form!);
+      const result = classId
+        ? await prepareWeeklyCheckin(classId)
+        : meetingId
+          ? await prepareMeetingCheckin(meetingId)
+          : await priceTeachingSession(form!);
       if (result.error) toast.error(result.error);
       else {
         toast.success(result.success);
@@ -30,7 +35,7 @@ export function TeachingSetup({
       }
     });
   }
-  if (meetingId)
+  if (meetingId || classId)
     return (
       <Button disabled={pending} onClick={() => run()}>
         {pending ? "Đang mở…" : "Mở check-in"}

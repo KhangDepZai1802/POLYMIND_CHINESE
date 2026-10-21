@@ -1,5 +1,9 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## Chấm công theo lịch tuần (2026-10-21)
+
+Theo yêu cầu mới, lớp active được phân công và đã khai giảng có lịch tuần đúng hôm nay, giờ rõ ràng, phải hiện tại Chấm công dù chưa tạo buổi theo ngày. Buổi theo ngày có sẵn được ưu tiên; hủy buổi sẽ chặn lịch tuần thay thế. Check-in có ảnh chỉ thành công trong cùng ngày từ 15 phút trước giờ bắt đầu đến trước giờ kết thúc; check-out từ giờ kết thúc đến hết ngày. Không tự đoán giờ thiếu, không tự ghi check-in hoặc tính tiền chỉ vì xem trang.
+
 ## B2C-STUDENT-SESSIONS-1 (2026-10-16)
 
 Số buổi mỗi ghi danh: đã học gồm có mặt/đi muộn/học bù, học bù là tập con của đã học; nghỉ phép và không phép riêng. Chỉ điểm danh của buổi đã kết thúc, không hủy được tính. Còn lại = registered_sessions - đã học; null khi chưa nhập, âm hiển thị vượt đăng ký. Không trừ tiền hoặc suy công nợ.

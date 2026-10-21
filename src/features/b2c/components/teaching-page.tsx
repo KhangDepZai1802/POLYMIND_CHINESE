@@ -13,6 +13,7 @@ import { TeachingCheckpoint } from "@/features/b2c/components/teaching-checkpoin
 import { getMyB2CPermissionsAction } from "../server/permission-actions";
 import { permissionRpc } from "../server/permission-rpc";
 import { TeachingSetup } from "./teaching-setup";
+import { CheckinWindow } from "./checkin-window";
 export async function B2CTeachingPage({
   params,
   mine,
@@ -55,13 +56,15 @@ export async function B2CTeachingPage({
       ? await permissionRpc<
           {
             id: string;
+            class_id?: string;
+            source?: "weekly";
             class_name: string;
             starts_at: string;
             ends_at: string;
             teaching_session_id: string | null;
             check_in_at: string | null;
             check_out_at: string | null;
-          can_start: boolean;
+            can_start: boolean;
           }[]
         >("read_b2c_checkin_meetings")
       : [];
@@ -126,23 +129,34 @@ export async function B2CTeachingPage({
                   </p>
                   {m.check_out_at ? (
                     <p>Đã hoàn tất chấm công</p>
-                  ) : m.teaching_session_id ? (
-                    <TeachingCheckpoint
-                      id={m.teaching_session_id}
-                      kind={m.check_in_at ? "out" : "in"}
-                    />
-                  ) : !m.can_start ? (
-                    <p>Đã qua giờ check-in</p>
                   ) : (
-                    <TeachingSetup meetingId={m.id} />
+                    <CheckinWindow
+                      startsAt={m.starts_at}
+                      endsAt={m.ends_at}
+                      checkedIn={Boolean(m.check_in_at)}
+                    >
+                      {m.teaching_session_id ? (
+                        <TeachingCheckpoint
+                          id={m.teaching_session_id}
+                          kind={m.check_in_at ? "out" : "in"}
+                        />
+                      ) : (
+                        <TeachingSetup
+                          meetingId={m.source === "weekly" ? undefined : m.id}
+                          classId={
+                            m.source === "weekly" ? m.class_id : undefined
+                          }
+                        />
+                      )}
+                    </CheckinWindow>
                   )}
                 </CardContent>
               </Card>
             ))
           ) : (
             <p className="text-muted-foreground">
-              Chưa có buổi dạy theo ngày được phân công hôm nay. Lịch tuần cần
-              có buổi theo ngày trước khi chấm công.
+              Hôm nay chưa có lịch dạy được phân công với giờ bắt đầu và kết
+              thúc hợp lệ.
             </p>
           )}
         </section>
@@ -159,9 +173,12 @@ export async function B2CTeachingPage({
           Xem tháng
         </Button>
       </form>
-      {canPay && Number(result.pending_price_count) > 0 && <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-        Có {result.pending_price_count} buổi đã đủ check-in/out đang chờ cập nhật đơn giá. Tổng tiền công bên dưới chưa bao gồm các buổi này.
-      </p>}
+      {canPay && Number(result.pending_price_count) > 0 && (
+        <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+          Có {result.pending_price_count} buổi đã đủ check-in/out đang chờ cập
+          nhật đơn giá. Tổng tiền công bên dưới chưa bao gồm các buổi này.
+        </p>
+      )}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         {[
           ["Buổi trong lịch", String(result.total)],
@@ -185,9 +202,9 @@ export async function B2CTeachingPage({
       </div>
       {mine && canCheck && (
         <p className="text-muted-foreground mb-4 text-sm">
-          Chụp ảnh tại buổi dạy. Check-in trước khi buổi kết thúc; check-out sau
-          giờ kết thúc, trong cùng ngày. Buổi thiếu một trong hai bước chưa được
-          tính giờ và tiền công.
+          Chụp ảnh tại buổi dạy. Check-in từ 15 phút trước giờ dạy đến trước giờ
+          kết thúc; check-out sau giờ kết thúc, trong cùng ngày. Buổi thiếu một
+          trong hai bước chưa được tính giờ và tiền công.
         </p>
       )}
       <div className="overflow-x-auto rounded-lg border">
@@ -286,10 +303,16 @@ export async function B2CTeachingPage({
                           "Asia/Ho_Chi_Minh",
                           "yyyy-MM-dd",
                         ) === todayISO() ? (
-                        <TeachingCheckpoint
-                          id={s.id}
-                          kind={s.check_in_at ? "out" : "in"}
-                        />
+                        <CheckinWindow
+                          startsAt={s.starts_at}
+                          endsAt={s.ends_at}
+                          checkedIn={Boolean(s.check_in_at)}
+                        >
+                          <TeachingCheckpoint
+                            id={s.id}
+                            kind={s.check_in_at ? "out" : "in"}
+                          />
+                        </CheckinWindow>
                       ) : (
                         "Chưa đến ngày / đã qua ngày"
                       )}

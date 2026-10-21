@@ -24,6 +24,7 @@ type PermissionRpc =
   | "write_b2c_enrollment_lifecycle"
   | "read_b2c_checkin_meetings"
   | "prepare_b2c_meeting_checkin"
+  | "prepare_b2c_weekly_checkin"
   | "price_b2c_teaching_session"
   | "add_b2c_class_student"
   | "find_b2c_enrollment_students"

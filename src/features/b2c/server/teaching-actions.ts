@@ -27,6 +27,25 @@ export async function prepareMeetingCheckin(id: string) {
     };
   }
 }
+export async function prepareWeeklyCheckin(id: string) {
+  await requireTeaching();
+  if (!z.uuid().safeParse(id).success)
+    return { error: "Lớp học không hợp lệ." };
+  try {
+    await permissionRpc<string>("prepare_b2c_weekly_checkin", {
+      p_class_id: id,
+    });
+    revalidatePath("/teacher/b2c-teaching");
+    revalidatePath("/teacher");
+    revalidatePath("/admin/b2c/teaching");
+    return { success: "Đã mở chấm công. Chọn ảnh để check-in." };
+  } catch {
+    return {
+      error:
+        "Chưa mở được check-in. Chỉ check-in từ 15 phút trước giờ dạy đến trước giờ kết thúc. Lịch có thể đã thay đổi; tải lại để kiểm tra.",
+    };
+  }
+}
 export async function priceTeachingSession(form: FormData) {
   await requireManager();
   const input = z
@@ -130,7 +149,7 @@ export async function recordTeachingCheckpoint(input: unknown) {
   if (error)
     return {
       error:
-        "Không ghi nhận được. Check-in trong ngày trước khi buổi kết thúc; check-out sau giờ kết thúc và sau check-in. Mỗi bước cần ảnh riêng.",
+        "Không ghi nhận được. Check-in từ 15 phút trước giờ dạy đến trước giờ kết thúc; check-out sau giờ kết thúc trong cùng ngày. Mỗi bước cần ảnh riêng.",
     };
   revalidatePath("/teacher/b2c-teaching");
   revalidatePath("/admin/b2c/teaching");
