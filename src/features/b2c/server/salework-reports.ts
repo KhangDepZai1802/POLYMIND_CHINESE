@@ -41,13 +41,17 @@ const inputSchema = z.object({
   closed_customers: z.number().int().min(0).max(1000000),
   collected_amount: z.number().int().min(0).max(999999999999),
   closed_courses: z.number().int().min(0).max(1000000),
+  notes: z.string().trim().max(500).optional(),
 });
 
 export async function saveSaleWorkReport(input: unknown) {
   const user = await requireUser();
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success)
-    return { error: "Nhập số nguyên không âm hợp lệ cho cả ba chỉ số." };
+    return {
+      error:
+        "Nhập số nguyên không âm cho ba chỉ số và ghi chú tối đa 500 ký tự.",
+    };
   const db = await createClient();
   const { data: owner, error: ownerError } = await db
     .from("salework_report_people")

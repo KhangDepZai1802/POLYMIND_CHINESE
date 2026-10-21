@@ -3,6 +3,7 @@ type ReportImage = {
   date: string;
   entries: [string, string][];
   saved: boolean;
+  notes?: string;
 };
 
 const colors = [
@@ -97,51 +98,19 @@ export function drawSaleWorkReport(
   ctx.shadowColor = "#b4cdf544";
   ctx.shadowBlur = 28;
   ctx.shadowOffsetY = 12;
-  box(24, 24, 1032, 364, 32, "#ffffffdd");
+  box(24, 24, 1032, 304, 32, "#ffffffdd");
   ctx.shadowColor = "transparent";
   text("BÁO CÁO", 65, 153, 92, true);
-  box(54, 220, 616, 124, 25, "#f0f6ff");
-  text("Ngày báo cáo", 80, 264, 25, false, "#506893");
-  text(data.date.split("-").reverse().join("/"), 80, 309, 34, true);
-  box(350, 244, 2, 77, 0, "#d4e3fa");
-  text("Nhân viên", 380, 264, 25, false, "#506893");
-  text(data.name, 380, 309, 34, true);
-  // Vector headset: gradient shells and padded cups, no external image dependency.
-  ctx.save();
-  ctx.translate(712, 75);
-  const blue = ctx.createLinearGradient(0, 0, 270, 260);
-  blue.addColorStop(0, "#8bdfff");
-  blue.addColorStop(0.4, "#247dff");
-  blue.addColorStop(1, "#153cb3");
-  ctx.lineWidth = 36;
-  ctx.strokeStyle = "#d2e7ff";
-  ctx.beginPath();
-  ctx.arc(137, 130, 116, Math.PI, 0);
-  ctx.stroke();
-  ctx.lineWidth = 23;
-  ctx.strokeStyle = blue;
-  ctx.beginPath();
-  ctx.arc(137, 130, 116, Math.PI, 0);
-  ctx.stroke();
-  box(7, 126, 68, 121, 30, blue);
-  box(25, 144, 37, 85, 18, "#123d99");
-  box(205, 126, 68, 121, 30, blue);
-  box(214, 140, 43, 92, 20, "#e4efff");
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = "#285cc3";
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(237, 236);
-  ctx.quadraticCurveTo(232, 281, 151, 275);
-  ctx.stroke();
-  box(127, 262, 45, 24, 12, "#113b92");
-  box(-28, -18, 75, 54, 17, blue);
-  text("•••", -14, 20, 30, true, "#fff");
-  ctx.restore();
+  box(54, 182, 972, 116, 25, "#f0f6ff");
+  text("Ngày báo cáo", 80, 222, 25, false, "#506893");
+  text(data.date.split("-").reverse().join("/"), 80, 270, 34, true);
+  box(530, 202, 2, 77, 0, "#d4e3fa");
+  text("Nhân viên", 570, 222, 25, false, "#506893");
+  text(data.name, 570, 270, 34, true);
 
   data.entries.forEach(([label, value], index) => {
     const x = 24 + (index % 2) * 528;
-    const y = 418 + Math.floor(index / 2) * 244;
+    const y = 352 + Math.floor(index / 2) * 234;
     const color = colors[index]!;
     ctx.shadowColor = "#a7c2ef33";
     ctx.shadowBlur = 20;
@@ -163,16 +132,34 @@ export function drawSaleWorkReport(
     text(label, x + 145, y + 72, 29, false, "#284979", 337);
     text(value, x + 145, y + 145, 60, true, "#071f50", 333);
   });
-  box(24, 1658, 1032, 226, 28, "#ffffffcc");
-  box(42, 1676, 996, 190, 26, "#edf3fc");
-  box(66, 1710, 70, 78, 18, "#dfeafa");
-  icon(9, 81, 1728, 40, "#506a9c");
-  text("Ghi chú", 164, 1742, 32, true);
+  box(24, 1536, 1032, 360, 28, "#ffffffcc");
+  text("Ghi chú", 65, 1588, 32, true);
+  const note = data.notes?.trim().replace(/\s+/gu, " ") || "—";
+  let noteSize = 28;
+  let lines: string[] = [];
+  do {
+    ctx.font = `400 ${noteSize}px Arial`;
+    lines = [];
+    let line = "";
+    for (const character of note) {
+      if (ctx.measureText(line + character).width > 940 && line) {
+        lines.push(line);
+        line = "";
+      }
+      line += character;
+    }
+    if (line) lines.push(line);
+    if (lines.length * (noteSize + 8) <= 220 || noteSize <= 12) break;
+    noteSize--;
+  } while (true);
+  lines.forEach((line, index) =>
+    text(line, 65, 1632 + index * (noteSize + 8), noteSize, false, "#506893"),
+  );
   text(
     data.saved ? "Đã lưu báo cáo" : "Bản nháp chưa lưu",
-    164,
-    1796,
-    29,
+    65,
+    1864,
+    22,
     false,
     "#617aa2",
   );

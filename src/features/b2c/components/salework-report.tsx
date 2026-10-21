@@ -40,6 +40,7 @@ export function SaleWorkReport({
   const [customers, setCustomers] = useState("");
   const [amount, setAmount] = useState("");
   const [courses, setCourses] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -57,6 +58,7 @@ export function SaleWorkReport({
       setCustomers("");
       setAmount("");
       setCourses("");
+      setNotes("");
       return readSaleWorkReport(person, date)
         .then((data) => {
           if (!active) return;
@@ -65,6 +67,7 @@ export function SaleWorkReport({
           setCustomers(data.report ? String(data.report.closed_customers) : "");
           setAmount(data.report ? String(data.report.collected_amount) : "");
           setCourses(data.report ? String(data.report.closed_courses) : "");
+          setNotes(data.report?.notes ?? "");
         })
         .catch(() => {
           if (active)
@@ -105,7 +108,13 @@ export function SaleWorkReport({
   async function createImage(): Promise<Blob> {
     await document.fonts.ready;
     const canvas = document.createElement("canvas");
-    drawSaleWorkReport(canvas, { name: names[person], date, entries, saved });
+    drawSaleWorkReport(canvas, {
+      name: names[person],
+      date,
+      entries,
+      saved,
+      notes,
+    });
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("PNG unavailable"))),
@@ -171,11 +180,16 @@ export function SaleWorkReport({
           <article className="space-y-5 rounded-2xl border bg-white p-4 text-slate-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-xl font-semibold">{names[person]}</h2>
-              <p className="text-sm text-slate-500">Ngày {date.split("-").reverse().join("/")}</p>
+              <p className="text-sm text-slate-500">
+                Ngày {date.split("-").reverse().join("/")}
+              </p>
             </div>
             <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {metrics.map(([key, label]) => (
-                <div key={key} className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                <div
+                  key={key}
+                  className="rounded-xl border border-blue-100 bg-blue-50/60 p-4"
+                >
                   <dt className="text-sm text-slate-500">{label}</dt>
                   <dd className="text-xl font-semibold">
                     {snapshot ? number.format(snapshot[key]) : "Chưa đồng bộ"}
@@ -209,6 +223,25 @@ export function SaleWorkReport({
                 </label>
               ))}
             </div>
+            <label className="block space-y-2">
+              <span className="block text-sm">Ghi chú</span>
+              <textarea
+                aria-label="Ghi chú"
+                className="w-full rounded-lg border p-3"
+                rows={4}
+                maxLength={500}
+                value={notes}
+                disabled={!canEdit || saving}
+                placeholder="Nhập ghi chú cho báo cáo (không bắt buộc)"
+                onChange={(event) => {
+                  setNotes(event.target.value);
+                  setSaved(false);
+                }}
+              />
+              <span className="block text-xs text-slate-500">
+                {notes.length}/500 ký tự
+              </span>
+            </label>
             <p className="text-sm text-slate-500">
               {saved ? "Đã lưu báo cáo" : "Chưa lưu báo cáo"}
             </p>
@@ -231,6 +264,7 @@ export function SaleWorkReport({
                       closed_customers: Number(customers),
                       collected_amount: Number(amount),
                       closed_courses: Number(courses),
+                      notes,
                     });
                     if (version === generation.current) {
                       setNotice(result.error ?? "Đã lưu báo cáo.");

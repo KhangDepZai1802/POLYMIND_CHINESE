@@ -48,9 +48,9 @@ export type Database = {
         Relationships: []
       }
       salework_daily_reports: {
-        Row: {person_slug:string;work_date:string;closed_customers:number;collected_amount:number;closed_courses:number;updated_at:string}
-        Insert: {person_slug:string;work_date:string;closed_customers:number;collected_amount:number;closed_courses:number;updated_at?:string}
-        Update: {closed_customers?:number;collected_amount?:number;closed_courses?:number}
+        Row: {person_slug:string;work_date:string;closed_customers:number;collected_amount:number;closed_courses:number;notes:string;updated_at:string}
+        Insert: {person_slug:string;work_date:string;closed_customers:number;collected_amount:number;closed_courses:number;notes?:string;updated_at?:string}
+        Update: {closed_customers?:number;collected_amount?:number;closed_courses?:number;notes?:string}
         Relationships: []
       }
       xkld_candidates: {

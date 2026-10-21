@@ -72,6 +72,9 @@ describe("Daily SaleWork report", () => {
     fireEvent.change(screen.getByLabelText("Khóa đã chốt"), {
       target: { value: "4" },
     });
+    fireEvent.change(screen.getByLabelText("Ghi chú"), {
+      target: { value: "Khách hẹn thanh toán ngày mai." },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Lưu báo cáo" }));
     await waitFor(() =>
       expect(saveSaleWorkReport).toHaveBeenCalledWith({
@@ -80,6 +83,7 @@ describe("Daily SaleWork report", () => {
         closed_customers: 3,
         collected_amount: 2500000,
         closed_courses: 4,
+        notes: "Khách hẹn thanh toán ngày mai.",
       }),
     );
     expect(await screen.findByText("Đã lưu báo cáo.")).toBeInTheDocument();
@@ -93,6 +97,7 @@ describe("Daily SaleWork report", () => {
       screen.queryByRole("button", { name: "Lưu báo cáo" }),
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Tiền thực thu (VNĐ)")).toBeDisabled();
+    expect(screen.getByLabelText("Ghi chú")).toBeDisabled();
     fireEvent.change(screen.getByRole("combobox"), {
       target: { value: "co-thy" },
     });
@@ -141,6 +146,9 @@ describe("Daily SaleWork report", () => {
       />,
     );
     await screen.findByRole("button", { name: "Sao chép báo cáo" });
+    fireEvent.change(screen.getByLabelText("Ghi chú"), {
+      target: { value: "Cần gọi lại khách." },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Sao chép báo cáo" }));
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith("Đã sao chép ảnh báo cáo.", {
@@ -158,6 +166,7 @@ describe("Daily SaleWork report", () => {
     expect(drawn).toContain("Tiền thực thu");
     expect(drawn).toContain("Chưa nhập");
     expect(drawn).toContain("Bản nháp chưa lưu");
+    expect(drawn).toContain("Cần gọi lại khách.");
     expect(drawn.join(" ")).not.toMatch(/BikeForce|SaleWork|Đồng bộ:/);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       /^Báo cáo$/,

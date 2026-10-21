@@ -1584,6 +1584,13 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 
 ## SALEWORK-DAILY-REPORT-1
 
+### SALEWORK-NOTES-6
+
+- [x] Ô ghi chú500ký tự theo người/ngày, admin chỉ xem; ảnh hiển thị ghi chú nhập thật.
+- [x] Bỏ tai nghe khỏi ảnh, giữ tỷ lệ9:16 và trạng thái lưu riêng.
+- [x] SQL04 production/history; RLS/roundtrip rollback; lint/typecheck/build/1074tests và Edge local đạt.
+- [ ] Phát hành ghi chú và ảnh bỏ tai nghe (user đã yêu cầu push).
+
 ### SALEWORK-LIVE-CARDS-5
 
 - [x] Bỏ canvas preview; hiển thị thẻ HTML từ snapshot theo người/ngày và ba ô nhập kết quả.

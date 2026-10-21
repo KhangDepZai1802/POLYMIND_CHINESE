@@ -10,7 +10,8 @@ Sau khi SQL chạy thành công và code được triển khai:
 - Số liệu SaleWork lấy snapshot cùng người/ngày. Thiếu snapshot hiện “Chưa đồng bộ”, không mặc định số 0.
 - Tiêu đề và liên kết hiển thị “Báo cáo”. Không hiển thị dòng thời gian BikeForce đồng bộ trong báo cáo.
 - Trên trang hiển thị thẻ HTML lấy số liệu SaleWork theo người/ngày và ba ô nhập kết quả; không dùng canvas/ảnh làm giao diện.
-- Chỉ khi Sao chép/Xuất ảnh mới tạo PNG theo mẫu: nền xanh nhạt, tai nghe vector, ngày/người báo cáo, 10 thẻ hai cột với icon màu và khung Ghi chú. Tiêu đề chỉ “BÁO CÁO”; lấy số liệu đang xem và giá trị đang nhập, chữ dài tự giảm cỡ.
+- Chỉ khi Sao chép/Xuất ảnh mới tạo PNG theo mẫu: nền xanh nhạt, không tai nghe, ngày/người báo cáo, 10 thẻ hai cột với icon màu và khung Ghi chú. Tiêu đề chỉ “BÁO CÁO”; lấy số liệu đang xem và giá trị đang nhập, chữ dài tự giảm cỡ.
+- Ô Ghi chú không bắt buộc, tối đa500ký tự, lưu theo người/ngày với quyền báo cáo hiện có. Migration bổ sung: `supabase/migrations/20261021000004_salework_report_notes.sql`. Ảnh hiển thị nội dung ghi chú (tự xuống dòng/giảm cỡ chữ), trạng thái lưu nằm riêng bên dưới.
 - Sao chép thành công hiện popup nổi trên màn hình trong 4 giây; lỗi sao chép cũng hiện popup, không bắt cuộn lên đầu nội dung.
 - Nút Sao chép báo cáo sao chép ảnh PNG; Xuất ảnh tải cùng ảnh 1080×1920 (9:16). Bản chưa lưu có nhãn bản nháp. Nếu trình duyệt không hỗ trợ hoặc từ chối clipboard ảnh, thông báo dùng Xuất ảnh PNG.
 

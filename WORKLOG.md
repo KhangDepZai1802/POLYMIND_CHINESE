@@ -38,6 +38,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> SALEWORK-NOTES-6-RELEASE — Codex — 2026-10-21. User yêu cầu dừng test, đẩy GitHub. Code cuối lint/typecheck/build và187files1074tests đã đạt; SQL04 production/history và rollback RLS đạt; Edge local ghi chú/ảnh bỏ tai nghe/copy9:16/popup/mobile đạt. Phát hành10file task, giữ4file dirty ngoài scope; không kiểm thử thêm.
+
+> SALEWORK-NOTES-6 — đang làm — Codex — 2026-10-21. User bổ sung ô ghi chú lưu theo người/ngày và hiện trên ảnh, đồng thời bỏ tai nghe. Giữ thẻ HTML; thêm migration notes tối đa500ký tự và quyền cũ.
+
 > SALEWORK-LIVE-CARDS-5-RELEASE — Codex — 2026-10-21. User xác nhận trực tiếp “đẩy đi hỏi quài vậy”: phát hành bản thẻ HTML đã đạt lint/typecheck/build/1074tests và Edge local. Chỉ5file task; giữ4file dirty ngoài scope. Next kiểm production.
 
 > SALEWORK-LIVE-CARDS-5 — Codex — 2026-10-21. Bỏ canvas preview, thẻ HTML từ snapshot theo người/ngày và3ô nhập; chỉ tạo ảnh khi copy/export. Edge local xác minh thẻ hiện/không canvas/nhập draft/copy PNG9:16/popup/mobile390/0pageerror, không lưu thử. Lint/typecheck/build và1074tests đạt. BLOCKED: auto-review từ chối commit/push vì cần xác nhận phát hành riêng bản thẻ HTML. Chưa commit/push; next user xác nhận rồi phát hành.
@@ -1481,6 +1485,11 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — SALEWORK-NOTES-6
+- Ô ghi chú tùy chọn500ký tự, tải/lưu theo người/ngày và quyền báo cáo cũ. Ảnh bỏ tai nghe, khung ghi chú dùng nội dung nhập; trạng thái lưu riêng, auto-wrap/fit giữ9:16. Không đưa canvas trở lại UI.
+- SQL20261021000004 áp production và exact-history đã xác minh. CLI dry-run bị16gaps lịch sử cũ nên không include-all; áp đúng SQL mới. Test SQL rollback own read/write/default/length/cross-read/update deny đạt, fixture0.
+- Edge local ô ghi chú/copyPNG1080×1920/popup/mobile390/0pageerror đạt; đã xem ảnh thực tế không tai nghe và có ghi chú. Full test lượt đầu3case nhãn Ghi chú lỗi; đã sửa aria-label, targeted3/3 đạt. Full rerun187files1074tests và build đạt; user yêu cầu đẩy GitHub, không test thêm.
 
 ### [2026-10-21] Codex — SALEWORK-LIVE-CARDS-5
 - User xác nhận trang phải là thẻ dữ liệu thật, không phải ảnh. Bỏ canvas preview, hiện metric HTML/ngày/người và giữ3ô nhập; renderer mẫu chỉ gọi từ copy/export.
