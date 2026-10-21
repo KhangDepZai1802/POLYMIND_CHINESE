@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { scheduleSchema } from "../domain/structured-schedule";
@@ -21,9 +21,7 @@ export async function generateB2CScheduleAction(input: unknown) {
           ? "Phòng đã có lịch trùng giờ. Chưa lưu thay đổi."
           : "Không sinh được buổi học. Tải lại và thử lại.",
     };
-  revalidatePath(`/admin/b2c/classes/${p.data.class_id}`);
-  revalidatePath("/teacher");
-  revalidatePath(`/teacher/b2c-classes/${p.data.class_id}`);
+  revalidateB2CViews();
   const r = data as { created: number; skipped: number; retry: boolean };
   return {
     success: r.retry

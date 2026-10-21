@@ -1,5 +1,9 @@
 # 04 — Kiến trúc hệ thống
 
+## B2C save visibility (2026-10-21)
+
+`revalidateB2CViews()` invalidates hai layout `/admin/b2c` và `/teacher` sau RPC ghi thành công. Dùng chung cho workspace, hồ sơ/lớp, sinh lịch, chấm công, học phí/phiếu thu, điểm kiểm tra và nhận xét tháng; lỗi validate/DB không invalidation hoặc báo thành công. Nhờ đó các trang tổng hợp/lớp/lịch sử của admin và giáo viên được đọc mới khi truy cập, tránh chỉ invalidation một trang giáo viên. Không thêm bảng/kho dữ liệu riêng/trạng thái gửi hay service-role user flow; không tự refresh browser admin đang mở trên máy khác.
+
 ## Check-in time window (2026-10-21)
 
 CheckinWindow client tự cập nhật mỗi giây, khóa controls ngoài cửa sổ theo giờ VN; đây chỉ là hướng dẫn giao diện. RPC check_b2c_teaching_session kiểm lại theo clock_timestamp trong DB sau khi khóa session. Weekly RPC không nhận giờ từ client, tự đọc lịch và phân công hiện tại; permissionRpc khai báo endpoint mới. Thẻ không tạo bản ghi khi render; chỉ thao tác Mở check-in mới materialize buổi. Giao diện và máy chủ cùng quy tắc [start−15 phút,end), trong ngày dạy.

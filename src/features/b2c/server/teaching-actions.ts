@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { z } from "zod";
 import {
   teachingSessionSchema,
@@ -17,8 +17,7 @@ export async function prepareMeetingCheckin(id: string) {
     await permissionRpc<string>("prepare_b2c_meeting_checkin", {
       p_meeting_id: id,
     });
-    revalidatePath("/teacher/b2c-teaching");
-    revalidatePath("/admin/b2c/teaching");
+    revalidateB2CViews();
     return { success: "Đã mở chấm công. Chọn ảnh để check-in." };
   } catch {
     return {
@@ -35,9 +34,7 @@ export async function prepareWeeklyCheckin(id: string) {
     await permissionRpc<string>("prepare_b2c_weekly_checkin", {
       p_class_id: id,
     });
-    revalidatePath("/teacher/b2c-teaching");
-    revalidatePath("/teacher");
-    revalidatePath("/admin/b2c/teaching");
+    revalidateB2CViews();
     return { success: "Đã mở chấm công. Chọn ảnh để check-in." };
   } catch {
     return {
@@ -61,8 +58,7 @@ export async function priceTeachingSession(form: FormData) {
       p_id: input.data.id,
       p_rate: input.data.rate,
     });
-    revalidatePath("/admin/b2c/teaching");
-    revalidatePath("/teacher/b2c-teaching");
+    revalidateB2CViews();
     return { success: "Đã cập nhật đơn giá cho buổi dạy." };
   } catch {
     return {
@@ -92,9 +88,7 @@ export async function createTeachingSessionAction(
       error:
         "Không tạo được buổi dạy. Kiểm tra tài khoản giáo viên và lịch trùng.",
     };
-  revalidatePath("/admin/b2c/teaching");
-  revalidatePath("/admin/b2c/classes/[classId]", "page");
-  revalidatePath("/teacher/b2c-teaching");
+  revalidateB2CViews();
   return { success: "Đã tạo buổi dạy." };
 }
 export async function teachingPhotoTicket(
@@ -151,7 +145,6 @@ export async function recordTeachingCheckpoint(input: unknown) {
       error:
         "Không ghi nhận được. Check-in từ 15 phút trước giờ dạy đến trước giờ kết thúc; check-out sau giờ kết thúc trong cùng ngày. Mỗi bước cần ảnh riêng.",
     };
-  revalidatePath("/teacher/b2c-teaching");
-  revalidatePath("/admin/b2c/teaching");
+  revalidateB2CViews();
   return { success: "Đã ghi nhận chấm công." };
 }

@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { requireTeaching } from "@/lib/auth/session";
 import { b2cAssessmentSchema, b2cAssessmentResultSchema, type B2CAssessmentsModel, type B2CAssessmentHistory } from "../domain/assessments";
 import { permissionRpc } from "./permission-rpc";
@@ -22,8 +22,7 @@ export async function saveB2CAssessmentAction(action: "exam" | "result", input: 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Kiểm tra thông tin bài kiểm tra." };
   try {
     const id = await permissionRpc<string>("write_b2c_assessment", { p_action: action, p_data: parsed.data });
-    revalidatePath("/admin/b2c", "layout");
-    revalidatePath(`/teacher/b2c-classes/${parsed.data.class_id}`);
+    revalidateB2CViews();
     return { id };
   } catch (e) { return { error: e instanceof Error ? e.message : "Không lưu được. Vui lòng thử lại." }; }
 }

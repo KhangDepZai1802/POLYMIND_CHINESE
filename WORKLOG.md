@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TEACHER-SAVE-VISIBILITY-1 — code/kiểm tra hoàn tất, release — Codex — 2026-10-21. Cloud read-only8GV/19lớp đủ identity/active/mapping,6nhóm đọc/GV đạt. Shared invalidation admin/teacher sau lưu, không gửi/duyệt/đổi quyền.11/11DBrollback +22/22unit mới,lint/typecheck/build exit0;full185files1059/1059tests với1worker đạt. Chỉ phát hành file task, giữ4file dirty có trước. Chưa QA browser/deploy online; quyền nhập điểm của8GV vẫn opt-in/chưa cấp.
+
 > B2C-WEEKLY-CHECKIN-2-RELEASE — Codex — 2026-10-21. Sau khi được thông báo11fulltests lỗi và quy định D-44, user yêu cầu rõ “đẩy code lên github đi”: cho phép phát hành riêng bản chấm công dù cổng full test còn đỏ. Giữ nguyên kết quả kiểm tra đã ghi; chỉ stage file chấm công/docs/tests/migration liên quan, không4file dirty có từ trước. Commit/push main trong phiên này; chưa xác minh Vercel deploy hoặc camera thật.
 
 > B2C-WEEKLY-CHECKIN-2 — code local + SQL cloud, phát hành bị chặn — Codex — 2026-10-21. Lịch tuần hôm nay tự hiện; check-in [start−15 phút,end), cùng ngày; UI tự mở/khóa, DB kiểm giờ. SQL20261021000001 áp cloud/history xác minh,28/28DB mới +28/28regression,12/12unit tập trung đạt; lint/typecheck/build đạt. Full test có lỗi ngoài scope (wrong-answer-review tái hiện khi chạy riêng, student-dashboard timeout). Chưa commit/push theo D-44; không tuyên bố deploy giao diện.
@@ -898,6 +900,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-TEACHER-SAVE-VISIBILITY-1-QA:** sau phát hành, giáo viên nhập nghiệp vụ thực và admin tải lại trang tương ứng để xem; kiểm camera/browser thật riêng. Full1059/1059tests với1worker/lint/typecheck/build đều đạt. Không cần thêm gửi/duyệt. Cả8GV hiện không có quyền nhập điểm; chỉ admin quyết định cấp, không tự đổi quyền khi audit.
+
 **B2C-WEEKLY-CHECKIN-2-RELEASE:** cần xử lý lỗi full test ngoài scope hoặc user cho phép ngoại lệ D-44 trước commit/push bản sửa chấm công. DB đã có migration mới, giao diện còn local. Không replay/repair16gaps history cũ. Khi phát hành chỉ stage file task, giữ nguyên4file thay đổi sẵn của user.
 
 **Cập nhật release 2026-10-21:** user đã cho phép push sau khi biết test lỗi; phát hành riêng bản chấm công. Next: xác minh deploy và thử camera/check-in đúng giờ, xử lý lỗi full suite trong task riêng.
@@ -1459,6 +1463,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — B2C-TEACHER-SAVE-VISIBILITY-1
+- **Yêu cầu:** user xác nhận giáo viên B2C lưu vào hệ thống thì admin thấy; không luồng gửi/nhận/duyệt.
+- **Audit:** cloud8GV có account/profileactive và mapping hợp lệ,19lớp active không mồ côi. Đọc6nhóm dữ liệu của19lớp dưới authenticated identity của GV phụ trách đều đạt. Không cập nhật hồ sơ thật, quyền hay mật khẩu. Cả8chưa có view/grade_assessments, giữ cấu hình này.
+- **Fix:** revalidateB2CViews invalidates hai layout admin/teacher sau RPC ghi thành công; chuẩn hóa workspace, hồ sơ/lớp, lịch, nhận xét tháng/điểm, học phí/phiếu thu và chấm công. Admin đọc dữ liệu mới khi mở/tải lại màn tương ứng, không realtime. Giữ4file dirty có trước.
+- **Test:**11/11DBassertion rollback cùng fixture quyền hiện có, chứng minh admin đọc dữ liệu teacher save gồm drafttháng/2phiếu thu/điểm/actor.22/22unit của11luồng lưu success/failure đạt. Lint/typecheck/build exit0;full185files1059/1059tests bằng `npm test -- --maxWorkers=1 --reporter=dot` đạt. Không migration, không dữ liệu thử còn lại. Fetch origin xác nhận HEAD=origin/main trước release.
+- **Next:** commit/push bản sửa theo D-44 sau cổng xanh; SHA/remote báo trong chat. Kiểm thử browser thật sau phát hành và admin tự quyết định quyền nhập điểm. Không tự tuyên bố Verified/deployed.
 
 ### [2026-10-21] Codex — B2C-WEEKLY-CHECKIN-2
 - **Làm được:** đồng bộ lịch tuần hôm nay sang chấm công bằng read-only fallback, ưu tiên buổi theo ngày/hủy. Materialize chỉ khi mở check-in, server đọc giờ/phân công hiện tại; giữ ảnh, giá null, idempotency, khóa và unique. UI tự mở/khóa theo giờ; DB check-in từ15phút trước start đến trước end trong cùng ngày. Check-out giữ sau end đến hết ngày.

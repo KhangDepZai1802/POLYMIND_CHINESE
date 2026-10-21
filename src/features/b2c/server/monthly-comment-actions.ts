@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { requireTeaching } from "@/lib/auth/session";
 import { monthlyCommentSchema, type MonthlyCommentsModel } from "../domain/monthly-comments";
 import { permissionRpc } from "./permission-rpc";
@@ -28,7 +28,7 @@ export async function saveMonthlyCommentAction(input: unknown) {
   if (!p.success) return { error: p.error.issues[0]?.message ?? "Kiểm tra nhận xét." };
   try {
     const id = await permissionRpc<string>("write_b2c_monthly_comment", { p_action: "save", p_data: p.data });
-    revalidatePath("/admin/b2c", "layout"); revalidatePath(`/teacher/b2c-classes/${p.data.class_id}`);
+    revalidateB2CViews();
     return { id };
   } catch (e) { return { error: e instanceof Error ? e.message : "Không lưu được nhận xét." }; }
 }
@@ -38,7 +38,7 @@ export async function confirmMonthlyCommentDeliveryAction(input: unknown) {
   if (!p.success) return { error: "Chọn phụ huynh, kênh và xác nhận đã gửi thủ công." };
   try {
     const id = await permissionRpc<string>("write_b2c_monthly_comment", { p_action: "confirm_delivery", p_data: p.data });
-    revalidatePath("/admin/b2c", "layout"); revalidatePath(`/teacher/b2c-classes/${p.data.class_id}`);
+    revalidateB2CViews();
     return { id };
   } catch (e) { return { error: e instanceof Error ? e.message : "Không ghi nhận được lần gửi." }; }
 }

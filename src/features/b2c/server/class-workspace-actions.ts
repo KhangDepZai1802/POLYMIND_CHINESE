@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { dbErrorToMessage } from "@/lib/action-state";
@@ -7,7 +7,6 @@ import {
   meetingSchema,
   attendanceSchema,
   commentSchema,
-  CLASS_WORKSPACE_PATH,
 } from "../domain/class-workspace";
 import type { Json } from "@/types/database";
 async function write(action: string, data: Json) {
@@ -15,11 +14,7 @@ async function write(action: string, data: Json) {
     await createClient()
   ).rpc("write_b2c_class_workspace", { p_action: action, p_data: data });
   if (error) return { error: dbErrorToMessage(error) };
-  const classId = (data as { class_id: string }).class_id;
-  revalidatePath(`${CLASS_WORKSPACE_PATH}/${classId}`);
-  revalidatePath(`${CLASS_WORKSPACE_PATH}/[classId]`, "page");
-  revalidatePath("/teacher");
-  revalidatePath(`/teacher/b2c-classes/${classId}`);
+  revalidateB2CViews();
   return { success: true };
 }
 export async function saveClassMeetingAction(input: unknown) {

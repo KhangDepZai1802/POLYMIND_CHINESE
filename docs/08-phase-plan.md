@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TEACHER-SAVE-VISIBILITY-1
+
+- [x] Rà toàn bộ8tài khoản B2C và19lớp active trên cloud: account/profile active, liên kết đúng giáo viên, không lớp mồ côi; kiểm tra6nhóm dữ liệu dưới authenticated identity từng giáo viên, không ghi dữ liệu thật.
+- [x] Chuẩn hóa invalidation cả admin/teacher sau lưu thành công: lớp/học viên, lịch/buổi học, điểm danh/nhận xét, nhận xét tháng/điểm, học phí/phiếu thu và chấm công. Không thêm gửi/duyệt, không đổi quyền thật, không realtime/polling.
+- [x] 11ca DB rollback chứng minh admin đọc dữ liệu giáo viên đã lưu (cả draft tháng), giữ attribution/phân quyền.22unit kiểm tra11luồng lưu thành công/thất bại. Kiểm tra phát hành ghi tại WORKLOG.
+- [ ] QA trên website sau phát hành; quyền nhập điểm kiểm tra của8GV hiện chưa được cấp, giữ nguyên cấu hình admin.
+
 ## B2C-WEEKLY-CHECKIN-2
 
 - [x] Lịch tuần hôm nay có giờ hợp lệ tự hiện chấm công; buổi theo ngày ưu tiên, gồm hủy. Chỉ tạo buổi khi giáo viên mở check-in; giữ ảnh/quyền/giá null, khóa và unique chống trùng.

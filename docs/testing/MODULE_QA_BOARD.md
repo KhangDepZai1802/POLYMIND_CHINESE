@@ -1,5 +1,11 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-TEACHER-SAVE-VISIBILITY-1 — 2026-10-21
+
+- **Codex Status:** Fixed; **Verification:** Not Started. Rà8GV/19lớp active: đủ identity/active/mapping; đọc6nhóm dữ liệu của19lớp dưới role authenticated đúng GV đều đạt. Không đổi quyền thật; cả8chưa có view/grade_assessments.
+- **Fix:** shared invalidation cả admin/teacher khi lưu thành công cho11luồng. Giữ DB/RLS/actor, không gửi/duyệt hoặc cam kết realtime giữa browser.
+- **Test:**11/11assertion DB rollback cùng fixture phân quyền hiện có, chứng minh admin đọc điểm danh/nhận xét/hồ sơ/2phiếu thu/chấm công/drafttháng/điểm sau teacher save.22/22unit success/failure đạt;lint/typecheck/build exit0,full185files1059/1059tests với1worker đạt. Không giữ fixture hoặc nội dung học viên thật trong repo. Chưa QA browser thật/deployment online.
+
 ## B2C-WEEKLY-CHECKIN-2 — 2026-10-21
 
 - **Codex Status:** Fixed, đang chạy cổng phát hành; **Verification:** Not Started. Khắc phục lịch tuần hiện ở Hôm nay nhưng mất tại Chấm công; thêm cửa sổ check-in từ start−15 phút đến trước end ở UI và DB.

@@ -1,5 +1,9 @@
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
+## Giáo viên lưu dữ liệu, admin xem (2026-10-21)
+
+User xác nhận không cần gửi admin hay duyệt: giáo viên B2C lưu dữ liệu của lớp mình thì admin xem cùng bản ghi trong màn tương ứng, gồm cả nhận xét tháng nháp. Quyền hiện tại vẫn quyết định ai được nhập gì; không tự cấp thêm quyền điểm/tài chính hoặc mở lớp ngoài phân công. Admin mở/tải lại dữ liệu để thấy bản mới, không mặc định có đẩy realtime giữa các trình duyệt.
+
 ## Chấm công theo lịch tuần (2026-10-21)
 
 Theo yêu cầu mới, lớp active được phân công và đã khai giảng có lịch tuần đúng hôm nay, giờ rõ ràng, phải hiện tại Chấm công dù chưa tạo buổi theo ngày. Buổi theo ngày có sẵn được ưu tiên; hủy buổi sẽ chặn lịch tuần thay thế. Check-in có ảnh chỉ thành công trong cùng ngày từ 15 phút trước giờ bắt đầu đến trước giờ kết thúc; check-out từ giờ kết thúc đến hết ngày. Không tự đoán giờ thiếu, không tự ghi check-in hoặc tính tiền chỉ vì xem trang.

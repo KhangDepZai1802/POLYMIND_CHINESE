@@ -1,5 +1,9 @@
 # 03 — Workflow nghiệp vụ
 
+## Nhập dữ liệu B2C và xem phía admin (2026-10-21)
+
+Giáo viên vào lớp được phân công → nhập phần có quyền → Lưu thành công. Admin mở lại/tải lại Học viên/Lịch học/Điểm danh/Nhận xét/Nhận xét tháng/Kiểm tra/Học phí hoặc Chấm công tương ứng để xem cùng dữ liệu. Nhận xét tháng nháp đã xem được, không cần đánh dấu hoàn tất hoặc gửi admin. Thiếu quyền nhập điểm thì admin quyết định cấp `view_assessments` + `grade_assessments` trong phân quyền, không tự cấp hàng loạt.
+
 ## Chấm công từ lịch tuần (2026-10-21)
 
 Giáo viên mở Chấm công → thấy buổi hôm nay từ lịch tuần hoặc buổi theo ngày đã điều chỉnh. Trước mốc start−15 phút thẻ vẫn hiện, nút khóa kèm giờ mở; đến mốc nút tự mở. Mở check-in tạo/liên kết buổi thực bằng lịch DB → chọn ảnh → check-in trước giờ kết thúc. Check-out có ảnh riêng từ giờ kết thúc đến hết ngày. Hủy/đổi buổi theo ngày ưu tiên hơn lịch tuần, không sinh lại buổi hủy. Chưa có giờ hợp lệ thì quản lý cần cập nhật giờ trong lịch tuần.

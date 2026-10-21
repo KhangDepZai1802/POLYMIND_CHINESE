@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { z } from "zod";
 import {
   b2cTuitionPackageSchema,
@@ -58,13 +58,7 @@ export async function saveB2CTuitionPackageAction(
       error: error instanceof Error ? error.message : "Không lưu được học phí.",
     };
   }
-  revalidatePath("/admin/b2c/tuition");
-  revalidatePath("/admin/b2c/classes/[classId]", "page");
-  const classId = form.get("class_id");
-  if (typeof classId === "string" && z.uuid().safeParse(classId).success)
-    revalidatePath(`/admin/b2c/classes/${classId}`);
-  revalidatePath("/admin/b2c/history");
-  revalidatePath("/teacher/b2c-classes/[classId]", "page");
+  revalidateB2CViews();
   return { success: "Đã lưu gói học phí." };
 }
 export async function recordB2CReceiptAction(
@@ -86,13 +80,7 @@ export async function recordB2CReceiptAction(
     p_collector_name: v.collector_name,
   });
   if (error) return { error: dbErrorToMessage(error) };
-  revalidatePath("/admin/b2c/tuition");
-  revalidatePath("/admin/b2c/classes/[classId]", "page");
-  const classId = form.get("class_id");
-  if (typeof classId === "string" && z.uuid().safeParse(classId).success)
-    revalidatePath(`/admin/b2c/classes/${classId}`);
-  revalidatePath("/admin/b2c/history");
-  revalidatePath("/teacher/b2c-classes/[classId]", "page");
+  revalidateB2CViews();
   return { success: "Đã lưu phiếu thu." };
 }
 export async function getB2CReceiptsAction(packageId: string, page: number) {
@@ -133,16 +121,7 @@ export async function correctB2CTuitionAction(input: unknown) {
     await permissionRpc<string>("correct_b2c_tuition", {
       p_payload: parsed.data,
     });
-    for (const path of [
-      "/admin/b2c/tuition",
-      "/admin/b2c/history",
-      "/admin/b2c/students",
-      "/admin/b2c/overview",
-      "/admin/b2c/teachers",
-    ])
-      revalidatePath(path);
-    revalidatePath("/admin/b2c/classes/[classId]", "page");
-    revalidatePath("/teacher/b2c-classes/[classId]", "page");
+    revalidateB2CViews();
     return { success: true };
   } catch (error) {
     return {

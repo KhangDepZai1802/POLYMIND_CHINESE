@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidateB2CViews } from "./revalidate-views";
 import { requireTeaching } from "@/lib/auth/session";
 import { permissionRpc } from "./permission-rpc";
 import { classFiltersSchema } from "../domain/class-workspace";
@@ -122,8 +122,7 @@ export async function saveTeacherClassAction(input: unknown) {
       p_data: v.data,
       p_expected_updated_at: v.expected_updated_at,
     });
-    revalidatePath("/teacher", "layout");
-    revalidatePath("/admin/b2c", "layout");
+    revalidateB2CViews();
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Không lưu được lớp." };
@@ -156,7 +155,7 @@ export async function saveTeacherStudentAction(
       p_enrollment_id: z.uuid().parse(enrollmentId),
       p_data: parsed.data,
     });
-    revalidatePath("/teacher", "layout");
+    revalidateB2CViews();
     return { success: true };
   } catch (e) {
     return {
