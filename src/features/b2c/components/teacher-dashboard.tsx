@@ -49,6 +49,11 @@ const select =
   "h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
 const avatarTones = ["bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-200", "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-200", "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200", "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200", "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-200"];
 const specialtyLabel = (value: string | null | undefined) => !value?.trim() || value.trim().toUpperCase() === "B2C" ? "Chưa cập nhật" : value.trim();
+const duration = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return hours ? `${hours} giờ ${minutes} phút` : `${minutes} phút`;
+};
 
 export function TeacherDashboard({
   rows,
@@ -290,6 +295,34 @@ export function TeacherDashboard({
           restoreFocus={() => detailTrigger.current?.focus()}
         />
       )}
+      <section className={panel} aria-labelledby="salework-title">
+        <div className="mb-4">
+          <h2 id="salework-title" className="font-semibold text-[#102752] dark:text-white">SaleWork từ BikeForce</h2>
+          <p className="mt-1 text-xs text-slate-500">Snapshot mới nhất của Cô Lê và Cô Thy; đồng bộ lại cùng ngày sẽ thay thế số cũ.</p>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {rows.filter((r) => ["cô lê", "cô thy"].includes(r.teacher.full_name.trim().toLocaleLowerCase("vi"))).map((r) => (
+            <article key={r.teacher.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold text-[#183764] dark:text-slate-100">{r.teacher.full_name}</h3>
+                <span className="text-xs text-slate-500">{r.saleWork ? `Ngày ${r.saleWork.workDate.split("-").reverse().join("/")}` : "Chưa đồng bộ"}</span>
+              </div>
+              {r.saleWork ? <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+                {[
+                  ["Hội thoại", number.format(r.saleWork.snapshot.conversations)],
+                  ["Tin đã gửi", number.format(r.saleWork.snapshot.sentMessages)],
+                  ["Tin đã nhận", number.format(r.saleWork.snapshot.receivedMessages)],
+                  ["Cuộc gọi đến", number.format(r.saleWork.snapshot.incomingCalls)],
+                  ["Cuộc gọi đi", number.format(r.saleWork.snapshot.outgoingCalls)],
+                  ["Cuộc gọi nhỡ", number.format(r.saleWork.snapshot.missedCalls)],
+                  ["Thời lượng gọi", duration(r.saleWork.snapshot.callDurationSeconds)],
+                  ["BikeForce đồng bộ", new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short" }).format(new Date(r.saleWork.snapshot.syncedAt))],
+                ].map(([label, value]) => <div key={label}><dt className="text-xs text-slate-500">{label}</dt><dd className="mt-1 font-semibold tabular-nums text-slate-800 dark:text-slate-100">{value}</dd></div>)}
+              </dl> : <p className="text-sm text-slate-500">BikeForce chưa gửi snapshot cho giáo viên này.</p>}
+            </article>
+          ))}
+        </div>
+      </section>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <section className={panel}>
           <h2 className="font-semibold text-[#102752] dark:text-white">

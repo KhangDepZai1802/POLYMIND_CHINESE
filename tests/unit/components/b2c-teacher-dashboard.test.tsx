@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
+import { TeacherDashboard, type Row } from "@/features/b2c/components/teacher-dashboard";
 vi.mock("@/features/teachers/server/account-actions", () => ({
   readTeacherAccountAction: vi.fn(), changeTeacherPasswordAction: vi.fn(),
 }));
@@ -44,6 +44,7 @@ const rows = [
     costRatio: null,
     salary: 0,
     revenue: 0,
+    saleWork: null,
   },
   {
     teacher: {
@@ -66,6 +67,7 @@ const rows = [
     costRatio: null,
     salary: 0,
     revenue: 0,
+    saleWork: null,
   },
 ];
 describe("B2C teacher dashboard", () => {
@@ -151,5 +153,21 @@ describe("B2C teacher dashboard", () => {
       target: { value: "không có" },
     });
     expect(screen.getByText("Không có giáo viên phù hợp.")).toBeInTheDocument();
+  });
+  it("shows all BikeForce SaleWork metrics for Cô Lê and Cô Thy", () => {
+    const snapshot = { conversations: 12, sentMessages: 30, receivedMessages: 24, incomingCalls: 7, outgoingCalls: 9, missedCalls: 2, callDurationSeconds: 3660, syncedAt: "2026-10-21T07:30:00Z" };
+    const baseRow = rows[0]!;
+    const saleRows: Row[] = ["Cô Lê", "Cô Thy"].map((full_name, index) => ({
+      ...baseRow,
+      teacher: { ...baseRow.teacher, id: `sale-${index}`, full_name },
+      saleWork: { workDate: "2026-10-21", receivedAt: "2026-10-21T07:31:00Z", snapshot: { ...snapshot, conversations: 12 + index } },
+    }));
+    render(<TeacherDashboard rows={saleRows} initialMonth="2026-10" />);
+    const section = screen.getByRole("region", { name: "SaleWork từ BikeForce" });
+    expect(within(section).getByText("Cô Lê")).toBeInTheDocument();
+    expect(within(section).getByText("Cô Thy")).toBeInTheDocument();
+    for (const label of ["Hội thoại", "Tin đã gửi", "Tin đã nhận", "Cuộc gọi đến", "Cuộc gọi đi", "Cuộc gọi nhỡ", "Thời lượng gọi", "BikeForce đồng bộ"])
+      expect(within(section).getAllByText(label)).toHaveLength(2);
+    expect(within(section).getAllByText("1 giờ 1 phút")).toHaveLength(2);
   });
 });

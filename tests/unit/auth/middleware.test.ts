@@ -41,6 +41,26 @@ describe("updateSession JWT verification", () => {
     expect(createServerClient).not.toHaveBeenCalled();
   });
 
+  it("cho đúng webhook BikeForce đi qua để route tự kiểm API key", async () => {
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/api/integrations/bikeforce/salework", {
+        method: "POST",
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(createServerClient).not.toHaveBeenCalled();
+  });
+
+  it("không mở công khai route khác chỉ vì có cùng tiền tố BikeForce", async () => {
+    createServerClient.mockReturnValue(createSupabaseMock({ data: null, error: new Error("No JWT") }));
+    const response = await updateSession(
+      new NextRequest("https://polymind.test/api/integrations/bikeforce/salework/admin"),
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("/login");
+  });
+
   it("does not expose paths merely starting with nps", async () => {
     createServerClient.mockReturnValue(createSupabaseMock({ data: null, error: new Error("No JWT") }));
     const response = await updateSession(new NextRequest("https://polymind.test/nps-private"));

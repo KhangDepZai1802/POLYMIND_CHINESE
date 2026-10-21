@@ -2,6 +2,12 @@ import "server-only";
 import { requireManager } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { teacherRenewalRates } from "@/features/b2c/domain/teacher-renewal";
+import { saleWorkSnapshotSchema } from "@/features/b2c/salework-schema";
+
+const saleWorkSlugByTeacherName: Record<string, "co-le" | "co-thy"> = {
+  "cô lê": "co-le",
+  "cô thy": "co-thy",
+};
 
 async function readAll<T>(
   read: (offset: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
@@ -18,7 +24,7 @@ async function readAll<T>(
 export async function getB2CTeacherMetrics() {
   await requireManager();
   const client = await createClient();
-  const [teachers, classes, enrollments, sessions, packages, receipts] =
+  const [teachers, classes, enrollments, sessions, packages, receipts, saleWorkResult] =
     await Promise.all([
       readAll((o) =>
         client
@@ -64,7 +70,13 @@ export async function getB2CTeacherMetrics() {
           .order("id")
           .range(o, o + 999),
       ),
+      client
+        .from("bikeforce_salework_snapshots")
+        .select("person_slug,work_date,snapshot,received_at")
+        .order("work_date", { ascending: false })
+        .order("received_at", { ascending: false }),
     ]);
+  if (saleWorkResult.error) throw new Error("Không tải được số liệu SaleWork.");
   const normalize = (name: string) => name.trim().toLocaleLowerCase("vi");
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -82,6 +94,12 @@ export async function getB2CTeacherMetrics() {
       return enrollmentId ? [{ enrollmentId, paid_date: r.paid_date }] : [];
     });
   const nameCounts = new Map<string, number>();
+  const latestSaleWork = new Map<string, { workDate: string; receivedAt: string; snapshot: ReturnType<typeof saleWorkSnapshotSchema.parse> }>();
+  for (const row of saleWorkResult.data ?? []) {
+    if (latestSaleWork.has(row.person_slug)) continue;
+    const parsed = saleWorkSnapshotSchema.safeParse(row.snapshot);
+    if (parsed.success) latestSaleWork.set(row.person_slug, { workDate: row.work_date, receivedAt: row.received_at, snapshot: parsed.data });
+  }
   for (const teacher of teachers) {
     const name = normalize(teacher.full_name);
     nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
@@ -106,6 +124,7 @@ export async function getB2CTeacherMetrics() {
   return new Map(
     teachers.map((teacher) => {
       const name = normalize(teacher.full_name);
+      const saleWorkSlug = saleWorkSlugByTeacherName[name];
       const ambiguous = (nameCounts.get(name) ?? 0) > 1;
       const assigned = classes.filter(
         (c) => c.teacher_name && normalize(c.teacher_name) === name,
@@ -171,6 +190,7 @@ export async function getB2CTeacherMetrics() {
               : (salary / collected) * 100,
           salary,
           revenue: collected,
+          saleWork: saleWorkSlug ? latestSaleWork.get(saleWorkSlug) ?? null : null,
         },
       ];
     }),

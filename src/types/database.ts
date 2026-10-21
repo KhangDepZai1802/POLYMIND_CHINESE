@@ -35,6 +35,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      bikeforce_salework_snapshots: {
+        Row: { person_slug: "co-le" | "co-thy"; work_date: string; snapshot: Json; received_at: string }
+        Insert: { person_slug: "co-le" | "co-thy"; work_date: string; snapshot: Json; received_at?: string }
+        Update: { snapshot?: Json; received_at?: string }
+        Relationships: []
+      }
       xkld_candidates: {
         Row: { id: string; code: string; create_request_id: string; full_name: string; date_of_birth: string; phone: string; zalo: string | null; hometown: string; education: string; occupation: string; health_status: "passed" | "failed"; source: "collaborator" | "employee" | "advertising"; assignee_id: string; created_at: string; updated_at: string; created_by: string | null; updated_by: string | null; search_text: string; stage: "lead" | "consultation" | "registration" | "language_training" | "documentation" | "interview" | "selected" | "visa" | "departed" | "aftercare"; order_id: string | null; b2c_class_id: string | null }
         Insert: { create_request_id: string; full_name: string; date_of_birth: string; phone: string; zalo?: string | null; hometown: string; education: string; occupation: string; health_status: "passed" | "failed"; source: "collaborator" | "employee" | "advertising"; assignee_id: string }
@@ -4499,6 +4505,7 @@ export type Database = {
       }
     }
     Functions: {
+      upsert_bikeforce_salework_snapshot: { Args: { p_person_slug: string; p_work_date: string; p_snapshot: Json }; Returns: string }
       get_xkld_assignees: { Args: Record<string, never>; Returns: { id: string; full_name: string; is_active: boolean }[] }
       get_xkld_pipeline: { Args: { p_query?: string; p_assignee?: string; p_stage?: string; p_page?: number }; Returns: Json }
       generate_b2c_class_schedule: {Args:{p_data:Json};Returns:Json}

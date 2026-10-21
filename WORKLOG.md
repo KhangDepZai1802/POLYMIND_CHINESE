@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> BIKEFORCE-SALEWORK-SYNC-1 — migration production đã áp, code sẵn sàng release — Codex — 2026-10-21. POST API key, chỉ `co-le`/`co-thy`, 8 trường snapshot, khóa người+ngày và replace snapshot; middleware miễn cookie đúng endpoint nhưng route vẫn kiểm `x-api-key`. 11/11pgTAP,26/26targeted, full186files1071/1071tests,lint/typecheck/build đạt. Chờ push/deploy và smoke production 401/200.
+
 > B2C-TEACHER-SAVE-VISIBILITY-1 — code/kiểm tra hoàn tất, release — Codex — 2026-10-21. Cloud read-only8GV/19lớp đủ identity/active/mapping,6nhóm đọc/GV đạt. Shared invalidation admin/teacher sau lưu, không gửi/duyệt/đổi quyền.11/11DBrollback +22/22unit mới,lint/typecheck/build exit0;full185files1059/1059tests với1worker đạt. Chỉ phát hành file task, giữ4file dirty có trước. Chưa QA browser/deploy online; quyền nhập điểm của8GV vẫn opt-in/chưa cấp.
 
 > B2C-WEEKLY-CHECKIN-2-RELEASE — Codex — 2026-10-21. Sau khi được thông báo11fulltests lỗi và quy định D-44, user yêu cầu rõ “đẩy code lên github đi”: cho phép phát hành riêng bản chấm công dù cổng full test còn đỏ. Giữ nguyên kết quả kiểm tra đã ghi; chỉ stage file chấm công/docs/tests/migration liên quan, không4file dirty có từ trước. Commit/push main trong phiên này; chưa xác minh Vercel deploy hoặc camera thật.
@@ -1330,6 +1332,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+> **BIKEFORCE-SALEWORK-SYNC-1 (2026-10-21):** linked project ref cũ vẫn lỗi, nhưng migration `20261021000002` đã áp trực tiếp bằng `SUPABASE_DB_URL` trong transaction và ghi exact history production. Còn smoke request đúng key cần khóa thô phía BikeForce/Vercel; không đọc ngược được secret từ Vercel.
+
 - **B2C-WEEKLY-CHECKIN-2-RELEASE (2026-10-21):** typecheck/build và12tests chấm công đạt; full suite không xanh. `wrong-answer-review.test.tsx` không thấy “Bạn đã ôn xong”, tái hiện khi chạy riêng, code/test module này không đổi so với HEAD. `b2c-student-dashboard.test.tsx` timeout5000ms cả khi chạy riêng; certificate timeout ở full suite nhưng chạy riêng đạt. Theo D-44 không tự commit/push khi full test đỏ. Cloud đã áp riêng SQL20261021000001 và xác minh history/RPC cole; dry-run trước/sau còn16gaps cũ, không replay/repair hoặc tuyên bố toàn remote up-to-date. Chưa QA camera/browser thật.
 
 - B2C-PARENT-NPS-1-HISTORY: SQL20261017000006 đã áp riêng/exact-history qua kết nối mới,59/59 DB rollback. Dry-run trước/sau vẫn16gaps cũ; không replay/repair, không tuyên bố toàn remote up-to-date. Chưa QA browser độc lập hoặc phát hành code online.
@@ -1463,6 +1467,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — BIKEFORCE-SALEWORK-SYNC-1
+- **Làm được:** thêm `POST /api/integrations/bikeforce/salework`, xác thực constant-time bằng header `x-api-key`; payload chỉ nhận `co-le`/`co-thy`, ngày ISO và object snapshot, không có/không nhận mã Telesale.
+- **Migration/data impact:** bảng RLS `bikeforce_salework_snapshots`, PK `(person_slug, work_date)`; RPC chỉ `service_role`, `ON CONFLICT` thay toàn bộ snapshot và cập nhật thời điểm nhận. Migration đã áp local, chưa áp cloud do linked tenant lỗi.
+- **Đã test:** pgTAP 8/8; unit tập trung 7/7; lint/typecheck/build exit0; full Vitest 186 files, 1066/1066 tests. Build liệt kê đúng route API.
+- **Blocker/rủi ro:** cần sửa Supabase project link/credential, push migration và đặt secret production `BIKEFORCE_API_KEY` tối thiểu 32 ký tự trước khi BikeForce gọi URL production.
+- **Next action:** deploy migration + app sau khi project link hoạt động, gửi URL domain production và API key qua kênh bí mật cho BikeForce.
 
 ### [2026-10-21] Codex — B2C-TEACHER-SAVE-VISIBILITY-1
 - **Yêu cầu:** user xác nhận giáo viên B2C lưu vào hệ thống thì admin thấy; không luồng gửi/nhận/duyệt.

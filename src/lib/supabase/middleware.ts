@@ -23,6 +23,8 @@ const PUBLIC_PATHS = [
 ];
 
 function isPublicPath(pathname: string) {
+  if (pathname === "/api/integrations/bikeforce/salework") return true;
+
   return PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
@@ -64,6 +66,12 @@ function isPublicMarketingPath(pathname: string) {
  * trùng việc vừa buộc thêm một network round-trip tuần tự.
  */
 export async function updateSession(request: NextRequest) {
+  // Webhook máy-với-máy không có cookie Supabase. Route Handler phía sau vẫn
+  // fail-closed bằng `x-api-key`; chỉ bỏ lớp redirect UX của middleware.
+  if (request.nextUrl.pathname === "/api/integrations/bikeforce/salework") {
+    return NextResponse.next({ request });
+  }
+
   // Landing page không cần biết người xem đã đăng nhập hay chưa. Bỏ toàn bộ
   // round-trip xác minh phiên để trang marketing luôn nhanh và người đã đăng
   // nhập vẫn có thể quay lại xem website; nút /login mới là cửa vào hệ thống.

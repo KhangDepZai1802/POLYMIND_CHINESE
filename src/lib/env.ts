@@ -16,6 +16,10 @@ const serverEnvSchema = z.object({
   CRON_SECRET: z.string().min(1),
 });
 
+const bikeForceEnvSchema = z.object({
+  BIKEFORCE_API_KEY: z.string().min(32),
+});
+
 /**
  * Chỉ đọc được các biến NEXT_PUBLIC_*. Gọi được ở cả client lẫn server.
  *
@@ -61,6 +65,18 @@ export function getServerEnv() {
         .map((i) => i.path.join("."))
         .join(", ")}. Xem .env.example.`,
     );
+  }
+
+  return parsed.data;
+}
+
+export function getBikeForceEnv() {
+  const parsed = bikeForceEnvSchema.safeParse({
+    BIKEFORCE_API_KEY: process.env.BIKEFORCE_API_KEY,
+  });
+
+  if (!parsed.success) {
+    throw new Error("Thiếu/sai biến môi trường BIKEFORCE_API_KEY (tối thiểu 32 ký tự).");
   }
 
   return parsed.data;
