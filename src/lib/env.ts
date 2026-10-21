@@ -17,7 +17,7 @@ const serverEnvSchema = z.object({
 });
 
 const bikeForceEnvSchema = z.object({
-  BIKEFORCE_API_KEY: z.string().min(32),
+  BIKEFORCE_API_KEY: z.string().min(1),
 });
 
 /**
@@ -76,7 +76,7 @@ export function getBikeForceEnv() {
   });
 
   if (!parsed.success) {
-    throw new Error("Thiếu/sai biến môi trường BIKEFORCE_API_KEY (tối thiểu 32 ký tự).");
+    throw new Error("Thiếu biến môi trường BIKEFORCE_API_KEY.");
   }
 
   return parsed.data;
