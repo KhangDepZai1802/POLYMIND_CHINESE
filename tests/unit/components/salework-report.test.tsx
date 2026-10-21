@@ -59,6 +59,9 @@ describe("Daily SaleWork report", () => {
       />,
     );
     await screen.findByText("75");
+    expect(screen.getByText("75")).toBeVisible();
+    expect(screen.getByText("Cuộc gọi đến")).toBeVisible();
+    expect(document.querySelector("canvas")).toBeNull();
     expect(readSaleWorkReport).toHaveBeenCalledWith("co-thy", "2026-10-21");
     fireEvent.change(screen.getByLabelText("Khách đã chốt"), {
       target: { value: "3" },

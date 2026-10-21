@@ -38,6 +38,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> SALEWORK-LIVE-CARDS-5-RELEASE — Codex — 2026-10-21. User xác nhận trực tiếp “đẩy đi hỏi quài vậy”: phát hành bản thẻ HTML đã đạt lint/typecheck/build/1074tests và Edge local. Chỉ5file task; giữ4file dirty ngoài scope. Next kiểm production.
+
+> SALEWORK-LIVE-CARDS-5 — Codex — 2026-10-21. Bỏ canvas preview, thẻ HTML từ snapshot theo người/ngày và3ô nhập; chỉ tạo ảnh khi copy/export. Edge local xác minh thẻ hiện/không canvas/nhập draft/copy PNG9:16/popup/mobile390/0pageerror, không lưu thử. Lint/typecheck/build và1074tests đạt. BLOCKED: auto-review từ chối commit/push vì cần xác nhận phát hành riêng bản thẻ HTML. Chưa commit/push; next user xác nhận rồi phát hành.
+
 > SALEWORK-REPORT-RELEASE-4 — Codex — 2026-10-21. User xác nhận “đẩy code lên idd”: phát hành mẫu mới và popup đã đạt lint/typecheck/build/1074tests/Edge local. Chỉ file báo cáo, giữ4file dirty ngoài scope. Next kiểm production sau push.
 
 > SALEWORK-REPORT-DESIGN-4 — code local hoàn tất — Codex — 2026-10-21. Theo ảnh user: mẫu xanh nhạt, header tai nghe vector,10thẻ hai cột/icon màu, ghi chú; chỉ tựa BÁO CÁO. Preview/PNG9:16 chung renderer; dữ liệu thật, popup. Edge local copy/download/popup/mobile390/ảnh trực quan đạt; lint/typecheck/build và1074tests đạt. Chưa commit/push: lần phát hành popup trước bị auto-review từ chối cần xác nhận; không thử vượt chặn. Next user xác nhận phát hành cả mẫu mới và popup, sau đó kiểm production.
@@ -1477,6 +1481,10 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — SALEWORK-LIVE-CARDS-5
+- User xác nhận trang phải là thẻ dữ liệu thật, không phải ảnh. Bỏ canvas preview, hiện metric HTML/ngày/người và giữ3ô nhập; renderer mẫu chỉ gọi từ copy/export.
+- Lint/typecheck/build và187files1074tests đạt. Edge local cothy thẻ hiện/không canvas/nhập3giá trị draft/copy PNG1080×1920/popup/mobile390/0pageerror. Không lưu dữ liệu thử hoặc đổi DB/API. Next phát hành và kiểm production.
 
 ### [2026-10-21] Codex — SALEWORK-REPORT-DESIGN-4
 - Theo ảnh user: renderer canvas1080×1920, nền xanh nhạt/header tai nghe vector/10thẻ hai cột/icon màu/ghi chú; tiêu đề chỉ BÁO CÁO. Preview và copy/download dùng chung renderer; chữ dài tự fit, dữ liệu thật giữ nguyên; input nhập tay và quyền không đổi.

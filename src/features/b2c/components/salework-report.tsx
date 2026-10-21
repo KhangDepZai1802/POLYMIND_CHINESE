@@ -102,16 +102,6 @@ export function SaleWorkReport({
       courses === "" ? "Chưa nhập" : number.format(Number(courses)),
     ],
   ];
-  const preview = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    if (preview.current)
-      drawSaleWorkReport(preview.current, {
-        name: names[person],
-        date,
-        entries,
-        saved,
-      });
-  });
   async function createImage(): Promise<Blob> {
     await document.fonts.ready;
     const canvas = document.createElement("canvas");
@@ -179,15 +169,13 @@ export function SaleWorkReport({
       ) : (
         <>
           <article className="space-y-5 rounded-2xl border bg-white p-4 text-slate-800">
-            <canvas
-              ref={preview}
-              role="img"
-              aria-label={`Báo cáo ${names[person]} ngày ${date.split("-").reverse().join("/")}`}
-              className="mx-auto block h-auto w-full max-w-[640px] rounded-2xl"
-            />
-            <dl className="sr-only">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold">{names[person]}</h2>
+              <p className="text-sm text-slate-500">Ngày {date.split("-").reverse().join("/")}</p>
+            </div>
+            <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {metrics.map(([key, label]) => (
-                <div key={key}>
+                <div key={key} className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
                   <dt className="text-sm text-slate-500">{label}</dt>
                   <dd className="text-xl font-semibold">
                     {snapshot ? number.format(snapshot[key]) : "Chưa đồng bộ"}

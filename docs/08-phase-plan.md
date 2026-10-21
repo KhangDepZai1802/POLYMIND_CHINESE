@@ -1584,6 +1584,13 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 
 ## SALEWORK-DAILY-REPORT-1
 
+### SALEWORK-LIVE-CARDS-5
+
+- [x] Bỏ canvas preview; hiển thị thẻ HTML từ snapshot theo người/ngày và ba ô nhập kết quả.
+- [x] Chỉ copy/export mới tạo PNG theo mẫu9:16; giữ popup.
+- [x] Lint/typecheck/build/1074tests; Edge local thẻ HTML/3ô nhập/copy9:16/popup/mobile đạt.
+- [ ] Phát hành và kiểm production bản thẻ HTML.
+
 ### SALEWORK-REPORT-DESIGN-4
 
 - [x] Mẫu theo ảnh: nền xanh nhạt, tai nghe vector, thẻ hai cột màu, ghi chú, tiêu đề BÁO CÁO.
