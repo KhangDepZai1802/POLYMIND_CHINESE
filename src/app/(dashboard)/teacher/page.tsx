@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   getMyClasses,
   getPendingGrading,
@@ -47,6 +48,8 @@ export default async function TeacherDashboardPage() {
     b2cToday.length +
     b2cMeetings.rows.filter((m) => m.status !== "cancelled").length;
   return (
+    <>
+    <Link className="mb-4 inline-flex rounded-lg border bg-white px-4 py-2 text-blue-700" href="/teacher/salework">Báo cáo SaleWork hằng ngày</Link>
     <TeacherHomeDashboard
       fullName={user.fullName}
       now={now.toISOString()}
@@ -61,5 +64,6 @@ export default async function TeacherDashboardPage() {
       todayCount={todayCount}
       canMarkB2CAttendance={b2cPermissions.includes("mark_attendance")}
     />
+    </>
   );
 }

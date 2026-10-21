@@ -1582,6 +1582,13 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 - [x] /nghe có hai lối vào Tiếng Trung ngân hàng/Học viện lãnh đạo; giữ bài 3–4 và toàn bộ route/audio cũ. Nhập đầy đủ bài 7–10 gồm bảng từ vựng, ngữ pháp, hội thoại từ MSUTONG SC Q1.docx. Đối chiếu 959 đoạn nguồn không thiếu; browser 10 route200/mobile390, lint/typecheck/build và 1031/1031 tests đạt.
 ## BIKEFORCE-SALEWORK-SYNC-1
 
+## SALEWORK-DAILY-REPORT-1
+
+- [x] Báo cáo theo ngày cho cole/cothy: khách chốt, tiền thực thu, khóa chốt, đọc snapshot cùng ngày, sao chép và xuất PNG.
+- [x] SQL03 người dùng chạy production, mapping UUID và RLS identity kiểm thử bằng rollback; admin chỉ đọc, cấm sửa chéo.
+- [x] Typecheck/lint/build; unit báo cáo; Edge local copy/PNG và mobile390.
+- [ ] Release và xác minh trang báo cáo production.
+
 - [x] API nhận snapshot SaleWork cho `co-le` và `co-thy`, API key trong header, upsert theo người + ngày và không cộng dồn.
 - [x] RLS, RPC service-role-only, pgTAP và unit test.
 - [ ] Áp migration cloud và cấu hình secret production (blocked: linked Supabase tenant/user not found ngày 2026-10-21).

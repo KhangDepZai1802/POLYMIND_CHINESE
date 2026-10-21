@@ -301,6 +301,7 @@ export function TeacherDashboard({
       <section className={panel} aria-labelledby="salework-title">
         <div className="mb-4">
           <h2 id="salework-title" className="font-semibold text-[#102752] dark:text-white">SaleWork từ BikeForce</h2>
+          <Link href="/admin/b2c/salework" className="mt-2 inline-block text-sm font-medium text-blue-600 underline">Xem báo cáo ngày của hai cô</Link>
           <p className="mt-1 text-xs text-slate-500">Snapshot mới nhất của Cô Lê và Cô Thy; đồng bộ lại cùng ngày sẽ thay thế số cũ.</p>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">

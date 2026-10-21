@@ -41,6 +41,18 @@ export type Database = {
         Update: { snapshot?: Json; received_at?: string }
         Relationships: []
       }
+      salework_report_people: {
+        Row: {person_slug:string;user_id:string}
+        Insert: {person_slug:string;user_id:string}
+        Update: {person_slug?:string;user_id?:string}
+        Relationships: []
+      }
+      salework_daily_reports: {
+        Row: {person_slug:string;work_date:string;closed_customers:number;collected_amount:number;closed_courses:number;updated_at:string}
+        Insert: {person_slug:string;work_date:string;closed_customers:number;collected_amount:number;closed_courses:number;updated_at?:string}
+        Update: {closed_customers?:number;collected_amount?:number;closed_courses?:number}
+        Relationships: []
+      }
       xkld_candidates: {
         Row: { id: string; code: string; create_request_id: string; full_name: string; date_of_birth: string; phone: string; zalo: string | null; hometown: string; education: string; occupation: string; health_status: "passed" | "failed"; source: "collaborator" | "employee" | "advertising"; assignee_id: string; created_at: string; updated_at: string; created_by: string | null; updated_by: string | null; search_text: string; stage: "lead" | "consultation" | "registration" | "language_training" | "documentation" | "interview" | "selected" | "visa" | "departed" | "aftercare"; order_id: string | null; b2c_class_id: string | null }
         Insert: { create_request_id: string; full_name: string; date_of_birth: string; phone: string; zalo?: string | null; hometown: string; education: string; occupation: string; health_status: "passed" | "failed"; source: "collaborator" | "employee" | "advertising"; assignee_id: string }

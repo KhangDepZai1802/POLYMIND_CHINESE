@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> SALEWORK-DAILY-REPORT-1 — Codex — 2026-10-21. User đã chạy SQL03 production; xác minh RLS và upsert bằng transaction rollback đạt. Mỗi cô nhập khách chốt/tiền thực thu/khóa chốt theo ngày; admin chọn hai cô chỉ xem, snapshot BikeForce cùng ngày, copy và PNG. Typecheck/lint/build đạt; full187files1074/1074tests đạt. Edge local Cô Thy đọc snapshot thật/copy/downloadPNG/mobile390 đạt. Release riêng13file task; chờ smoke production.
+
 > BIKEFORCE-SALEWORK-SYNC-1 — migration production đã áp, code sẵn sàng release — Codex — 2026-10-21. POST API key, chỉ `co-le`/`co-thy`, 8 trường snapshot, khóa người+ngày và replace snapshot; middleware miễn cookie đúng endpoint nhưng route vẫn kiểm `x-api-key`. 11/11pgTAP,26/26targeted, full186files1071/1071tests,lint/typecheck/build đạt. Chờ push/deploy và smoke production 401/200.
 
 > B2C-TEACHER-SAVE-VISIBILITY-1 — code/kiểm tra hoàn tất, release — Codex — 2026-10-21. Cloud read-only8GV/19lớp đủ identity/active/mapping,6nhóm đọc/GV đạt. Shared invalidation admin/teacher sau lưu, không gửi/duyệt/đổi quyền.11/11DBrollback +22/22unit mới,lint/typecheck/build exit0;full185files1059/1059tests với1worker đạt. Chỉ phát hành file task, giữ4file dirty có trước. Chưa QA browser/deploy online; quyền nhập điểm của8GV vẫn opt-in/chưa cấp.
@@ -1467,6 +1469,12 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-10-21] Codex — SALEWORK-DAILY-REPORT-1
+- User chốt tiền thực thu, yêu cầu gửi SQL tự chạy; SQL20261021000003 đã được user áp production, hai mappings cole/cothy đúng và RLS bật.
+- Bổ sung /teacher/salework và /admin/b2c/salework, link từ home GV và admin Giáo viên. Mỗi cô chỉ nhập/sửa số liệu của mình; admin xem. Số khách, tiền thực thu VNĐ, số khóa theo người/ngày, upsert thay số. Snapshot BikeForce đúng ngày; thiếu không coi là0. Copy văn bản và PNG tiếng Việt có nhãn bản nháp khi chưa lưu.
+- SQL integration rollback dưới cole/cothy/admin/anon: own-upsert, IDOR đọc/ghi, future/negative validation, manager read-only và anon deny đạt; không giữ fixture. Typecheck/lint/build đạt,3unit mới đạt. Edge local đăng nhập cothy, snapshot thật11hội thoại, copy và PNG1200x1120 đạt; mobile390 không tràn,0pageerror. Chưa kiểm browser production hoặc admin browser thật tại thời điểm log.
+- Giữ4file dirty có trước. Release chỉ file báo cáo; không thay snapshot BikeForce hoặc quyền module khác.
 
 ### [2026-10-21] Codex — BIKEFORCE-SALEWORK-SYNC-1
 - **Làm được:** thêm `POST /api/integrations/bikeforce/salework`, xác thực constant-time bằng header `x-api-key`; payload chỉ nhận `co-le`/`co-thy`, ngày ISO và object snapshot, không có/không nhận mã Telesale.
