@@ -43,7 +43,7 @@ export function AdmissionsBrowser({ groups, query, program, view, basePath = "/a
       <h2 className="mb-3 flex justify-between font-semibold"><span>{ADMISSION_STAGE_LABELS[group.stage ?? ""]}</span><span className="bg-background rounded-full px-2 text-sm">{group.total.toLocaleString("vi-VN")}</span></h2>
       <div className="space-y-3">{group.leads.length ? group.leads.map((lead) => <article key={lead.id} className="bg-card rounded-lg border p-3 shadow-sm">
         <div className="flex justify-between gap-2"><h3 className="font-medium break-words">{lead.full_name}</h3><div className="flex shrink-0 items-center gap-1"><LeadDialog lead={lead} /><DeleteAdmissionButton id={lead.id} fullName={lead.full_name} /></div></div>
-        <p className="mt-1 text-sm">{lead.phone}</p>
+        <p className="mt-1 text-sm">{lead.phone ?? "Chưa có SĐT"}</p>
         <p className="text-muted-foreground mt-2 text-xs">{getB2CProgram(lead.program_slug)?.title} · {lead.salesperson}</p>
         <p className="text-muted-foreground mt-1 text-xs">{lead.customer_source ? B2C_CUSTOMER_SOURCE_LABELS[lead.customer_source] : "Chưa xác định nguồn"}{lead.referrer_name ? ` · ${lead.referrer_name}` : ""}</p>
         {lead.notes && <p className="mt-2 line-clamp-3 text-sm whitespace-pre-wrap break-words">{lead.notes}</p>}

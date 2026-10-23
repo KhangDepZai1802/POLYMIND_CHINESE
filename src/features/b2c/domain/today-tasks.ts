@@ -96,7 +96,7 @@ export function buildTodayTasks(
       detail: `${lead.phone} · ${lead.salesperson || "Chưa có người phụ trách"}`,
       date,
       scope: "B2C",
-      href: `/admin/b2c/admissions?view=list&q=${encodeURIComponent(lead.phone)}`,
+      href: `/admin/b2c/admissions?view=list&q=${encodeURIComponent(lead.phone ?? lead.full_name)}`,
       action: "Mở tuyển sinh",
       lead: { id: lead.id, name: lead.full_name, caretaker: lead.salesperson },
     });

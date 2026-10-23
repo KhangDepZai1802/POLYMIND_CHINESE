@@ -13,6 +13,16 @@ export async function getB2CAdmissionsPage(stage: string | null, program: string
   return data as unknown as { leads: import("@/features/b2c/domain/admissions").AdmissionLead[]; total: number };
 }
 
+export async function getAmisCrmPurchaseRecency() {
+  const { data, error } = await (await createClient()).from("b2c_admission_leads")
+    .select("id,full_name,phone,amis_order_sales,amis_last_purchase_date,amis_days_since_purchase")
+    .not("amis_crm_code", "is", null)
+    .order("amis_days_since_purchase", { ascending: false, nullsFirst: false })
+    .order("full_name");
+  if (error) throw new Error("Không tải được dữ liệu mua hàng từ CRM.");
+  return data;
+}
+
 export async function getB2CCustomerSourceOverview() {
   const supabase = await createClient();
   const sources = [...B2C_CUSTOMER_SOURCES, null];

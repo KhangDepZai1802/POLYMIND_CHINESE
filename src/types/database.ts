@@ -774,9 +774,9 @@ export type Database = {
         Relationships: [];
       };
       b2c_admission_leads: {
-        Row: { id: string; full_name: string; phone: string; program_slug: string; salesperson: string; stage: string; customer_source: string | null; referrer_name: string | null; notes: string | null; failure_reason: string | null; created_by: string; created_at: string; updated_at: string; };
-        Insert: { id?: string; full_name: string; phone: string; program_slug: string; salesperson: string; stage?: string; customer_source?: string | null; referrer_name?: string | null; notes?: string | null; failure_reason?: string | null; created_by?: string; created_at?: string; updated_at?: string };
-        Update: { id?: string; full_name?: string; phone?: string; program_slug?: string; salesperson?: string; stage?: string; customer_source?: string | null; referrer_name?: string | null; notes?: string | null; failure_reason?: string | null; created_by?: string; created_at?: string; updated_at?: string };
+        Row: { id: string; full_name: string; phone: string | null; program_slug: string; salesperson: string; stage: string; customer_source: string | null; referrer_name: string | null; notes: string | null; failure_reason: string | null; created_by: string | null; created_at: string; updated_at: string; amis_crm_id: number | null; amis_crm_code: string | null; amis_crm_modified_at: string | null; amis_crm_synced_at: string | null; amis_order_sales: number | null; amis_last_purchase_date: string | null; amis_days_since_purchase: number | null; };
+        Insert: { id?: string; full_name: string; phone?: string | null; program_slug: string; salesperson: string; stage?: string; customer_source?: string | null; referrer_name?: string | null; notes?: string | null; failure_reason?: string | null; created_by?: string | null; created_at?: string; updated_at?: string; amis_crm_id?: number | null; amis_crm_modified_at?: string | null; amis_crm_synced_at?: string | null };
+        Update: { id?: string; full_name?: string; phone?: string | null; program_slug?: string; salesperson?: string; stage?: string; customer_source?: string | null; referrer_name?: string | null; notes?: string | null; failure_reason?: string | null; created_by?: string | null; created_at?: string; updated_at?: string; amis_crm_id?: number | null; amis_crm_modified_at?: string | null; amis_crm_synced_at?: string | null };
         Relationships: [];
       };
       b2c_tuition_packages: {
