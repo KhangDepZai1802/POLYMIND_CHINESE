@@ -109,6 +109,7 @@ export function TeachingCheckpoint({
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState("");
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [pendingLocation, setPendingLocation] =
@@ -121,31 +122,55 @@ export function TeachingCheckpoint({
     },
     [previewUrl],
   );
+  async function preparePhoto(selected: File | null) {
+    setFile(null);
+    setPreviewUrl(null);
+    setPendingPhoto(null);
+    setPendingLocation(null);
+    setError("");
+    if (!selected) return;
+    setPreparing(true);
+    try {
+      const location = await currentLocation();
+      location.address = await reverseGeocodeCheckpoint(
+        location.latitude,
+        location.longitude,
+      );
+      const stamped = await stampPhoto(selected, location, kind);
+      setFile(stamped);
+      setPendingLocation(location);
+      setPreviewUrl(URL.createObjectURL(stamped));
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Không tạo được ảnh xem trước có thời gian và địa điểm.",
+      );
+    } finally {
+      setPreparing(false);
+    }
+  }
   async function submit() {
     if (!file) return;
     setBusy(true);
     setError("");
     try {
       let path = pendingPhoto;
-      let location = pendingLocation;
+      const location = pendingLocation;
       if (!path) {
-        location = await currentLocation();
-        location.address = await reverseGeocodeCheckpoint(
-          location.latitude,
-          location.longitude,
-        );
-        const stamped = await stampPhoto(file, location, kind);
+        if (!location)
+          throw Error("Thiếu vị trí chấm công. Vui lòng chụp lại ảnh.");
         const ticket = await teachingPhotoTicket(
           id,
           kind,
-          stamped.type,
-          stamped.size,
+          file.type,
+          file.size,
         );
         if ("error" in ticket) throw Error(ticket.error);
         const result = await createClient()
           .storage.from("b2c-check-photos")
-          .uploadToSignedUrl(ticket.path, ticket.token, stamped, {
-            contentType: stamped.type,
+          .uploadToSignedUrl(ticket.path, ticket.token, file, {
+            contentType: file.type,
           });
         if (result.error) throw Error("Không tải được ảnh. Vui lòng thử lại.");
         path = ticket.path;
@@ -215,7 +240,7 @@ export function TeachingCheckpoint({
       <div className="flex items-center gap-2">
         <Label
           htmlFor={`camera-photo-${id}`}
-          aria-disabled={busy}
+          aria-disabled={busy || preparing}
           className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-3 text-sm font-medium aria-disabled:pointer-events-none aria-disabled:opacity-50"
         >
           <Camera className="size-4" aria-hidden />
@@ -227,24 +252,26 @@ export function TeachingCheckpoint({
           type="file"
           accept="image/*"
           capture="environment"
-          disabled={busy}
+          disabled={busy || preparing}
           onChange={(e) => {
             const selected = e.target.files?.[0] ?? null;
-            setFile(selected);
-            setPreviewUrl(selected ? URL.createObjectURL(selected) : null);
-            setPendingPhoto(null);
-            setPendingLocation(null);
-            setError("");
+            void preparePhoto(selected);
+            e.currentTarget.value = "";
           }}
         />
         <Button
           size="sm"
-          disabled={busy || !file}
+          disabled={busy || preparing || !file}
           onClick={() => void submit()}
         >
           {busy ? "Đang ghi nhận…" : kind === "in" ? "Check-in" : "Check-out"}
         </Button>
       </div>
+      {preparing && (
+        <p className="text-primary text-sm font-medium" role="status">
+          Đang thêm thời gian và địa điểm lên ảnh…
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}

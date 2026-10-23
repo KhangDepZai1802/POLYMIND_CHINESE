@@ -37,13 +37,24 @@ export function CheckinWindow({
     (checkedIn ? now >= ends : now >= opens && now < ends);
   return (
     <div className="space-y-2">
-      <p className="text-muted-foreground text-sm" role="status">
-        {checkedIn
-          ? `Đã check-in. Check-out từ ${formatTime(endsAt)} đến hết ngày.`
-          : now !== null && now >= ends
-            ? "Đã hết giờ check-in."
-            : `Check-in từ ${formatTime(new Date(opens).toISOString())} đến trước ${formatTime(endsAt)}.`}
-      </p>
+      <div className="text-sm" role="status">
+        {checkedIn ? (
+          <p className="flex flex-wrap gap-x-1.5 gap-y-1">
+            <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+              Đã check-in.
+            </span>
+            <span className="font-semibold text-orange-700 dark:text-orange-300">
+              Check-out từ {formatTime(endsAt)} đến hết ngày.
+            </span>
+          </p>
+        ) : (
+          <p className="text-muted-foreground">
+            {now !== null && now >= ends
+              ? "Đã hết giờ check-in."
+              : `Check-in từ ${formatTime(new Date(opens).toISOString())} đến trước ${formatTime(endsAt)}.`}
+          </p>
+        )}
+      </div>
       <fieldset disabled={!allowed} className="min-w-0 disabled:opacity-60">
         <legend className="sr-only">
           {checkedIn ? "Check-out" : "Check-in"}
