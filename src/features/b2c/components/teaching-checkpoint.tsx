@@ -11,12 +11,14 @@ import { createClient } from "@/lib/supabase/client";
 import {
   teachingPhotoTicket,
   recordTeachingCheckpoint,
+  reverseGeocodeCheckpoint,
 } from "@/features/b2c/server/teaching-actions";
 
 type CheckpointLocation = {
   latitude: number;
   longitude: number;
   accuracy: number;
+  address?: string | null;
 };
 
 function currentLocation(): Promise<CheckpointLocation> {
@@ -58,7 +60,9 @@ async function stampPhoto(
   const fontSize = Math.max(18, Math.round(canvas.width / 38));
   const lines = [
     `${kind === "in" ? "CHECK-IN" : "CHECK-OUT"} · ${new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "medium" }).format(new Date())}`,
-    `GPS ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)} · ±${Math.round(location.accuracy)} m`,
+    location.address
+      ? `ĐỊA ĐIỂM · ${location.address}`
+      : `VỊ TRÍ · ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)} · ±${Math.round(location.accuracy)} m`,
   ];
   context.font = `600 ${fontSize}px sans-serif`;
   const padding = Math.round(fontSize * 0.7);
@@ -126,6 +130,10 @@ export function TeachingCheckpoint({
       let location = pendingLocation;
       if (!path) {
         location = await currentLocation();
+        location.address = await reverseGeocodeCheckpoint(
+          location.latitude,
+          location.longitude,
+        );
         const stamped = await stampPhoto(file, location, kind);
         const ticket = await teachingPhotoTicket(
           id,

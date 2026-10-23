@@ -9,6 +9,32 @@ import { requireManager, requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { permissionRpc } from "./permission-rpc";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
+export async function reverseGeocodeCheckpoint(
+  latitude: number,
+  longitude: number,
+) {
+  await requireTeaching();
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("lat", String(latitude));
+    url.searchParams.set("lon", String(longitude));
+    url.searchParams.set("accept-language", "vi");
+    const response = await fetch(url, {
+      headers: { "User-Agent": "Polymind-Teacher-Checkin/1.0" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return null;
+    const result = (await response.json()) as { display_name?: unknown };
+    return typeof result.display_name === "string"
+      ? result.display_name.slice(0, 180)
+      : null;
+  } catch {
+    return null;
+  }
+}
 export async function prepareMeetingCheckin(id: string) {
   await requireTeaching();
   if (!z.uuid().safeParse(id).success)
@@ -133,15 +159,19 @@ export async function recordTeachingCheckpoint(input: unknown) {
   await requireTeaching();
   const p = checkpointSchema.safeParse(input);
   if (!p.success) return { error: "Dữ liệu chấm công không hợp lệ." };
-  const { error } = await (await createClient()).rpc(
-    "check_b2c_teaching_session_with_location" as never, {
-    p_id: p.data.id,
-    p_kind: p.data.kind,
-    p_photo: p.data.photo,
-    p_latitude: p.data.latitude,
-    p_longitude: p.data.longitude,
-    p_accuracy: p.data.accuracy,
-  } as never);
+  const { error } = await (
+    await createClient()
+  ).rpc(
+    "check_b2c_teaching_session_with_location" as never,
+    {
+      p_id: p.data.id,
+      p_kind: p.data.kind,
+      p_photo: p.data.photo,
+      p_latitude: p.data.latitude,
+      p_longitude: p.data.longitude,
+      p_accuracy: p.data.accuracy,
+    } as never,
+  );
   if (error)
     return {
       error:
