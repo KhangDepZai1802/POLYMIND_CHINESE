@@ -7,6 +7,7 @@ import { permissionRpc } from "./permission-rpc";
 export type StudentDataRow = {
   enrollment_id: string | null; student_id: string; code: string; full_name: string;
   phone: string | null; customer_source: string | null; referrer_name: string | null;
+  guardian_summary?: string | null;
   class_id: string | null; class_name: string | null; teacher_name: string | null; salesperson: string | null;
   enrollment_date: string | null; learning_start_date: string | null; tuition_end_date: string | null;
   student_updated_at: string; enrollment_updated_at: string | null;

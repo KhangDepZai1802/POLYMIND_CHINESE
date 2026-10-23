@@ -5,8 +5,13 @@ import { pathToFileURL } from "node:url";
 process.loadEnvFile(".env.local");
 const { default: pg } = await import(pathToFileURL(path.join(process.env.TEMP, "polymind-b2c-db/node_modules/pg/lib/index.js")).href);
 const client = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
-const version = "20261023000012";
-const name = "teacher_manage_unassigned_students";
+const version = process.argv[3] ?? "20261023000013";
+const names = {
+  "20261023000012": "teacher_manage_unassigned_students",
+  "20261023000013": "teacher_student_parent_column",
+};
+const name = names[version];
+if (!name) throw new Error("Unsupported migration version");
 const sql = fs.readFileSync(`supabase/migrations/${version}_${name}.sql`, "utf8");
 
 try {
@@ -32,8 +37,9 @@ try {
     await client.query("select set_config('request.jwt.claims',$1,true)", [JSON.stringify({ sub: teacher.id, role: "authenticated" })]);
     await client.query("set local role authenticated");
     const data = (await client.query("select public.read_center_b2c_student_data('',0) result")).rows[0].result;
+    const secondPage = (await client.query("select public.read_center_b2c_student_data('',1) result")).rows[0].result;
     await client.query("rollback");
-    results.push({ account: teacher.full_name, students: data.students, rows: data.total, unassigned_on_first_page: data.rows.filter((row) => row.enrollment_id === null).length });
+    results.push({ account: teacher.full_name, students: data.students, rows: data.total, unassigned_on_first_page: data.rows.filter((row) => row.enrollment_id === null).length, rows_with_parent: [...data.rows, ...secondPage.rows].filter((row) => row.guardian_summary).length });
   }
   console.log(JSON.stringify(results));
 } catch (error) {
