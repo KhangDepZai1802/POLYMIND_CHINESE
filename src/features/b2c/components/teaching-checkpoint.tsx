@@ -67,7 +67,16 @@ async function stampPhoto(
   context.fillStyle = "rgba(0,0,0,0.68)";
   context.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
   context.fillStyle = "white";
-  lines.forEach((line, index) =>
+  const fittedLines = lines.map((line) => {
+    let fitted = line;
+    while (
+      fitted.length > 1 &&
+      context.measureText(`${fitted}…`).width > canvas.width - padding * 2
+    )
+      fitted = fitted.slice(0, -1);
+    return fitted === line ? line : `${fitted}…`;
+  });
+  fittedLines.forEach((line, index) =>
     context.fillText(
       line,
       padding,
@@ -89,14 +98,10 @@ export function TeachingCheckpoint({
   id,
   kind,
   previousPhotoUrl,
-  previousPhotoTime,
-  previousPhotoLocation,
 }: {
   id: string;
   kind: "in" | "out";
   previousPhotoUrl?: string;
-  previousPhotoTime?: string;
-  previousPhotoLocation?: string;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -148,6 +153,10 @@ export function TeachingCheckpoint({
         ...location,
       });
       if (r.error) throw Error(r.error);
+      setFile(null);
+      setPreviewUrl(null);
+      setPendingPhoto(null);
+      setPendingLocation(null);
       toast.success(
         kind === "in" ? "Check-in thành công" : "Check-out thành công",
       );
@@ -182,16 +191,6 @@ export function TeachingCheckpoint({
               unoptimized
               className="aspect-video w-full object-cover"
             />
-            {(previousPhotoTime || previousPhotoLocation) && (
-              <span className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1.5 text-[11px] leading-4 font-semibold text-white">
-                {previousPhotoTime && (
-                  <span className="block">CHECK-IN · {previousPhotoTime}</span>
-                )}
-                {previousPhotoLocation && (
-                  <span className="block">{previousPhotoLocation}</span>
-                )}
-              </span>
-            )}
           </a>
         </div>
       )}
