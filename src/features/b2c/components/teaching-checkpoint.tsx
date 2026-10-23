@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Camera, ImagePlus } from "lucide-react";
+import { useState } from "react";
+import { Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -96,73 +96,7 @@ export function TeachingCheckpoint({
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [pendingLocation, setPendingLocation] =
     useState<CheckpointLocation | null>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraReady, setCameraReady] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    setCameraReady(false);
-    setCameraOpen(false);
-  }
-  useEffect(
-    () => () => streamRef.current?.getTracks().forEach((track) => track.stop()),
-    [],
-  );
-  async function openCamera() {
-    setError("");
-    setCameraReady(false);
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      setCameraOpen(true);
-    } catch {
-      setError(
-        "Không mở được camera. Hãy cấp quyền camera cho trình duyệt hoặc chọn ảnh có sẵn.",
-      );
-    }
-  }
-  useEffect(() => {
-    if (!cameraOpen || !videoRef.current || !streamRef.current) return;
-    const video = videoRef.current;
-    video.srcObject = streamRef.current;
-    void video
-      .play()
-      .catch(() =>
-        setError(
-          "Camera không thể phát hình. Hãy dùng nút Chụp bằng camera máy.",
-        ),
-      );
-  }, [cameraOpen]);
-  async function takePhoto() {
-    const video = videoRef.current;
-    if (!video?.videoWidth || !video.videoHeight)
-      return setError("Camera chưa sẵn sàng. Vui lòng thử lại.");
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext("2d");
-    if (!context) return setError("Không chụp được ảnh trên thiết bị này.");
-    context.drawImage(video, 0, 0);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.9),
-    );
-    if (!blob) return setError("Không tạo được ảnh chụp.");
-    setFile(
-      new File([blob], `check-${kind}-${Date.now()}.jpg`, {
-        type: "image/jpeg",
-      }),
-    );
-    setPendingPhoto(null);
-    setPendingLocation(null);
-    stopCamera();
-  }
   async function submit() {
     if (!file) return;
     setBusy(true);
@@ -208,25 +142,17 @@ export function TeachingCheckpoint({
   }
   return (
     <div className="max-w-xs space-y-2">
-      <Label htmlFor={`photo-${id}`}>
+      <Label htmlFor={`camera-photo-${id}`}>
         Ảnh {kind === "in" ? "check-in" : "check-out"}
       </Label>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={busy || cameraOpen}
-          onClick={() => void openCamera()}
-        >
-          <Camera className="size-4" aria-hidden />
-          Mở camera
-        </Button>
+      <div>
         <Label
           htmlFor={`camera-photo-${id}`}
-          className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-medium"
+          aria-disabled={busy}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-3 text-sm font-medium aria-disabled:pointer-events-none aria-disabled:opacity-50"
         >
           <Camera className="size-4" aria-hidden />
-          Chụp bằng camera máy
+          Chụp ảnh
         </Label>
         <Input
           id={`camera-photo-${id}`}
@@ -240,67 +166,10 @@ export function TeachingCheckpoint({
             setPendingPhoto(null);
             setPendingLocation(null);
             setError("");
-            stopCamera();
-          }}
-        />
-        <Label
-          htmlFor={`photo-${id}`}
-          className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-medium"
-        >
-          <ImagePlus className="size-4" aria-hidden />
-          Chọn ảnh có sẵn
-        </Label>
-        <Input
-          id={`photo-${id}`}
-          className="sr-only"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          disabled={busy}
-          onChange={(e) => {
-            setFile(e.target.files?.[0] ?? null);
-            setPendingPhoto(null);
-            setPendingLocation(null);
-            setError("");
-            stopCamera();
           }}
         />
       </div>
-      {cameraOpen && (
-        <div className="space-y-2 rounded-lg border p-2">
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            autoPlay
-            onLoadedMetadata={(event) => {
-              const video = event.currentTarget;
-              setCameraReady(video.videoWidth > 0 && video.videoHeight > 0);
-            }}
-            onCanPlay={() => setCameraReady(true)}
-            className="aspect-video w-full rounded-md bg-black object-cover"
-          />
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={!cameraReady}
-              onClick={() => void takePhoto()}
-            >
-              <Camera className="size-4" aria-hidden />
-              {cameraReady ? "Chụp ảnh" : "Đang mở camera…"}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={stopCamera}
-            >
-              Đóng camera
-            </Button>
-          </div>
-        </div>
-      )}
-      {file && !cameraOpen && (
+      {file && (
         <p className="text-xs text-emerald-700 dark:text-emerald-300">
           Đã có ảnh: {file.name}
         </p>
