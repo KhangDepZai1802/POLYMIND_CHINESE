@@ -133,17 +133,19 @@ export async function recordTeachingCheckpoint(input: unknown) {
   await requireTeaching();
   const p = checkpointSchema.safeParse(input);
   if (!p.success) return { error: "Dữ liệu chấm công không hợp lệ." };
-  const { error } = await (
-    await createClient()
-  ).rpc("check_b2c_teaching_session", {
+  const { error } = await (await createClient()).rpc(
+    "check_b2c_teaching_session_with_location" as never, {
     p_id: p.data.id,
     p_kind: p.data.kind,
     p_photo: p.data.photo,
-  });
+    p_latitude: p.data.latitude,
+    p_longitude: p.data.longitude,
+    p_accuracy: p.data.accuracy,
+  } as never);
   if (error)
     return {
       error:
-        "Không ghi nhận được. Check-in từ 15 phút trước giờ dạy đến trước giờ kết thúc; check-out sau giờ kết thúc trong cùng ngày. Mỗi bước cần ảnh riêng.",
+        "Không ghi nhận được. Hãy cho phép truy cập vị trí; check-in/out đúng khung giờ và mỗi bước cần ảnh riêng.",
     };
   revalidateB2CViews();
   return { success: "Đã ghi nhận chấm công." };

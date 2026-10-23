@@ -9,6 +9,7 @@ const version = process.argv[3] ?? "20261023000013";
 const names = {
   "20261023000012": "teacher_manage_unassigned_students",
   "20261023000013": "teacher_student_parent_column",
+  "20261023000014": "teaching_checkpoint_location",
 };
 const name = names[version];
 if (!name) throw new Error("Unsupported migration version");

@@ -243,10 +243,18 @@ export async function B2CTeachingPage({
                   {[s.check_in_at, s.check_out_at].map((time, i) => {
                     const photo =
                       i === 0 ? s.check_in_photo : s.check_out_photo;
+                    const latitude = i === 0 ? s.check_in_latitude : s.check_out_latitude;
+                    const longitude = i === 0 ? s.check_in_longitude : s.check_out_longitude;
+                    const accuracy = i === 0 ? s.check_in_accuracy : s.check_out_accuracy;
                     const url = photo ? urls.get(photo) : null;
                     return (
                       <td key={i} className="px-4 py-3">
-                        <p>{time ? formatTime(time) : "Chưa ghi nhận"}</p>
+                        <p>{time ? `${formatDate(time)} · ${formatTime(time)}` : "Chưa ghi nhận"}</p>
+                        {latitude != null && longitude != null ? (
+                          <a href={`https://www.google.com/maps?q=${latitude},${longitude}`} target="_blank" rel="noopener noreferrer" className="block text-xs text-primary underline">
+                            GPS {Number(latitude).toFixed(6)}, {Number(longitude).toFixed(6)}{accuracy != null ? ` · ±${Math.round(Number(accuracy))} m` : ""}
+                          </a>
+                        ) : time ? <p className="text-xs text-muted-foreground">Ảnh cũ chưa có vị trí</p> : null}
                         {url && (
                           <a
                             href={url}
