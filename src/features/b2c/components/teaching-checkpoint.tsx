@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -86,9 +88,11 @@ async function stampPhoto(
 export function TeachingCheckpoint({
   id,
   kind,
+  previousPhotoUrl,
 }: {
   id: string;
   kind: "in" | "out";
+  previousPhotoUrl?: string;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -96,7 +100,14 @@ export function TeachingCheckpoint({
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [pendingLocation, setPendingLocation] =
     useState<CheckpointLocation | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const router = useRouter();
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
   async function submit() {
     if (!file) return;
     setBusy(true);
@@ -133,6 +144,9 @@ export function TeachingCheckpoint({
         ...location,
       });
       if (r.error) throw Error(r.error);
+      toast.success(
+        kind === "in" ? "Check-in thành công" : "Check-out thành công",
+      );
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không chấm công được.");
@@ -145,7 +159,34 @@ export function TeachingCheckpoint({
       <Label htmlFor={`camera-photo-${id}`}>
         Ảnh {kind === "in" ? "check-in" : "check-out"}
       </Label>
-      <div>
+      {previousPhotoUrl && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            Đã check-in
+          </p>
+          <a href={previousPhotoUrl} target="_blank" rel="noopener noreferrer">
+            <Image
+              src={previousPhotoUrl}
+              alt="Ảnh check-in đã ghi nhận"
+              width={320}
+              height={180}
+              unoptimized
+              className="aspect-video w-full rounded-lg border object-cover"
+            />
+          </a>
+        </div>
+      )}
+      {previewUrl && (
+        <Image
+          src={previewUrl}
+          alt={`Ảnh ${kind === "in" ? "check-in" : "check-out"} vừa chụp`}
+          width={320}
+          height={180}
+          unoptimized
+          className="aspect-video w-full rounded-lg border object-cover"
+        />
+      )}
+      <div className="flex items-center gap-2">
         <Label
           htmlFor={`camera-photo-${id}`}
           aria-disabled={busy}
@@ -162,21 +203,22 @@ export function TeachingCheckpoint({
           capture="environment"
           disabled={busy}
           onChange={(e) => {
-            setFile(e.target.files?.[0] ?? null);
+            const selected = e.target.files?.[0] ?? null;
+            setFile(selected);
+            setPreviewUrl(selected ? URL.createObjectURL(selected) : null);
             setPendingPhoto(null);
             setPendingLocation(null);
             setError("");
           }}
         />
+        <Button
+          size="sm"
+          disabled={busy || !file}
+          onClick={() => void submit()}
+        >
+          {busy ? "Đang ghi nhận…" : kind === "in" ? "Check-in" : "Check-out"}
+        </Button>
       </div>
-      {file && (
-        <p className="text-xs text-emerald-700 dark:text-emerald-300">
-          Đã có ảnh: {file.name}
-        </p>
-      )}
-      <Button size="sm" disabled={busy || !file} onClick={() => void submit()}>
-        {busy ? "Đang ghi nhận…" : kind === "in" ? "Check-in" : "Check-out"}
-      </Button>
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {error}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { formatInTimeZone } from "date-fns-tz";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -120,39 +121,85 @@ export async function B2CTeachingPage({
         <section className="mb-5 space-y-3" aria-label="Chấm công hôm nay">
           <h2 className="text-lg font-semibold">Buổi dạy hôm nay</h2>
           {meetings.length ? (
-            meetings.map((m) => (
-              <Card key={m.id}>
-                <CardContent className="space-y-3 pt-5">
-                  <p className="font-semibold">
-                    {m.class_name} · {formatTime(m.starts_at)}–
-                    {formatTime(m.ends_at)}
-                  </p>
-                  {m.check_out_at ? (
-                    <p>Đã hoàn tất chấm công</p>
-                  ) : (
-                    <CheckinWindow
-                      startsAt={m.starts_at}
-                      endsAt={m.ends_at}
-                      checkedIn={Boolean(m.check_in_at)}
-                    >
-                      {m.teaching_session_id ? (
-                        <TeachingCheckpoint
-                          id={m.teaching_session_id}
-                          kind={m.check_in_at ? "out" : "in"}
-                        />
-                      ) : (
-                        <TeachingSetup
-                          meetingId={m.source === "weekly" ? undefined : m.id}
-                          classId={
-                            m.source === "weekly" ? m.class_id : undefined
-                          }
-                        />
-                      )}
-                    </CheckinWindow>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+            meetings.map((m) => {
+              const session = result.rows.find(
+                (row) => row.id === m.teaching_session_id,
+              );
+              const checkInUrl = session?.check_in_photo
+                ? urls.get(session.check_in_photo)
+                : undefined;
+              const checkOutUrl = session?.check_out_photo
+                ? urls.get(session.check_out_photo)
+                : undefined;
+              return (
+                <Card key={m.id}>
+                  <CardContent className="space-y-3 pt-5">
+                    <p className="font-semibold">
+                      {m.class_name} · {formatTime(m.starts_at)}–
+                      {formatTime(m.ends_at)}
+                    </p>
+                    {m.check_out_at ? (
+                      <div className="space-y-2">
+                        <p className="font-medium text-emerald-700 dark:text-emerald-300">
+                          Đã hoàn tất chấm công
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            ["Check-in", checkInUrl],
+                            ["Check-out", checkOutUrl],
+                          ].map(([label, url]) =>
+                            url ? (
+                              <a
+                                key={label}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="space-y-1"
+                              >
+                                <p className="text-xs font-medium">{label}</p>
+                                <Image
+                                  src={url}
+                                  alt={`Ảnh ${label}`}
+                                  width={240}
+                                  height={135}
+                                  unoptimized
+                                  className="aspect-video w-full rounded-lg border object-cover"
+                                />
+                              </a>
+                            ) : null,
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <CheckinWindow
+                        startsAt={m.starts_at}
+                        endsAt={m.ends_at}
+                        checkedIn={Boolean(m.check_in_at)}
+                      >
+                        {m.teaching_session_id ? (
+                          <TeachingCheckpoint
+                            id={m.teaching_session_id}
+                            kind={m.check_in_at ? "out" : "in"}
+                            previousPhotoUrl={
+                              m.check_in_at
+                                ? (checkInUrl ?? undefined)
+                                : undefined
+                            }
+                          />
+                        ) : (
+                          <TeachingSetup
+                            meetingId={m.source === "weekly" ? undefined : m.id}
+                            classId={
+                              m.source === "weekly" ? m.class_id : undefined
+                            }
+                          />
+                        )}
+                      </CheckinWindow>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           ) : (
             <p className="text-muted-foreground">
               Hôm nay chưa có lịch dạy được phân công với giờ bắt đầu và kết
@@ -243,18 +290,38 @@ export async function B2CTeachingPage({
                   {[s.check_in_at, s.check_out_at].map((time, i) => {
                     const photo =
                       i === 0 ? s.check_in_photo : s.check_out_photo;
-                    const latitude = i === 0 ? s.check_in_latitude : s.check_out_latitude;
-                    const longitude = i === 0 ? s.check_in_longitude : s.check_out_longitude;
-                    const accuracy = i === 0 ? s.check_in_accuracy : s.check_out_accuracy;
+                    const latitude =
+                      i === 0 ? s.check_in_latitude : s.check_out_latitude;
+                    const longitude =
+                      i === 0 ? s.check_in_longitude : s.check_out_longitude;
+                    const accuracy =
+                      i === 0 ? s.check_in_accuracy : s.check_out_accuracy;
                     const url = photo ? urls.get(photo) : null;
                     return (
                       <td key={i} className="px-4 py-3">
-                        <p>{time ? `${formatDate(time)} · ${formatTime(time)}` : "Chưa ghi nhận"}</p>
+                        <p>
+                          {time
+                            ? `${formatDate(time)} · ${formatTime(time)}`
+                            : "Chưa ghi nhận"}
+                        </p>
                         {latitude != null && longitude != null ? (
-                          <a href={`https://www.google.com/maps?q=${latitude},${longitude}`} target="_blank" rel="noopener noreferrer" className="block text-xs text-primary underline">
-                            GPS {Number(latitude).toFixed(6)}, {Number(longitude).toFixed(6)}{accuracy != null ? ` · ±${Math.round(Number(accuracy))} m` : ""}
+                          <a
+                            href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary block text-xs underline"
+                          >
+                            GPS {Number(latitude).toFixed(6)},{" "}
+                            {Number(longitude).toFixed(6)}
+                            {accuracy != null
+                              ? ` · ±${Math.round(Number(accuracy))} m`
+                              : ""}
                           </a>
-                        ) : time ? <p className="text-xs text-muted-foreground">Ảnh cũ chưa có vị trí</p> : null}
+                        ) : time ? (
+                          <p className="text-muted-foreground text-xs">
+                            Ảnh cũ chưa có vị trí
+                          </p>
+                        ) : null}
                         {url && (
                           <a
                             href={url}
@@ -319,6 +386,11 @@ export async function B2CTeachingPage({
                           <TeachingCheckpoint
                             id={s.id}
                             kind={s.check_in_at ? "out" : "in"}
+                            previousPhotoUrl={
+                              s.check_in_at && s.check_in_photo
+                                ? (urls.get(s.check_in_photo) ?? undefined)
+                                : undefined
+                            }
                           />
                         </CheckinWindow>
                       ) : (
