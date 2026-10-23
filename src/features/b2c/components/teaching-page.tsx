@@ -145,28 +145,70 @@ export async function B2CTeachingPage({
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           {[
-                            ["Check-in", checkInUrl],
-                            ["Check-out", checkOutUrl],
-                          ].map(([label, url]) =>
-                            url ? (
-                              <a
-                                key={label}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="space-y-1"
-                              >
-                                <p className="text-xs font-medium">{label}</p>
-                                <Image
-                                  src={url}
-                                  alt={`Ảnh ${label}`}
-                                  width={240}
-                                  height={135}
-                                  unoptimized
-                                  className="aspect-video w-full rounded-lg border object-cover"
-                                />
-                              </a>
-                            ) : null,
+                            {
+                              label: "Check-in",
+                              url: checkInUrl,
+                              time: session?.check_in_at,
+                              latitude: session?.check_in_latitude,
+                              longitude: session?.check_in_longitude,
+                              accuracy: session?.check_in_accuracy,
+                            },
+                            {
+                              label: "Check-out",
+                              url: checkOutUrl,
+                              time: session?.check_out_at,
+                              latitude: session?.check_out_latitude,
+                              longitude: session?.check_out_longitude,
+                              accuracy: session?.check_out_accuracy,
+                            },
+                          ].map(
+                            ({
+                              label,
+                              url,
+                              time,
+                              latitude,
+                              longitude,
+                              accuracy,
+                            }) =>
+                              url ? (
+                                <a
+                                  key={label}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="space-y-1"
+                                >
+                                  <p className="text-xs font-medium">{label}</p>
+                                  <span className="relative block overflow-hidden rounded-lg border">
+                                    <Image
+                                      src={url}
+                                      alt={`Ảnh ${label}`}
+                                      width={240}
+                                      height={135}
+                                      unoptimized
+                                      className="aspect-video w-full object-cover"
+                                    />
+                                    <span className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1 text-[10px] leading-3.5 font-semibold text-white">
+                                      {time && (
+                                        <span className="block">
+                                          {label.toUpperCase()} ·{" "}
+                                          {formatDate(time)} {formatTime(time)}
+                                        </span>
+                                      )}
+                                      {latitude != null &&
+                                        longitude != null && (
+                                          <span className="block">
+                                            GPS {Number(latitude).toFixed(6)},{" "}
+                                            {Number(longitude).toFixed(6)}
+                                            {accuracy != null
+                                              ? ` · ±${Math.round(Number(accuracy))} m`
+                                              : ""}
+                                          </span>
+                                        )}
+                                    </span>
+                                  </span>
+                                </a>
+                              ) : null,
                           )}
                         </div>
                       </div>
@@ -183,6 +225,17 @@ export async function B2CTeachingPage({
                             previousPhotoUrl={
                               m.check_in_at
                                 ? (checkInUrl ?? undefined)
+                                : undefined
+                            }
+                            previousPhotoTime={
+                              session?.check_in_at
+                                ? `${formatDate(session.check_in_at)} ${formatTime(session.check_in_at)}`
+                                : undefined
+                            }
+                            previousPhotoLocation={
+                              session?.check_in_latitude != null &&
+                              session.check_in_longitude != null
+                                ? `GPS ${Number(session.check_in_latitude).toFixed(6)}, ${Number(session.check_in_longitude).toFixed(6)}${session.check_in_accuracy != null ? ` · ±${Math.round(Number(session.check_in_accuracy))} m` : ""}`
                                 : undefined
                             }
                           />
@@ -389,6 +442,17 @@ export async function B2CTeachingPage({
                             previousPhotoUrl={
                               s.check_in_at && s.check_in_photo
                                 ? (urls.get(s.check_in_photo) ?? undefined)
+                                : undefined
+                            }
+                            previousPhotoTime={
+                              s.check_in_at
+                                ? `${formatDate(s.check_in_at)} ${formatTime(s.check_in_at)}`
+                                : undefined
+                            }
+                            previousPhotoLocation={
+                              s.check_in_latitude != null &&
+                              s.check_in_longitude != null
+                                ? `GPS ${Number(s.check_in_latitude).toFixed(6)}, ${Number(s.check_in_longitude).toFixed(6)}${s.check_in_accuracy != null ? ` · ±${Math.round(Number(s.check_in_accuracy))} m` : ""}`
                                 : undefined
                             }
                           />

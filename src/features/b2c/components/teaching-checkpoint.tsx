@@ -89,10 +89,14 @@ export function TeachingCheckpoint({
   id,
   kind,
   previousPhotoUrl,
+  previousPhotoTime,
+  previousPhotoLocation,
 }: {
   id: string;
   kind: "in" | "out";
   previousPhotoUrl?: string;
+  previousPhotoTime?: string;
+  previousPhotoLocation?: string;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -164,15 +168,30 @@ export function TeachingCheckpoint({
           <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
             Đã check-in
           </p>
-          <a href={previousPhotoUrl} target="_blank" rel="noopener noreferrer">
+          <a
+            href={previousPhotoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative block overflow-hidden rounded-lg border"
+          >
             <Image
               src={previousPhotoUrl}
               alt="Ảnh check-in đã ghi nhận"
               width={320}
               height={180}
               unoptimized
-              className="aspect-video w-full rounded-lg border object-cover"
+              className="aspect-video w-full object-cover"
             />
+            {(previousPhotoTime || previousPhotoLocation) && (
+              <span className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1.5 text-[11px] leading-4 font-semibold text-white">
+                {previousPhotoTime && (
+                  <span className="block">CHECK-IN · {previousPhotoTime}</span>
+                )}
+                {previousPhotoLocation && (
+                  <span className="block">{previousPhotoLocation}</span>
+                )}
+              </span>
+            )}
           </a>
         </div>
       )}
