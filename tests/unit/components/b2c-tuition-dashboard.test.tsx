@@ -7,6 +7,13 @@ import type { TuitionDashboardRow } from "@/features/b2c/domain/tuition-dashboar
 const row: TuitionDashboardRow = { enrollment_id: "e1", student_code: "HV1", full_name: "An", class_name: "Movers", class_id: "c1", enrollment_date: "2026-10-01", tuition_end_date: "2026-10-17", status: "studying", package_id: "p1", sessions: 10, unit_price: 100000, discount: 0, discount_reason: null, total_due: 1000000, paid_amount: 400000, balance: 600000 };
 const other: TuitionDashboardRow = { ...row, enrollment_id: "e2", student_code: "HV2", full_name: "Bình", class_id: "c2", class_name: "Flyers", package_id: null, sessions: null, total_due: null, unit_price: null, discount: null, paid_amount: 0, balance: 0, tuition_end_date: null, enrollment_date: "2026-09-01" };
 afterEach(cleanup);
+it("lets tuition teachers enter packages and receipts without manager correction controls", () => {
+  render(<TuitionDashboard rows={[row, other]} collector="Cô Thy" canReadHistory={false} canCorrect={false} today="2026-10-23" />);
+  expect(screen.getAllByRole("button", { name: "Tạo/sửa gói" })).toHaveLength(2);
+  expect(screen.getAllByRole("button", { name: "Phiếu thu" })).toHaveLength(2);
+  expect(screen.queryByRole("button", { name: "Xử lý học phí" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Nhật ký" })).not.toBeInTheDocument();
+});
 function mount(rows = [row, other]) { render(<TuitionDashboard rows={rows} collector="Quản lý" canReadHistory today="2026-10-17" />); }
 it.each(["Tổng phải thu", "Đã thu", "Còn phải thu"])("opens a matching financial list for the %s card", (label) => {
   mount([row, other, { ...row, enrollment_id: "e3", student_code: "HV3", full_name: "Chi", paid_amount: 1000000, balance: 0 }]);

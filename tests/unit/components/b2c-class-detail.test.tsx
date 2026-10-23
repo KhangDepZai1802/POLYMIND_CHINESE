@@ -145,7 +145,7 @@ describe("B2C class details", () => {
     const dialog = within(screen.getByRole("dialog"));
     const url = window.location.href;
     fireEvent.click(dialog.getByRole("button", { name: "Điểm danh" }));
-    await dialog.findByRole("link", { name: "Lịch học" });
+    await dialog.findByRole("link", { name: "Chọn buổi học theo ngày" });
     fireEvent.change(dialog.getByLabelText("Tìm học viên của lớp"), {
       target: { value: "HV-1" },
     });
@@ -166,7 +166,7 @@ describe("B2C class details", () => {
         page: "1",
       }),
     );
-    fireEvent.click(await dialog.findByRole("link", { name: "Lịch học" }));
+    fireEvent.click(await dialog.findByRole("link", { name: "Chọn buổi học theo ngày" }));
     await waitFor(() =>
       expect(readClassWorkspaceAction).toHaveBeenLastCalledWith("class-a", {
         tab: "schedule",

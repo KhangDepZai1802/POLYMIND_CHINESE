@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const B2C_PERMISSION_LABELS = {
+  manage_center_student_data: "Bổ sung nguồn khách, SĐT và thông tin ghi danh toàn trung tâm",
+  manage_center_tuition: "Nhập gói học phí và phiếu thu cho toàn trung tâm",
+  manage_admissions: "Nhập khách tiềm năng, tư vấn và cập nhật tuyển sinh",
   view_classes: "Xem các lớp được phân công",
   view_students: "Xem danh sách học viên",
   view_assessments: "Xem kiểm tra giữa kỳ / cuối kỳ",
@@ -35,6 +38,7 @@ export const DEFAULT_B2C_PERMISSIONS: B2CPermission[] = [
 export const B2C_PERMISSION_DEPENDENCIES: Partial<
   Record<B2CPermission, B2CPermission[]>
 > = {
+  manage_center_tuition: ["view_tuition", "edit_tuition", "collect_tuition"],
   view_students: ["view_classes"],
   view_assessments: ["view_students"],
   grade_assessments: ["view_assessments"],

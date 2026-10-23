@@ -28,9 +28,17 @@ import { isManagerRole, ROLE_LABELS, type UserRole } from "@/types/roles";
 export function MobileNav({
   role,
   hasAssignedClasses = false,
+  canManageAdmissions = false,
+  canManageCenterTuition = false,
+  canManageB2CParents = false,
+  canManageStudentData = false,
 }: {
   role: UserRole;
   hasAssignedClasses?: boolean;
+  canManageAdmissions?: boolean;
+  canManageCenterTuition?: boolean;
+  canManageB2CParents?: boolean;
+  canManageStudentData?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -38,7 +46,7 @@ export function MobileNav({
     ? [{ label: "Xuất khẩu lao động", items: getXkldNavigation(role) }]
     : isManagerRole(role) && pathname.startsWith("/admin/b2c")
       ? [{ label: "Lớp trung tâm", items: getB2CNavigation(role) }]
-      : getNavigationGroups(role, { hasAssignedClasses });
+      : getNavigationGroups(role, { hasAssignedClasses, canManageAdmissions, canManageCenterTuition, canManageB2CParents, canManageStudentData });
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

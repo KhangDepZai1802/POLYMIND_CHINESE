@@ -1,5 +1,10 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-ATTENDANCE-CLARITY-1 — 2026-10-22
+
+- Giao diện chọn/tạo buổi rõ ràng; buổi theo ngày hiện trước lịch tuần, không thu gọn. Chưa chọn buổi không hiển thị roster điểm danh. Không thay dữ liệu/quyền.
+- Component tests kiểm thứ tự, trạng thái chưa chọn buổi và chặn tương lai/hủy/thu hồi quyền. Chờ QA trình duyệt/điện thoại thật; chưa phát hành online.
+
 ## B2C-TEACHER-SAVE-VISIBILITY-1 — 2026-10-21
 
 - **Codex Status:** Fixed; **Verification:** Not Started. Rà8GV/19lớp active: đủ identity/active/mapping; đọc6nhóm dữ liệu của19lớp dưới role authenticated đúng GV đều đạt. Không đổi quyền thật; cả8chưa có view/grade_assessments.

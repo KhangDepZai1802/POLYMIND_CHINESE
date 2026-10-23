@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireManager } from "@/lib/auth/session";
+import { requireB2CEnrollmentAccess } from "./enrollment-access";
 import {
   b2cEnrollmentCreateSchema,
   type EnrollmentStudentOption,
@@ -13,7 +13,7 @@ export async function findB2CEnrollmentStudentsAction(
   query: string,
   page: number,
 ) {
-  await requireManager();
+  await requireB2CEnrollmentAccess();
   const parsed = z
     .object({
       classId: z.uuid(),
@@ -30,7 +30,7 @@ export async function findB2CEnrollmentStudentsAction(
 export async function addB2CClassStudentAction(
   form: FormData,
 ): Promise<{ success?: string; error?: string }> {
-  await requireManager();
+  await requireB2CEnrollmentAccess();
   const parsed = b2cEnrollmentCreateSchema.safeParse(
     form instanceof FormData ? Object.fromEntries(form) : null,
   );
@@ -44,6 +44,7 @@ export async function addB2CClassStudentAction(
     });
     revalidatePath("/admin/b2c", "layout");
     revalidatePath("/teacher/classes");
+    revalidatePath("/teacher/tuition");
     revalidatePath("/teacher/b2c-classes/[classId]", "page");
     return { success: "Đã thêm học viên vào lớp." };
   } catch (e) {

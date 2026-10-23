@@ -1,8 +1,19 @@
 import { render, screen, within, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-vi.mock("@/features/b2c/server/monthly-comment-actions", () => ({ readMonthlyCommentsAction: vi.fn(), readMonthlyCommentDetailAction: vi.fn(), saveMonthlyCommentAction: vi.fn(), confirmMonthlyCommentDeliveryAction: vi.fn() }));
-vi.mock("@/features/b2c/server/assessment-actions", () => ({ readB2CAssessmentsAction: vi.fn(), readB2CAssessmentHistoryAction: vi.fn(), saveB2CAssessmentAction: vi.fn() }));
-vi.mock("@/features/b2c/components/weekly-schedule-dialog", () => ({ WeeklyScheduleDialog: () => null }));
+vi.mock("@/features/b2c/server/monthly-comment-actions", () => ({
+  readMonthlyCommentsAction: vi.fn(),
+  readMonthlyCommentDetailAction: vi.fn(),
+  saveMonthlyCommentAction: vi.fn(),
+  confirmMonthlyCommentDeliveryAction: vi.fn(),
+}));
+vi.mock("@/features/b2c/server/assessment-actions", () => ({
+  readB2CAssessmentsAction: vi.fn(),
+  readB2CAssessmentHistoryAction: vi.fn(),
+  saveB2CAssessmentAction: vi.fn(),
+}));
+vi.mock("@/features/b2c/components/weekly-schedule-dialog", () => ({
+  WeeklyScheduleDialog: () => null,
+}));
 vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
   ClassStudentAddDialog: () => <button>Thêm học viên</button>,
 }));
@@ -93,14 +104,80 @@ const model: Model = {
 };
 afterEach(cleanup);
 describe("B2C mobile attendance", () => {
-  it.each([5, -1, null])("shows per-student attendance totals and remaining %s", (remaining) => {
-    const next: Model = { ...model, filters: { tab: "students", page: 0, q: "" }, result: { ...model.result, rows: [{ ...model.result.rows[0], session_summary: { attended: 3, absent: 1, excused: 2, makeup: 1, remaining } } as Model["result"]["rows"][number]] } };
-    render(<ClassWorkspaceContent model={next} />);
-    expect(screen.getByText("Đã học: 3")).toBeInTheDocument();
-    expect(screen.getByText("Nghỉ có phép: 2 · Không phép: 1")).toBeInTheDocument();
-    expect(screen.getByText("Học bù: 1 (đã tính trong đã học)")).toBeInTheDocument();
-    expect(screen.getByText(remaining === null ? "Còn lại: Chưa xác định" : remaining < 0 ? "Vượt đăng ký: 1" : "Còn lại: 5")).toBeInTheDocument();
+  it("asks for a dated meeting before showing an unmarked roster", () => {
+    render(<ClassWorkspaceContent model={{ ...model, meeting: null }} />);
+    expect(
+      screen.getByRole("heading", { name: "Bước 1 · Chọn buổi học" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Chọn buổi học theo ngày" }),
+    ).toHaveAttribute("href", expect.stringContaining("tab=schedule"));
+    expect(
+      screen.queryByLabelText("Điểm danh trên điện thoại"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Học viên A")).not.toBeInTheDocument();
   });
+  it("shows dated meetings before the reference weekly schedule without a collapsed panel", () => {
+    render(
+      <ClassWorkspaceContent
+        model={{
+          ...model,
+          filters: { tab: "schedule", page: 0, q: "" },
+          result: { rows: [], total: 0, stats: null },
+        }}
+      />,
+    );
+    const dated = screen.getByRole("region", { name: "Buổi học để điểm danh" });
+    const weekly = screen.getByRole("region", {
+      name: "Lịch học cố định hằng tuần",
+    });
+    expect(
+      dated.compareDocumentPosition(weekly) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(dated.closest("details")).toBeNull();
+    expect(screen.getByText("Chưa có buổi học để chọn")).toBeInTheDocument();
+  });
+  it.each([5, -1, null])(
+    "shows per-student attendance totals and remaining %s",
+    (remaining) => {
+      const next: Model = {
+        ...model,
+        filters: { tab: "students", page: 0, q: "" },
+        result: {
+          ...model.result,
+          rows: [
+            {
+              ...model.result.rows[0],
+              session_summary: {
+                attended: 3,
+                absent: 1,
+                excused: 2,
+                makeup: 1,
+                remaining,
+              },
+            } as Model["result"]["rows"][number],
+          ],
+        },
+      };
+      render(<ClassWorkspaceContent model={next} />);
+      expect(screen.getByText("Đã học: 3")).toBeInTheDocument();
+      expect(
+        screen.getByText("Nghỉ có phép: 2 · Không phép: 1"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Học bù: 1 (đã tính trong đã học)"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          remaining === null
+            ? "Còn lại: Chưa xác định"
+            : remaining < 0
+              ? "Vượt đăng ký: 1"
+              : "Còn lại: 5",
+        ),
+      ).toBeInTheDocument();
+    },
+  );
   it("shows the student's status, note and attendance action in a mobile card", () => {
     render(
       <ClassWorkspaceContent

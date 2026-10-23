@@ -13,6 +13,7 @@ import { getMyB2CClasses } from "@/features/b2c/server/teacher-class-queries";
 import { TeacherB2CClassCards } from "@/features/b2c/components/teacher-class-cards";
 import { getMyB2CPermissionsAction } from "@/features/b2c/server/permission-actions";
 import { TeacherClassManageDialog } from "@/features/b2c/components/teacher-management-dialogs";
+import { TeacherAddStudent } from "@/features/b2c/components/teacher-add-student";
 import { requireTeaching } from "@/lib/auth/session";
 import { formatDate } from "@/lib/dates";
 import { isOpenEnrollment } from "@/lib/domain/enrollment";
@@ -51,9 +52,10 @@ export default async function TeacherClassesPage({
         title="Lớp của tôi"
         description="Các lớp bạn được phân công giảng dạy."
         action={
-          permissions.includes("create_classes") ? (
-            <TeacherClassManageDialog />
-          ) : undefined
+          <div className="flex flex-wrap gap-2">
+            <TeacherAddStudent />
+            {permissions.includes("create_classes") && <TeacherClassManageDialog />}
+          </div>
         }
       />
 

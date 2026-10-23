@@ -1,5 +1,45 @@
 # 08 — Phase Plan & Task Ledger
 
+## RELEASE-20261023-B2C
+
+- [x] Đồng bộ13commit GitHub bằng fast-forward, ghép local và giữ shared invalidation/SaleWork/chấm công. Lint/typecheck/build và1099tests đạt;59file staged/secret-scan0/diff-check đạt.
+- [ ] Xác minh deployment sau push và QA browser production theo quyền thật; không tạo dữ liệu học viên/phiếu thu giả trên hồ sơ thật. Kết quả commit/remote báo trong chat.
+
+## B2C-CENTER-STUDENT-DATA-1
+
+- [x] Quyền riêng hai cô manage_center_student_data, menu/trang Học viên, bổ sung nguồn/referrer/SĐT/người chốt/ngày nhập học/bắt đầu/hạn phí, tìm theo lớp/GV/bé,50ghi danh/trang/count động. Không buộc điền thông tin chưa biết; check stale/phone/date/referral ở server và DB. Không mở quyền này cho các GV khác.
+- [x] SQL20261023000006 cloud exact-history/rollback tests; cấp hai cô data/create_classes giữ quyền cũ, audit admin xác nhận. Cả hai đủ admissions/data/tuition/parents/add_student/create_class,58HV60ghi danh thật. Lint/typecheck/build và1056tests đạt, không sửa dữ liệu học viên thật.
+- [ ] QA thực tế hai cô sau F5 local; chưa commit/push/deploy online. Dry-run4remote-only20261021 cũ chưa xử lý ngoài scope.
+
+## B2C-TEACHER-PARENTS-ALL-1
+
+- [x] Mọi giáo viên B2C active có menu Phụ huynh, thêm/sửa SĐT/Zalo/email/liên kết con; danh sách/tổng động, không cố định33, tự áp dụng GV/hồ sơ mới. Server/RPC guard và projection an toàn, không mở raw-table/học phí.
+- [x] SQL20261023000005 cloud exact-history/integration rollback;9tài khoản active allowed. Test55→56PH/phân trang50, lint/typecheck/build và1052tests đạt. Liên hệ thật giữ nguyên.
+- [ ] QA thực tế sau F5 local; chưa commit/push/deploy online. Dry-run còn4remote-only20261021 như trước.
+
+## B2C-TEACHER-ENROLLMENT-ALL-1
+
+- [x] Mọi giáo viên liên kết B2C active được thêm học viên và ghi danh, gồm tài khoản mới; nút tại Lớp của tôi, chọn lớp mở/tạo mới/chọn hồ sơ cũ. Server guard/RPC giữ kiểm capacity/status/retry/actor, không mở quyền học phí hoặc B2B-only.
+- [x] SQL20261023000004 cloud exact-history/integration rollback;9tài khoản thật allowed. Lint/typecheck/build và1047tests đạt. Không tạo học viên thật.
+- [ ] QA thực tế trên local sau F5; chưa commit/push/deploy online. Dry-run còn4remote-only20261021 như trước.
+
+## B2C-CENTER-TUITION-TEACHERS-1
+
+- [x] Quyền riêng manage_center_tuition cho hai cô, phụ thuộc view_tuition/edit_tuition/collect_tuition; menu desktop/mobile và /teacher/tuition, projection riêng đủ60ghi danh, nhập gói/phiếu thu bằng forms cũ. Không cấp quyền hủy/hoàn hoặc quản lý lớp/học viên khác.
+- [x] SQL20261023000003 cloud exact-history/integration rollback, cấp quyền/audit giữ quyền cũ; hai cô allowed=true,total60. Lint/typecheck/build và1044tests đạt. Không tạo dữ liệu tiền thật.
+- [ ] QA browser hai tài khoản nhập số liệu thực tế sau F5 local; chưa commit/push/deploy online. Dry-run4remote-only20261021 cũ, không repair/replay.
+
+## B2C-ADMISSIONS-DELETE-1
+
+- [x] Nút X cho Pipeline/Danh sách, xác nhận tên khách; server/RPC/RLS bảo vệ, lưu trữ với actor thật và giữ nhật ký. SQL20261023000002 cloud exact-history/integration rollback đạt; lint/typecheck/build và1040tests đạt. Không xóa khách thật.
+- [ ] QA thao tác thực tế sau F5 local; chưa commit/push/deploy online. Dry-run còn4remote-only migration20261021 như trước.
+
+## B2C-ADMISSIONS-TEACHERS-1
+
+- [x] Quyền Tuyển sinh riêng manage_admissions; menu desktop/mobile, trang giáo viên dùng chung pipeline Lead → Đã tư vấn → Học thử → Đặt cọc → Ghi danh. Guard server/RLS, mặc định tắt, thu hồi/khóa hiệu lực ngay.
+- [x] SQL20261023000001 cloud exact-history/integration rollback; cấp đúng cô Lê/cô Thy, giữ quyền cũ, audit admin user xác nhận; cả hai đọc được 1 khách hiện có. Lint/typecheck/build và1037tests đạt.
+- [ ] QA giao diện hai tài khoản sau khi phát hành code; chưa commit/push/deploy. Dry-run còn remote-only4migration20261021, không repair/replay.
+
 ## B2C-TEACHER-SAVE-VISIBILITY-1
 
 - [x] Rà toàn bộ8tài khoản B2C và19lớp active trên cloud: account/profile active, liên kết đúng giáo viên, không lớp mồ côi; kiểm tra6nhóm dữ liệu dưới authenticated identity từng giáo viên, không ghi dữ liệu thật.
@@ -1580,6 +1620,13 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 - [x] Bổ sung bốn nút điều hướng Từ vựng/Ngữ pháp/Bài khóa 1/Bài khóa 2 theo user; browser mobile 16 anchor đúng cho bài 7–10. Audio hai bài khóa chờ user cung cấp.
 
 - [x] /nghe có hai lối vào Tiếng Trung ngân hàng/Học viện lãnh đạo; giữ bài 3–4 và toàn bộ route/audio cũ. Nhập đầy đủ bài 7–10 gồm bảng từ vựng, ngữ pháp, hội thoại từ MSUTONG SC Q1.docx. Đối chiếu 959 đoạn nguồn không thiếu; browser 10 route200/mobile390, lint/typecheck/build và 1031/1031 tests đạt.
+
+## B2C-ATTENDANCE-CLARITY-1
+
+- [x] Chọn/tạo buổi rõ trong tab Điểm danh; buổi theo ngày hiện trước lịch tuần, không thu gọn; không hiện roster khi chưa chọn buổi.
+- [x] Lint/typecheck/build đạt; 1033/1033 tests đạt.
+- [ ] QA trình duyệt/điện thoại thật; chưa commit/push/deploy.
+
 ## BIKEFORCE-SALEWORK-SYNC-1
 
 ## SALEWORK-DAILY-REPORT-1

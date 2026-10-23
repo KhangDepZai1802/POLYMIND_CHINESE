@@ -195,10 +195,16 @@ export function getNavigation(role: UserRole): NavItem[] {
  */
 export function getNavigationGroups(
   role: UserRole,
-  options: { hasAssignedClasses?: boolean } = {},
+  options: { hasAssignedClasses?: boolean; canManageAdmissions?: boolean; canManageCenterTuition?: boolean; canManageB2CParents?: boolean; canManageStudentData?: boolean } = {},
 ): NavGroup[] {
+  const teacherItems = options.canManageAdmissions
+    ? [...NAVIGATION.teacher, { label: "Tuyển sinh", href: "/teacher/admissions", icon: TrendingUp }]
+    : [...NAVIGATION.teacher];
+  if (options.canManageCenterTuition) teacherItems.push({ label: "Học phí", href: "/teacher/tuition", icon: Wallet });
+  if (options.canManageB2CParents) teacherItems.push({ label: "Phụ huynh", href: "/teacher/parents", icon: UserCircle });
+  if (options.canManageStudentData) teacherItems.push({ label: "Học viên", href: "/teacher/students", icon: Users });
   if (role !== "academic_manager") {
-    return [{ label: null, items: NAVIGATION[role] }];
+    return [{ label: null, items: role === "teacher" ? teacherItems : NAVIGATION[role] }];
   }
 
   const groups: NavGroup[] = [
@@ -206,7 +212,7 @@ export function getNavigationGroups(
   ];
 
   if (options.hasAssignedClasses) {
-    groups.push({ label: "Lớp được phân công", items: NAVIGATION.teacher });
+    groups.push({ label: "Lớp được phân công", items: teacherItems });
   }
 
   return groups;

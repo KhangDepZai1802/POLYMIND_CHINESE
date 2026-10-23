@@ -1,5 +1,25 @@
 # 02 — Thiết kế Database
 
+## B2C-CENTER-STUDENT-DATA-1 (2026-10-23)
+
+Quyền opt-in `manage_center_student_data` cho projection RPC `read_center_b2c_student_data(text,integer)` (50ghi danh/trang, count/distinctstudent động) và writer `save_center_b2c_student_data(jsonb)`, security definer/guard trước truy cập. Writer chỉ cập nhật phone/customer_source/referrer trên student và salesperson/enrollment_date/learning_start_date/tuition_end_date trên enrollment; kiểm timestamp cả hai, lock student rồi enrollment, validate phone/source/referrer/dates. Không sửa trạng thái/tiền/hồ sơ raw khác, không mở RLS. Unknown fields cho null, không buộc dữ liệu giả. Cấp permission và create_classes cho hai account được user xác nhận, giữ audit quyền cũ. Migration20261023000006 có integration rollback tests.
+
+## B2C-TEACHER-PARENTS-ALL-1 (2026-10-23)
+
+`can_manage_b2c_parents()` kiểm manager hoặc hồ sơ B2C liên kết active qua `app.my_b2c_teacher_id()`. Hai RPC lưu phụ huynh kiểm guard này; base writer chuyển sang security definer, giữ validation SĐT/email/mã học viên/quan hệ và actor auth.uid(). Teacher đọc qua `read_teacher_b2c_parents_page(text,integer)`, guard trước projection PH/con/lớp,50hồ sơ/trang và count động; không mở raw-table parents/students/enrollments. Admin giữ query/page cũ. Migration20261023000005 có integration rollback tests về hơn33PH, paging/contact/link/actor/B2B-only/khóa tài khoản.
+
+## B2C-TEACHER-ENROLLMENT-ALL-1 (2026-10-23)
+
+`can_add_b2c_students()` kiểm `app.is_manager()` hoặc `app.my_b2c_teacher_id()` khác null (profile/teacher active, role teacher/academic_manager, có liên kết B2C). RPC thêm học viên dùng guard này, giữ logic atomic/idempotency/capacity/actor. `find_b2c_enrollment_students` đổi sang security definer có guard và projection option cũ; `read_b2c_enrollment_classes()` chỉ trả id/code/name/status các lớp chưa completed/cancelled. Không mở quyền raw-table hoặc thay quyền học phí. SQL20261023000004 có integration rollback tests, chặn B2B-only và tài khoản khóa.
+
+## B2C-CENTER-TUITION-TEACHERS-1 (2026-10-23)
+
+`manage_center_tuition` là quyền opt-in phụ thuộc `view_tuition/edit_tuition/collect_tuition`. `app.has_b2c_permission` cho phép ba quyền này hoạt động ngoài lớp phân công khi scope toàn trung tâm được bật; các quyền khác vẫn giữ giới hạn lớp. RPC security definer `read_center_b2c_tuition_page(text,integer)` kiểm scope, chỉ trả projection học phí/ghi danh,50hàng/trang, dùng thu ròng effective_amount. Không mở RLS/raw-table cho hồ sơ học viên hoặc ghi danh. Ghi gói/thu dùng RPC hiện có với attribution/auth.uid và guard số dư/retry. Thu hồi scope lập tức chặn page và thao tác ngoài lớp. SQL20261023000003 có integration rollback test.
+
+## B2C-ADMISSIONS-DELETE-1 (2026-10-23)
+
+`b2c_admission_leads.archived_at/archived_by` lưu thời điểm/người xóa khỏi danh sách. RPC `archive_b2c_admission(uuid)` kiểm `manage_admissions`, ghi `auth.uid()` và idempotent với hồ sơ đã lưu trữ. Không grant update trực tiếp hai cột cho authenticated. RLS restrictive select chỉ cho hồ sơ chưa lưu trữ, áp dụng cả manager/pipeline RPC invoker/Việc hôm nay; insert phải chưa lưu trữ, chăm sóc mới phải có lead còn hiển thị. Hồ sơ và care logs giữ nguyên trong DB. Migration `20261023000002` có integration rollback test.
+
 ## Weekly check-in (2026-10-21)
 
 Migration `20261021000001_b2c_weekly_checkin.sql`: helper private app.b2c_weekly_slot đọc giờ chung/giờ riêng từng thứ; read_b2c_checkin_meetings kết hợp buổi theo ngày và lịch tuần hôm nay, không ghi dữ liệu khi đọc. prepare_b2c_weekly_checkin lấy lớp từ DB, khóa giáo viên rồi lớp, kiểm capability/identity/ngày/trạng thái/giờ, tạo buổi theo ngày và gọi prepare_b2c_meeting_checkin hiện có. Unique(class_id, starts_at), kiểm trùng giờ và retry giữ nguyên. Không thêm bảng, không bypass RLS/service role trong user flow. Public checkpoint kiểm cửa sổ [start−15 phút,end) bằng giờ máy chủ, giữ kiểm ảnh/ngày/check-out và retry ảnh cũ. Mọi ghi actor=auth.uid().

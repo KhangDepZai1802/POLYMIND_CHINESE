@@ -28,11 +28,13 @@ export function ClassMeetingDialog({
   teacherName,
   today,
   meeting,
+  createLabel = "Thêm buổi học",
 }: {
   classId: string;
   teacherName: string;
   today: string;
   meeting?: ClassMeeting;
+  createLabel?: string;
 }) {
   const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false),
@@ -53,14 +55,12 @@ export function ClassMeetingDialog({
     >
       <DialogTrigger asChild>
         <Button variant={meeting ? "outline" : "default"}>
-          {meeting ? "Sửa buổi học" : "Thêm buổi học"}
+          {meeting ? "Sửa buổi học" : createLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {meeting ? "Sửa buổi học" : "Thêm buổi học"}
-          </DialogTitle>
+          <DialogTitle>{meeting ? "Sửa buổi học" : createLabel}</DialogTitle>
           <DialogDescription>
             Giờ Việt Nam. Lịch học ở đây không tự ghi công/lương giáo viên.
             {meeting?.schedule_id

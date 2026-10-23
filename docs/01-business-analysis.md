@@ -1,3 +1,16 @@
+<!-- B2C-ADMISSIONS-TEACHERS-1: 2026-10-23 -->
+Hoàn thiện hồ sơ toàn trung tâm (2026-10-23): cô Lê/cô Thy được cấp riêng `manage_center_student_data` và tạo lớp. Menu Học viên cho phép tìm theo bé/lớp/GV và bổ sung nguồn khách, người giới thiệu, SĐT, người chốt, ngày nhập học/bắt đầu/hạn phí. SĐT/nguồn dùng chung hồ sơ giữa các lớp; người chốt/ngày theo ghi danh. Cho phép giữ thông tin chưa biết trống để nhập phần đã xác nhận, không suy đoán SĐT dùng chung/thiếu0 hoặc hạn phí. Tổng/danh sách động, không cố định58HV60ghi danh33PH hoặc1khách. Tạo lớp tự phân công cho người tạo; Tuyển sinh/Học phí/Phụ huynh tiếp tục theo quyền đã cấp. Các giáo viên khác không tự có quyền sửa dữ liệu toàn trung tâm này.
+
+Phụ huynh (2026-10-23): tất cả giáo viên có liên kết B2C đang hoạt động được xem/thêm/sửa hồ sơ phụ huynh toàn trung tâm, bổ sung SĐT/Zalo/email và liên kết các con/quan hệ. Menu Phụ huynh trên giao diện giáo viên dùng dữ liệu/tổng thực tế, tải đủ các trang, không giới hạn33hồ sơ hoặc danh sách giáo viên cố định. Giáo viên/hồ sơ mới tự áp dụng. Không tự đoán liên hệ từ SĐT học viên hoặc điền số giả; B2B-only và tài khoản khóa bị chặn.
+
+Thêm học viên (2026-10-23, yêu cầu mới thay phạm vi chỉ hai cô): mọi tài khoản giáo viên đang hoạt động có hồ sơ giáo viên B2C liên kết được tạo học viên mới hoặc chọn học viên đã có rồi ghi danh vào lớp B2C đang nhận học viên. Áp dụng cả giáo viên mới được liên kết sau này. Nút tại Lớp của tôi, chọn lớp trước khi nhập; kiểm lớp đóng/sĩ số/trùng hồ sơ ghi danh và retry như quản lý. Không tự cấp quyền học phí, sửa hồ sơ khác hoặc quyền giáo viên B2B. Tài khoản/giáo viên inactive bị chặn ngay.
+
+Học phí (2026-10-23): cô Thy/cô Lê được cấp quyền riêng `manage_center_tuition`, kèm xem/sửa gói và thu học phí cho toàn trung tâm. Menu Học phí cho phép nhập số buổi/đơn giá/chiết khấu, sau đó phiếu thu số tiền/ngày đóng/phương thức/người thu theo từng ghi danh. Không giới hạn lớp đứng dạy đối với nghiệp vụ này; không cấp thêm quyền quản lý lớp/học viên/hủy phiếu/hoàn tiền. Hiển thị số ghi danh/chưa có gói từ dữ liệu thật; không tự điền số tiền hoặc ngày đóng khi chưa có thông tin.
+
+Tuyển sinh có nút **X** trên Pipeline và Danh sách cho người có quyền tuyển sinh, gồm cô Lê/cô Thy. Xác nhận tên khách trước khi bỏ khỏi danh sách, số đếm và Việc hôm nay bằng lưu trữ. Giữ lịch sử chăm sóc và ghi người thực hiện; không xóa vĩnh viễn hoặc đổi hồ sơ học viên đã ghi danh.
+
+Giáo viên được cấp quyền riêng manage_admissions có menu Tuyển sinh và được nhập/sửa khách hỏi, tiềm năng chưa học, cập nhật Lead → Đã tư vấn → Học thử → Đặt cọc → Ghi danh, ghi nhật ký chăm sóc. Dùng chung danh sách với quản lý; quyền này độc lập lớp được phân công, không cấp quyền học phí. Mặc định tắt; đã cấp cho cô Lê và cô Thy theo yêu cầu. Ghi danh trong pipeline chỉ là giai đoạn khách, giữ quy trình tạo hồ sơ học viên hiện có.
+
 # 01 — Phân tích nghiệp vụ (Business Analysis)
 
 ## Giáo viên lưu dữ liệu, admin xem (2026-10-21)
@@ -590,3 +603,7 @@ Trang Học phí theo mẫu user: tổng phải thu/đã thu/còn phải thu the
 ### B2C-PARENT-DESIGN-1
 
 Trang Phụ huynh theo ảnh:4thẻ Tổng/Có SĐT/Có Zalo/Thiếu thông tin, đếm hồ sơ duy nhất không theo số con. Thiếu là SĐT hoặc Zalo trống, email vẫn tùy chọn; không đổi sang yêu cầu2SĐT hoặc tự bổ sung liên hệ. KPI dùng toàn bộ danh sách, bộ lọc chỉ thay bảng/số hồ sơ.
+
+### Làm rõ luồng điểm danh lớp trung tâm — 22/10/2026
+
+Tab Điểm danh hướng dẫn chọn buổi theo ngày hoặc tạo buổi nếu có quyền sửa lịch. Chưa chọn buổi thì chưa hiện danh sách trạng thái điểm danh. Tab Lịch học đặt buổi có ngày cụ thể trước lịch tuần, luôn mở và có nút Mở điểm danh; lịch tuần là phần tham khảo, không phải nút chọn buổi. Giữ phân quyền và điều kiện ngày học hiện có; không tự sinh buổi hoặc đổi dữ liệu lớp.

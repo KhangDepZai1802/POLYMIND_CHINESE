@@ -46,7 +46,9 @@ type Model = Awaited<ReturnType<typeof readClassWorkspaceAction>>;
 type Navigate = (filters: Record<string, string>) => void;
 const NavigationContext = createContext<Navigate | undefined>(undefined);
 const time = (value: string) =>
-  formatInTimeZone(value, "Asia/Ho_Chi_Minh", "EEEE, dd/MM/yyyy HH:mm", { locale: vi });
+  formatInTimeZone(value, "Asia/Ho_Chi_Minh", "EEEE, dd/MM/yyyy HH:mm", {
+    locale: vi,
+  });
 function Link({ href, ...props }: ComponentProps<typeof NextLink>) {
   const navigate = useContext(NavigationContext);
   return (
@@ -147,17 +149,25 @@ export function ClassWorkspaceContent({
       )}
       <div className="bg-card mb-5 grid gap-3 rounded-xl border p-4 text-sm sm:grid-cols-3">
         <p>
-          Giáo viên: <strong>{cls.teacher_name?.trim() || "Chưa phân công"}</strong>
+          Giáo viên:{" "}
+          <strong>{cls.teacher_name?.trim() || "Chưa phân công"}</strong>
         </p>
         <p className="sm:col-span-2">
-          Lịch học hằng tuần: <strong>{[cls.weekdays_text, cls.time_text].filter(Boolean).join(" · ") || "Chưa cập nhật"}</strong>
+          Lịch học hằng tuần:{" "}
+          <strong>
+            {[cls.weekdays_text, cls.time_text].filter(Boolean).join(" · ") ||
+              "Chưa cập nhật"}
+          </strong>
         </p>
         <p>
           Sĩ số ghi nhận:{" "}
           <strong>
             {cls.enrolled_count}/{cls.capacity}
           </strong>
-          <ClassOccupancyProgress count={cls.enrolled_count} capacity={cls.capacity} />
+          <ClassOccupancyProgress
+            count={cls.enrolled_count}
+            capacity={cls.capacity}
+          />
         </p>
         <p>
           Khai giảng:{" "}
@@ -248,125 +258,199 @@ export function ClassWorkspaceContent({
       )}
       {filters.tab === "schedule" && (
         <>
-          <section className="bg-card mb-5 rounded-xl border p-4" aria-label="Lịch học cố định hằng tuần">
-            <h2 className="font-semibold">Lịch học hằng tuần</h2>
-            {!permissions && <div className="mt-3"><WeeklyScheduleDialog classId={classId} /></div>}
-            <WeeklyScheduleGrid weekdays={cls.weekdays_text} time={cls.time_text} teacher={cls.teacher_name} />
-            <p className="text-muted-foreground mt-3 text-xs">Lịch cố định hằng tuần, chưa gắn ngày cụ thể. Trên điện thoại, vuốt ngang để xem đủ T2–CN.</p>
-          </section>
-          <details className="rounded-xl border p-4">
-          <summary className="cursor-pointer text-sm font-medium">Quản lý buổi học theo ngày (tùy chọn)</summary>
-          <p className="text-muted-foreground my-3 text-xs">Chỉ mở khi cần tạo hoặc xử lý một buổi có ngày cụ thể. Phần này độc lập với lịch học hằng tuần.</p>
-          {can("edit_schedule") && (
-            <div className="mb-4 flex flex-wrap gap-3">
-              <StructuredScheduleDialog
-                classId={classId}
-                today={today}
-                openingDate={cls.start_date}
-              />
-              <ClassMeetingDialog
-                classId={classId}
-                teacherName={cls.teacher_name ?? ""}
-                today={today}
-              />
-            </div>
-          )}
-          {!!schedules.length && (
-            <section className="bg-card mb-5 rounded-xl border p-4">
-              <h2 className="mb-3 font-semibold">Lịch lặp đã lưu</h2>
-              <ul className="space-y-2 text-sm">
-                {schedules.map((s) => (
-                  <li key={s.id} className="bg-muted/40 rounded-lg p-3">
-                    {WEEKDAYS.filter(([v]) => s.weekdays.includes(v))
-                      .map(([, l]) => l)
-                      .join(" · ")}{" "}
-                    · {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)} ·{" "}
-                    {s.room_name || "Chưa xếp phòng"}
-                    <p className="text-muted-foreground text-xs">
-                      {formatDateOnly(s.date_from)}–{formatDateOnly(s.date_to)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          <div className="grid gap-3">
-            {scheduleRows.map((m) => (
-              <section key={m.id} className="bg-card rounded-xl border p-4">
-                <h2 className="font-semibold">
-                  {time(m.starts_at)} –{" "}
-                  {formatInTimeZone(m.ends_at, "Asia/Ho_Chi_Minh", "HH:mm")}
-                </h2>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {MEETING_STATUSES[m.status]} ·{" "}
-                  {m.teacher_name || "Chưa phân công"}
-                  {m.teaching_session_id ? " · Liên kết lịch dạy" : ""}
-                  {m.schedule_id ? " · Sinh từ lịch lặp" : ""}
-                  {` · ${m.room_name || "Chưa xếp phòng"}`}
-                </p>
-                {m.note && (
-                  <p className="mt-2 text-sm break-words whitespace-pre-wrap">
-                    {m.note}
-                  </p>
-                )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {can("mark_attendance") && (
-                    <Button asChild variant="outline">
-                      <Link href={href("attendance", 0, m.id)}>
-                        Mở điểm danh
-                      </Link>
-                    </Button>
-                  )}
-                  {can("view_comments") && (
-                    <Button asChild variant="outline">
-                      <Link href={href("comments", 0, m.id)}>
-                        Nhận xét buổi
-                      </Link>
-                    </Button>
-                  )}
-                  {can("edit_schedule") && !m.teaching_session_id && (
-                    <ClassMeetingDialog
-                      classId={classId}
-                      teacherName={cls.teacher_name ?? ""}
-                      today={today}
-                      meeting={m}
-                    />
-                  )}
-                </div>
+          <section
+            className="bg-card rounded-xl border p-4 sm:p-5"
+            aria-label="Buổi học để điểm danh"
+          >
+            <h2 className="text-lg font-semibold">
+              Buổi học theo ngày · Chọn để điểm danh
+            </h2>
+            <p className="text-muted-foreground my-3 text-sm">
+              Mỗi buổi có ngày và giờ cụ thể. Chọn “Mở điểm danh” ở buổi bạn
+              cần.
+            </p>
+            {can("edit_schedule") && (
+              <div className="mb-4 flex flex-wrap gap-3">
+                <StructuredScheduleDialog
+                  classId={classId}
+                  today={today}
+                  openingDate={cls.start_date}
+                />
+                <ClassMeetingDialog
+                  classId={classId}
+                  teacherName={cls.teacher_name ?? ""}
+                  today={today}
+                  createLabel="Tạo buổi để điểm danh"
+                />
+              </div>
+            )}
+            {!!schedules.length && (
+              <section className="bg-card mb-5 rounded-xl border p-4">
+                <h2 className="mb-3 font-semibold">Lịch lặp đã lưu</h2>
+                <ul className="space-y-2 text-sm">
+                  {schedules.map((s) => (
+                    <li key={s.id} className="bg-muted/40 rounded-lg p-3">
+                      {WEEKDAYS.filter(([v]) => s.weekdays.includes(v))
+                        .map(([, l]) => l)
+                        .join(" · ")}{" "}
+                      · {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)} ·{" "}
+                      {s.room_name || "Chưa xếp phòng"}
+                      <p className="text-muted-foreground text-xs">
+                        {formatDateOnly(s.date_from)}–
+                        {formatDateOnly(s.date_to)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
               </section>
-            ))}
-          </div>
-          {!scheduleRows.length && <p className="text-muted-foreground py-4 text-sm">Chưa có buổi học theo ngày cụ thể.</p>}
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-            <p>{result.total} buổi · Trang {filters.page + 1}/{Math.max(1, Math.ceil(result.total / 25))}</p>
-            <div className="flex gap-3">
-              {filters.page > 0 && <Link href={href("schedule", filters.page - 1)}>Trang trước</Link>}
-              {(filters.page + 1) * 25 < result.total && <Link href={href("schedule", filters.page + 1)}>Trang sau</Link>}
+            )}
+            <div className="grid gap-3">
+              {scheduleRows.map((m) => (
+                <section key={m.id} className="bg-card rounded-xl border p-4">
+                  <h2 className="font-semibold">
+                    {time(m.starts_at)} –{" "}
+                    {formatInTimeZone(m.ends_at, "Asia/Ho_Chi_Minh", "HH:mm")}
+                  </h2>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {MEETING_STATUSES[m.status]} ·{" "}
+                    {m.teacher_name || "Chưa phân công"}
+                    {m.teaching_session_id ? " · Liên kết lịch dạy" : ""}
+                    {m.schedule_id ? " · Sinh từ lịch lặp" : ""}
+                    {` · ${m.room_name || "Chưa xếp phòng"}`}
+                  </p>
+                  {m.note && (
+                    <p className="mt-2 text-sm break-words whitespace-pre-wrap">
+                      {m.note}
+                    </p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {can("mark_attendance") && (
+                      <Button asChild variant="outline">
+                        <Link href={href("attendance", 0, m.id)}>
+                          Mở điểm danh
+                        </Link>
+                      </Button>
+                    )}
+                    {can("view_comments") && (
+                      <Button asChild variant="outline">
+                        <Link href={href("comments", 0, m.id)}>
+                          Nhận xét buổi
+                        </Link>
+                      </Button>
+                    )}
+                    {can("edit_schedule") && !m.teaching_session_id && (
+                      <ClassMeetingDialog
+                        classId={classId}
+                        teacherName={cls.teacher_name ?? ""}
+                        today={today}
+                        meeting={m}
+                      />
+                    )}
+                  </div>
+                </section>
+              ))}
             </div>
-          </div>
-          </details>
+            {!scheduleRows.length && (
+              <div className="bg-muted/40 rounded-xl border border-dashed p-5 text-sm">
+                <h3 className="font-semibold">Chưa có buổi học để chọn</h3>
+                <p className="text-muted-foreground mt-2">
+                  {can("edit_schedule")
+                    ? "Bấm “Tạo buổi để điểm danh”, nhập ngày và giờ học rồi lưu. Buổi vừa tạo sẽ hiện ở đây để mở điểm danh."
+                    : "Nhờ quản lý tạo buổi có ngày và giờ cụ thể cho lớp. Lịch hằng tuần chưa dùng để điểm danh được."}
+                </p>
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+              <p>
+                {result.total} buổi · Trang {filters.page + 1}/
+                {Math.max(1, Math.ceil(result.total / 25))}
+              </p>
+              <div className="flex gap-3">
+                {filters.page > 0 && (
+                  <Link href={href("schedule", filters.page - 1)}>
+                    Trang trước
+                  </Link>
+                )}
+                {(filters.page + 1) * 25 < result.total && (
+                  <Link href={href("schedule", filters.page + 1)}>
+                    Trang sau
+                  </Link>
+                )}
+              </div>
+            </div>
+          </section>
+          <section
+            className="bg-card mt-5 rounded-xl border p-4"
+            aria-label="Lịch học cố định hằng tuần"
+          >
+            <h2 className="font-semibold">Lịch học hằng tuần</h2>
+            {!permissions && (
+              <div className="mt-3">
+                <WeeklyScheduleDialog classId={classId} />
+              </div>
+            )}
+            <WeeklyScheduleGrid
+              weekdays={cls.weekdays_text}
+              time={cls.time_text}
+              teacher={cls.teacher_name}
+            />
+            <p className="text-muted-foreground mt-3 text-xs">
+              Lịch lặp để tham khảo, không phải nút chọn buổi. Để điểm danh,
+              chọn hoặc tạo buổi theo ngày ở phía trên. Vuốt ngang để xem đủ
+              T2–CN.
+            </p>
+          </section>
         </>
       )}
       {filters.tab === "attendance" && (
         <div className="bg-muted/40 mb-4 rounded-lg p-4 text-sm">
           {meeting ? (
             <>
-              <strong>Buổi {time(meeting.starts_at)}</strong>
+              <h2 className="font-semibold">Bước 2 · Điểm danh học viên</h2>
+              <p className="mt-2 font-medium">Buổi {time(meeting.starts_at)}</p>
+              {can("view_schedule") && (
+                <Button asChild variant="outline" className="my-3">
+                  <Link href={href("schedule")}>Đổi buổi học</Link>
+                </Button>
+              )}
               <p>
                 {MEETING_STATUSES[meeting.status]} ·{" "}
                 {canAttend
                   ? "Chọn trạng thái từng học viên để lưu điểm danh."
-                  : "Buổi đã hủy hoặc chưa đến ngày; chỉ xem."}
+                  : meeting.status === "cancelled"
+                    ? "Buổi đã hủy; chỉ xem điểm danh."
+                    : "Chưa đến ngày học; chỉ xem. Đến ngày học có thể điểm danh mà không cần chờ giờ bắt đầu."}
               </p>
             </>
           ) : (
-            <p>
-              Chọn một buổi trong{" "}
-              <Link href={href("schedule")} className="text-primary underline">
-                Lịch học
-              </Link>{" "}
-              để điểm danh.
-            </p>
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Bước 1 · Chọn buổi học</h2>
+              <p className="text-muted-foreground">
+                Điểm danh cần một buổi có ngày cụ thể, ví dụ hôm nay{" "}
+                {formatDateOnly(today)}. Ô lịch hằng tuần chỉ cho biết lịch cố
+                định của lớp.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {can("view_schedule") && (
+                  <Button asChild>
+                    <Link href={href("schedule")}>Chọn buổi học theo ngày</Link>
+                  </Button>
+                )}
+                {can("edit_schedule") && (
+                  <ClassMeetingDialog
+                    classId={classId}
+                    teacherName={cls.teacher_name ?? ""}
+                    today={today}
+                    createLabel="Tạo buổi để điểm danh"
+                  />
+                )}
+              </div>
+              <p className="text-muted-foreground">
+                {can("edit_schedule")
+                  ? "Chưa có buổi? Tạo buổi, lưu rồi chọn buổi đó. Sau đó chọn trạng thái từng học viên ở bước 2."
+                  : "Nếu chưa có buổi để chọn, nhờ quản lý tạo buổi học theo ngày cho lớp."}
+              </p>
+            </div>
           )}
           {meeting && result.stats && (
             <p className="mt-2">
@@ -380,7 +464,9 @@ export function ClassWorkspaceContent({
       )}
       {filters.tab === "students" && can("mark_attendance") && (
         <p className="text-muted-foreground mb-4 text-xs">
-          Đã học gồm có mặt, đi muộn và học bù của buổi đã kết thúc. Nghỉ và buổi chưa điểm danh không tính là đã học; buổi hủy không tính. Còn lại theo số buổi đăng ký, không tự trừ học phí.
+          Đã học gồm có mặt, đi muộn và học bù của buổi đã kết thúc. Nghỉ và
+          buổi chưa điểm danh không tính là đã học; buổi hủy không tính. Còn lại
+          theo số buổi đăng ký, không tự trừ học phí.
         </p>
       )}
       {filters.tab === "tuition" && result.stats && (
@@ -406,7 +492,7 @@ export function ClassWorkspaceContent({
           </p>
         </div>
       )}
-      {filters.tab === "attendance" && (
+      {filters.tab === "attendance" && meeting && (
         <div
           className="mb-4 grid gap-3 md:hidden"
           aria-label="Điểm danh trên điện thoại"
@@ -441,7 +527,8 @@ export function ClassWorkspaceContent({
           ))}
         </div>
       )}
-      {["students", "attendance", "tuition"].includes(filters.tab) && (
+      {(["students", "tuition"].includes(filters.tab) ||
+        (filters.tab === "attendance" && !!meeting)) && (
         <div
           className={`bg-card overflow-x-auto rounded-xl border ${filters.tab === "attendance" ? "hidden md:block" : ""}`}
         >
@@ -496,13 +583,28 @@ export function ClassWorkspaceContent({
                       <td className="p-3">
                         {s.session_summary ? (
                           <div className="min-w-44 space-y-1 text-xs">
-                            <p>Đăng ký: {s.registered_sessions ?? "Chưa nhập"}</p>
+                            <p>
+                              Đăng ký: {s.registered_sessions ?? "Chưa nhập"}
+                            </p>
                             <p>Đã học: {s.session_summary.attended}</p>
-                            <p>Nghỉ có phép: {s.session_summary.excused} · Không phép: {s.session_summary.absent}</p>
-                            <p>Học bù: {s.session_summary.makeup} (đã tính trong đã học)</p>
-                            <p className="font-semibold">{s.session_summary.remaining !== null && s.session_summary.remaining < 0 ? `Vượt đăng ký: ${-s.session_summary.remaining}` : `Còn lại: ${s.session_summary.remaining ?? "Chưa xác định"}`}</p>
+                            <p>
+                              Nghỉ có phép: {s.session_summary.excused} · Không
+                              phép: {s.session_summary.absent}
+                            </p>
+                            <p>
+                              Học bù: {s.session_summary.makeup} (đã tính trong
+                              đã học)
+                            </p>
+                            <p className="font-semibold">
+                              {s.session_summary.remaining !== null &&
+                              s.session_summary.remaining < 0
+                                ? `Vượt đăng ký: ${-s.session_summary.remaining}`
+                                : `Còn lại: ${s.session_summary.remaining ?? "Chưa xác định"}`}
+                            </p>
                           </div>
-                        ) : "—"}
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     </>
                   ) : filters.tab === "attendance" ? (
@@ -639,32 +741,54 @@ export function ClassWorkspaceContent({
           </div>
         </>
       )}
-      {filters.tab === "assessments" && can("view_assessments") && <AssessmentsPanel key={classId} classId={classId} today={today} canGrade={can("grade_assessments")} />}
-      {filters.tab === "monthly_comments" && can("view_comments") && <MonthlyCommentsPanel key={classId} classId={classId} today={today} canWrite={can("write_comments")} canShare={can("share_monthly_comments")} />}
-      {!result.rows.length && !["schedule", "assessments", "monthly_comments"].includes(filters.tab) && (
-        <p className="text-muted-foreground py-8 text-center">
-          Chưa có dữ liệu phù hợp trong mục{" "}
-          {CLASS_TABS[filters.tab].toLowerCase()}.
-        </p>
+      {filters.tab === "assessments" && can("view_assessments") && (
+        <AssessmentsPanel
+          key={classId}
+          classId={classId}
+          today={today}
+          canGrade={can("grade_assessments")}
+        />
       )}
-      {!["schedule", "assessments", "monthly_comments"].includes(filters.tab) && <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">
-        <p>
-          {result.total} kết quả · Trang {filters.page + 1}/
-          {Math.max(1, Math.ceil(result.total / 25))}
-        </p>
-        <div className="flex gap-3">
-          {filters.page > 0 && (
-            <Link href={href(filters.tab, filters.page - 1, filters.meeting)}>
-              Trang trước
-            </Link>
-          )}
-          {(filters.page + 1) * 25 < result.total && (
-            <Link href={href(filters.tab, filters.page + 1, filters.meeting)}>
-              Trang sau
-            </Link>
-          )}
+      {filters.tab === "monthly_comments" && can("view_comments") && (
+        <MonthlyCommentsPanel
+          key={classId}
+          classId={classId}
+          today={today}
+          canWrite={can("write_comments")}
+          canShare={can("share_monthly_comments")}
+        />
+      )}
+      {!result.rows.length &&
+        !["schedule", "assessments", "monthly_comments"].includes(
+          filters.tab,
+        ) && (
+          <p className="text-muted-foreground py-8 text-center">
+            Chưa có dữ liệu phù hợp trong mục{" "}
+            {CLASS_TABS[filters.tab].toLowerCase()}.
+          </p>
+        )}
+      {!["schedule", "assessments", "monthly_comments"].includes(
+        filters.tab,
+      ) && (
+        <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">
+          <p>
+            {result.total} kết quả · Trang {filters.page + 1}/
+            {Math.max(1, Math.ceil(result.total / 25))}
+          </p>
+          <div className="flex gap-3">
+            {filters.page > 0 && (
+              <Link href={href(filters.tab, filters.page - 1, filters.meeting)}>
+                Trang trước
+              </Link>
+            )}
+            {(filters.page + 1) * 25 < result.total && (
+              <Link href={href(filters.tab, filters.page + 1, filters.meeting)}>
+                Trang sau
+              </Link>
+            )}
+          </div>
         </div>
-      </div>}
+      )}
     </NavigationContext.Provider>
   );
 }

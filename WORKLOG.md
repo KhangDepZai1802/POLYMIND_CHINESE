@@ -38,6 +38,22 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> RELEASE-20261023-B2C — cổng phát hành đạt — Codex — 2026-10-23. User yêu cầu đẩy GitHub; fetch/fast-forward13commit origin/main, ghép docs và giữ shared invalidation mới. Lint/typecheck/build và194files1099/1099tests đạt;59file staged không secret literal, diff-check đạt. Commit/push main theo user, SHA/remote kết quả báo trong chat. Giữ script inspect ngoài commit; chưa xác minh deployment online.
+
+> B2C-CENTER-STUDENT-DATA-1 — hoàn thành local và quyền cloud — Codex — 2026-10-23. Hai cô có Học viên/bổ sung nguồn/SĐT/người chốt/ngày/hạn phí toàn trung tâm và tạo lớp; đầy đủ6nhóm quyền kiểm dưới từng account. SQL06 exact-history/rollback tests; lint/typecheck/build và1056tests đạt.58HV60ghi danh động, không sửa dữ liệu thật/commit/push/deploy online.
+
+> B2C-TEACHER-PARENTS-ALL-1 — hoàn thành local và SQL cloud — Codex — 2026-10-23. Mọi GV B2C active có menu Phụ huynh, thêm/sửa SĐT/Zalo/email/liên kết con; danh sách động, không cố định33. SQL05 exact-history/rollback tests,9tài khoản active allowed; lint/typecheck/build và1052tests đạt. Không sửa liên hệ thật/commit/push/deploy online.
+
+> B2C-TEACHER-ENROLLMENT-ALL-1 — hoàn thành local và SQL cloud — Codex — 2026-10-23. User mở thêm học viên/ghi danh cho mọi giáo viên liên kết B2C active, gồm tài khoản mới; nút Lớp của tôi. SQL04 exact-history/rollback tests;9tài khoản thật allowed. Lint/typecheck/build và1047tests đạt. Không nhập học viên thật/commit/push/deploy online.
+
+> B2C-CENTER-TUITION-TEACHERS-1 — hoàn thành local và quyền cloud — Codex — 2026-10-23. Menu Học phí cho hai cô, đủ60ghi danh, nhập gói/phiếu thu; quyền riêng toàn trung tâm, giữ quyền cũ. SQL03 exact-history/rollback tests đạt, lint/typecheck/build và1044tests đạt. Chưa commit/push/deploy/QA browser thực tế;60ghi danh0gói0phiếu giữ nguyên.
+
+> B2C-ADMISSIONS-DELETE-1 — hoàn thành local và SQL cloud — Codex — 2026-10-23. Nút X Pipeline/Danh sách, xác nhận tên khách, lưu trữ có actor và giữ lịch sử. SQL02 exact-history/integration rollback đạt; lint/typecheck/build và1040tests đạt. Dev3000 HTTP200, không xóa khách thật/commit/push/deploy online.
+
+> B2C-ADMISSIONS-TEACHERS-1 — hoàn thành code local và quyền cloud — Codex — 2026-10-23. Menu/trang Tuyển sinh cho GV có manage_admissions; đã cấp cô Lê/cô Thy, giữ quyền cũ/1 khách. Build/typecheck/lint đạt, 1037 tests; chưa commit/push/deploy giao diện.
+
+> B2C-ATTENDANCE-CLARITY-1 — hoàn thành local — Codex — 2026-10-22. Hai bước chọn/tạo buổi rồi điểm danh; buổi theo ngày hiện trước lịch tuần, luôn mở. Lint/typecheck/build đạt, 1033/1033 tests. Không DB/migration/commit/push; chưa QA trình duyệt/online.
+
 > SALEWORK-NOTES-6-RELEASE — Codex — 2026-10-21. User yêu cầu dừng test, đẩy GitHub. Code cuối lint/typecheck/build và187files1074tests đã đạt; SQL04 production/history và rollback RLS đạt; Edge local ghi chú/ảnh bỏ tai nghe/copy9:16/popup/mobile đạt. Phát hành10file task, giữ4file dirty ngoài scope; không kiểm thử thêm.
 
 > SALEWORK-NOTES-6 — đang làm — Codex — 2026-10-21. User bổ sung ô ghi chú lưu theo người/ngày và hiện trên ảnh, đồng thời bỏ tai nghe. Giữ thẻ HTML; thêm migration notes tối đa500ký tự và quyền cũ.
@@ -920,6 +936,22 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- RELEASE-20261023-B2C-QA: sau push, xác minh deploy và hai cô dùng các menu Tuyển sinh/Học viên/Học phí/Phụ huynh/Tạo lớp; mọi GV B2C có Thêm học viên/Phụ huynh. Chưa chạy QA browser production, không nhập dữ liệu thật chỉ để kiểm thử.
+
+- B2C-CENTER-STUDENT-DATA-1-QA: hai cô F5 local → Học viên → tìm theo bé/lớp/GV → Bổ sung. Các mục Tuyển sinh/Học phí/Phụ huynh giữ quyền; Tạo lớp tự phân công cho người tạo. Không tự đoán liên hệ/ngày học của danh sách user nêu. Chưa phát hành giao diện online.
+
+- B2C-TEACHER-PARENTS-ALL-1-QA: F5 local → Phụ huynh → Sửa để bổ sung SĐT/Zalo hoặc Thêm phụ huynh. Nhập dữ liệu thực khi có; giao diện online chưa phát hành.
+
+- B2C-TEACHER-ENROLLMENT-ALL-1-QA: F5 local → Lớp của tôi → Thêm học viên → chọn lớp/tạo mới hoặc chọn hồ sơ có sẵn. Giao diện online chưa phát hành; không tạo học viên thật chỉ để QA.
+
+- B2C-CENTER-TUITION-TEACHERS-1-QA: cô Thy/cô Lê F5 local → Học phí → Tạo/sửa gói (số buổi/đơn giá) → Phiếu thu (số tiền/ngày đóng), nhập số liệu thực tế. Chưa phát hành giao diện online.
+
+- B2C-ADMISSIONS-DELETE-1-QA: user F5 Tuyển sinh local, bấm X và xác nhận khi thực sự muốn bỏ khách. Chưa phát hành giao diện online; không tự xóa khách thật để thử.
+
+- B2C-ADMISSIONS-TEACHERS-1-QA: phát hành code theo yêu cầu user, rồi QA menu/nhập khách trên hai tài khoản. Quyền cloud đã cấp; giao diện online chưa phát hành.
+
+- B2C-ATTENDANCE-CLARITY-1-QA: xem trang/popup lớp trên điện thoại, chọn/tạo buổi theo ngày rồi điểm danh; chưa phát hành online.
+
 **B2C-TEACHER-SAVE-VISIBILITY-1-QA:** sau phát hành, giáo viên nhập nghiệp vụ thực và admin tải lại trang tương ứng để xem; kiểm camera/browser thật riêng. Full1059/1059tests với1worker/lint/typecheck/build đều đạt. Không cần thêm gửi/duyệt. Cả8GV hiện không có quyền nhập điểm; chỉ admin quyết định cấp, không tự đổi quyền khi audit.
 
 **B2C-WEEKLY-CHECKIN-2-RELEASE:** cần xử lý lỗi full test ngoài scope hoặc user cho phép ngoại lệ D-44 trước commit/push bản sửa chấm công. DB đã có migration mới, giao diện còn local. Không replay/repair16gaps history cũ. Khi phát hành chỉ stage file task, giữ nguyên4file thay đổi sẵn của user.
@@ -1350,6 +1382,20 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- RELEASE-20261023-B2C-HISTORY: đã đồng bộ4migration20261021 từ GitHub, không còn remote-only4; dry-run hiện chỉ báo16gap history20261012–14 cũ. Không include-all/replay/repair; SQL20261023000001–06 đã áp cloud và exact-history ở các task. Không có DB mutation trong release này.
+
+- B2C-CENTER-STUDENT-DATA-1-HISTORY: SQL20261023000006 áp riêng/exact-history/integration rollback đạt; dry-run trước/sau vẫn bị4remote-only20261021 cũ chặn. Không repair/replay; chưa thể xác nhận toàn bộ remote up-to-date.
+
+- B2C-TEACHER-PARENTS-ALL-1-HISTORY: SQL20261023000005 áp riêng, exact-history/integration rollback đạt. Dry-run trước/sau còn4remote-only20261021 như trước; không repair/replay, chưa thể xác nhận toàn bộ remote up-to-date.
+
+- B2C-TEACHER-ENROLLMENT-ALL-1-HISTORY: SQL20261023000004 áp riêng và xác minh exact-history/integration rollback đạt. Dry-run trước/sau vẫn báo4remote-only20261021 cũ; không repair/replay, chưa thể xác nhận toàn bộ remote up-to-date.
+
+- B2C-CENTER-TUITION-TEACHERS-1-HISTORY: SQL20261023000003 đã áp riêng và xác minh exact-history/integration rollback; dry-run trước/sau vẫn bị4remote-only20261021 cũ chặn. Không repair/replay; chưa thể xác nhận toàn bộ remote up-to-date.
+
+- B2C-ADMISSIONS-DELETE-1-HISTORY: SQL20261023000002 đã áp riêng/exact-history/rollback tests đạt; dry-run trước/sau vẫn bị4remote-only20261021 chặn như phiên trước. Không repair/replay; chưa xác nhận toàn bộ remote up-to-date.
+
+- B2C-ADMISSIONS-TEACHERS-1-HISTORY: dry-run trước/sau bị chặn bởi remote-only 20261021000001–000004. Chỉ áp SQL20261023000001 trong transaction riêng và ghi history, verify exact SQL và integration rollback đạt; không repair/replay migration khác. Không thể xác nhận toàn bộ remote up-to-date.
+
 > **BIKEFORCE-SALEWORK-SYNC-1 (2026-10-21):** linked project ref cũ vẫn lỗi, nhưng migration `20261021000002` đã áp trực tiếp bằng `SUPABASE_DB_URL` trong transaction và ghi exact history production. Còn smoke request đúng key cần khóa thô phía BikeForce/Vercel; không đọc ngược được secret từ Vercel.
 
 - **B2C-WEEKLY-CHECKIN-2-RELEASE (2026-10-21):** typecheck/build và12tests chấm công đạt; full suite không xanh. `wrong-answer-review.test.tsx` không thấy “Bạn đã ôn xong”, tái hiện khi chạy riêng, code/test module này không đổi so với HEAD. `b2c-student-dashboard.test.tsx` timeout5000ms cả khi chạy riêng; certificate timeout ở full suite nhưng chạy riêng đạt. Theo D-44 không tự commit/push khi full test đỏ. Cloud đã áp riêng SQL20261021000001 và xác minh history/RPC cole; dry-run trước/sau còn16gaps cũ, không replay/repair hoặc tuyên bố toàn remote up-to-date. Chưa QA camera/browser thật.
@@ -1486,6 +1532,18 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-23] Codex — RELEASE-20261023-B2C
+- User yêu cầu đẩy GitHub. Fetch phát hiện13commit mới (9150779→f668889); stash dự phòng local, fast-forward main, apply lại và ghép5conflict docs/tuition. Giữ shared revalidateB2CViews từ upstream và toàn bộ SaleWork/chấm công mới. Không force-push.
+- Bundle59file: quyền/menu Tuyển sinh/Học viên/Học phí/Phụ huynh, thêm học viên GV B2C/tạo lớp hai cô, lưu trữ khách,6migration/tests/scripts và cải thiện chọn buổi điểm danh đã có local. Không stage script inspect-cole-meetings ngoài scope.
+- Sau ghép: lint/typecheck/build exit0;194files1099/1099tests đạt; staged secret-literal scan0, diff-check đạt. Chỉ docs thay sau cổng. Dry-run còn16gap history cũ, không còn4remote-only20261021, không replay/repair/DB mutation.
+- Commit/push theo yêu cầu user; SHA/remote xác minh báo trong chat. Chưa xác minh deployment hoặc QA browser production. Next: RELEASE-20261023-B2C-QA.
+
+### [2026-10-23] Codex — B2C-CENTER-STUDENT-DATA-1
+- User yêu cầu hai cô nhập đủ7nhóm thông tin. Bổ sung quyền opt-in manage_center_student_data và trang/menu Học viên, tìm mã/tên/SĐT/lớp/GV,50ghi danh/trang, tổng/distinctHV thật; dialog nguồn/referrer/phone/người chốt/ngày nhập học/bắt đầu/hạn phí. Cho giữ thông tin chưa biết trống, không ép số/ngày giả; kiểm10chữsố/referral/date/stale student+enrollment timestamps; không đổi trạng thái/tiền/lớp bằng RPC này.
+- SQL20261023000006 cloud exact-history/integration rollback đạt. Cấp đúng cô Lê/cô Thy manage_center_student_data và create_classes (view_classes), giữ quyền cũ và audit admin user đã xác nhận. Cả hai read-only có admissions/data/tuition/parents/add_student/create_class=true,58HV60ghi danh. Không sửa hồ sơ thật, số điện thoại dùng chung/thiếu0 chờ xác nhận.
+- Lint/typecheck/build đạt,190files1056/1056tests. Typecheck đầu lỗi nonnull assertion trong test mới, đã sửa và typecheck/lint chạy lại đạt; build app đạt. Local/login HTTP200. Chưa QA browser thực tế/commit/push/deploy online. Dry-run4remote-only20261021 cũ, không repair/replay.
+- Next: B2C-CENTER-STUDENT-DATA-1-QA, hai cô F5 và nhập thông tin đã xác nhận qua Học viên/Tuyển sinh/Học phí/Phụ huynh/Tạo lớp.
+
 ### [2026-10-21] Codex — SALEWORK-NOTES-6
 - Ô ghi chú tùy chọn500ký tự, tải/lưu theo người/ngày và quyền báo cáo cũ. Ảnh bỏ tai nghe, khung ghi chú dùng nội dung nhập; trạng thái lưu riêng, auto-wrap/fit giữ9:16. Không đưa canvas trở lại UI.
 - SQL20261021000004 áp production và exact-history đã xác minh. CLI dry-run bị16gaps lịch sử cũ nên không include-all; áp đúng SQL mới. Test SQL rollback own read/write/default/length/cross-read/update deny đạt, fixture0.
@@ -1502,65 +1560,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ### [2026-10-21] Codex — SALEWORK-COPY-POPUP-3
 - Thay thông báo sao chép inline bằng toast.success nổi 4 giây, lỗi dùng toast.error. Dùng Toaster top-center có sẵn; không thay layout hoặc dữ liệu.
 - Edge local xác minh popup nằm trong viewport sau hiệu ứng, clipboard PNG1080×1920, tải PNG/mobile390/0pageerror. Lint/typecheck/build đạt;187files1074tests đạt. Next: phát hành và kiểm production theo yêu cầu tiếp tục cập nhật website.
-
-### [2026-10-21] Codex — SALEWORK-REPORT-IMAGE-2
-- User đổi yêu cầu: chỉ nhãn Báo cáo, bỏ dòng BikeForce đồng bộ, sao chép hình ảnh 9:16.
-- UI và link đổi nhãn; createImage dùng chung PNG1080×1920 cho ClipboardItem và tải ảnh, xử lý trình duyệt không hỗ trợ/từ chối. Giữ ngày/người/chỉ số/trạng thái nháp.
-- Lint/typecheck/build đạt,187files1074tests đạt. Edge local clipboard đọc lại image/png1080×1920, tải PNG và xem ảnh tiếng Việt, mobile390 không tràn/0pageerror. Không ghi số liệu thử; không DB/migration. Auto-review từ chối commit+push main do cần user xác nhận riêng lần phát hành, dù D-44 ghi tự phát hành. Chưa commit/push/deploy; next user xác nhận phát hành; giữ4file dirty ngoài scope.
-
-### [2026-10-21] Codex — SALEWORK-DAILY-REPORT-1
-- User chốt tiền thực thu, yêu cầu gửi SQL tự chạy; SQL20261021000003 đã được user áp production, hai mappings cole/cothy đúng và RLS bật.
-- Bổ sung /teacher/salework và /admin/b2c/salework, link từ home GV và admin Giáo viên. Mỗi cô chỉ nhập/sửa số liệu của mình; admin xem. Số khách, tiền thực thu VNĐ, số khóa theo người/ngày, upsert thay số. Snapshot BikeForce đúng ngày; thiếu không coi là0. Copy văn bản và PNG tiếng Việt có nhãn bản nháp khi chưa lưu.
-- SQL integration rollback dưới cole/cothy/admin/anon: own-upsert, IDOR đọc/ghi, future/negative validation, manager read-only và anon deny đạt; không giữ fixture. Typecheck/lint/build đạt,3unit mới đạt. Edge local đăng nhập cothy, snapshot thật11hội thoại, copy và PNG1200x1120 đạt; mobile390 không tràn,0pageerror. Chưa kiểm browser production hoặc admin browser thật tại thời điểm log.
-- Giữ4file dirty có trước. Release chỉ file báo cáo; không thay snapshot BikeForce hoặc quyền module khác.
-
-### [2026-10-21] Codex — BIKEFORCE-SALEWORK-SYNC-1
-- **Làm được:** thêm `POST /api/integrations/bikeforce/salework`, xác thực constant-time bằng header `x-api-key`; payload chỉ nhận `co-le`/`co-thy`, ngày ISO và object snapshot, không có/không nhận mã Telesale.
-- **Migration/data impact:** bảng RLS `bikeforce_salework_snapshots`, PK `(person_slug, work_date)`; RPC chỉ `service_role`, `ON CONFLICT` thay toàn bộ snapshot và cập nhật thời điểm nhận. Migration đã áp local, chưa áp cloud do linked tenant lỗi.
-- **Đã test:** pgTAP 8/8; unit tập trung 7/7; lint/typecheck/build exit0; full Vitest 186 files, 1066/1066 tests. Build liệt kê đúng route API.
-- **Blocker/rủi ro:** cần sửa Supabase project link/credential, push migration và đặt secret production `BIKEFORCE_API_KEY` tối thiểu 32 ký tự trước khi BikeForce gọi URL production.
-- **Next action:** deploy migration + app sau khi project link hoạt động, gửi URL domain production và API key qua kênh bí mật cho BikeForce.
-
-### [2026-10-21] Codex — B2C-TEACHER-SAVE-VISIBILITY-1
-- **Yêu cầu:** user xác nhận giáo viên B2C lưu vào hệ thống thì admin thấy; không luồng gửi/nhận/duyệt.
-- **Audit:** cloud8GV có account/profileactive và mapping hợp lệ,19lớp active không mồ côi. Đọc6nhóm dữ liệu của19lớp dưới authenticated identity của GV phụ trách đều đạt. Không cập nhật hồ sơ thật, quyền hay mật khẩu. Cả8chưa có view/grade_assessments, giữ cấu hình này.
-- **Fix:** revalidateB2CViews invalidates hai layout admin/teacher sau RPC ghi thành công; chuẩn hóa workspace, hồ sơ/lớp, lịch, nhận xét tháng/điểm, học phí/phiếu thu và chấm công. Admin đọc dữ liệu mới khi mở/tải lại màn tương ứng, không realtime. Giữ4file dirty có trước.
-- **Test:**11/11DBassertion rollback cùng fixture quyền hiện có, chứng minh admin đọc dữ liệu teacher save gồm drafttháng/2phiếu thu/điểm/actor.22/22unit của11luồng lưu success/failure đạt. Lint/typecheck/build exit0;full185files1059/1059tests bằng `npm test -- --maxWorkers=1 --reporter=dot` đạt. Không migration, không dữ liệu thử còn lại. Fetch origin xác nhận HEAD=origin/main trước release.
-- **Next:** commit/push bản sửa theo D-44 sau cổng xanh; SHA/remote báo trong chat. Kiểm thử browser thật sau phát hành và admin tự quyết định quyền nhập điểm. Không tự tuyên bố Verified/deployed.
-
-### [2026-10-21] Codex — B2C-WEEKLY-CHECKIN-2
-- **Làm được:** đồng bộ lịch tuần hôm nay sang chấm công bằng read-only fallback, ưu tiên buổi theo ngày/hủy. Materialize chỉ khi mở check-in, server đọc giờ/phân công hiện tại; giữ ảnh, giá null, idempotency, khóa và unique. UI tự mở/khóa theo giờ; DB check-in từ15phút trước start đến trước end trong cùng ngày. Check-out giữ sau end đến hết ngày.
-- **Migration:** SQL20261021000001 áp cloud bằng transaction riêng kèm exact history; không áp16migration cũ thiếu history. RPC dưới authenticated identity cole trả Starter Hero21/10/2026 18:00–19:30, can_start=false buổi sáng; không tạo chấm công thật cho cô. Fixtures DB đều rollback.
-- **Đã kiểm tra:** 28/28DB mới,28/28regression unpriced,12/12unit chấm công; lint/typecheck/build đạt. Full test có lỗi cũ ngoài phạm vi, chạy riêng vẫn lỗi wrong-answer-review và timeout student-dashboard; certificate chạy riêng đạt. Lint toàn repo chạy lại exit0 sau xóa script chẩn đoán tạm (lượt đầu chỉ lỗi require trong script tạm đã xóa).
-- **Bàn giao:** code/dữ liệu yêu cầu đã sửa nhưng chưa commit/push vì D-44 yêu cầu test xanh. Next B2C-WEEKLY-CHECKIN-2-RELEASE: xử lý cổng kiểm thử hoặc user cho phép ngoại lệ rõ ràng. Giữ nguyên4file dirty có từ trước. Chưa QA browser/camera hoặc deploy giao diện.
-
-### [2026-10-19] Codex — LISTENING-BANK-1
-- /nghe chia hai lớp, Học viện lãnh đạo giữ bài 3–4 và route/audio cũ. Tiếng Trung ngân hàng có bốn bài 7–10 từ Word, 82 mục từ vựng, ngữ pháp/hội thoại; đối chiếu 959 đoạn nguồn không thiếu. File Word không có audio.
-- Thay đổi: trang chọn lớp, trang danh sách và bài ngân hàng, bank-lessons.json, ListeningShell và docs. Không DB/migration, không commit/push.
-- Kiểm tra: lint/typecheck/build đạt; 183 file, 1031/1031 tests đạt. Browser Edge 10 route HTTP200, hai nút lớp, mobile390 không tràn ngang.
-- Next: user xem /nghe; bổ sung audio khi được cung cấp.
-
-### [2026-10-17] Codex — RELEASE-20261017-DASHBOARDS
-- User yêu cầu đưa code GitHub: giao diện Giáo viên/Báo cáo theo ảnh,3popup tiền học phí và regressions/docs/QAboard. Không DB/migration/quyền mới.
-- Fetch main trước release=HEAD, rà12files không environment secret literal/private key; diff-check đạt. Code mới nhất lint/typecheck/build exit0,183files1031/1031tests; chỉ cập nhật log sau checks.
-- Commit/push theo user; kết quả SHA/remote xác minh báo trong chat. Chưa xác minh deployment online hoặc QA browser độc lập.
-
-### [2026-10-17] Codex — B2C-REPORT-DESIGN-1
-- Theo ảnh:4KPI xanh lá/xanh/cam/hồng/icon trái/nền trang trí, calendar kỳ báo cáo, chương trình avatar5màu/cột màu/sort thật, chi phí icon từng dòng/tổng nền xanh/lương cũ cam, editbar icon/chevron. Không viền trên dày/sidebar/logo.
-- Giữ tổng/công thức/chọn tháng/trend/chi phí null/ghi chú/form lưu cũ. Nền SVG chỉ trang trí không biểu diễn số liệu giả. Bảng mobile outer scroll/inner minwidth để không cắt nội dung. Không DB/API hoặc tự lấy CRM. File monthly-report-dashboard/test/docs04/08/WORKLOG.
-- Lint/typecheck/build exit0;183files1031/1031tests, có regression số liệu/sort và giữ biểu mẫu. Build lại bản cuối sau chỉnh minwidth mobile, không thay logic sau tests. Dev restartlocalhost3000; chưa QA browser độc lập/commit/push/deploy bản này. Next xem Báo cáo theo phản hồi user.
-
-### [2026-10-17] Codex — B2C-TUITION-CARD-POPUPS
-- User báo click thẻ tiền không mở:3card làdiv. Đổi button/focus/dialog và thêm TuitionCardList: Tổng phải thu ghi danh cógói; Đãthu thu ròng>0 gồm trảmộtphần; Cònphảithu sốdư>0. Giữ4thẻ cần xử lý hiện có. Popup khớp filter/tổng, tìm/page20/empty/gói-phiếu thu, không đổi bảng ngoài. Không DB/API/quyền mới.
-- File dashboard/cardlist/test/docs04/08/QAboard/WORKLOG. Lint/typecheck/build exit0;183files1030/1030fulltests. Lượt đầu2testfail do regex Đãthu trùng nút sort; matcher thêm sốtiền để chọncard, targeted9/9 và full chạy lại đạt, giữ expectation hành vi.
-- Dev restartlocalhost3000; QAboard Codex Fixed/Verification Not Started. Chưa QA browser độc lập/commit/push/deploy bản này. Next kiểm popup các thẻ học phí.
-
-### [2026-10-17] Codex — B2C-TEACHER-DESIGN-2
-- User muốn Giáo viên theo ảnh: đồng bộ4KPI màu xanh lá/xanh dương/vàng/tím và nềncong nhẹ, panelbo16/viềnmảnh, avatar chữcái/bảng/actiongọn. Đưa link thời khóa biểu vào cùng header tháng/chuyên môn/thêm. Giữ donut/bar/tảiExcel/print/lịch dạy/KPIpopup/filter/paging và quyền account.
-- Giá trị specialization cũ chỉ ghi B2C hiển thị Chưa cập nhật ở bảng/chart/filter/export; không ghi DB/giả chuyên môn. FilenameExcel bỏ b2c theo preference. Sửa dashboard/teacherpage/test/docs04/08/WORKLOG; không DB/sidebar/logo.
-- Lint/typecheck/build exit0;183files1024/1024fulltests, sau thêm1case nhãnlegacy/timetable chạy focused5/5 và typecheck đạt. Không cộng tests trùng. Dev restartlocalhost3000; chưa QA browser độc lập/commit/push/deploy bản này. Next kiểm trực quan Giáo viên theo phản hồi user.
-
-### [2026-10-17] Codex — RELEASE-20261017-CENTER
-- User yêu cầu commit/push GitHub. Bundle gồm lifecycle ghi danh, kiểm tra, nhận xét tháng, chứng chỉ/marketing, NPS, KPI thấp sĩ số, đổi nhãn và giao diện Tổng quan/Học phí/Phụ huynh/popup thẻ. Giữ các kiểm tra/quyền và tài liệu đi kèm.
-- Fetch origin: HEAD=origin/main trước release. Rà151file không environment secret literal/private key. Không thêm .env, ảnh dữ liệu hoặc secret. Sửa dòng trống EOF trong WORKLOG.
-- Code mới nhất lint/typecheck/build exit0,183files1024/1024tests;6SQL mới đã áp cloud/exact-history trong các task trước, không replay16gaps cũ. Không đổi code sau checks. Thực hiện commit/push theo user; kết quả SHA/remote báo trong chat, chưa xác minh deployment online.

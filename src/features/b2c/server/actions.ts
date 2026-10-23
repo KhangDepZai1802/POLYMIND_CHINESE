@@ -12,32 +12,48 @@ import {
 import { requireManager } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { B2C_CUSTOMER_SOURCES } from "@/features/b2c/domain/customer-source";
+import { requireAdmissionsAccess } from "./admissions-access";
+import { requireB2CParentAccess } from "./parent-access";
 import { permissionRpc } from "./permission-rpc";
 
+export async function archiveB2CAdmissionAction(id: string): Promise<ActionState> {
+  await requireAdmissionsAccess();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+    return { error: "Khách tuyển sinh không hợp lệ." };
+  try { await permissionRpc("archive_b2c_admission", { p_id: id }); }
+  catch (e) { return { error: e instanceof Error ? e.message : "Không xóa được khách tuyển sinh." }; }
+  revalidatePath("/admin/b2c/admissions");
+  revalidatePath("/teacher/admissions");
+  revalidatePath("/admin/b2c/today");
+  return { success: "Đã xóa khách khỏi danh sách tuyển sinh." };
+}
+
 export async function saveB2CParentAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  await requireManager();
+  await requireB2CParentAccess();
   const parsed = b2cParentSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return zodToActionState(parsed.error);
   const v = parsed.data;
   try { await permissionRpc("save_b2c_parent_with_email", { p_data: v }); }
   catch (e) { return { error: e instanceof Error ? e.message : "Không lưu được phụ huynh." }; }
   revalidatePath("/admin/b2c", "layout");
+  revalidatePath("/teacher/parents");
   return { success: "Đã lưu thông tin phụ huynh." };
 }
 
 export async function saveB2CCareLogAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const actor = await requireManager();
+  const actor = await requireAdmissionsAccess();
   const parsed = b2cCareLogSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return zodToActionState(parsed.error);
   const { error } = await (await createClient()).from("b2c_admission_care_logs").insert({ ...parsed.data, created_by: actor.id });
   if (error) return { error: dbErrorToMessage(error) };
   revalidatePath("/admin/b2c/admissions");
+  revalidatePath("/teacher/admissions");
   revalidatePath("/admin/b2c/today");
   return { success: "Đã lưu nhật ký chăm sóc." };
 }
 
 export async function getB2CCareLogsAction(leadId: string, page: number) {
-  await requireManager();
+  await requireAdmissionsAccess();
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(leadId) || !Number.isSafeInteger(page) || page < 0 || page > 1000000) return { logs: [], total: 0, error: "Bộ lọc không hợp lệ." };
   const { data, count, error } = await (await createClient()).from("b2c_admission_care_logs")
     .select("id, channel, contact_date, caretaker_name, content, next_followup_date", { count: "exact" })
@@ -48,7 +64,7 @@ export async function getB2CCareLogsAction(leadId: string, page: number) {
 }
 
 export async function saveB2CAdmissionAction(_previous: ActionState, formData: FormData): Promise<ActionState> {
-  const actor = await requireManager();
+  const actor = await requireAdmissionsAccess();
   const parsed = b2cAdmissionSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return zodToActionState(parsed.error);
   const { id, ...values } = parsed.data;
@@ -59,6 +75,7 @@ export async function saveB2CAdmissionAction(_previous: ActionState, formData: F
   if (error) return { error: dbErrorToMessage(error) };
   if (!data) return { error: "Không tìm thấy khách hoặc bạn không có quyền cập nhật." };
   revalidatePath("/admin/b2c/admissions");
+  revalidatePath("/teacher/admissions");
   return { success: id ? "Đã cập nhật khách tuyển sinh." : "Đã thêm khách tuyển sinh." };
 }
 

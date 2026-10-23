@@ -1,3 +1,4 @@
+import { permissionRpc } from "@/features/b2c/server/permission-rpc";
 import { Suspense } from "react";
 
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -38,6 +39,18 @@ export default async function DashboardLayout({
 
   // Chỉ tốn round-trip với giáo vụ — hàm tự trả false ngay cho ba role kia.
   const showAssignedClassesBranch = await hasAssignedClasses(user);
+  const canManageAdmissions = user.role === "teacher"
+    ? await permissionRpc<boolean>("has_b2c_permission", { p_key: "manage_admissions" }).catch(() => false)
+    : false;
+  const canManageStudentData = user.role === "teacher"
+    ? await permissionRpc<boolean>("has_b2c_permission", { p_key: "manage_center_student_data" }).catch(() => false)
+    : false;
+  const canManageB2CParents = user.role === "teacher"
+    ? await permissionRpc<boolean>("can_manage_b2c_parents").catch(() => false)
+    : false;
+  const canManageCenterTuition = user.role === "teacher"
+    ? await permissionRpc<boolean>("has_b2c_permission", { p_key: "manage_center_tuition" }).catch(() => false)
+    : false;
 
   return (
     <ConfirmationProvider>
@@ -56,6 +69,10 @@ export default async function DashboardLayout({
           <SidebarNav
             role={user.role}
             hasAssignedClasses={showAssignedClassesBranch}
+            canManageAdmissions={canManageAdmissions}
+            canManageCenterTuition={canManageCenterTuition}
+            canManageB2CParents={canManageB2CParents}
+            canManageStudentData={canManageStudentData}
           />
         </div>
 
@@ -72,6 +89,10 @@ export default async function DashboardLayout({
               <MobileNav
                 role={user.role}
                 hasAssignedClasses={showAssignedClassesBranch}
+            canManageAdmissions={canManageAdmissions}
+            canManageCenterTuition={canManageCenterTuition}
+            canManageB2CParents={canManageB2CParents}
+            canManageStudentData={canManageStudentData}
               />
               {isManagerRole(user.role) && <ModuleSwitcher role={user.role} />}
               <Logo height={28} priority />
