@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,43 @@ export function TeachingCheckpoint({
   const [error, setError] = useState("");
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [pendingLocation, setPendingLocation] = useState<CheckpointLocation | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraOpen(false);
+  }
+  useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
+  async function openCamera() {
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      requestAnimationFrame(() => { if (videoRef.current) { videoRef.current.srcObject = stream; void videoRef.current.play(); } });
+    } catch {
+      setError("Không mở được camera. Hãy cấp quyền camera cho trình duyệt hoặc chọn ảnh có sẵn.");
+    }
+  }
+  async function takePhoto() {
+    const video = videoRef.current;
+    if (!video?.videoWidth || !video.videoHeight) return setError("Camera chưa sẵn sàng. Vui lòng thử lại.");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) return setError("Không chụp được ảnh trên thiết bị này.");
+    context.drawImage(video, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) return setError("Không tạo được ảnh chụp.");
+    setFile(new File([blob], `check-${kind}-${Date.now()}.jpg`, { type: "image/jpeg" }));
+    setPendingPhoto(null);
+    setPendingLocation(null);
+    stopCamera();
+  }
   async function submit() {
     if (!file) return;
     setBusy(true);
@@ -106,19 +143,13 @@ export function TeachingCheckpoint({
       <Label htmlFor={`photo-${id}`}>
         Ảnh {kind === "in" ? "check-in" : "check-out"}
       </Label>
-      <Input
-        id={`photo-${id}`}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="environment"
-        disabled={busy}
-        onChange={(e) => {
-          setFile(e.target.files?.[0] ?? null);
-          setPendingPhoto(null);
-          setPendingLocation(null);
-          setError("");
-        }}
-      />
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" disabled={busy || cameraOpen} onClick={() => void openCamera()}><Camera className="size-4" aria-hidden />Mở camera</Button>
+        <Label htmlFor={`photo-${id}`} className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-medium"><ImagePlus className="size-4" aria-hidden />Chọn ảnh có sẵn</Label>
+        <Input id={`photo-${id}`} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPendingPhoto(null); setPendingLocation(null); setError(""); stopCamera(); }} />
+      </div>
+      {cameraOpen && <div className="space-y-2 rounded-lg border p-2"><video ref={videoRef} playsInline muted className="aspect-video w-full rounded-md bg-black object-cover" /><div className="flex gap-2"><Button type="button" size="sm" onClick={() => void takePhoto()}><Camera className="size-4" aria-hidden />Chụp ảnh</Button><Button type="button" size="sm" variant="outline" onClick={stopCamera}>Đóng camera</Button></div></div>}
+      {file && !cameraOpen && <p className="text-xs text-emerald-700 dark:text-emerald-300">Đã có ảnh: {file.name}</p>}
       <Button size="sm" disabled={busy || !file} onClick={() => void submit()}>
         {busy ? "Đang ghi nhận…" : kind === "in" ? "Check-in" : "Check-out"}
       </Button>

@@ -39,6 +39,11 @@ export type TeacherB2CMeetingToday = {
   ends_at: string;
   room_name: string;
   status: string;
+  teaching_session_id?: string | null;
+  check_in_at?: string | null;
+  check_out_at?: string | null;
+  student_count?: number;
+  attendance_marked?: number;
 };
 export async function getMyB2CToday() {
   await requireTeaching();

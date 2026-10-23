@@ -63,6 +63,7 @@ export default async function TeacherDashboardPage() {
       meetings={b2cMeetings.rows}
       todayCount={todayCount}
       canMarkB2CAttendance={b2cPermissions.includes("mark_attendance")}
+      canCheckB2CTeaching={b2cPermissions.includes("check_teaching")}
     />
     </>
   );
