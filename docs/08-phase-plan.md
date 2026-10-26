@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — 2026-10-26
+
+- [x] Admin Giờ dạy & Lương có Xóa buổi dạy, xác nhận/lý do và loại khỏi tổng công; giữ ảnh/lịch/điểm danh và audit.
+- [x] Ảnh check-in/out hiện thumbnail, popup xem lớn; giáo viên/giáo vụ không thấy nút xóa. 7tests UI/page đạt; typecheck/build đạt. SQL02 cloud/history/integration rollback đạt; không xóa buổi thật.
+- [ ] Full test/lint và QA browser/deployment; hiện vẫn lỗi chấm công có sẵn đã ghi ở task trước.
+
+
 ## B2C-CENTER-DELETE-1 — 2026-10-26
 
 - [x] Bổ sung xóa Phụ huynh/Học viên/Gói học phí, mở hủy/hoàn phiếu thu theo quyền riêng; dialog xác nhận/lý do, giữ dữ liệu lịch sử.

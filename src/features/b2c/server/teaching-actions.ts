@@ -5,10 +5,20 @@ import {
   teachingSessionSchema,
   checkpointSchema,
 } from "@/features/b2c/teaching-schema";
-import { requireManager, requireTeaching } from "@/lib/auth/session";
+import { requireManager, requireTeaching, requireRole } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { permissionRpc } from "./permission-rpc";
 import { zodToActionState, type ActionState } from "@/lib/action-state";
+export async function archiveTeachingSessionAction(input: unknown) {
+  await requireRole("super_admin");
+  const parsed = z.object({ id: z.uuid(), reason: z.string().trim().min(1).max(1000) }).safeParse(input);
+  if (!parsed.success) return { error: "Chọn buổi dạy và nhập lý do xóa." };
+  try {
+    await permissionRpc("archive_b2c_teaching_session", { p_id: parsed.data.id, p_reason: parsed.data.reason });
+    revalidateB2CViews();
+    return { success: true };
+  } catch (e) { return { error: e instanceof Error ? e.message : "Không xóa được buổi dạy." }; }
+}
 export async function reverseGeocodeCheckpoint(
   latitude: number,
   longitude: number,

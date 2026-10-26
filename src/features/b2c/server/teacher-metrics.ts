@@ -91,6 +91,7 @@ export async function getB2CTeacherMetrics() {
         client
           .from("b2c_teaching_sessions")
           .select("id,teacher_id,class_id,salary,check_out_at,starts_at")
+          .is("archived_at", null)
           .order("id")
           .range(o, o + 999),
       ),

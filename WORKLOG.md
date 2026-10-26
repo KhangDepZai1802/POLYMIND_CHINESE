@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — code và SQL cloud hoàn tất, phát hành — Codex — 2026-10-26. Xóa chỉ super_admin, giữ ảnh/lịch/điểm danh/audit, loại khỏi giờ/lương/pending-price; thumbnail/popup ảnh. SQL02 history/rollback đạt,7UItests/typecheck/build/lint file task đạt. Full197files:195đạt/2lỗi,1106tests đạt/4lỗi có sẵn; full lint vẫn1lỗi cũ. Theo yêu cầu đẩy GitHub trước đó, tiếp tục phát hành bản sửa; không xóa buổi thật.
+
 > B2C-CENTER-DELETE-1-RELEASE — Codex — 2026-10-26. User yêu cầu rõ đẩy GitHub sau khi đã báo4test lỗi/1lint chấm công ngoài scope. Phát hành bản xóa ba mục đã build/typecheck/lint file task và DB rollback/account-check đạt; giữ nguyên lỗi đã báo, không sửa chấm công. Không đưa script inspect có trước vào commit; chưa xác minh deployment online.
 
 > B2C-CENTER-DELETE-1 — code local và quyền cloud, chưa phát hành giao diện — Codex — 2026-10-26. User chốt Phụ huynh/Học viên/Học phí, xác nhận admin datathongdat@gmail.com. SQL01 exact-history/integration và hồi quy student/parent rollback đạt; cấp đúng hai cô, account-check đạt. Typecheck/build/lint file task đạt; full lint lỗi chấm công có sẵn, full tests1099đạt/4lỗi chấm công ngoài scope. Không xóa hồ sơ thật/commit/push/deploy.
@@ -940,6 +942,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-TEACHING-ADMIN-DELETE-PREVIEW-1-QA:** sau push kiểm Vercel status, admin Giờ dạy & Lương có thumbnail/Xóa và popup; không xóa buổi thật để smoke test. Giữ nguyên4lỗi test/1lint chấm công có sẵn nếu vẫn tái hiện; không replay16gap migration.
+
 **B2C-CENTER-DELETE-1-RELEASE-QA:** xử lý cổng kiểm tra ngoài scope trước phát hành; review thay đổi nút Xóa Phụ huynh/Học viên/Gói học phí, kiểm hai account trên browser sau deployment. Không replay16migration gap cũ. Cloud SQL/quyền đã áp, giao diện chưa commit/push/deploy.
 
 - RELEASE-20261023-B2C-QA: sau push, xác minh deploy và hai cô dùng các menu Tuyển sinh/Học viên/Học phí/Phụ huynh/Tạo lớp; mọi GV B2C có Thêm học viên/Phụ huynh. Chưa chạy QA browser production, không nhập dữ liệu thật chỉ để kiểm thử.
@@ -1540,6 +1544,12 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-26] Codex — B2C-TEACHING-ADMIN-DELETE-PREVIEW-1
+- Theo ảnh user, admin thiếu xóa buổi và bảng chỉ có link Xem ảnh. Thêm Xóa chỉ super_admin tại page/server/DB, xác nhận+lý do; archive payroll, trừ khỏi tổng giờ/lương/pending-price/metrics. Giữ ảnh/GPS/meeting/điểm danh và snapshot trước-sau/actor thật; không mở lại chấm công hoặc tái sinh buổi đã xóa.
+- Thumbnail check-in/out bằng private signed URL300giây, bấm xem popup lớn; URL lỗi có hướng dẫn tải lại. 7UI/page tests mới đạt (admin/teacher/giáo vụ, ảnh/popup/lỗi URL/xác nhận/server error).
+- SQL20261026000002 cloud đã áp/exact-history/rollback tests đạt (quyền, giờ/lương/pending-price, ảnh/meeting/audit, retry/checkpoint deny). Typecheck/build/lint file task đạt. Full197files:195đạt/2lỗi,1106tests đạt/4lỗi cũ tại checkpoint/schema; full lint lỗi Date.now render có sẵn. Không sửa buổi/ảnh thật, không repair/replay16gap CLI cũ.
+- Tiếp tục đẩy GitHub theo yêu cầu trước đó; báo SHA/Vercel trong chat, chưa QA browser độc lập. Không stage scripts/inspect-cole-meetings.mjs có trước.
+
 ### [2026-10-26] Codex — B2C-CENTER-DELETE-1
 - User xác nhận ba mục Phụ huynh/Học viên/Học phí và admin datathongdat@gmail.com. Bổ sung quyền opt-in delete_center_records, nút/dialog xác nhận+lý do; archive hồ sơ/gói, mở xử lý hủy/hoàn thu phí cho hai cô. Giữ lịch sử/actor thật; gói còn tiền không xóa, tạo lại dùng ID mới. Học viên archive vẫn giữ công nợ.
 - Đồng bộ main từ47ddcae đến675a0f1, giữ cột PH và học viên chưa xếp lớp; giải quyết conflict đúng trang học viên. Không sửa script inspect có trước. SQL20261026000001 áp cloud, exact-history/test rollback và student/parent regression rollback đạt. Grant đúng hai cô giữ quyền cũ; read-only account-check quyền xóa=true,33PH99HV63ghi danh học phí. Không xóa dữ liệu thật.
@@ -1566,7 +1576,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ### [2026-10-21] Codex — SALEWORK-LIVE-CARDS-5
 - User xác nhận trang phải là thẻ dữ liệu thật, không phải ảnh. Bỏ canvas preview, hiện metric HTML/ngày/người và giữ3ô nhập; renderer mẫu chỉ gọi từ copy/export.
 - Lint/typecheck/build và187files1074tests đạt. Edge local cothy thẻ hiện/không canvas/nhập3giá trị draft/copy PNG1080×1920/popup/mobile390/0pageerror. Không lưu dữ liệu thử hoặc đổi DB/API. Next phát hành và kiểm production.
-
-### [2026-10-21] Codex — SALEWORK-REPORT-DESIGN-4
-- Theo ảnh user: renderer canvas1080×1920, nền xanh nhạt/header tai nghe vector/10thẻ hai cột/icon màu/ghi chú; tiêu đề chỉ BÁO CÁO. Preview và copy/download dùng chung renderer; chữ dài tự fit, dữ liệu thật giữ nguyên; input nhập tay và quyền không đổi.
-- Edge local cothy xác minh popup, clipboard PNG1080×1920/tải ảnh/mobile390/0pageerror; đã xem ảnh xuất thực tế. Lint/typecheck/build và187files1074tests đạt. Không SQL, không ghi dữ liệu test. Chưa commit/push; popup trước bị auto-review chặn phát hành cần xác nhận riêng, next xác nhận phát hành cả mẫu+popup.

@@ -1,5 +1,10 @@
 # 02 — Thiết kế Database
 
+## B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 (2026-10-26)
+
+SQL `20261026000002`: archived_at/by/reason có constraint trên b2c_teaching_sessions; không mở direct write. RPC archive_b2c_teaching_session chỉ app.is_super_admin, row lock/idempotent, ghi snapshot trước-sau vào b2c_class_history với auth.uid. App/public get_b2c_teaching_page loại archive cả tổng giờ/lương/pending-price; can_check_b2c_session giữ guard cũ và thêm chưa archive. Trigger chặn cập nhật sau archive để chống race với check-in/đơn giá. Giữ unique class/time và FK meeting, ảnh/checkpoints không bị xóa; không giải phóng slot hay tự sinh lại payroll. Raw teacher metrics lọc archive. SQL integration rollback kiểm teacher deny/admin archive/retry/totals/pending-price/photo/meeting/audit/checkpoint retention. Cloud migration/history đã áp và kiểm; CLI vẫn16gap cũ, không replay.
+
+
 ## B2C-CENTER-DELETE-1 (2026-10-26)
 
 Migration `20261026000001`: `archived_at` trên students/parents/tuition_packages và bảng RLS `b2c_record_archives` lưu snapshot/lý do/actor auth.uid; authenticated không ghi trực tiếp archive/audit. RPC `archive_b2c_center_record` guard quyền opt-in `delete_center_records`, kiểm entity/reason, khóa bản ghi, retry không ghi audit trùng. Gói khóa enrollment rồi package, không xóa khi còn effective_amount. Partial unique enrollment cho gói chưa archive, tạo lại dùng ID mới; phiếu/điều chỉnh giữ nguyên. Projection hoạt động lọc archive kể cả SECURITY DEFINER. Riêng học phí giữ học viên đã archive để không mất công nợ; raw dashboard lọc học viên hoạt động tại server. Trigger chặn ghi danh/thu tiền vào hồ sơ đã archive và sửa hồ sơ đã archive. Integration rollback test kiểm deny/default/inactive, archive/list/audit và giữ lịch sử/tạo lại gói.

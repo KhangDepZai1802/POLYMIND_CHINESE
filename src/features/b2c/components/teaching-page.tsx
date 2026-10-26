@@ -15,6 +15,8 @@ import { getMyB2CPermissionsAction } from "../server/permission-actions";
 import { permissionRpc } from "../server/permission-rpc";
 import { TeachingSetup } from "./teaching-setup";
 import { CheckinWindow } from "./checkin-window";
+import { TeachingPhotoPreview } from "./teaching-photo-preview";
+import { DeleteTeachingSession } from "./delete-teaching-session";
 export async function B2CTeachingPage({
   params,
   mine,
@@ -22,8 +24,8 @@ export async function B2CTeachingPage({
   params: Record<string, string | string[] | undefined>;
   mine: boolean;
 }) {
-  if (mine) await requireTeaching();
-  else await requireManager();
+  const actor = mine ? await requireTeaching() : await requireManager();
+  const canDelete = !mine && actor.role === "super_admin";
   const permissions = mine ? await getMyB2CPermissionsAction() : null;
   const canPay = !permissions || permissions.includes("view_pay");
   const canCheck = !permissions || permissions.includes("check_teaching");
@@ -283,6 +285,7 @@ export async function B2CTeachingPage({
                 "Check-out",
                 ...(canPay ? ["Đơn giá / giờ", "Giờ / Tiền công"] : []),
                 ...(mine && canCheck ? ["Chấm công"] : []),
+                ...(canDelete ? ["Thao tác"] : []),
               ].map((h) => (
                 <th key={h} className="px-4 py-3">
                   {h}
@@ -338,15 +341,9 @@ export async function B2CTeachingPage({
                           </p>
                         ) : null}
                         {url && (
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline"
-                          >
-                            Xem ảnh
-                          </a>
+                          <TeachingPhotoPreview url={url} label={`Ảnh ${i === 0 ? "check-in" : "check-out"} · ${s.teacher_name} · ${s.class_name}`} />
                         )}
+                        {photo && !url && <p className="text-destructive mt-2 text-xs">Không tải được ảnh. Tải lại trang để thử lại.</p>}
                       </td>
                     );
                   })}
@@ -413,12 +410,13 @@ export async function B2CTeachingPage({
                       )}
                     </td>
                   )}
+                  {canDelete && <td className="px-4 py-3"><DeleteTeachingSession id={s.id} label={`${s.class_name} · ${s.teacher_name} · ${formatDate(s.starts_at)} ${formatTime(s.starts_at)}`} /></td>}
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={mine ? 7 : 6}
+                  colSpan={4 + (canPay ? 2 : 0) + (mine && canCheck ? 1 : 0) + (canDelete ? 1 : 0)}
                   className="text-muted-foreground py-10 text-center"
                 >
                   Chưa có buổi dạy trong tháng này.

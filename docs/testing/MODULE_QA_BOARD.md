@@ -1,5 +1,12 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — 2026-10-26
+
+- User ảnh thật admin thiếu nút xóa và thumbnail ở Giờ dạy & Lương. Codex bổ sung Xóa chỉ super_admin, xác nhận/lý do, lưu trữ và loại tổng công; giữ ảnh/meeting/lịch sử. Thumbnail check-in/out + popup ảnh lớn, lỗi URL có nhắc tải lại.
+- 7test mới UI/page đạt, SQL02 cloud exact-history/rollback đạt (quyền, giờ/lương/pending-price, giữ ảnh/meeting/audit, retry/deny archived checkpoint); typecheck/build đạt. Chờ QA độc lập sau phát hành. Không xóa dữ liệu thật.
+- Full197files:195đạt/2lỗi,1106tests đạt/4lỗi có sẵn tại checkpoint/schema; lint file task đạt, full lint vẫn Date.now render cũ. Không đổi các test/code checkpoint đang lỗi.
+
+
 ## B2C-CENTER-DELETE-1 — 2026-10-26
 
 - Codex: đã bổ sung nút xác nhận/lý do tại Phụ huynh/Học viên/Học phí cho hai cô. SQL cloud/history/integration rollback đạt; grant đúng hai account, quyền cũ giữ nguyên; không xóa dữ liệu thật. Chờ QA độc lập giao diện/browser sau phát hành.

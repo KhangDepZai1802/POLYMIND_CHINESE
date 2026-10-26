@@ -4,6 +4,7 @@ import type { Json } from "@/types/database";
 
 // Forward migration RPCs, typed here until the next full database type generation.
 type PermissionRpc =
+  | "archive_b2c_teaching_session"
   | "archive_b2c_center_record"
   | "read_center_b2c_student_data"
   | "save_center_b2c_student_data"
