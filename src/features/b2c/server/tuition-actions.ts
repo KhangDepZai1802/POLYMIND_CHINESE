@@ -8,7 +8,7 @@ import {
   type B2CReceipt,
   type B2CCorrectionHistory,
 } from "@/features/b2c/tuition-schema";
-import { requireTeaching, requireManager } from "@/lib/auth/session";
+import { requireTeaching } from "@/lib/auth/session";
 import { permissionRpc } from "./permission-rpc";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -111,7 +111,7 @@ export async function getB2CReceiptsAction(packageId: string, page: number) {
 }
 
 export async function correctB2CTuitionAction(input: unknown) {
-  await requireManager();
+  await requireTeaching("super_admin");
   const parsed = b2cCorrectionSchema.safeParse(input);
   if (!parsed.success)
     return {
@@ -132,7 +132,7 @@ export async function correctB2CTuitionAction(input: unknown) {
 }
 
 export async function getB2CCorrectionsAction(packageId: string, page: number) {
-  await requireManager();
+  await requireTeaching("super_admin");
   if (
     !z.uuid().safeParse(packageId).success ||
     !Number.isSafeInteger(page) ||

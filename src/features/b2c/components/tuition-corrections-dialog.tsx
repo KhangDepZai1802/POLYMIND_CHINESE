@@ -109,7 +109,7 @@ export function TuitionCorrectionsDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={!row.package_id}>
+        <Button variant="outline" size="sm" disabled={!row.package_id} title="Hủy phiếu thu nhầm, hoàn tiền hoặc điều chỉnh phải thu">
           Xử lý học phí
         </Button>
       </DialogTrigger>

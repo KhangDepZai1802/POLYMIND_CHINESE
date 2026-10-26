@@ -1,5 +1,12 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-CENTER-DELETE-1 — 2026-10-26
+
+- Codex: đã bổ sung nút xác nhận/lý do tại Phụ huynh/Học viên/Học phí cho hai cô. SQL cloud/history/integration rollback đạt; grant đúng hai account, quyền cũ giữ nguyên; không xóa dữ liệu thật. Chờ QA độc lập giao diện/browser sau phát hành.
+- Cổng cuối: typecheck/build/lint file task đạt; full195files:193đạt/2lỗi,1099tests đạt/4lỗi (checkpoint3,teaching-schema1). Các file lỗi không thay đổi trong task này. Chưa commit/push/deploy.
+- Lint hiện có lỗi ngoài scope trong `teacher-today-classes.tsx:29` (`Date.now` trong render, code có sẵn từ origin/main). Full suite hiện có lỗi checkpoint do thiếu geolocation trong môi trường test; không thay test hoặc sửa module chấm công trong task xóa.
+
+
 ## B2C-ATTENDANCE-CLARITY-1 — 2026-10-22
 
 - Giao diện chọn/tạo buổi rõ ràng; buổi theo ngày hiện trước lịch tuần, không thu gọn. Chưa chọn buổi không hiển thị roster điểm danh. Không thay dữ liệu/quyền.

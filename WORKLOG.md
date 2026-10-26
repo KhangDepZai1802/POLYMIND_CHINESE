@@ -38,6 +38,10 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-CENTER-DELETE-1-RELEASE — Codex — 2026-10-26. User yêu cầu rõ đẩy GitHub sau khi đã báo4test lỗi/1lint chấm công ngoài scope. Phát hành bản xóa ba mục đã build/typecheck/lint file task và DB rollback/account-check đạt; giữ nguyên lỗi đã báo, không sửa chấm công. Không đưa script inspect có trước vào commit; chưa xác minh deployment online.
+
+> B2C-CENTER-DELETE-1 — code local và quyền cloud, chưa phát hành giao diện — Codex — 2026-10-26. User chốt Phụ huynh/Học viên/Học phí, xác nhận admin datathongdat@gmail.com. SQL01 exact-history/integration và hồi quy student/parent rollback đạt; cấp đúng hai cô, account-check đạt. Typecheck/build/lint file task đạt; full lint lỗi chấm công có sẵn, full tests1099đạt/4lỗi chấm công ngoài scope. Không xóa hồ sơ thật/commit/push/deploy.
+
 > RELEASE-20261023-B2C — cổng phát hành đạt — Codex — 2026-10-23. User yêu cầu đẩy GitHub; fetch/fast-forward13commit origin/main, ghép docs và giữ shared invalidation mới. Lint/typecheck/build và194files1099/1099tests đạt;59file staged không secret literal, diff-check đạt. Commit/push main theo user, SHA/remote kết quả báo trong chat. Giữ script inspect ngoài commit; chưa xác minh deployment online.
 
 > B2C-CENTER-STUDENT-DATA-1 — hoàn thành local và quyền cloud — Codex — 2026-10-23. Hai cô có Học viên/bổ sung nguồn/SĐT/người chốt/ngày/hạn phí toàn trung tâm và tạo lớp; đầy đủ6nhóm quyền kiểm dưới từng account. SQL06 exact-history/rollback tests; lint/typecheck/build và1056tests đạt.58HV60ghi danh động, không sửa dữ liệu thật/commit/push/deploy online.
@@ -936,6 +940,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-CENTER-DELETE-1-RELEASE-QA:** xử lý cổng kiểm tra ngoài scope trước phát hành; review thay đổi nút Xóa Phụ huynh/Học viên/Gói học phí, kiểm hai account trên browser sau deployment. Không replay16migration gap cũ. Cloud SQL/quyền đã áp, giao diện chưa commit/push/deploy.
+
 - RELEASE-20261023-B2C-QA: sau push, xác minh deploy và hai cô dùng các menu Tuyển sinh/Học viên/Học phí/Phụ huynh/Tạo lớp; mọi GV B2C có Thêm học viên/Phụ huynh. Chưa chạy QA browser production, không nhập dữ liệu thật chỉ để kiểm thử.
 
 - B2C-CENTER-STUDENT-DATA-1-QA: hai cô F5 local → Học viên → tìm theo bé/lớp/GV → Bổ sung. Các mục Tuyển sinh/Học phí/Phụ huynh giữ quyền; Tạo lớp tự phân công cho người tạo. Không tự đoán liên hệ/ngày học của danh sách user nêu. Chưa phát hành giao diện online.
@@ -1382,6 +1388,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-CENTER-DELETE-1 (2026-10-26):** full lint lỗi `teacher-today-classes.tsx:29` Date.now render từ origin/main; test chấm công/checkpoint thiếu geolocation so với schema/code hiện tại. Không sửa module chấm công hoặc giảm test trong task xóa. CLI dry-run bị16gap B2C history cũ, không include-all/repair/replay; áp đúng migration mới qua transaction và kiểm history SQL mới khớp byte. Hai script verify migration23/10 cũ báo khác SQL (checkout CRLF/history), kiểm regression SQL trực tiếp trong rollback đã đạt. Chưa QA browser/publish giao diện.
+
 - RELEASE-20261023-B2C-HISTORY: đã đồng bộ4migration20261021 từ GitHub, không còn remote-only4; dry-run hiện chỉ báo16gap history20261012–14 cũ. Không include-all/replay/repair; SQL20261023000001–06 đã áp cloud và exact-history ở các task. Không có DB mutation trong release này.
 
 - B2C-CENTER-STUDENT-DATA-1-HISTORY: SQL20261023000006 áp riêng/exact-history/integration rollback đạt; dry-run trước/sau vẫn bị4remote-only20261021 cũ chặn. Không repair/replay; chưa thể xác nhận toàn bộ remote up-to-date.
@@ -1532,6 +1540,12 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-10-26] Codex — B2C-CENTER-DELETE-1
+- User xác nhận ba mục Phụ huynh/Học viên/Học phí và admin datathongdat@gmail.com. Bổ sung quyền opt-in delete_center_records, nút/dialog xác nhận+lý do; archive hồ sơ/gói, mở xử lý hủy/hoàn thu phí cho hai cô. Giữ lịch sử/actor thật; gói còn tiền không xóa, tạo lại dùng ID mới. Học viên archive vẫn giữ công nợ.
+- Đồng bộ main từ47ddcae đến675a0f1, giữ cột PH và học viên chưa xếp lớp; giải quyết conflict đúng trang học viên. Không sửa script inspect có trước. SQL20261026000001 áp cloud, exact-history/test rollback và student/parent regression rollback đạt. Grant đúng hai cô giữ quyền cũ; read-only account-check quyền xóa=true,33PH99HV63ghi danh học phí. Không xóa dữ liệu thật.
+- Typecheck/build/lint file task đạt; full lint lỗi có sẵn ở teacher-today-classes. Full195files:193đạt/2lỗi;1099tests đạt/4lỗi tại checkpoint(3) và teaching-schema(1), đều ngoài scope/không thay đổi. Các test xóa/dashboard/hủy học phí đạt. CLI bị16gap history cũ, không replay/repair hoặc khẳng định remote up-to-date.
+- Next: B2C-CENTER-DELETE-1-RELEASE-QA; chưa commit/push/deploy hoặc QA browser độc lập.
+
 ### [2026-10-23] Codex — RELEASE-20261023-B2C
 - User yêu cầu đẩy GitHub. Fetch phát hiện13commit mới (9150779→f668889); stash dự phòng local, fast-forward main, apply lại và ghép5conflict docs/tuition. Giữ shared revalidateB2CViews từ upstream và toàn bộ SaleWork/chấm công mới. Không force-push.
 - Bundle59file: quyền/menu Tuyển sinh/Học viên/Học phí/Phụ huynh, thêm học viên GV B2C/tạo lớp hai cô, lưu trữ khách,6migration/tests/scripts và cải thiện chọn buổi điểm danh đã có local. Không stage script inspect-cole-meetings ngoài scope.
@@ -1556,7 +1570,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ### [2026-10-21] Codex — SALEWORK-REPORT-DESIGN-4
 - Theo ảnh user: renderer canvas1080×1920, nền xanh nhạt/header tai nghe vector/10thẻ hai cột/icon màu/ghi chú; tiêu đề chỉ BÁO CÁO. Preview và copy/download dùng chung renderer; chữ dài tự fit, dữ liệu thật giữ nguyên; input nhập tay và quyền không đổi.
 - Edge local cothy xác minh popup, clipboard PNG1080×1920/tải ảnh/mobile390/0pageerror; đã xem ảnh xuất thực tế. Lint/typecheck/build và187files1074tests đạt. Không SQL, không ghi dữ liệu test. Chưa commit/push; popup trước bị auto-review chặn phát hành cần xác nhận riêng, next xác nhận phát hành cả mẫu+popup.
-
-### [2026-10-21] Codex — SALEWORK-COPY-POPUP-3
-- Thay thông báo sao chép inline bằng toast.success nổi 4 giây, lỗi dùng toast.error. Dùng Toaster top-center có sẵn; không thay layout hoặc dữ liệu.
-- Edge local xác minh popup nằm trong viewport sau hiệu ứng, clipboard PNG1080×1920, tải PNG/mobile390/0pageerror. Lint/typecheck/build đạt;187files1074tests đạt. Next: phát hành và kiểm production theo yêu cầu tiếp tục cập nhật website.

@@ -27,7 +27,7 @@ export async function getB2CCustomerSourceOverview() {
   const supabase = await createClient();
   const sources = [...B2C_CUSTOMER_SOURCES, null];
   const rows = await Promise.all(sources.map(async (source) => {
-    const query = supabase.from("b2c_students").select("id", { count: "exact", head: true });
+    const query = supabase.from("b2c_students").select("id", { count: "exact", head: true }).is("archived_at", null);
     const { count, error } = await (source === null
       ? query.is("customer_source", null)
       : query.eq("customer_source", source));
@@ -41,7 +41,7 @@ export async function getB2CStudentCounts() {
   const supabase = await createClient();
   const { count, error } = await supabase
     .from("b2c_students")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true }).is("archived_at", null);
   if (error) throw new Error(`Không tải được số học viên: ${error.message}`);
 
   const studentsByProgram = new Map<string, Set<string>>();
@@ -49,7 +49,7 @@ export async function getB2CStudentCounts() {
   for (let offset = 0; ; offset += pageSize) {
     const { data, error: enrollmentError } = await supabase
       .from("b2c_enrollments")
-      .select("id, student_id, b2c_classes!inner(program_slug)")
+      .select("id, student_id, b2c_classes!inner(program_slug), b2c_students!inner(id)").is("b2c_students.archived_at", null)
       .order("id")
       .range(offset, offset + pageSize - 1);
     if (enrollmentError) {
@@ -85,8 +85,8 @@ export async function getB2COverview() {
         .order("code"),
       supabase
         .from("b2c_students")
-        .select("id", { count: "exact", head: true }),
-      supabase.from("b2c_enrollments").select("class_id, student_id, status"),
+        .select("id", { count: "exact", head: true }).is("archived_at", null),
+      supabase.from("b2c_enrollments").select("class_id, student_id, status, b2c_students!inner(id)").is("b2c_students.archived_at", null),
       supabase
         .from("b2c_monthly_reports")
         .select(
@@ -222,13 +222,14 @@ export async function getB2CStudentRows(programSlug?: string) {
     .select(
       `id, class_id, status, withdrawal_reason, learning_goal, certificate_goal, enrollment_date, payment_date, learning_start_date,
        tuition_end_date, registered_sessions, sessions_per_week, salesperson, notes,
-       student:b2c_students (id, code, full_name, date_of_birth, birth_year, email, address, phone, customer_source, referrer_name,
+       student:b2c_students!inner (id, code, full_name, date_of_birth, birth_year, email, address, phone, customer_source, referrer_name,
          parentLinks:b2c_student_parents (parent:b2c_parents (full_name)))`,
     )
     .in(
       "class_id",
       classes.map((item) => item.id),
     )
+    .is("student.archived_at", null)
     .order("source_row");
 
   if (error) {

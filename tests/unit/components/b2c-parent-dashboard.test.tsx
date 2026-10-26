@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+vi.mock("@/features/b2c/server/archive-actions", () => ({ archiveCenterRecordAction: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/features/b2c/components/parent-dialog", () => ({ ParentDialog: ({ parent, showLabel }: { parent?: { full_name: string }; showLabel?: boolean }) => <button>{parent ? `${showLabel ? "Sửa" : "Hồ sơ"} ${parent.full_name}` : "Thêm phụ huynh"}</button> }));
 import { ParentDashboard } from "@/features/b2c/components/parent-dashboard";
 import type { ParentDashboardRow } from "@/features/b2c/domain/parent-dashboard";
@@ -8,6 +10,12 @@ const rows: ParentDashboardRow[] = [
   { id: "b", full_name: "Anh Bình", phone: null, zalo: null, email: null, children: [{ code: "HV3", full_name: "Minh Đạt", relationship: "father", classes: [{ id: "c1", name: "Movers" }] }] },
 ];
 afterEach(cleanup);
+it("only exposes deletion when the server grants delete permission", () => {
+  const view = render(<ParentDashboard parents={rows} />);
+  expect(screen.queryByRole("button", { name: "Xóa phụ huynh Chị An" })).not.toBeInTheDocument();
+  view.rerender(<ParentDashboard parents={rows} canDelete />);
+  expect(screen.getByRole("button", { name: "Xóa phụ huynh Chị An" })).toBeVisible();
+});
 it("opens missing contacts in a popup while preserving the main table", () => {
   render(<ParentDashboard parents={rows} />);
   expect(screen.getByRole("button", { name: "Tổng phụ huynh: 2" })).toBeInTheDocument();

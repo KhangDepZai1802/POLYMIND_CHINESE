@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+vi.mock("@/features/b2c/server/archive-actions", () => ({ archiveCenterRecordAction: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/features/b2c/components/tuition-dialogs", () => ({ TuitionPackageDialog: () => <button>Tạo/sửa gói</button>, TuitionReceiptsDialog: () => <button>Phiếu thu</button> }));
 vi.mock("@/features/b2c/components/tuition-corrections-dialog", () => ({ TuitionCorrectionsDialog: () => <button>Xử lý học phí</button> }));
 import { TuitionDashboard } from "@/features/b2c/components/tuition-dashboard";
@@ -7,6 +9,13 @@ import type { TuitionDashboardRow } from "@/features/b2c/domain/tuition-dashboar
 const row: TuitionDashboardRow = { enrollment_id: "e1", student_code: "HV1", full_name: "An", class_name: "Movers", class_id: "c1", enrollment_date: "2026-10-01", tuition_end_date: "2026-10-17", status: "studying", package_id: "p1", sessions: 10, unit_price: 100000, discount: 0, discount_reason: null, total_due: 1000000, paid_amount: 400000, balance: 600000 };
 const other: TuitionDashboardRow = { ...row, enrollment_id: "e2", student_code: "HV2", full_name: "Bình", class_id: "c2", class_name: "Flyers", package_id: null, sessions: null, total_due: null, unit_price: null, discount: null, paid_amount: 0, balance: 0, tuition_end_date: null, enrollment_date: "2026-09-01" };
 afterEach(cleanup);
+it("only offers deletion for an existing package with explicit delete permission", () => {
+  const view = render(<TuitionDashboard rows={[row, other]} collector="Cô Lê" canReadHistory={false} canCorrect={false} today="2026-10-26" />);
+  expect(screen.queryByRole("button", { name: /Xóa gói học phí/ })).not.toBeInTheDocument();
+  view.rerender(<TuitionDashboard rows={[row, other]} collector="Cô Lê" canReadHistory={false} canCorrect canDelete today="2026-10-26" />);
+  expect(screen.getAllByRole("button", { name: /Xóa gói học phí/ })).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: "Xử lý học phí" })).toHaveLength(2);
+});
 it("lets tuition teachers enter packages and receipts without manager correction controls", () => {
   render(<TuitionDashboard rows={[row, other]} collector="Cô Thy" canReadHistory={false} canCorrect={false} today="2026-10-23" />);
   expect(screen.getAllByRole("button", { name: "Tạo/sửa gói" })).toHaveLength(2);

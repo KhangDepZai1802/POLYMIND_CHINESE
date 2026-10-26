@@ -1,5 +1,13 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-CENTER-DELETE-1 — 2026-10-26
+
+- [x] Bổ sung xóa Phụ huynh/Học viên/Gói học phí, mở hủy/hoàn phiếu thu theo quyền riêng; dialog xác nhận/lý do, giữ dữ liệu lịch sử.
+- [x] SQL20261026000001 áp cloud, exact-history/integration rollback đạt; cấp đúng hai cô bằng admin user xác nhận và kiểm tra dưới từng account. Không xóa dữ liệu thật.
+- [ ] Hoàn tất cổng kiểm tra và QA browser trước phát hành giao diện; chưa commit/push/deploy.
+- User yêu cầu phát hành GitHub ngày26/10 sau khi được báo4test lỗi/1lint có sẵn ở chấm công; cho phép commit/push bản xóa hiện tại, giữ nguyên kết quả kiểm tra. QA deployment/browser vẫn chờ sau phát hành.
+
+
 ## RELEASE-20261023-B2C
 
 - [x] Đồng bộ13commit GitHub bằng fast-forward, ghép local và giữ shared invalidation/SaleWork/chấm công. Lint/typecheck/build và1099tests đạt;59file staged/secret-scan0/diff-check đạt.

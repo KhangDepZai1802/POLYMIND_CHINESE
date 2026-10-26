@@ -1,5 +1,10 @@
 # 02 — Thiết kế Database
 
+## B2C-CENTER-DELETE-1 (2026-10-26)
+
+Migration `20261026000001`: `archived_at` trên students/parents/tuition_packages và bảng RLS `b2c_record_archives` lưu snapshot/lý do/actor auth.uid; authenticated không ghi trực tiếp archive/audit. RPC `archive_b2c_center_record` guard quyền opt-in `delete_center_records`, kiểm entity/reason, khóa bản ghi, retry không ghi audit trùng. Gói khóa enrollment rồi package, không xóa khi còn effective_amount. Partial unique enrollment cho gói chưa archive, tạo lại dùng ID mới; phiếu/điều chỉnh giữ nguyên. Projection hoạt động lọc archive kể cả SECURITY DEFINER. Riêng học phí giữ học viên đã archive để không mất công nợ; raw dashboard lọc học viên hoạt động tại server. Trigger chặn ghi danh/thu tiền vào hồ sơ đã archive và sửa hồ sơ đã archive. Integration rollback test kiểm deny/default/inactive, archive/list/audit và giữ lịch sử/tạo lại gói.
+
+
 ## B2C-CENTER-STUDENT-DATA-1 (2026-10-23)
 
 Quyền opt-in `manage_center_student_data` cho projection RPC `read_center_b2c_student_data(text,integer)` (50ghi danh/trang, count/distinctstudent động) và writer `save_center_b2c_student_data(jsonb)`, security definer/guard trước truy cập. Writer chỉ cập nhật phone/customer_source/referrer trên student và salesperson/enrollment_date/learning_start_date/tuition_end_date trên enrollment; kiểm timestamp cả hai, lock student rồi enrollment, validate phone/source/referrer/dates. Không sửa trạng thái/tiền/hồ sơ raw khác, không mở RLS. Unknown fields cho null, không buộc dữ liệu giả. Cấp permission và create_classes cho hai account được user xác nhận, giữ audit quyền cũ. Migration20261023000006 có integration rollback tests.

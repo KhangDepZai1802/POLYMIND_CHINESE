@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const B2C_PERMISSION_LABELS = {
+  delete_center_records: "Xóa phụ huynh, học viên, gói học phí và hủy phiếu thu toàn trung tâm",
   manage_center_student_data: "Bổ sung nguồn khách, SĐT và thông tin ghi danh toàn trung tâm",
   manage_center_tuition: "Nhập gói học phí và phiếu thu cho toàn trung tâm",
   manage_admissions: "Nhập khách tiềm năng, tư vấn và cập nhật tuyển sinh",

@@ -1,0 +1,31 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { DeleteCenterRecord } from "@/features/b2c/components/delete-center-record";
+import { archiveCenterRecordAction } from "@/features/b2c/server/archive-actions";
+const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+vi.mock("@/features/b2c/server/archive-actions", () => ({ archiveCenterRecordAction: vi.fn() }));
+beforeEach(() => { vi.clearAllMocks(); });
+it("requires a separate confirmation, allows cancellation, and refreshes after successful deletion", async () => {
+  vi.mocked(archiveCenterRecordAction).mockResolvedValue({ success: true });
+  render(<DeleteCenterRecord entity="parent" id="parent-1" name="Mẹ An" />);
+  fireEvent.click(screen.getByRole("button", { name: "Xóa phụ huynh Mẹ An" }));
+  expect(archiveCenterRecordAction).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+  expect(archiveCenterRecordAction).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Xóa phụ huynh Mẹ An" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "Lý do xóa" }), { target: { value: "Hồ sơ trùng" } });
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận xóa" }));
+  await waitFor(() => expect(archiveCenterRecordAction).toHaveBeenCalledWith({ entity: "parent", id: "parent-1", reason: "Hồ sơ trùng" }));
+  await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+});
+it("keeps a paid-package error visible without reporting success", async () => {
+  vi.mocked(archiveCenterRecordAction).mockResolvedValue({ error: "Gói còn tiền đã thu." });
+  render(<DeleteCenterRecord entity="package" id="package-1" name="Bé An" />);
+  fireEvent.click(screen.getByRole("button", { name: "Xóa gói học phí Bé An" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "Lý do xóa" }), { target: { value: "Nhập nhầm" } });
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận xóa" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Gói còn tiền đã thu.");
+  expect(refresh).not.toHaveBeenCalled();
+  expect(screen.getByRole("dialog")).toBeVisible();
+});

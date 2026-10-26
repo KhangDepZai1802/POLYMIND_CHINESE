@@ -25,6 +25,7 @@ export async function getStudentDashboard(): Promise<StudentDashboardData> {
         .select(
           "id,code,full_name,phone,email,date_of_birth,birth_year,address,guardian_name,guardian_zalo,customer_source,referrer_name,parentLinks:b2c_student_parents(parent:b2c_parents(full_name,zalo))",
         )
+        .is("archived_at", null)
         .order("full_name")
         .order("id")
         .range(o, o + 999),
@@ -68,7 +69,7 @@ export async function getStudentDashboard(): Promise<StudentDashboardData> {
           ].join(", ") || null,
       }),
     ),
-    enrollments,
+    enrollments: enrollments.filter(e => students.some(s => s.id === e.student_id)),
     classes,
     today: new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Ho_Chi_Minh",
