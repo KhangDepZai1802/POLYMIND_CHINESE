@@ -44,6 +44,8 @@
 
 > B2C-CENTER-DELETE-1 — code local và quyền cloud, chưa phát hành giao diện — Codex — 2026-10-26. User chốt Phụ huynh/Học viên/Học phí, xác nhận admin datathongdat@gmail.com. SQL01 exact-history/integration và hồi quy student/parent rollback đạt; cấp đúng hai cô, account-check đạt. Typecheck/build/lint file task đạt; full lint lỗi chấm công có sẵn, full tests1099đạt/4lỗi chấm công ngoài scope. Không xóa hồ sơ thật/commit/push/deploy.
 
+> B2C-CENTER-STUDENT-NAME-1 — code + SQL production xong, user cho phép phát hành ngoại lệ — Codex — 2026-11-03. Hai cô sửa được tên toàn trung tâm qua allowlist DB riêng; giáo viên khác có `manage_center_student_data` vẫn bị chặn. SQL20261103000002 production exact-history + rollback test đạt; lint/typecheck/build và test task đạt. Full Vitest 1095/1099, 4 lỗi chấm công vị trí ngoài scope trong file dirty có trước; user yêu cầu commit/push sau khi đã được báo rõ kết quả này.
+
 > RELEASE-20261023-B2C — cổng phát hành đạt — Codex — 2026-10-23. User yêu cầu đẩy GitHub; fetch/fast-forward13commit origin/main, ghép docs và giữ shared invalidation mới. Lint/typecheck/build và194files1099/1099tests đạt;59file staged không secret literal, diff-check đạt. Commit/push main theo user, SHA/remote kết quả báo trong chat. Giữ script inspect ngoài commit; chưa xác minh deployment online.
 
 > B2C-CENTER-STUDENT-DATA-1 — hoàn thành local và quyền cloud — Codex — 2026-10-23. Hai cô có Học viên/bổ sung nguồn/SĐT/người chốt/ngày/hạn phí toàn trung tâm và tạo lớp; đầy đủ6nhóm quyền kiểm dưới từng account. SQL06 exact-history/rollback tests; lint/typecheck/build và1056tests đạt.58HV60ghi danh động, không sửa dữ liệu thật/commit/push/deploy online.
@@ -1393,6 +1395,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 ## ⛔ BLOCKERS
 
 - **B2C-CENTER-DELETE-1 (2026-10-26):** full lint lỗi `teacher-today-classes.tsx:29` Date.now render từ origin/main; test chấm công/checkpoint thiếu geolocation so với schema/code hiện tại. Không sửa module chấm công hoặc giảm test trong task xóa. CLI dry-run bị16gap B2C history cũ, không include-all/repair/replay; áp đúng migration mới qua transaction và kiểm history SQL mới khớp byte. Hai script verify migration23/10 cũ báo khác SQL (checkout CRLF/history), kiểm regression SQL trực tiếp trong rollback đã đạt. Chưa QA browser/publish giao diện.
+
+- **B2C-CENTER-STUDENT-NAME-1-RELEASE (2026-11-03):** full Vitest 1095/1099; 3 lỗi `b2c-teaching-checkpoint.test.tsx` và 1 lỗi `b2c-teaching-schema.test.ts` do thay đổi geolocation/chấm công ngoài scope đang có sẵn. Lint/typecheck/build và test sửa tên đạt. User đã cho phép commit/push ngoại lệ sau khi được báo lỗi; không sửa test hay file chấm công để che lỗi.
 
 - RELEASE-20261023-B2C-HISTORY: đã đồng bộ4migration20261021 từ GitHub, không còn remote-only4; dry-run hiện chỉ báo16gap history20261012–14 cũ. Không include-all/replay/repair; SQL20261023000001–06 đã áp cloud và exact-history ở các task. Không có DB mutation trong release này.
 

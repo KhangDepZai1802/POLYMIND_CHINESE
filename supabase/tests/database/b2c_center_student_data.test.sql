@@ -16,21 +16,29 @@ end $$;
 reset role;
 insert into public.b2c_teacher_permissions(teacher_id,permissions,updated_by) values('ac230006-0000-4000-8000-000000000003',array['manage_center_student_data'],'ac230006-0000-4000-8000-000000000001');
 set local role authenticated;
-do $$ declare r jsonb; payload jsonb; begin
+do $$ declare r jsonb; begin
  assert public.has_b2c_permission('manage_center_student_data'), 'Explicit opt-in enabled';
  assert not public.has_b2c_permission('edit_tuition','ac230006-0000-4000-8000-000000000004'), 'No tuition escalation';
  r:=public.read_center_b2c_student_data('TEST CENTER DATA STUDENT',0)->'rows'->0;
  assert r->>'enrollment_id'='ac230006-0000-4000-8000-000000000006', 'Can complete data outside assigned classes';
- payload:=r||jsonb_build_object('phone','0901234567','customer_source','tiktok','referrer_name','','salesperson','TEST CLOSER','enrollment_date','2026-10-01','learning_start_date','2026-10-02','tuition_end_date','2026-12-01');
- perform public.save_center_b2c_student_data(payload);
+ begin perform public.save_center_b2c_student_data(r||jsonb_build_object('full_name','TEST FORBIDDEN RENAME','phone','','customer_source','','referrer_name','','salesperson','','enrollment_date','','learning_start_date','','tuition_end_date','')); raise exception 'Center data permission alone allowed rename'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+insert into public.b2c_student_name_editors(teacher_id) values('ac230006-0000-4000-8000-000000000003');
+set local role authenticated;
+do $$ declare r jsonb; payload jsonb; begin
  r:=public.read_center_b2c_student_data('TEST CENTER DATA STUDENT',0)->'rows'->0;
- assert r->>'phone'='0901234567' and r->>'customer_source'='tiktok' and r->>'salesperson'='TEST CLOSER' and r->>'tuition_end_date'='2026-12-01', 'All requested fields updated';
+ payload:=r||jsonb_build_object('full_name','TEST RENAMED CENTER STUDENT','phone','0901234567','customer_source','tiktok','referrer_name','','salesperson','TEST CLOSER','enrollment_date','2026-10-01','learning_start_date','2026-10-02','tuition_end_date','2026-12-01');
+ perform public.save_center_b2c_student_data(payload);
+ r:=public.read_center_b2c_student_data('TEST RENAMED CENTER STUDENT',0)->'rows'->0;
+ assert r->>'full_name'='TEST RENAMED CENTER STUDENT' and r->>'phone'='0901234567' and r->>'customer_source'='tiktok' and r->>'salesperson'='TEST CLOSER' and r->>'tuition_end_date'='2026-12-01', 'Name and all requested fields updated';
+ begin perform public.save_center_b2c_student_data(payload||'{"full_name":"X"}'); raise exception 'One character name accepted'; exception when invalid_parameter_value then null; end;
  begin perform public.save_center_b2c_student_data(payload||'{"phone":"901234567"}'); raise exception 'Nine digit phone accepted'; exception when invalid_parameter_value then null; end;
  begin perform public.save_center_b2c_student_data(payload||'{"customer_source":"referral","referrer_name":""}'); raise exception 'Missing referrer accepted'; exception when invalid_parameter_value then null; end;
  begin perform public.save_center_b2c_student_data(payload||'{"student_updated_at":"2000-01-01T00:00:00Z"}'); raise exception 'Stale snapshot accepted'; exception when serialization_failure then null; end;
  -- Completing source alone must not force invented missing phone, closer or dates.
  perform public.save_center_b2c_student_data(r||jsonb_build_object('phone','','customer_source','facebook','referrer_name','','salesperson','','enrollment_date','','learning_start_date','','tuition_end_date',''));
- r:=public.read_center_b2c_student_data('TEST CENTER DATA STUDENT',0)->'rows'->0;
+ r:=public.read_center_b2c_student_data('TEST RENAMED CENTER STUDENT',0)->'rows'->0;
  assert r->>'phone' is null and r->>'enrollment_date' is null and r->>'customer_source'='facebook', 'Unknown values may remain empty';
  assert (select count(*)=0 from public.b2c_students where id='ac230006-0000-4000-8000-000000000005'), 'No raw student table access added';
 end $$;

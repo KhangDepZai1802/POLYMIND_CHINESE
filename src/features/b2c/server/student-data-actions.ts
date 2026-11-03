@@ -7,6 +7,7 @@ import { B2C_CUSTOMER_SOURCES } from "../domain/customer-source";
 const date = z.union([z.literal(""), z.iso.date()]);
 const schema = z.object({
   student_id: z.uuid(), enrollment_id: z.union([z.literal(""), z.uuid()]), student_updated_at: z.string().min(1), enrollment_updated_at: z.string(),
+  full_name: z.string().trim().min(2, "Họ tên tối thiểu 2 ký tự.").max(200, "Họ tên tối đa 200 ký tự."),
   phone: z.string().trim().regex(/^(?:[0-9]{10})?$/, "SĐT phải có đúng 10 chữ số."),
   customer_source: z.union([z.literal(""), z.enum(B2C_CUSTOMER_SOURCES)]),
   referrer_name: z.string().trim().max(200), salesperson: z.string().trim().max(200),

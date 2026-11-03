@@ -15,6 +15,11 @@
 - User yêu cầu phát hành GitHub ngày26/10 sau khi được báo4test lỗi/1lint có sẵn ở chấm công; cho phép commit/push bản xóa hiện tại, giữ nguyên kết quả kiểm tra. QA deployment/browser vẫn chờ sau phát hành.
 
 
+## B2C-CENTER-STUDENT-NAME-1 — 2026-11-03
+
+- [x] Cô Lê/cô Thy sửa được họ tên học viên tại Học viên toàn trung tâm qua allowlist DB riêng; tên dùng chung giữa các lớp, kiểm 2–200 ký tự và stale timestamp. Giáo viên khác không tự có quyền; SQL production exact-history/rollback đạt.
+- User yêu cầu phát hành GitHub ngày03/11 sau khi được báo full test còn4 lỗi geolocation/chấm công ngoài scope; cho phép commit/push bản sửa tên hiện tại, giữ nguyên kết quả kiểm tra.
+
 ## RELEASE-20261023-B2C
 
 - [x] Đồng bộ13commit GitHub bằng fast-forward, ghép local và giữ shared invalidation/SaleWork/chấm công. Lint/typecheck/build và1099tests đạt;59file staged/secret-scan0/diff-check đạt.
