@@ -124,15 +124,6 @@ export function ClassWorkspaceContent({
       today;
   return (
     <NavigationContext.Provider value={onNavigate}>
-      {can("edit_students") && filters.tab === "students" && (
-        <div className="mb-3 flex justify-end">
-          <ClassStudentAddDialog
-            classId={classId}
-            className={cls.name}
-            today={today}
-          />
-        </div>
-      )}
       {!embedded && (
         <BackLink
           href={
@@ -222,9 +213,12 @@ export function ClassWorkspaceContent({
             ))}
         </nav>
       )}
-      {can("edit_classes") && (
-        <div className="mb-4">
-          <TeacherClassManageDialog classId={classId} />
+      {(can("edit_classes") || (can("edit_students") && filters.tab === "students")) && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {can("edit_classes") && <TeacherClassManageDialog classId={classId} />}
+          {can("edit_students") && filters.tab === "students" && (
+            <ClassStudentAddDialog classId={classId} className={cls.name} today={today} />
+          )}
         </div>
       )}
       {["students", "attendance", "tuition"].includes(filters.tab) && (
