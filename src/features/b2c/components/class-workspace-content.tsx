@@ -124,7 +124,7 @@ export function ClassWorkspaceContent({
       today;
   return (
     <NavigationContext.Provider value={onNavigate}>
-      {!permissions && filters.tab === "students" && (
+      {can("edit_students") && filters.tab === "students" && (
         <div className="mb-3 flex justify-end">
           <ClassStudentAddDialog
             classId={classId}

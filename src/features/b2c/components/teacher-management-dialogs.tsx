@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   readTeacherClassEditAction,
+  readTeacherClassTeacherOptionsAction,
   readTeacherStudentEditAction,
   saveTeacherClassAction,
   saveTeacherStudentAction,
@@ -51,6 +52,8 @@ export function TeacherClassManageDialog({ classId }: { classId?: string }) {
               status: "planned",
               notes: "",
               updated_at: null,
+              teacher_id: "",
+              teachers: await readTeacherClassTeacherOptionsAction(),
             },
       );
     } catch (e) {
@@ -104,6 +107,7 @@ export function TeacherClassManageDialog({ classId }: { classId?: string }) {
                     request_id: request,
                     expected_updated_at: data.updated_at,
                     data: values,
+                    ...(values.teacher_id ? { teacher_id: String(values.teacher_id) } : {}),
                   });
                   if (result.error) setError(result.error);
                   else {
@@ -118,6 +122,13 @@ export function TeacherClassManageDialog({ classId }: { classId?: string }) {
                 }
               }}
             >
+              {(data.teachers?.length ?? 0) > 0 && <label className="grid gap-1 text-sm">
+                Giáo viên đứng lớp
+                <select name="teacher_id" className={selectClass} required defaultValue={data.teacher_id ?? ""}>
+                  <option value="" disabled>Chọn giáo viên</option>
+                  {data.teachers?.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.full_name}</option>)}
+                </select>
+              </label>}
               <label className="grid gap-1 text-sm">
                 Tên lớp
                 <Input

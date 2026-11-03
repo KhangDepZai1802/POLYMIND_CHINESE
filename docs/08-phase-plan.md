@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-FULL-ACCESS-CLASS-1 — 2026-11-03
+
+- [x] Cô Lê/Cô Thy có đủ 22 quyền B2C và quyền thao tác toàn bộ lớp trung tâm.
+- [x] Hiện nút Thêm học viên trong tab Học viên; cho phép chọn/đổi giáo viên đứng lớp trong form sửa lớp.
+- [x] Migration production exact-history/rollback, 19 test liên quan, typecheck và production build đạt; user yêu cầu push GitHub.
+
+
 ## B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — 2026-10-26
 
 - [x] Admin Giờ dạy & Lương có Xóa buổi dạy, xác nhận/lý do và loại khỏi tổng công; giữ ảnh/lịch/điểm danh và audit.

@@ -15,7 +15,7 @@ const row: StudentDataRow = {
 beforeEach(() => vi.resetAllMocks());
 function open() {
   render(<StudentDataDialog row={row} />);
-  fireEvent.click(screen.getByRole("button", { name: /Bổ sung hồ sơ/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Chỉnh sửa hồ sơ/ }));
 }
 it("allows source entry without inventing missing phone and dates", async () => {
   mocks.save.mockResolvedValue({ success: true });

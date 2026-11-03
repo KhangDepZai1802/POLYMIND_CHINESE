@@ -19,6 +19,8 @@ export type TeacherClassEdit = {
   status: string;
   notes: string | null;
   updated_at: string | null;
+  teacher_id: string | null;
+  teachers: { id: string; full_name: string }[];
 };
 export type TeacherStudentEdit = {
   full_name: string;
@@ -60,10 +62,16 @@ export async function readTeacherWorkspaceAction(
   } satisfies Model;
 }
 export async function readTeacherClassEditAction(id: string) {
-  await requireTeaching("super_admin");
-  return permissionRpc<TeacherClassEdit>("read_teacher_b2c_class_edit", {
+  await requireTeaching();
+  const data = await permissionRpc<Omit<TeacherClassEdit, "teachers">>("read_teacher_b2c_class_edit", {
     p_id: z.uuid().parse(id),
   });
+  const teachers = await permissionRpc<TeacherClassEdit["teachers"]>("read_b2c_class_teacher_options");
+  return { ...data, teachers };
+}
+export async function readTeacherClassTeacherOptionsAction() {
+  await requireTeaching();
+  return permissionRpc<TeacherClassEdit["teachers"]>("read_b2c_class_teacher_options");
 }
 export async function readTeacherStudentEditAction(
   classId: string,
@@ -101,13 +109,14 @@ const classSchema = z
     message: "Ngày kết thúc khóa học không được trước ngày khai giảng.",
   });
 export async function saveTeacherClassAction(input: unknown) {
-  await requireTeaching("super_admin");
+  await requireTeaching();
   const parsed = z
     .object({
       id: z.uuid().nullable(),
       request_id: z.uuid(),
       expected_updated_at: z.string().nullable(),
       data: classSchema,
+      teacher_id: z.uuid().optional(),
     })
     .safeParse(input);
   if (!parsed.success)
@@ -116,12 +125,13 @@ export async function saveTeacherClassAction(input: unknown) {
     };
   try {
     const v = parsed.data;
-    await permissionRpc("save_teacher_b2c_class", {
+    const classId = await permissionRpc<string>("save_teacher_b2c_class", {
       p_id: v.id,
       p_request_id: v.request_id,
       p_data: v.data,
       p_expected_updated_at: v.expected_updated_at,
     });
+    if (v.teacher_id) await permissionRpc("assign_b2c_class_teacher", { p_class_id: classId, p_teacher_id: v.teacher_id });
     revalidateB2CViews();
     return { success: true };
   } catch (e) {

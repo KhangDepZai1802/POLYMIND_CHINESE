@@ -14,8 +14,8 @@ export function StudentDataDialog({ row }: { row: StudentDataRow }) {
   const hasEnrollment = row.enrollment_id !== null;
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
   return <Dialog open={open} onOpenChange={value => { if (!busy) { setOpen(value); setError(""); } }}>
-    <DialogTrigger asChild><Button size="sm" variant="outline" aria-label={`Bổ sung hồ sơ ${row.full_name} · ${row.class_name ?? "Chưa xếp lớp"}`}>Bổ sung</Button></DialogTrigger>
-    <DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Bổ sung hồ sơ học viên</DialogTitle><DialogDescription>{row.full_name} · {row.code} · {row.class_name ?? "Chưa xếp lớp"}. Họ tên, SĐT và nguồn khách dùng chung giữa các lớp; người chốt và ngày học theo ghi danh này. Chỉ nhập thông tin đã xác nhận.</DialogDescription></DialogHeader>
+    <DialogTrigger asChild><Button size="sm" variant="outline" aria-label={`Chỉnh sửa hồ sơ ${row.full_name} · ${row.class_name ?? "Chưa xếp lớp"}`}>Chỉnh sửa</Button></DialogTrigger>
+    <DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Chỉnh sửa hồ sơ học viên</DialogTitle><DialogDescription>{row.full_name} · {row.code} · {row.class_name ?? "Chưa xếp lớp"}. Họ tên, SĐT và nguồn khách dùng chung giữa các lớp; người chốt và ngày học theo ghi danh này. Chỉ nhập thông tin đã xác nhận.</DialogDescription></DialogHeader>
       <form key={`${row.student_updated_at}:${row.enrollment_updated_at}`} className="space-y-3" onSubmit={async event => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);

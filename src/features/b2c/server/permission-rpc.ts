@@ -49,6 +49,8 @@ type PermissionRpc =
   | "read_b2c_permitted_receipts"
   | "save_teacher_b2c_class"
   | "read_teacher_b2c_class_edit"
+  | "read_b2c_class_teacher_options"
+  | "assign_b2c_class_teacher"
   | "read_teacher_b2c_student_edit"
   | "save_teacher_b2c_student";
 export async function permissionRpc<T>(

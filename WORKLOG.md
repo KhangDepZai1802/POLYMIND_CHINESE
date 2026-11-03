@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-FULL-ACCESS-CLASS-1 — hoàn tất, user yêu cầu phát hành — Codex — 2026-11-03. Cô Lê/Cô Thy có đủ 22 quyền B2C và quyền toàn trung tâm; tab lớp hiện Thêm học viên, form lớp cho chọn giáo viên đứng lớp. SQL20261103000003 production exact-history + rollback đạt; 19/19 test liên quan, typecheck và build đạt.
+
 > B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — code và SQL cloud hoàn tất, phát hành — Codex — 2026-10-26. Xóa chỉ super_admin, giữ ảnh/lịch/điểm danh/audit, loại khỏi giờ/lương/pending-price; thumbnail/popup ảnh. SQL02 history/rollback đạt,7UItests/typecheck/build/lint file task đạt. Full197files:195đạt/2lỗi,1106tests đạt/4lỗi có sẵn; full lint vẫn1lỗi cũ. Theo yêu cầu đẩy GitHub trước đó, tiếp tục phát hành bản sửa; không xóa buổi thật.
 
 > B2C-CENTER-DELETE-1-RELEASE — Codex — 2026-10-26. User yêu cầu rõ đẩy GitHub sau khi đã báo4test lỗi/1lint chấm công ngoài scope. Phát hành bản xóa ba mục đã build/typecheck/lint file task và DB rollback/account-check đạt; giữ nguyên lỗi đã báo, không sửa chấm công. Không đưa script inspect có trước vào commit; chưa xác minh deployment online.
