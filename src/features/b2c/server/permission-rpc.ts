@@ -11,6 +11,7 @@ type PermissionRpc =
   | "can_manage_b2c_parents"
   | "read_teacher_b2c_parents_page"
   | "can_add_b2c_students"
+  | "can_create_b2c_teacher_accounts"
   | "read_b2c_enrollment_classes"
   | "read_center_b2c_tuition_page"
   | "archive_b2c_admission"

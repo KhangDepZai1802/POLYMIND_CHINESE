@@ -14,8 +14,13 @@ import {
   zodToActionState,
   type ActionState,
 } from "@/lib/action-state";
+import { permissionRpc } from "@/features/b2c/server/permission-rpc";
 import { logAudit } from "@/lib/audit";
-import { requireManager, requireRole } from "@/lib/auth/session";
+import {
+  requireManager,
+  requireRole,
+  requireUser,
+} from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,12 +39,22 @@ export async function createTeacherAction(
   // kéo theo tạo tài khoản đăng nhập. Đây chính là hệ quả user đã nghe và vẫn
   // chốt ở `D-2` điểm (4): giáo vụ KHÔNG thêm được giáo viên mới.
   // RLS cũng nói y hệt (`…087`), đừng nới một bên.
-  await requireRole("super_admin");
+  const actor = await requireUser();
+  const delegated =
+    actor.role !== "super_admin" &&
+    (await permissionRpc<boolean>("can_create_b2c_teacher_accounts").catch(
+      () => false,
+    ));
+  if (actor.role !== "super_admin" && !delegated)
+    return { error: "Không có quyền tạo tài khoản giáo viên." };
 
   const parsed = teacherSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToActionState(parsed.error);
 
   const input = parsed.data;
+
+  if (delegated && input.account_role !== "teacher")
+    return { error: "Bạn chỉ được tạo tài khoản có vai trò Giáo viên." };
 
   // Giáo vụ đi CHUNG luồng này, không có luồng riêng: hàng `teachers` bên dưới
   // được tạo cho cả hai vai trò, nên điểm (2) của `D-2` ("giáo vụ luôn có hồ sơ
@@ -85,6 +100,26 @@ export async function createTeacherAction(
     };
   }
 
+  if (delegated) {
+    const { error: b2cError } = await admin.from("b2c_teachers").insert({
+      source_teacher_id: data.id,
+      full_name: input.full_name,
+      phone: input.phone,
+      email: input.email,
+      specialization: input.specialization,
+      employment_type: input.employment_type,
+      hourly_rate: input.hourly_rate,
+      created_by: actor.id,
+    });
+    if (b2cError) {
+      await admin.from("teachers").delete().eq("id", data.id);
+      if (account.created) await admin.auth.admin.deleteUser(account.userId);
+      return {
+        error: `Không tạo được hồ sơ giáo viên B2C: ${dbErrorToMessage(b2cError)}`,
+      };
+    }
+  }
+
   const supabase = await createClient();
   await logAudit(supabase, {
     action: "teacher.create",
@@ -98,10 +133,15 @@ export async function createTeacherAction(
   });
 
   revalidatePath("/admin/teachers");
+  revalidatePath("/teacher/teachers");
 
   const roleLabel =
     input.account_role === "academic_manager" ? "giáo vụ" : "giáo viên";
-  return { success: `Đã tạo ${roleLabel} và cấp tài khoản ${input.username}.` };
+  return {
+    success: delegated
+      ? `Đã tạo và liên kết giáo viên B2C với tài khoản ${input.username}.`
+      : `Đã tạo ${roleLabel} và cấp tài khoản ${input.username}.`,
+  };
 }
 
 export async function updateTeacherAction(

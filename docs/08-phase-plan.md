@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TEACHER-ACCOUNT-CREATORS-1 — 2026-11-03
+
+- [x] Cô Lê/Cô Thy có menu Giáo viên riêng và biểu mẫu một bước để tạo tài khoản vai trò Giáo viên.
+- [x] Sau khi tạo, hệ thống tự tạo hồ sơ B2C và liên kết `source_teacher_id`; giáo viên mới xuất hiện trong lựa chọn Giáo viên đứng lớp. Server chặn tạo Giáo vụ và quyền được bảo vệ bằng allowlist DB riêng.
+- [x] Targeted lint, typecheck, production build và 7/7 test quyền/action đạt. User báo đã chạy SQL production.
+- [ ] Chưa xác minh migration history/DB integration qua CLI vì kết nối remote lỗi. Full lint còn 1 lỗi `Date.now()` và full Vitest còn 4 lỗi geolocation/chấm công ngoài phạm vi; chưa commit/push/deploy/QA tài khoản thật.
+
 ## B2C-FULL-ACCESS-CLASS-1 — 2026-11-03
 
 - [x] Cô Lê/Cô Thy có đủ 22 quyền B2C và quyền thao tác toàn bộ lớp trung tâm.

@@ -1,5 +1,9 @@
 # 02 — Thiết kế Database
 
+## B2C-TEACHER-ACCOUNT-CREATORS-1 (2026-11-03)
+
+Migration `20261103000004` tạo bảng RLS `b2c_teacher_account_creators` không cấp quyền đọc/ghi trực tiếp và allowlist đúng Cô Lê/Cô Thy qua chuỗi liên kết B2C teacher → teacher → profile active. RPC `can_create_b2c_teacher_accounts()` chỉ trả true cho Super Admin hoặc giáo viên active trong allowlist. Server vẫn kiểm lại quyền trước khi dùng admin client tạo Auth account; người được ủy quyền chỉ tạo role teacher. Sau khi tạo `teachers`, server tạo `b2c_teachers` với `source_teacher_id`; nếu bước B2C lỗi thì xóa bù hồ sơ teacher và Auth account mới để tránh dữ liệu nửa chừng.
+
 ## B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 (2026-10-26)
 
 SQL `20261026000002`: archived_at/by/reason có constraint trên b2c_teaching_sessions; không mở direct write. RPC archive_b2c_teaching_session chỉ app.is_super_admin, row lock/idempotent, ghi snapshot trước-sau vào b2c_class_history với auth.uid. App/public get_b2c_teaching_page loại archive cả tổng giờ/lương/pending-price; can_check_b2c_session giữ guard cũ và thêm chưa archive. Trigger chặn cập nhật sau archive để chống race với check-in/đơn giá. Giữ unique class/time và FK meeting, ảnh/checkpoints không bị xóa; không giải phóng slot hay tự sinh lại payroll. Raw teacher metrics lọc archive. SQL integration rollback kiểm teacher deny/admin archive/retry/totals/pending-price/photo/meeting/audit/checkpoint retention. Cloud migration/history đã áp và kiểm; CLI vẫn16gap cũ, không replay.

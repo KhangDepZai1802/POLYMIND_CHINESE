@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TEACHER-ACCOUNT-CREATORS-1 — code local hoàn tất, SQL do user báo đã chạy — Codex — 2026-11-03. Cô Lê/Cô Thy có menu Giáo viên và form một bước tạo account role teacher + hồ sơ teachers/B2C + liên kết; chặn role cao hơn/server allowlist riêng. Target lint/typecheck/build và7/7tests đạt. Full lint1 lỗi + full test4 lỗi geolocation/chấm công ngoài scope; CLI remote DB không kết nối nên chưa xác minh history/integration. Chưa commit/push/deploy.
+
 > B2C-FULL-ACCESS-CLASS-1 — hoàn tất, user yêu cầu phát hành — Codex — 2026-11-03. Cô Lê/Cô Thy có đủ 22 quyền B2C và quyền toàn trung tâm; tab lớp hiện Thêm học viên, form lớp cho chọn giáo viên đứng lớp. SQL20261103000003 production exact-history + rollback đạt; 19/19 test liên quan, typecheck và build đạt.
 
 > B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — code và SQL cloud hoàn tất, phát hành — Codex — 2026-10-26. Xóa chỉ super_admin, giữ ảnh/lịch/điểm danh/audit, loại khỏi giờ/lương/pending-price; thumbnail/popup ảnh. SQL02 history/rollback đạt,7UItests/typecheck/build/lint file task đạt. Full197files:195đạt/2lỗi,1106tests đạt/4lỗi có sẵn; full lint vẫn1lỗi cũ. Theo yêu cầu đẩy GitHub trước đó, tiếp tục phát hành bản sửa; không xóa buổi thật.
@@ -946,6 +948,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+**B2C-TEACHER-ACCOUNT-CREATORS-1-RELEASE-QA:** xác minh migration history khi kết nối Supabase hoạt động; commit/push khi user yêu cầu, sau đó đăng nhập Cô Lê/Cô Thy kiểm menu Giáo viên → tạo account thử được phép → giáo viên mới xuất hiện trong Sửa thông tin lớp. Không tạo tài khoản thử trên production nếu không có dữ liệu người thật đã được user duyệt.
+
 **B2C-TEACHING-ADMIN-DELETE-PREVIEW-1-QA:** sau push kiểm Vercel status, admin Giờ dạy & Lương có thumbnail/Xóa và popup; không xóa buổi thật để smoke test. Giữ nguyên4lỗi test/1lint chấm công có sẵn nếu vẫn tái hiện; không replay16gap migration.
 
 **B2C-CENTER-DELETE-1-RELEASE-QA:** xử lý cổng kiểm tra ngoài scope trước phát hành; review thay đổi nút Xóa Phụ huynh/Học viên/Gói học phí, kiểm hai account trên browser sau deployment. Không replay16migration gap cũ. Cloud SQL/quyền đã áp, giao diện chưa commit/push/deploy.
@@ -1396,6 +1400,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-TEACHER-ACCOUNT-CREATORS-1 (2026-11-03):** user báo đã chạy SQL production, nhưng `supabase migration list` không kết nối được remote Postgres nên chưa xác minh history/exact migration hoặc chạy DB integration test. Full lint còn lỗi `teacher-today-classes.tsx:29` gọi `Date.now()` trong render; full Vitest 196/198 files,1109/1113tests với4 lỗi geolocation/checkpoint có sẵn ngoài task. Targeted lint, typecheck, build và7/7 test account creator đạt. Chưa commit/push/deploy.
+
 - **B2C-CENTER-DELETE-1 (2026-10-26):** full lint lỗi `teacher-today-classes.tsx:29` Date.now render từ origin/main; test chấm công/checkpoint thiếu geolocation so với schema/code hiện tại. Không sửa module chấm công hoặc giảm test trong task xóa. CLI dry-run bị16gap B2C history cũ, không include-all/repair/replay; áp đúng migration mới qua transaction và kiểm history SQL mới khớp byte. Hai script verify migration23/10 cũ báo khác SQL (checkout CRLF/history), kiểm regression SQL trực tiếp trong rollback đã đạt. Chưa QA browser/publish giao diện.
 
 - **B2C-CENTER-STUDENT-NAME-1-RELEASE (2026-11-03):** full Vitest 1095/1099; 3 lỗi `b2c-teaching-checkpoint.test.tsx` và 1 lỗi `b2c-teaching-schema.test.ts` do thay đổi geolocation/chấm công ngoài scope đang có sẵn. Lint/typecheck/build và test sửa tên đạt. User đã cho phép commit/push ngoại lệ sau khi được báo lỗi; không sửa test hay file chấm công để che lỗi.
@@ -1549,6 +1555,12 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-11-03] Codex — B2C-TEACHER-ACCOUNT-CREATORS-1
+- Cô Lê/Cô Thy có menu Giáo viên riêng và form một bước; server chỉ nhận role teacher, tạo Auth + teachers + b2c_teachers liên kết và xóa bù nếu bước B2C lỗi. Giáo viên mới xuất hiện trong lựa chọn đứng lớp, không cần ghép thủ công.
+- Migration04 thêm allowlist RLS riêng và RPC capability fail-closed; user báo đã chạy SQL production. CLI migration list không kết nối được remote nên history/DB integration chưa xác minh.
+- Targeted lint sạch, typecheck/build đạt,7/7 test action/menu đạt. Full lint lỗi1 chấm công; full test196/198files,1109/1113tests,4 lỗi geolocation/chấm công ngoài scope. Không sửa module/test ngoài task.
+- Chưa commit/push/deploy. Next: xác minh DB history khi kết nối được, phát hành khi user yêu cầu rồi QA hai tài khoản bằng dữ liệu giáo viên thật được duyệt.
 
 ### [2026-10-26] Codex — B2C-TEACHING-ADMIN-DELETE-PREVIEW-1
 - Theo ảnh user, admin thiếu xóa buổi và bảng chỉ có link Xem ảnh. Thêm Xóa chỉ super_admin tại page/server/DB, xác nhận+lý do; archive payroll, trừ khỏi tổng giờ/lương/pending-price/metrics. Giữ ảnh/GPS/meeting/điểm danh và snapshot trước-sau/actor thật; không mở lại chấm công hoặc tái sinh buổi đã xóa.

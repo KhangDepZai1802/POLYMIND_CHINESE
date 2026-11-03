@@ -1,5 +1,9 @@
 # 03 — Workflow nghiệp vụ
 
+## Cô Lê/Cô Thy tạo giáo viên B2C (2026-11-03)
+
+Đăng nhập Cô Lê hoặc Cô Thy → menu Giáo viên → Thêm giáo viên → nhập tên đăng nhập, mật khẩu ban đầu, họ tên và thông tin giảng dạy → Lưu. Hệ thống chỉ tạo vai trò Giáo viên, đồng thời tạo/liên kết hồ sơ B2C; không cần mở Phân quyền để ghép tài khoản thủ công. Sau đó mở lớp → Sửa thông tin lớp → chọn giáo viên mới trong Giáo viên đứng lớp. Nếu bất kỳ bước tạo hồ sơ nào lỗi, giao diện báo lỗi và không giữ tài khoản tạo dở.
+
 ## Nhập dữ liệu B2C và xem phía admin (2026-10-21)
 
 Giáo viên vào lớp được phân công → nhập phần có quyền → Lưu thành công. Admin mở lại/tải lại Học viên/Lịch học/Điểm danh/Nhận xét/Nhận xét tháng/Kiểm tra/Học phí hoặc Chấm công tương ứng để xem cùng dữ liệu. Nhận xét tháng nháp đã xem được, không cần đánh dấu hoàn tất hoặc gửi admin. Thiếu quyền nhập điểm thì admin quyết định cấp `view_assessments` + `grade_assessments` trong phân quyền, không tự cấp hàng loạt.

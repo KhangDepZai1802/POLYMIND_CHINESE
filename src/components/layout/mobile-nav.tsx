@@ -32,6 +32,7 @@ export function MobileNav({
   canManageCenterTuition = false,
   canManageB2CParents = false,
   canManageStudentData = false,
+  canCreateTeacherAccounts = false,
 }: {
   role: UserRole;
   hasAssignedClasses?: boolean;
@@ -39,6 +40,7 @@ export function MobileNav({
   canManageCenterTuition?: boolean;
   canManageB2CParents?: boolean;
   canManageStudentData?: boolean;
+  canCreateTeacherAccounts?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -46,7 +48,7 @@ export function MobileNav({
     ? [{ label: "Xuất khẩu lao động", items: getXkldNavigation(role) }]
     : isManagerRole(role) && pathname.startsWith("/admin/b2c")
       ? [{ label: "Lớp trung tâm", items: getB2CNavigation(role) }]
-      : getNavigationGroups(role, { hasAssignedClasses, canManageAdmissions, canManageCenterTuition, canManageB2CParents, canManageStudentData });
+      : getNavigationGroups(role, { hasAssignedClasses, canManageAdmissions, canManageCenterTuition, canManageB2CParents, canManageStudentData, canCreateTeacherAccounts });
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

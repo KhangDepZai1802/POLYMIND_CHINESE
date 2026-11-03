@@ -23,6 +23,7 @@ export function SidebarNav({
   canManageCenterTuition = false,
   canManageB2CParents = false,
   canManageStudentData = false,
+  canCreateTeacherAccounts = false,
 }: {
   role: UserRole;
   hasAssignedClasses?: boolean;
@@ -30,13 +31,14 @@ export function SidebarNav({
   canManageCenterTuition?: boolean;
   canManageB2CParents?: boolean;
   canManageStudentData?: boolean;
+  canCreateTeacherAccounts?: boolean;
 }) {
   const pathname = usePathname();
   const groups = pathname.startsWith("/workspace/xkld")
     ? [{ label: "Xuất khẩu lao động", items: getXkldNavigation(role) }]
     : isManagerRole(role) && pathname.startsWith("/admin/b2c")
       ? [{ label: "Lớp trung tâm", items: getB2CNavigation(role) }]
-      : getNavigationGroups(role, { hasAssignedClasses, canManageAdmissions, canManageCenterTuition, canManageB2CParents, canManageStudentData });
+      : getNavigationGroups(role, { hasAssignedClasses, canManageAdmissions, canManageCenterTuition, canManageB2CParents, canManageStudentData, canCreateTeacherAccounts });
 
   return (
     <aside className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col self-start border-r md:flex">

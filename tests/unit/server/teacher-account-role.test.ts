@@ -5,7 +5,8 @@ import {
   resetTeacherPasswordAction,
 } from "@/features/teachers/server/actions";
 import { provisionPasswordAccount } from "@/features/users/server/account";
-import { requireRole } from "@/lib/auth/session";
+import { permissionRpc } from "@/features/b2c/server/permission-rpc";
+import { requireRole, requireUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,6 +18,10 @@ vi.mock("@/features/users/server/invite", () => ({ setUserActive: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({
   requireRole: vi.fn(),
   requireManager: vi.fn(),
+  requireUser: vi.fn(),
+}));
+vi.mock("@/features/b2c/server/permission-rpc", () => ({
+  permissionRpc: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
@@ -46,6 +51,11 @@ describe("trang Giáo viên không được lặng lẽ đổi vai trò", () => 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireRole).mockResolvedValue(undefined as never);
+    vi.mocked(requireUser).mockResolvedValue({
+      id: USER_ID,
+      role: "super_admin",
+    } as never);
+    vi.mocked(permissionRpc).mockResolvedValue(false as never);
     vi.mocked(createClient).mockResolvedValue({
       from: vi.fn(() => logAuditQuery),
       rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -163,5 +173,51 @@ describe("trang Giáo viên không được lặng lẽ đổi vai trò", () => 
     expect(provisionPasswordAccount).toHaveBeenCalledWith(
       expect.objectContaining({ role: "teacher" }),
     );
+  });
+
+  it("tài khoản được ủy quyền chỉ tạo giáo viên và tự liên kết hồ sơ B2C", async () => {
+    vi.mocked(requireUser).mockResolvedValue({
+      id: USER_ID,
+      role: "teacher",
+    } as never);
+    vi.mocked(permissionRpc).mockResolvedValue(true as never);
+    const fd = new FormData();
+    fd.set("account_role", "teacher");
+    fd.set("username", "gv.b2c");
+    fd.set("password", "Polymind@2026");
+    fd.set("email", "");
+    fd.set("full_name", "Giáo viên B2C");
+    fd.set("phone", "");
+    fd.set("specialization", "Tiếng Anh");
+    fd.set("bio", "");
+
+    const result = await createTeacherAction({}, fd);
+
+    expect(permissionRpc).toHaveBeenCalledWith(
+      "can_create_b2c_teacher_accounts",
+    );
+    expect(result.success).toContain("Đã tạo và liên kết giáo viên B2C");
+  });
+
+  it("tài khoản được ủy quyền không thể tạo vai trò Giáo vụ", async () => {
+    vi.mocked(requireUser).mockResolvedValue({
+      id: USER_ID,
+      role: "teacher",
+    } as never);
+    vi.mocked(permissionRpc).mockResolvedValue(true as never);
+    const fd = new FormData();
+    fd.set("account_role", "academic_manager");
+    fd.set("username", "giaovu.cam");
+    fd.set("password", "Polymind@2026");
+    fd.set("email", "");
+    fd.set("full_name", "Giáo vụ bị chặn");
+    fd.set("phone", "");
+    fd.set("specialization", "");
+    fd.set("bio", "");
+
+    const result = await createTeacherAction({}, fd);
+
+    expect(result.error).toContain("chỉ được tạo");
+    expect(provisionPasswordAccount).not.toHaveBeenCalled();
   });
 });

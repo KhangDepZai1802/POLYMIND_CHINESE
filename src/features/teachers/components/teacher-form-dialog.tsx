@@ -42,9 +42,11 @@ type Teacher = {
 export function TeacherFormDialog({
   teacher,
   trigger,
+  teacherOnly = false,
 }: {
   teacher?: Teacher;
   trigger?: React.ReactNode;
+  teacherOnly?: boolean;
 }) {
   const isEdit = Boolean(teacher);
   const [open, setOpen] = useState(false);
@@ -93,7 +95,10 @@ export function TeacherFormDialog({
               thao tác trên tài khoản — `trg_profiles_no_self_escalation` chặn
               nó ở DB cho mọi client trừ service_role, nên bày ô này ở form sửa
               là hứa một việc mà tầng dưới từ chối. */}
-          {!isEdit && (
+          {!isEdit && teacherOnly && (
+            <input type="hidden" name="account_role" value="teacher" />
+          )}
+          {!isEdit && !teacherOnly && (
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">Vai trò *</legend>
               <div className="grid gap-2 sm:grid-cols-2">
