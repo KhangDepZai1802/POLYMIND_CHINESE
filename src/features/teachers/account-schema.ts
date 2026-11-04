@@ -19,6 +19,9 @@ export const teacherPasswordChangeSchema = teacherAccountTargetSchema
 export const teacherAccountDeleteSchema = teacherAccountTargetSchema.extend({
   expected_user_id: z.uuid(),
 });
+export const teacherAccountActiveSchema = teacherAccountDeleteSchema.extend({
+  activate: z.boolean(),
+});
 export type TeacherAccountDetails = {
   teacher_id: string;
   user_id: string;

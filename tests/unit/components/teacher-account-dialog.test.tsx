@@ -10,11 +10,13 @@ const mocks = vi.hoisted(() => ({
   read: vi.fn(),
   change: vi.fn(),
   remove: vi.fn(),
+  active: vi.fn(),
 }));
 vi.mock("@/features/teachers/server/account-actions", () => ({
   readTeacherAccountAction: mocks.read,
   changeTeacherPasswordAction: mocks.change,
   deleteTeacherAccountAction: mocks.remove,
+  setTeacherAccountActiveAction: mocks.active,
 }));
 import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
 import { TeacherAccountDialog } from "@/features/teachers/components/teacher-account-dialog";
@@ -37,6 +39,9 @@ beforeEach(() => {
   mocks.read.mockResolvedValue({ account });
   mocks.change.mockResolvedValue({ success: "Đã đổi mật khẩu giáo viên." });
   mocks.remove.mockResolvedValue({ success: "Đã xóa tài khoản." });
+  mocks.active.mockResolvedValue({
+    success: "Đã mở khóa tài khoản giáo viên.",
+  });
 });
 afterEach(cleanup);
 async function open() {

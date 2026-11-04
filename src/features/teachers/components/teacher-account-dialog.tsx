@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
-import { KeyRound, Trash2 } from "lucide-react";
+import { KeyRound, Lock, Trash2, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   readTeacherAccountAction,
   changeTeacherPasswordAction,
   deleteTeacherAccountAction,
+  setTeacherAccountActiveAction,
 } from "../server/account-actions";
 import { useConfirmation } from "@/components/shared/confirmation-provider";
 import type {
@@ -202,6 +203,65 @@ export function TeacherAccountDialog({
                 </Button>
               </fieldset>
             </form>
+            <div className="space-y-2 rounded-md border p-3">
+              <p className="text-sm font-medium">
+                {account.account_active
+                  ? "Khóa tài khoản"
+                  : "Mở khóa tài khoản"}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Khóa tài khoản sẽ ngăn đăng nhập nhưng vẫn giữ nguyên lớp và
+                lịch sử giảng dạy.
+              </p>
+              <Button
+                type="button"
+                variant={account.account_active ? "outline" : "default"}
+                disabled={saving}
+                onClick={async () => {
+                  if (account.account_active) {
+                    const accepted = await confirm({
+                      title: "Khóa tài khoản giáo viên?",
+                      description: `Khóa tài khoản ${account.full_name} (${account.login})? Dữ liệu vẫn được giữ nguyên.`,
+                      confirmLabel: "Khóa tài khoản",
+                      cancelLabel: "Không khóa",
+                      variant: "destructive",
+                    });
+                    if (!accepted) return;
+                  }
+                  setSaving(true);
+                  setError("");
+                  try {
+                    const result = await setTeacherAccountActiveAction({
+                      ...target,
+                      expected_user_id: account.user_id,
+                      activate: !account.account_active,
+                    });
+                    if (result.error) setError(result.error);
+                    else if (result.success) {
+                      toast.success(result.success);
+                      setAccount({
+                        ...account,
+                        account_active: !account.account_active,
+                        teacher_active: !account.account_active,
+                      });
+                    }
+                  } catch {
+                    setError("Không thể kết nối. Vui lòng thử lại.");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                {account.account_active ? (
+                  <Lock className="size-4" aria-hidden />
+                ) : (
+                  <Unlock className="size-4" aria-hidden />
+                )}
+                {account.account_active
+                  ? "Khóa tài khoản"
+                  : "Mở khóa tài khoản"}
+              </Button>
+            </div>
             <div className="border-destructive/30 space-y-2 rounded-md border p-3">
               <p className="text-sm font-medium">Xóa tài khoản</p>
               <p className="text-muted-foreground text-sm">

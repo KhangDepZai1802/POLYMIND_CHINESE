@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   teacherAccountTargetSchema,
   teacherAccountDeleteSchema,
+  teacherAccountActiveSchema,
   teacherPasswordChangeSchema,
   type TeacherAccountTarget,
   type TeacherAccountDetails,
@@ -47,13 +48,13 @@ async function resolveTeacher(target: TeacherAccountTarget) {
 
 async function requireTeacherAccountManager() {
   const actor = await requireUser();
-  if (actor.role === "super_admin") return { delegated: false };
+  if (actor.role === "super_admin") return { delegated: false, actor };
   const delegated = await permissionRpc<boolean>(
     "can_create_b2c_teacher_accounts",
   ).catch(() => false);
   if (!delegated)
     throw new Error("Không có quyền quản lý tài khoản giáo viên.");
-  return { delegated: true };
+  return { delegated: true, actor };
 }
 
 export async function readTeacherAccountAction(
@@ -218,5 +219,65 @@ export async function deleteTeacherAccountAction(
     };
   } catch {
     return { error: "Không xóa được tài khoản giáo viên. Vui lòng thử lại." };
+  }
+}
+
+export async function setTeacherAccountActiveAction(
+  input: unknown,
+): Promise<{ success?: string; error?: string }> {
+  const access = await requireTeacherAccountManager();
+  const parsed = teacherAccountActiveSchema.safeParse(input);
+  if (!parsed.success)
+    return { error: "Dữ liệu trạng thái tài khoản không hợp lệ." };
+  try {
+    const teacher = await resolveTeacher(parsed.data);
+    if (!teacher) return { error: "Giáo viên chưa liên kết tài khoản." };
+    if (access.delegated && teacher.profile!.role !== "teacher")
+      return { error: "Bạn chỉ được khóa hoặc mở khóa tài khoản Giáo viên." };
+    if (teacher.user_id !== parsed.data.expected_user_id)
+      return { error: "Liên kết tài khoản đã thay đổi. Vui lòng tải lại." };
+    if (teacher.user_id === access.actor.id)
+      return {
+        error: "Không thể tự khóa hoặc mở khóa tài khoản đang đăng nhập.",
+      };
+
+    const admin = createAdminClient();
+    const { error: teacherError } = await admin
+      .from("teachers")
+      .update({ is_active: parsed.data.activate })
+      .eq("id", teacher.id);
+    if (teacherError) return { error: teacherError.message };
+
+    const { error: profileError } = await admin
+      .from("profiles")
+      .update({ is_active: parsed.data.activate })
+      .eq("id", teacher.user_id);
+    if (profileError) {
+      await admin
+        .from("teachers")
+        .update({ is_active: teacher.is_active })
+        .eq("id", teacher.id);
+      return { error: profileError.message };
+    }
+
+    const client = await createClient();
+    await logAudit(client, {
+      action: parsed.data.activate
+        ? "teacher.account_activate"
+        : "teacher.account_deactivate",
+      resourceType: "teacher",
+      resourceId: teacher.id,
+      after: { is_active: parsed.data.activate, user_id: teacher.user_id },
+    });
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/b2c/teachers");
+    revalidatePath("/teacher/teachers");
+    return {
+      success: parsed.data.activate
+        ? "Đã mở khóa tài khoản giáo viên."
+        : "Đã khóa tài khoản giáo viên. Họ không thể đăng nhập.",
+    };
+  } catch {
+    return { error: "Không đổi được trạng thái tài khoản. Vui lòng thử lại." };
   }
 }

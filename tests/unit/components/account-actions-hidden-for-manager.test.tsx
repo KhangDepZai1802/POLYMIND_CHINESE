@@ -10,6 +10,7 @@ vi.mock("@/features/teachers/server/account-actions", () => ({
   readTeacherAccountAction: vi.fn(),
   changeTeacherPasswordAction: vi.fn(),
   deleteTeacherAccountAction: vi.fn(),
+  setTeacherAccountActiveAction: vi.fn(),
 }));
 
 vi.mock("@/features/teachers/server/actions", () => ({
