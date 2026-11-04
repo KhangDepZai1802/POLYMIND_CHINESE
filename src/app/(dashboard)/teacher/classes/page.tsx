@@ -12,6 +12,7 @@ import { getClasses } from "@/features/classes/server/queries";
 import { getMyB2CClasses } from "@/features/b2c/server/teacher-class-queries";
 import { TeacherB2CClassCards } from "@/features/b2c/components/teacher-class-cards";
 import { getMyB2CPermissionsAction } from "@/features/b2c/server/permission-actions";
+import { permissionRpc } from "@/features/b2c/server/permission-rpc";
 import { TeacherClassManageDialog } from "@/features/b2c/components/teacher-management-dialogs";
 import { TeacherAddStudent } from "@/features/b2c/components/teacher-add-student";
 import { requireTeaching } from "@/lib/auth/session";
@@ -34,10 +35,11 @@ export default async function TeacherClassesPage({
   const search = await searchParams;
   const query =
     typeof search.q === "string" ? search.q.trim().slice(0, 200) : "";
-  const [allClasses, allB2CClasses, permissions] = await Promise.all([
+  const [allClasses, allB2CClasses, permissions, canViewAllClasses] = await Promise.all([
     getClasses(),
     getMyB2CClasses(),
     getMyB2CPermissionsAction(),
+    permissionRpc<boolean>("can_create_b2c_teacher_accounts").catch(() => false),
   ]);
   const matches = (code: string, name: string) =>
     `${code} ${name}`
@@ -49,8 +51,12 @@ export default async function TeacherClassesPage({
   return (
     <>
       <PageHeader
-        title="Lớp của tôi"
-        description="Các lớp bạn được phân công giảng dạy."
+        title={canViewAllClasses ? "Tất cả lớp" : "Lớp của tôi"}
+        description={
+          canViewAllClasses
+            ? "Toàn bộ lớp B2C của trung tâm và các lớp khác bạn trực tiếp giảng dạy."
+            : "Các lớp bạn được phân công giảng dạy."
+        }
         action={
           <div className="flex flex-wrap gap-2">
             <TeacherAddStudent />
@@ -62,7 +68,7 @@ export default async function TeacherClassesPage({
       <form
         className="mb-5 flex gap-2"
         role="search"
-        aria-label="Lọc lớp của tôi"
+        aria-label={canViewAllClasses ? "Lọc tất cả lớp" : "Lọc lớp của tôi"}
       >
         <Input
           type="search"
@@ -84,12 +90,16 @@ export default async function TeacherClassesPage({
               title={
                 query
                   ? "Không tìm thấy lớp phù hợp"
-                  : "Bạn chưa được phân công lớp nào"
+                  : canViewAllClasses
+                    ? "Trung tâm chưa có lớp nào"
+                    : "Bạn chưa được phân công lớp nào"
               }
               description={
                 query
                   ? "Thử tìm lại bằng mã hoặc tên lớp khác."
-                  : "Quản trị viên sẽ phân công lớp cho bạn."
+                  : canViewAllClasses
+                    ? "Lớp mới sẽ xuất hiện tại đây sau khi được tạo."
+                    : "Quản trị viên sẽ phân công lớp cho bạn."
               }
             />
           </CardContent>

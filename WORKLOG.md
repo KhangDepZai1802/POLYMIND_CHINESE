@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TEACHER-OPERATIONS-1 — code xong, user yêu cầu phát hành — Codex — 2026-11-04. Cô Lê/Cô Thy có danh sách account sau khi tạo, xem username/đặt mật khẩu mới (không lưu plaintext) và Tất cả lớp B2C; server/DB allowlist fail-closed. User báo đã chạy SQL production; CLI dry-run vẫn lỗi Supabase tenant ENOTFOUND nên chưa xác minh migration history. Typecheck, target lint, 23/23 target tests và production build đạt; Docker local không chạy nên pgTAP chưa chạy.
+
 > B2C-TEACHER-ACCOUNT-CREATORS-1 — code local hoàn tất, SQL do user báo đã chạy — Codex — 2026-11-03. Cô Lê/Cô Thy có menu Giáo viên và form một bước tạo account role teacher + hồ sơ teachers/B2C + liên kết; chặn role cao hơn/server allowlist riêng. Target lint/typecheck/build và7/7tests đạt. Full lint1 lỗi + full test4 lỗi geolocation/chấm công ngoài scope; CLI remote DB không kết nối nên chưa xác minh history/integration. Chưa commit/push/deploy.
 
 > B2C-FULL-ACCESS-CLASS-1 — hoàn tất, user yêu cầu phát hành — Codex — 2026-11-03. Cô Lê/Cô Thy có đủ 22 quyền B2C và quyền toàn trung tâm; tab lớp hiện Thêm học viên, form lớp cho chọn giáo viên đứng lớp. SQL20261103000003 production exact-history + rollback đạt; 19/19 test liên quan, typecheck và build đạt.
@@ -947,6 +949,8 @@
 ---
 
 ## ➡️ VIỆC TIẾP THEO
+
+**B2C-TEACHER-OPERATIONS-1-RELEASE-QA:** sau push theo dõi Vercel project `thongdat`; Cô Lê/Cô Thy đăng xuất/đăng nhập lại, kiểm Giáo viên → danh sách/username/đặt mật khẩu mới và Tất cả lớp. Không reset mật khẩu thật chỉ để smoke test.
 
 **B2C-TEACHER-ACCOUNT-CREATORS-1-RELEASE-QA:** xác minh migration history khi kết nối Supabase hoạt động; commit/push khi user yêu cầu, sau đó đăng nhập Cô Lê/Cô Thy kiểm menu Giáo viên → tạo account thử được phép → giáo viên mới xuất hiện trong Sửa thông tin lớp. Không tạo tài khoản thử trên production nếu không có dữ liệu người thật đã được user duyệt.
 

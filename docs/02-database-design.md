@@ -118,6 +118,8 @@ SQL20261014000015 đã áp cloud/history xác minh; pgTAP mới35/35, hồi quy 
 
 ## Phân công lớp B2C cho tài khoản giáo viên (SQL14)
 
+`b2c_teacher_account_creators` là allowlist riêng cho Cô Lê/Cô Thy. Ngoài quyền tạo/reset tài khoản role `teacher`, migration `20261104000001_teacher_operations.sql` nới projection `app.read_my_b2c_classes` để hai tài khoản này đọc toàn bộ lớp B2C. Giáo viên không nằm trong allowlist vẫn bị giới hạn bởi `app.teaches_b2c_class`; mật khẩu không có bảng plaintext, chỉ có thao tác Auth Admin đặt giá trị mới sau khi server kiểm allowlist.
+
 20261014000014 thêm b2c_classes.teacher_id FK b2c_teachers restrict + index. Backfill tên trim/lower chỉ khớp duy nhất; trigger resolve_b2c_class_teacher chạy insert/đổi teacher_name. Không dùng so tên trong truy vấn phân quyền sau backfill. app.teaches_b2c_class kiểm ID/source_teacher/user/profile role teacher|academic_manager và cả profiles.is_active/teachers.is_active.
 
 read_my_b2c_classes SECURITY DEFINER search_path rỗng kiểm role active, deny lớp khác, chỉ projection lớp/roster/lịch/nhận xét, không học phí/PII liên hệ/audit/payroll. Raw RLS và RPC manager cũ giữ nguyên. Chỉ authenticated execute; không cấp quyền helper app cho user. SQL14 đã áp cloud/history xác minh; pgTAP23/23 rollback. CLI dry-run vẫn chặn15 migration cũ thiếu history, không replay/repair SQL cũ.

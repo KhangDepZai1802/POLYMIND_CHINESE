@@ -131,7 +131,7 @@ Quản lý cấp quyền Điểm danh học viên trong Phân quyền B2C. Giáo
 
 ## Phân quyền giáo viên B2C (2026-10-15)
 
-Admin B2C → menu trái Phân quyền (ngay dưới Nhật ký thay đổi) → tìm/chọn hồ sơ B2C → chọn tài khoản giáo viên đang hoạt động đã có → tích từng quyền → Lưu phân quyền. Quyền phụ thuộc tự chọn/bỏ; thay đổi chỉ lưu khi bấm Lưu, bản ghi cũ thay đổi thì báo tải lại. Giáo viên dùng Lớp của tôi → lớp B2C để xem/nhập theo quyền; Tạo lớp B2C xuất hiện nếu được cấp, lớp mới tự phân công cho mình. Chấm công B2C tách quyền upload/check-in/out và xem tiền công. Không được truy cập lớp khác bằng URL/RPC. User đã xác nhận và migration production đã áp/verify. Code hiện ở local, chưa phát hành online.
+Admin B2C → menu trái Phân quyền (ngay dưới Nhật ký thay đổi) → tìm/chọn hồ sơ B2C → chọn tài khoản giáo viên đang hoạt động đã có → tích từng quyền → Lưu phân quyền. Quyền phụ thuộc tự chọn/bỏ; thay đổi chỉ lưu khi bấm Lưu, bản ghi cũ thay đổi thì báo tải lại. Giáo viên thường dùng Lớp của tôi và chỉ truy cập lớp được phân công. Riêng Cô Lê/Cô Thy thấy Tất cả lớp và được mở chi tiết toàn bộ lớp B2C. Tại Giáo viên, tạo tài khoản xong danh sách tải lại ngay; nếu quên mật khẩu thì xem tên đăng nhập và đặt mật khẩu mới (không đọc lại mật khẩu cũ). Chấm công B2C tách quyền upload/check-in/out và xem tiền công.
 
 ## Xếp lịch lặp và sinh buổi B2C (2026-10-14)
 

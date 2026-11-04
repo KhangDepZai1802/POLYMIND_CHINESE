@@ -42,14 +42,17 @@ type Teacher = {
 export function TeacherFormDialog({
   teacher,
   trigger,
+  initialSpecialization,
   teacherOnly = false,
 }: {
   teacher?: Teacher;
   trigger?: React.ReactNode;
+  initialSpecialization?: string;
   teacherOnly?: boolean;
 }) {
   const isEdit = Boolean(teacher);
   const [open, setOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { state, formAction } = useFormAction(
     isEdit ? updateTeacherAction : createTeacherAction,
@@ -59,7 +62,13 @@ export function TeacherFormDialog({
   const fe = state.fieldErrors ?? {};
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) setShowPassword(false);
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? (
           <Button>
@@ -159,7 +168,7 @@ export function TeacherFormDialog({
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   minLength={8}
                   required
@@ -167,6 +176,14 @@ export function TeacherFormDialog({
                 {fe["password"] && (
                   <p className="text-destructive text-xs">{fe["password"]}</p>
                 )}
+                <label className="flex min-h-8 items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(event) => setShowPassword(event.target.checked)}
+                  />
+                  Hiện mật khẩu để kiểm tra và sao chép
+                </label>
               </div>
             </div>
           )}
@@ -219,7 +236,7 @@ export function TeacherFormDialog({
             <Input
               id="specialization"
               name="specialization"
-              defaultValue={teacher?.specialization ?? ""}
+              defaultValue={teacher?.specialization ?? initialSpecialization ?? ""}
               placeholder="HSK, Tiếng Trung thương mại"
             />
           </div>

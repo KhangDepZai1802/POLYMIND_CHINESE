@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { permissionRpc } from "@/features/b2c/server/permission-rpc";
 
 export async function getTeachers(search?: string) {
   const supabase = await createClient();
@@ -54,4 +56,36 @@ export async function getActiveTeacherOptions() {
 
   if (error) throw new Error(`Không tải được giáo viên: ${error.message}`);
   return data;
+}
+
+export type TeacherAccountDirectoryRow = {
+  id: string;
+  user_id: string;
+  teacher_code: string;
+  specialization: string | null;
+  is_active: boolean;
+  profile: {
+    full_name: string;
+    username: string | null;
+    phone: string | null;
+    is_active: boolean;
+  } | null;
+};
+
+/** Danh bạ tài khoản dành riêng cho hai giáo viên được ủy quyền. */
+export async function getTeacherAccountDirectory() {
+  const allowed = await permissionRpc<boolean>(
+    "can_create_b2c_teacher_accounts",
+  ).catch(() => false);
+  if (!allowed) throw new Error("Không có quyền xem tài khoản giáo viên.");
+
+  const { data, error } = await createAdminClient()
+    .from("teachers")
+    .select(
+      "id,user_id,teacher_code,specialization,is_active,profile:profiles!fk_teachers_profile!inner(full_name,username,phone,is_active,role)",
+    )
+    .eq("profile.role", "teacher")
+    .order("teacher_code");
+  if (error) throw new Error("Không tải được danh sách tài khoản giáo viên.");
+  return (data ?? []) as unknown as TeacherAccountDirectoryRow[];
 }

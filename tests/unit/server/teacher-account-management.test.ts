@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
-  role: vi.fn(),
+  user: vi.fn(),
+  permission: vi.fn(),
   from: vi.fn(),
   admin: vi.fn(),
   getUser: vi.fn(),
@@ -10,7 +11,10 @@ const mocks = vi.hoisted(() => ({
   teacher: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ requireRole: mocks.role }));
+vi.mock("@/lib/auth/session", () => ({ requireUser: mocks.user }));
+vi.mock("@/features/b2c/server/permission-rpc", () => ({
+  permissionRpc: mocks.permission,
+}));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ from: mocks.from }),
 }));
@@ -37,7 +41,8 @@ const passwordInput = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.role.mockResolvedValue({ role: "super_admin" });
+  mocks.user.mockResolvedValue({ id: userId, role: "super_admin" });
+  mocks.permission.mockResolvedValue(false);
   mocks.b2c.mockResolvedValue({
     data: { source_teacher_id: teacherId },
     error: null,
@@ -67,6 +72,7 @@ beforeEach(() => {
   });
   mocks.updateUser.mockResolvedValue({ data: {}, error: null });
   mocks.admin.mockReturnValue({
+    from: mocks.from,
     auth: {
       admin: { getUserById: mocks.getUser, updateUserById: mocks.updateUser },
     },
@@ -76,7 +82,7 @@ beforeEach(() => {
 describe("admin manages linked teacher credentials", () => {
   it("resolves B2C IDs to shared accounts and shows username/locked state without passwords", async () => {
     const result = await readTeacherAccountAction(target);
-    expect(mocks.role).toHaveBeenCalledWith("super_admin");
+    expect(mocks.user).toHaveBeenCalled();
     expect(result.account).toMatchObject({
       teacher_id: teacherId,
       user_id: userId,
@@ -92,7 +98,6 @@ describe("admin manages linked teacher credentials", () => {
     expect(mocks.updateUser).toHaveBeenCalledExactlyOnceWith(userId, {
       password: "NewPass@2026",
     });
-    expect(mocks.admin.mock.results[0]?.value.from).toBeUndefined();
     expect(mocks.audit).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -108,13 +113,36 @@ describe("admin manages linked teacher credentials", () => {
     );
   });
   it("rejects nonadmins before resolving any account or using Auth admin", async () => {
-    mocks.role.mockRejectedValue(new Error("denied"));
+    mocks.user.mockRejectedValue(new Error("denied"));
     await expect(readTeacherAccountAction(target)).rejects.toThrow("denied");
     await expect(changeTeacherPasswordAction(passwordInput)).rejects.toThrow(
       "denied",
     );
     expect(mocks.from).not.toHaveBeenCalled();
-    expect(mocks.admin).not.toHaveBeenCalled();
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+  it("allows a delegated creator to manage teacher accounts but not academic managers", async () => {
+    mocks.user.mockResolvedValue({ id: userId, role: "teacher" });
+    mocks.permission.mockResolvedValue(true);
+    expect((await readTeacherAccountAction(target)).error).toContain(
+      "chỉ được quản lý tài khoản Giáo viên",
+    );
+    mocks.teacher.mockResolvedValue({
+      data: {
+        id: teacherId,
+        user_id: userId,
+        is_active: true,
+        profile: {
+          full_name: "Giáo viên A",
+          username: "gv.a",
+          role: "teacher",
+          is_active: true,
+        },
+      },
+      error: null,
+    });
+    expect((await readTeacherAccountAction(target)).account?.login).toBe("gv.a");
   });
   it("rejects an account link changed after opening the dialog", async () => {
     const result = await changeTeacherPasswordAction({
@@ -133,7 +161,8 @@ describe("admin manages linked teacher credentials", () => {
     expect((await changeTeacherPasswordAction(passwordInput)).error).toContain(
       "chưa liên kết",
     );
-    expect(mocks.admin).not.toHaveBeenCalled();
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
     expect(mocks.teacher).not.toHaveBeenCalled();
   });
   it("validates confirmation and length before reading accounts", async () => {

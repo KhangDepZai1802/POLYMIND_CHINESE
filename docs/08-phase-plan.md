@@ -193,6 +193,7 @@
 ## TEACHER-ACCOUNT-MANAGEMENT-1 — Admin quản lý tài khoản giáo viên
 
 - [x] Admin xem đúng tài khoản liên kết giáo viên; đặt mật khẩu mới có xác nhận; server gác super_admin và resolve target qua RLS; chỉ đổi password, giữ username/role/is_active; báo hồ sơ B2C chưa liên kết; audit không chứa mật khẩu.14 test mới (server9/UI5), full Vitest880/880, lint/typecheck/build exit0; không migration.
+- [x] `B2C-TEACHER-OPERATIONS-1`: Cô Lê/Cô Thy xem danh sách + username, đặt lại mật khẩu cho role teacher và xem toàn bộ lớp B2C; người khác fail-closed. Không lưu/hiện mật khẩu cũ.
 - [ ] `TEACHER-ACCOUNT-MANAGEMENT-1-QA`: QA browser độc lập bằng tài khoản thử; phát hành code khi user yêu cầu.
 
 ## B2C-TUITION-CORRECTIONS-1 — Hủy thu, hoàn tiền, điều chỉnh
