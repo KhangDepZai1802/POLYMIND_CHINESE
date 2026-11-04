@@ -195,13 +195,20 @@ export async function deleteTeacherAccountAction(
       },
     });
 
-    const { error: authError } =
-      await createAdminClient().auth.admin.deleteUser(teacher.user_id);
-    if (authError)
+    const admin = createAdminClient();
+    const { error: authError } = await admin.auth.admin.deleteUser(
+      teacher.user_id,
+    );
+    if (authError) {
+      await admin
+        .from("profiles")
+        .update({ is_active: false })
+        .eq("id", teacher.user_id);
       return {
         error:
           "Đã gỡ hồ sơ giáo viên và khóa đăng nhập, nhưng chưa xóa được Auth. Báo quản trị hệ thống xử lý phần còn lại.",
       };
+    }
 
     revalidatePath("/admin/teachers");
     revalidatePath("/admin/b2c/teachers");

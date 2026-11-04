@@ -42,7 +42,6 @@ begin
     raise exception 'Giáo viên đã có lớp hoặc lịch sử giảng dạy. Hãy khóa tài khoản thay vì xóa.' using errcode = '23503';
   end if;
 
-  update public.profiles set is_active = false where id = v_user_id;
   delete from public.b2c_teacher_permissions where teacher_id = v_b2c_teacher_id;
   delete from public.b2c_teachers where id = v_b2c_teacher_id;
   delete from public.teachers where id = p_teacher_id;
