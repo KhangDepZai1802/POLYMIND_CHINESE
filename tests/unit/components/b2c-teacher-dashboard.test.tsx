@@ -2,9 +2,14 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TeacherDashboard } from "@/features/b2c/components/teacher-dashboard";
 vi.mock("@/features/teachers/server/account-actions", () => ({
-  readTeacherAccountAction: vi.fn(), changeTeacherPasswordAction: vi.fn(),
+  readTeacherAccountAction: vi.fn(),
+  changeTeacherPasswordAction: vi.fn(),
+  deleteTeacherAccountAction: vi.fn(),
 }));
-vi.mock("@/features/b2c/server/permission-actions", () => ({ readB2CPermissionAdminAction: vi.fn(), saveB2CPermissionsAction: vi.fn() }));
+vi.mock("@/features/b2c/server/permission-actions", () => ({
+  readB2CPermissionAdminAction: vi.fn(),
+  saveB2CPermissionsAction: vi.fn(),
+}));
 
 vi.mock("@/features/b2c/components/teacher-dialog", () => ({
   B2CTeacherDialog: () => <button>Sửa hồ sơ</button>,
@@ -72,13 +77,33 @@ const rows = [
 ];
 describe("B2C teacher dashboard", () => {
   it("keeps legacy scope labels out of specialty display and preserves timetable access", () => {
-    render(<TeacherDashboard rows={rows.map(r => ({ ...r, teacher: { ...r.teacher, specialization: "B2C" } }))} initialMonth="2026-10" />);
-    expect(screen.getByRole("link", { name: "Xem thời khóa biểu giáo viên" })).toHaveAttribute("href", "/admin/b2c/timetable");
-    expect(screen.getByRole("combobox", { name: "Lọc chuyên môn" })).toContainHTML("Chưa cập nhật");
-    expect(screen.queryByRole("option", { name: "B2C" })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Lọc chuyên môn"), { target: { value: "Chưa cập nhật" } });
-    expect(within(screen.getByRole("table")).getByText("Cô An")).toBeInTheDocument();
-    expect(within(screen.getByRole("table")).getByText("Cô Bình")).toBeInTheDocument();
+    render(
+      <TeacherDashboard
+        rows={rows.map((r) => ({
+          ...r,
+          teacher: { ...r.teacher, specialization: "B2C" },
+        }))}
+        initialMonth="2026-10"
+      />,
+    );
+    expect(
+      screen.getByRole("link", { name: "Xem thời khóa biểu giáo viên" }),
+    ).toHaveAttribute("href", "/admin/b2c/timetable");
+    expect(
+      screen.getByRole("combobox", { name: "Lọc chuyên môn" }),
+    ).toContainHTML("Chưa cập nhật");
+    expect(
+      screen.queryByRole("option", { name: "B2C" }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Lọc chuyên môn"), {
+      target: { value: "Chưa cập nhật" },
+    });
+    expect(
+      within(screen.getByRole("table")).getByText("Cô An"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("table")).getByText("Cô Bình"),
+    ).toBeInTheDocument();
   });
   it("opens each card with the matching teacher group or class list", () => {
     render(<TeacherDashboard rows={rows} initialMonth="2026-10" />);
@@ -155,20 +180,49 @@ describe("B2C teacher dashboard", () => {
     expect(screen.getByText("Không có giáo viên phù hợp.")).toBeInTheDocument();
   });
   it("shows all BikeForce SaleWork metrics for Cô Lê and Cô Thy", () => {
-    const snapshot = { conversations: 12, sentMessages: 30, receivedMessages: 24, incomingCalls: 7, outgoingCalls: 9, missedCalls: 2, callDurationSeconds: 3660, syncedAt: "2026-10-21T07:30:00Z" };
+    const snapshot = {
+      conversations: 12,
+      sentMessages: 30,
+      receivedMessages: 24,
+      incomingCalls: 7,
+      outgoingCalls: 9,
+      missedCalls: 2,
+      callDurationSeconds: 3660,
+      syncedAt: "2026-10-21T07:30:00Z",
+    };
     const baseRow = rows[0]!;
-    const saleWorkRows = (["co-le", "co-thy"] as const).map((person, index) => ({
-      person,
-      displayName: person === "co-le" ? "Cô Lê" as const : "Cô Thy" as const,
-      workDate: "2026-10-21",
-      receivedAt: "2026-10-21T07:31:00Z",
-      snapshot: { ...snapshot, conversations: 12 + index },
-    }));
-    render(<TeacherDashboard rows={[baseRow]} saleWorkRows={saleWorkRows} initialMonth="2026-10" />);
-    const section = screen.getByRole("region", { name: "SaleWork từ BikeForce" });
+    const saleWorkRows = (["co-le", "co-thy"] as const).map(
+      (person, index) => ({
+        person,
+        displayName:
+          person === "co-le" ? ("Cô Lê" as const) : ("Cô Thy" as const),
+        workDate: "2026-10-21",
+        receivedAt: "2026-10-21T07:31:00Z",
+        snapshot: { ...snapshot, conversations: 12 + index },
+      }),
+    );
+    render(
+      <TeacherDashboard
+        rows={[baseRow]}
+        saleWorkRows={saleWorkRows}
+        initialMonth="2026-10"
+      />,
+    );
+    const section = screen.getByRole("region", {
+      name: "SaleWork từ BikeForce",
+    });
     expect(within(section).getByText("Cô Lê")).toBeInTheDocument();
     expect(within(section).getByText("Cô Thy")).toBeInTheDocument();
-    for (const label of ["Hội thoại", "Tin đã gửi", "Tin đã nhận", "Cuộc gọi đến", "Cuộc gọi đi", "Cuộc gọi nhỡ", "Thời lượng gọi", "BikeForce đồng bộ"])
+    for (const label of [
+      "Hội thoại",
+      "Tin đã gửi",
+      "Tin đã nhận",
+      "Cuộc gọi đến",
+      "Cuộc gọi đi",
+      "Cuộc gọi nhỡ",
+      "Thời lượng gọi",
+      "BikeForce đồng bộ",
+    ])
       expect(within(section).getAllByText(label)).toHaveLength(2);
     expect(within(section).getAllByText("1 giờ 1 phút")).toHaveLength(2);
   });

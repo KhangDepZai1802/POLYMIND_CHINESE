@@ -4517,6 +4517,7 @@ export type Database = {
       }
     }
     Functions: {
+      delete_unused_b2c_teacher_account: { Args: { p_teacher_id: string }; Returns: string }
       upsert_bikeforce_salework_snapshot: { Args: { p_person_slug: string; p_work_date: string; p_snapshot: Json }; Returns: string }
       get_xkld_assignees: { Args: Record<string, never>; Returns: { id: string; full_name: string; is_active: boolean }[] }
       get_xkld_pipeline: { Args: { p_query?: string; p_assignee?: string; p_stage?: string; p_page?: number }; Returns: Json }

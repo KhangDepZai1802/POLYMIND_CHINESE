@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   teacherAccountTargetSchema,
+  teacherAccountDeleteSchema,
   teacherPasswordChangeSchema,
   type TeacherAccountTarget,
   type TeacherAccountDetails,
@@ -50,7 +51,8 @@ async function requireTeacherAccountManager() {
   const delegated = await permissionRpc<boolean>(
     "can_create_b2c_teacher_accounts",
   ).catch(() => false);
-  if (!delegated) throw new Error("Không có quyền quản lý tài khoản giáo viên.");
+  if (!delegated)
+    throw new Error("Không có quyền quản lý tài khoản giáo viên.");
   return { delegated: true };
 }
 
@@ -65,7 +67,10 @@ export async function readTeacherAccountAction(
     const teacher = await resolveTeacher(parsed.data);
     if (!teacher) return { account: null };
     if (access.delegated && teacher.profile!.role !== "teacher")
-      return { account: null, error: "Bạn chỉ được quản lý tài khoản Giáo viên." };
+      return {
+        account: null,
+        error: "Bạn chỉ được quản lý tài khoản Giáo viên.",
+      };
     const { data, error } = await createAdminClient().auth.admin.getUserById(
       teacher.user_id,
     );
@@ -110,7 +115,9 @@ export async function changeTeacherPasswordAction(
     const teacher = await resolveTeacher(parsed.data);
     if (!teacher) return { error: "Giáo viên chưa liên kết tài khoản." };
     if (access.delegated && teacher.profile!.role !== "teacher")
-      return { error: "Bạn chỉ được đặt lại mật khẩu cho tài khoản Giáo viên." };
+      return {
+        error: "Bạn chỉ được đặt lại mật khẩu cho tài khoản Giáo viên.",
+      };
     if (teacher.user_id !== parsed.data.expected_user_id)
       return {
         error: "Liên kết tài khoản đã thay đổi. Vui lòng đóng và mở lại.",
@@ -143,5 +150,66 @@ export async function changeTeacherPasswordAction(
     return {
       error: "Không xử lý được yêu cầu. Vui lòng tải lại tài khoản và thử lại.",
     };
+  }
+}
+
+export async function deleteTeacherAccountAction(
+  input: unknown,
+): Promise<{ success?: string; error?: string }> {
+  const access = await requireTeacherAccountManager();
+  const parsed = teacherAccountDeleteSchema.safeParse(input);
+  if (!parsed.success) return { error: "Dữ liệu xóa tài khoản không hợp lệ." };
+  try {
+    const teacher = await resolveTeacher(parsed.data);
+    if (!teacher) return { error: "Giáo viên chưa liên kết tài khoản." };
+    if (access.delegated && teacher.profile!.role !== "teacher")
+      return { error: "Bạn chỉ được xóa tài khoản Giáo viên." };
+    if (teacher.user_id !== parsed.data.expected_user_id)
+      return { error: "Liên kết tài khoản đã thay đổi. Vui lòng tải lại." };
+
+    const client = await createClient();
+    const { data: userId, error } = await client.rpc(
+      "delete_unused_b2c_teacher_account",
+      { p_teacher_id: teacher.id },
+    );
+    if (error)
+      return {
+        error:
+          error.code === "PGRST202"
+            ? "Máy chủ chưa có lệnh xóa tài khoản. Hãy chạy migration mới."
+            : error.message,
+      };
+    if (userId !== teacher.user_id)
+      return {
+        error: "Tài khoản đã thay đổi trong lúc xóa. Vui lòng kiểm tra lại.",
+      };
+
+    await logAudit(client, {
+      action: "teacher.account_delete",
+      resourceType: "teacher",
+      resourceId: teacher.id,
+      before: {
+        user_id: teacher.user_id,
+        username: teacher.profile!.username,
+        source: parsed.data.kind,
+      },
+    });
+
+    const { error: authError } =
+      await createAdminClient().auth.admin.deleteUser(teacher.user_id);
+    if (authError)
+      return {
+        error:
+          "Đã gỡ hồ sơ giáo viên và khóa đăng nhập, nhưng chưa xóa được Auth. Báo quản trị hệ thống xử lý phần còn lại.",
+      };
+
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/b2c/teachers");
+    revalidatePath("/teacher/teachers");
+    return {
+      success: "Đã xóa vĩnh viễn tài khoản giáo viên chưa phát sinh dữ liệu.",
+    };
+  } catch {
+    return { error: "Không xóa được tài khoản giáo viên. Vui lòng thử lại." };
   }
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,9 @@ import {
 import {
   readTeacherAccountAction,
   changeTeacherPasswordAction,
+  deleteTeacherAccountAction,
 } from "../server/account-actions";
+import { useConfirmation } from "@/components/shared/confirmation-provider";
 import type {
   TeacherAccountTarget,
   TeacherAccountDetails,
@@ -39,6 +41,7 @@ export function TeacherAccountDialog({
   const [account, setAccount] = useState<TeacherAccountDetails | null>(null);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const confirm = useConfirmation();
   async function load() {
     const token = ++sequence.current;
     setLoading(true);
@@ -199,6 +202,48 @@ export function TeacherAccountDialog({
                 </Button>
               </fieldset>
             </form>
+            <div className="border-destructive/30 space-y-2 rounded-md border p-3">
+              <p className="text-sm font-medium">Xóa tài khoản</p>
+              <p className="text-muted-foreground text-sm">
+                Chỉ xóa được giáo viên chưa có lớp hoặc lịch sử giảng dạy.
+              </p>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={saving}
+                onClick={async () => {
+                  const accepted = await confirm({
+                    title: "Bạn có chắc muốn xóa?",
+                    description: `Tài khoản ${account.full_name} (${account.login}) sẽ bị xóa vĩnh viễn và không thể đăng nhập lại.`,
+                    confirmLabel: "Xóa vĩnh viễn",
+                    cancelLabel: "Không xóa",
+                    variant: "destructive",
+                  });
+                  if (!accepted) return;
+                  setSaving(true);
+                  setError("");
+                  try {
+                    const result = await deleteTeacherAccountAction({
+                      ...target,
+                      expected_user_id: account.user_id,
+                    });
+                    if (result.error) setError(result.error);
+                    else if (result.success) {
+                      toast.success(result.success);
+                      setAccount(null);
+                      setOpen(false);
+                    }
+                  } catch {
+                    setError("Không thể kết nối. Vui lòng thử lại.");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Xóa tài khoản
+              </Button>
+            </div>
           </>
         )}
         {error && (

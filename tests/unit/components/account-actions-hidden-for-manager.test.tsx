@@ -7,7 +7,9 @@ import { StudentRowActions } from "@/features/students/components/student-row-ac
 import { TeacherRowActions } from "@/features/teachers/components/teacher-row-actions";
 
 vi.mock("@/features/teachers/server/account-actions", () => ({
-  readTeacherAccountAction: vi.fn(), changeTeacherPasswordAction: vi.fn(),
+  readTeacherAccountAction: vi.fn(),
+  changeTeacherPasswordAction: vi.fn(),
+  deleteTeacherAccountAction: vi.fn(),
 }));
 
 vi.mock("@/features/teachers/server/actions", () => ({
@@ -66,7 +68,9 @@ async function openMenu() {
  */
 describe("giáo vụ KHÔNG thấy thao tác tài khoản", () => {
   it("dòng giáo viên: ẩn Đặt lại mật khẩu + Khóa tài khoản, GIỮ Sửa hồ sơ", async () => {
-    renderWithProviders(<TeacherRowActions teacher={TEACHER} canManageAccounts={false} />);
+    renderWithProviders(
+      <TeacherRowActions teacher={TEACHER} canManageAccounts={false} />,
+    );
     await openMenu();
 
     expect(screen.getByText("Sửa hồ sơ")).toBeInTheDocument();
@@ -76,7 +80,9 @@ describe("giáo vụ KHÔNG thấy thao tác tài khoản", () => {
   });
 
   it("dòng giáo viên: super admin vẫn thấy đủ", async () => {
-    renderWithProviders(<TeacherRowActions teacher={TEACHER} canManageAccounts />);
+    renderWithProviders(
+      <TeacherRowActions teacher={TEACHER} canManageAccounts />,
+    );
     await openMenu();
 
     expect(screen.getByText("Sửa hồ sơ")).toBeInTheDocument();

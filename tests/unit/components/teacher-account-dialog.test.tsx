@@ -6,11 +6,17 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ read: vi.fn(), change: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  read: vi.fn(),
+  change: vi.fn(),
+  remove: vi.fn(),
+}));
 vi.mock("@/features/teachers/server/account-actions", () => ({
   readTeacherAccountAction: mocks.read,
   changeTeacherPasswordAction: mocks.change,
+  deleteTeacherAccountAction: mocks.remove,
 }));
+import { ConfirmationProvider } from "@/components/shared/confirmation-provider";
 import { TeacherAccountDialog } from "@/features/teachers/components/teacher-account-dialog";
 const target = {
   kind: "b2c" as const,
@@ -30,10 +36,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.read.mockResolvedValue({ account });
   mocks.change.mockResolvedValue({ success: "Đã đổi mật khẩu giáo viên." });
+  mocks.remove.mockResolvedValue({ success: "Đã xóa tài khoản." });
 });
 afterEach(cleanup);
 async function open() {
-  render(<TeacherAccountDialog target={target} />);
+  render(
+    <ConfirmationProvider>
+      <TeacherAccountDialog target={target} />
+    </ConfirmationProvider>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Tài khoản" }));
   await screen.findByText("gv.a");
 }
@@ -80,7 +91,11 @@ describe("teacher account dialog", () => {
   });
   it("shows a link to assign an existing account when B2C is unlinked", async () => {
     mocks.read.mockResolvedValue({ account: null });
-    render(<TeacherAccountDialog target={target} />);
+    render(
+      <ConfirmationProvider>
+        <TeacherAccountDialog target={target} />
+      </ConfirmationProvider>,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Tài khoản" }));
     await screen.findByText("Hồ sơ chưa liên kết tài khoản giáo viên.");
     expect(screen.getByRole("link", { name: /Mở Phân quyền/ })).toHaveAttribute(
@@ -93,7 +108,11 @@ describe("teacher account dialog", () => {
   });
   it("supports retry after account loading fails", async () => {
     mocks.read.mockRejectedValueOnce(new Error("network"));
-    render(<TeacherAccountDialog target={target} />);
+    render(
+      <ConfirmationProvider>
+        <TeacherAccountDialog target={target} />
+      </ConfirmationProvider>,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Tài khoản" }));
     await screen.findByRole("alert");
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));

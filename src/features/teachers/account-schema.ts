@@ -16,6 +16,9 @@ export const teacherPasswordChangeSchema = teacherAccountTargetSchema
     path: ["confirm_password"],
     message: "Mật khẩu xác nhận chưa khớp.",
   });
+export const teacherAccountDeleteSchema = teacherAccountTargetSchema.extend({
+  expected_user_id: z.uuid(),
+});
 export type TeacherAccountDetails = {
   teacher_id: string;
   user_id: string;

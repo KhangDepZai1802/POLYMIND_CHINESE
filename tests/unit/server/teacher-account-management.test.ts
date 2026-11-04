@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   getUser: vi.fn(),
   updateUser: vi.fn(),
+  deleteUser: vi.fn(),
+  rpc: vi.fn(),
   audit: vi.fn(),
   b2c: vi.fn(),
   teacher: vi.fn(),
@@ -16,13 +18,14 @@ vi.mock("@/features/b2c/server/permission-rpc", () => ({
   permissionRpc: mocks.permission,
 }));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ from: mocks.from }),
+  createClient: async () => ({ from: mocks.from, rpc: mocks.rpc }),
 }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/audit", () => ({ logAudit: mocks.audit }));
 import {
   readTeacherAccountAction,
   changeTeacherPasswordAction as changePasswordFormAction,
+  deleteTeacherAccountAction,
 } from "@/features/teachers/server/account-actions";
 function changeTeacherPasswordAction(input: Record<string, string>) {
   const form = new FormData();
@@ -71,10 +74,16 @@ beforeEach(() => {
     error: null,
   });
   mocks.updateUser.mockResolvedValue({ data: {}, error: null });
+  mocks.deleteUser.mockResolvedValue({ data: {}, error: null });
+  mocks.rpc.mockResolvedValue({ data: userId, error: null });
   mocks.admin.mockReturnValue({
     from: mocks.from,
     auth: {
-      admin: { getUserById: mocks.getUser, updateUserById: mocks.updateUser },
+      admin: {
+        getUserById: mocks.getUser,
+        updateUserById: mocks.updateUser,
+        deleteUser: mocks.deleteUser,
+      },
     },
   });
   mocks.audit.mockResolvedValue(undefined);
@@ -142,7 +151,9 @@ describe("admin manages linked teacher credentials", () => {
       },
       error: null,
     });
-    expect((await readTeacherAccountAction(target)).account?.login).toBe("gv.a");
+    expect((await readTeacherAccountAction(target)).account?.login).toBe(
+      "gv.a",
+    );
   });
   it("rejects an account link changed after opening the dialog", async () => {
     const result = await changeTeacherPasswordAction({
@@ -226,5 +237,35 @@ describe("admin manages linked teacher credentials", () => {
       (await readTeacherAccountAction({ kind: "teacher", id: teacherId }))
         .account?.login,
     ).toBe("gv.a@accounts.example");
+  });
+  it("deletes an unused teacher only after the database guard succeeds", async () => {
+    mocks.teacher.mockResolvedValue({
+      data: {
+        id: teacherId,
+        user_id: userId,
+        is_active: true,
+        profile: {
+          full_name: "Giáo viên A",
+          username: "gv.a",
+          role: "teacher",
+          is_active: true,
+        },
+      },
+      error: null,
+    });
+    const result = await deleteTeacherAccountAction({
+      ...target,
+      expected_user_id: userId,
+    });
+    expect(result.success).toBeTruthy();
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "delete_unused_b2c_teacher_account",
+      { p_teacher_id: teacherId },
+    );
+    expect(mocks.deleteUser).toHaveBeenCalledWith(userId);
+    expect(mocks.audit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ action: "teacher.account_delete" }),
+    );
   });
 });
