@@ -308,3 +308,8 @@ Codex Status: Implemented; Verification: Not Started (chờ QA độc lập). SQ
 ## B2C-TUITION-CARD-POPUPS — 2026-10-17
 
 Bug:3thẻ tiền chỉ là div, click không mở danh sách. Codex Status: Fixed — đổi button và popup đúng nhóm/tìm/page20/empty/gói-phiếu thu, giữ bảng ngoài và popup cần xử lý. Verification: Not Started (chờ QA độc lập). Không API/DB/quyền mới.
+# B2C-PARENT-NPS-ERROR-1 — 2026-11-03
+
+- Codex Status: Fixed — chờ xác minh độc lập.
+- Production `/admin/b2c/nps` lỗi Server Components: RPC lỗi SQL42803 tại GROUP BY phụ huynh. Migration `20261103000001` đã áp cloud và exact-history khớp; request mặc định authenticated thành công, 59/59 pgTAP rollback đạt. Không đổi dữ liệu thật.
+- QA: mở trang bằng tài khoản quản lý, kiểm tra danh sách khảo sát hiện bình thường; không gửi phản hồi thật để thử.

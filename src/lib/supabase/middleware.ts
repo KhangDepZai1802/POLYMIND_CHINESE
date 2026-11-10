@@ -36,7 +36,9 @@ function isPublicFlashcardPath(pathname: string) {
 
 function isPublicListeningMediaPath(pathname: string) {
   return (
-    pathname.startsWith("/audio/bai-3/") || pathname.startsWith("/audio/bai-4/")
+    pathname.startsWith("/audio/bai-3/") ||
+    pathname.startsWith("/audio/bai-4/") ||
+    pathname.startsWith("/audio/phat-am/")
   );
 }
 

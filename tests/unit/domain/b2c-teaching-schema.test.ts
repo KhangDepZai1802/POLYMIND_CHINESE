@@ -32,6 +32,9 @@ describe("lịch dạy và chấm công B2C", () => {
         id: session.class_id,
         kind: "in",
         photo: "file.jpg",
+        latitude: 21.0285,
+        longitude: 105.8542,
+        accuracy: 10,
         at: "2000-01-01",
       }),
     ).not.toHaveProperty("at"));

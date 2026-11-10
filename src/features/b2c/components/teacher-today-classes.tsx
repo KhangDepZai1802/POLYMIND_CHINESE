@@ -12,11 +12,13 @@ export function TeacherB2CTodayClasses({
   meetings = [],
   canMarkAttendance = false,
   canCheckTeaching = false,
+  now = 0,
 }: {
   classes: TeacherB2CClass[];
   meetings?: TeacherB2CMeetingToday[];
   canMarkAttendance?: boolean;
   canCheckTeaching?: boolean;
+  now?: number;
 }) {
   if (!classes.length && !meetings.length) return null;
   return (
@@ -26,7 +28,6 @@ export function TeacherB2CTodayClasses({
           <p className="sr-only">Buổi học hôm nay</p>
           <ul className="space-y-3">
             {meetings.map((m) => {
-              const now = Date.now();
               const opensAt = new Date(m.starts_at).getTime() - 15 * 60_000;
               const endsAt = new Date(m.ends_at).getTime();
               const checkinOpen = now >= opensAt && now < endsAt;

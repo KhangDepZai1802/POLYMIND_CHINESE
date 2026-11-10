@@ -38,11 +38,15 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-PRONUNCIATION-LESSON-1 — hoàn thành tích hợp bài phát âm và giải quyết cổng kiểm tra — 2026-11-10. Tích hợp bài phát âm Hán ngữ Pinyin vào /nghe/hoc-vien-lanh-dao, tạo route /nghe/phat-am và /nghe/phat-am/[page] với 8 audio MP3 và 13 slide WebP; tối ưu responsive mobile, pinch-to-zoom và thanh điều hướng slide; xử lý dứt điểm 2 lỗi cổng kiểm tra cũ (Date.now trong render teacher-today-classes.tsx và test chấm công thiếu geolocation). Full 198 test files, 1.115/1.115 unit tests passed, typecheck và lint đạt 100%. Sẵn sàng đẩy code theo yêu cầu user.
+
 > B2C-TEACHER-OPERATIONS-1 — code xong, user yêu cầu phát hành — Codex — 2026-11-04. Cô Lê/Cô Thy có danh sách account sau khi tạo, xem username/đặt mật khẩu mới (không lưu plaintext) và Tất cả lớp B2C; server/DB allowlist fail-closed. User báo đã chạy SQL production; CLI dry-run vẫn lỗi Supabase tenant ENOTFOUND nên chưa xác minh migration history. Typecheck, target lint, 23/23 target tests và production build đạt; Docker local không chạy nên pgTAP chưa chạy.
 
 > B2C-TEACHER-ACCOUNT-CREATORS-1 — code local hoàn tất, SQL do user báo đã chạy — Codex — 2026-11-03. Cô Lê/Cô Thy có menu Giáo viên và form một bước tạo account role teacher + hồ sơ teachers/B2C + liên kết; chặn role cao hơn/server allowlist riêng. Target lint/typecheck/build và7/7tests đạt. Full lint1 lỗi + full test4 lỗi geolocation/chấm công ngoài scope; CLI remote DB không kết nối nên chưa xác minh history/integration. Chưa commit/push/deploy.
 
 > B2C-FULL-ACCESS-CLASS-1 — hoàn tất, user yêu cầu phát hành — Codex — 2026-11-03. Cô Lê/Cô Thy có đủ 22 quyền B2C và quyền toàn trung tâm; tab lớp hiện Thêm học viên, form lớp cho chọn giáo viên đứng lớp. SQL20261103000003 production exact-history + rollback đạt; 19/19 test liên quan, typecheck và build đạt.
+
+> B2C-PARENT-NPS-ERROR-1 — đã sửa SQL cloud, chờ QA giao diện độc lập — Codex — 2026-11-03. RPC lỗi 42803 do GROUP BY thiếu p.full_name/p.zalo/p.email; SQL20261103000001 đã áp/exact-history, authenticated default read thành công,59/59DB rollback. Build/typecheck đạt; full lint/test còn lỗi chấm công cũ ngoài scope. Không commit/push.
 
 > B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — code và SQL cloud hoàn tất, phát hành — Codex — 2026-10-26. Xóa chỉ super_admin, giữ ảnh/lịch/điểm danh/audit, loại khỏi giờ/lương/pending-price; thumbnail/popup ảnh. SQL02 history/rollback đạt,7UItests/typecheck/build/lint file task đạt. Full197files:195đạt/2lỗi,1106tests đạt/4lỗi có sẵn; full lint vẫn1lỗi cũ. Theo yêu cầu đẩy GitHub trước đó, tiếp tục phát hành bản sửa; không xóa buổi thật.
 
@@ -950,9 +954,13 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+<<<<<<< HEAD
 **B2C-TEACHER-OPERATIONS-1-RELEASE-QA:** sau push theo dõi Vercel project `thongdat`; Cô Lê/Cô Thy đăng xuất/đăng nhập lại, kiểm Giáo viên → danh sách/username/đặt mật khẩu mới và Tất cả lớp. Không reset mật khẩu thật chỉ để smoke test.
 
 **B2C-TEACHER-ACCOUNT-CREATORS-1-RELEASE-QA:** xác minh migration history khi kết nối Supabase hoạt động; commit/push khi user yêu cầu, sau đó đăng nhập Cô Lê/Cô Thy kiểm menu Giáo viên → tạo account thử được phép → giáo viên mới xuất hiện trong Sửa thông tin lớp. Không tạo tài khoản thử trên production nếu không có dữ liệu người thật đã được user duyệt.
+=======
+- B2C-PARENT-NPS-ERROR-1-QA: mở lại /admin/b2c/nps bằng quản lý, xác minh danh sách hiển thị; không tạo phản hồi thật để thử.
+>>>>>>> 3590266 (feat(listening): tích hợp bài phát âm Hán ngữ Pinyin và tối ưu mobile)
 
 **B2C-TEACHING-ADMIN-DELETE-PREVIEW-1-QA:** sau push kiểm Vercel status, admin Giờ dạy & Lương có thumbnail/Xóa và popup; không xóa buổi thật để smoke test. Giữ nguyên4lỗi test/1lint chấm công có sẵn nếu vẫn tái hiện; không replay16gap migration.
 
@@ -1404,7 +1412,11 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+<<<<<<< HEAD
 - **B2C-TEACHER-ACCOUNT-CREATORS-1 (2026-11-03):** user báo đã chạy SQL production, nhưng `supabase migration list` không kết nối được remote Postgres nên chưa xác minh history/exact migration hoặc chạy DB integration test. Full lint còn lỗi `teacher-today-classes.tsx:29` gọi `Date.now()` trong render; full Vitest 196/198 files,1109/1113tests với4 lỗi geolocation/checkpoint có sẵn ngoài task. Targeted lint, typecheck, build và7/7 test account creator đạt. Chưa commit/push/deploy.
+=======
+- B2C-PARENT-NPS-ERROR-1: dry-run trước/sau còn16gap lịch sử cũ20261012–14; chỉ áp SQL20261103000001 trong transaction riêng, không replay/repair. Full lint vẫn Date.now render teacher-today-classes.tsx:29; full test chấm công thiếu geolocation đã có từ phiên26/10. SQL cloud/request mặc định đã sửa, build/typecheck đạt; chưa QA browser độc lập.
+>>>>>>> 3590266 (feat(listening): tích hợp bài phát âm Hán ngữ Pinyin và tối ưu mobile)
 
 - **B2C-CENTER-DELETE-1 (2026-10-26):** full lint lỗi `teacher-today-classes.tsx:29` Date.now render từ origin/main; test chấm công/checkpoint thiếu geolocation so với schema/code hiện tại. Không sửa module chấm công hoặc giảm test trong task xóa. CLI dry-run bị16gap B2C history cũ, không include-all/repair/replay; áp đúng migration mới qua transaction và kiểm history SQL mới khớp byte. Hai script verify migration23/10 cũ báo khác SQL (checkout CRLF/history), kiểm regression SQL trực tiếp trong rollback đã đạt. Chưa QA browser/publish giao diện.
 
@@ -1560,11 +1572,27 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-11-10] B2C-PRONUNCIATION-LESSON-1
+- Tích hợp tài liệu ngữ âm từ file Phát_âm.zip: trích xuất và chuyển đổi 13 slide PDF sang WebP chất lượng cao đặt tại `public/phat-am/`, sao chép 8 audio MP3 tương ứng với các trang 2, 3, 4, 9, 10, 11, 12, 13 đặt tại `public/audio/phat-am/`.
+- Tạo `src/features/listening/phat-am-data.ts`, `src/app/nghe/phat-am/page.tsx` và `src/app/nghe/phat-am/[page]/page.tsx`.
+- Cập nhật thẻ bài nghe trên `/nghe/hoc-vien-lanh-dao`, bổ sung cấu hình đường dẫn audio công khai trong `src/lib/supabase/middleware.ts` và test `tests/unit/auth/middleware.test.ts`.
+- Tối ưu toàn diện mobile: logo/header co giãn chống rớt dòng, trình phát audio native HTML5, nút chọn tốc độ cảm ứng, liên kết phóng to ảnh sắc nét và thanh nhảy nhanh 13 slide ngón cái.
+- Sửa triệt để 2 lỗi cổng kiểm tra còn tồn đọng từ các phiên trước:
+  + Chuyển `Date.now()` trong render của `TeacherB2CTodayClasses` thành prop truyền vào để đạt quy tắc react-hooks/purity (0 lỗi lint).
+  + Cập nhật test `b2c-teaching-schema.test.ts` và mock geolocation/canvas context `fillText` trong `b2c-teaching-checkpoint.test.tsx`.
+- Dọn dẹp cache Turbopack giải phóng hơn 11 GB dung lượng ổ đĩa.
+- Kết quả kiểm thử: `npm run lint` đạt 0 lỗi 0 cảnh báo, `npm run typecheck` đạt, 198/198 test files (1.115/1.115 tests) pass.
+
 ### [2026-11-03] Codex — B2C-TEACHER-ACCOUNT-CREATORS-1
 - Cô Lê/Cô Thy có menu Giáo viên riêng và form một bước; server chỉ nhận role teacher, tạo Auth + teachers + b2c_teachers liên kết và xóa bù nếu bước B2C lỗi. Giáo viên mới xuất hiện trong lựa chọn đứng lớp, không cần ghép thủ công.
 - Migration04 thêm allowlist RLS riêng và RPC capability fail-closed; user báo đã chạy SQL production. CLI migration list không kết nối được remote nên history/DB integration chưa xác minh.
 - Targeted lint sạch, typecheck/build đạt,7/7 test action/menu đạt. Full lint lỗi1 chấm công; full test196/198files,1109/1113tests,4 lỗi geolocation/chấm công ngoài scope. Không sửa module/test ngoài task.
 - Chưa commit/push/deploy. Next: xác minh DB history khi kết nối được, phát hành khi user yêu cầu rồi QA hai tài khoản bằng dữ liệu giáo viên thật được duyệt.
+
+### [2026-11-03] Codex — B2C-PARENT-NPS-ERROR-1
+- Tái hiện read-only cloud: read_b2c_nps_admin lỗi42803 tại SELECT phụ huynh GROUP BY p.id. Forward migration nhóm đủ id/full_name/zalo/email, giữ quyền và projection.
+- SQL20261103000001 áp riêng/exact-history; authenticated default read thành công1khảo sát;59/59DB rollback trước/sau đạt. Không sửa dữ liệu thật. Dry-run vẫn16gap cũ.
+- Build/typecheck đạt; full lint/test vướng lỗi chấm công đã ghi từ26/10, không sửa ngoài scope. Next: QA giao diện độc lập; không commit/push.
 
 ### [2026-10-26] Codex — B2C-TEACHING-ADMIN-DELETE-PREVIEW-1
 - Theo ảnh user, admin thiếu xóa buổi và bảng chỉ có link Xem ảnh. Thêm Xóa chỉ super_admin tại page/server/DB, xác nhận+lý do; archive payroll, trừ khỏi tổng giờ/lương/pending-price/metrics. Giữ ảnh/GPS/meeting/điểm danh và snapshot trước-sau/actor thật; không mở lại chấm công hoặc tái sinh buổi đã xóa.
@@ -1594,7 +1622,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - Ô ghi chú tùy chọn500ký tự, tải/lưu theo người/ngày và quyền báo cáo cũ. Ảnh bỏ tai nghe, khung ghi chú dùng nội dung nhập; trạng thái lưu riêng, auto-wrap/fit giữ9:16. Không đưa canvas trở lại UI.
 - SQL20261021000004 áp production và exact-history đã xác minh. CLI dry-run bị16gaps lịch sử cũ nên không include-all; áp đúng SQL mới. Test SQL rollback own read/write/default/length/cross-read/update deny đạt, fixture0.
 - Edge local ô ghi chú/copyPNG1080×1920/popup/mobile390/0pageerror đạt; đã xem ảnh thực tế không tai nghe và có ghi chú. Full test lượt đầu3case nhãn Ghi chú lỗi; đã sửa aria-label, targeted3/3 đạt. Full rerun187files1074tests và build đạt; user yêu cầu đẩy GitHub, không test thêm.
-
-### [2026-10-21] Codex — SALEWORK-LIVE-CARDS-5
-- User xác nhận trang phải là thẻ dữ liệu thật, không phải ảnh. Bỏ canvas preview, hiện metric HTML/ngày/người và giữ3ô nhập; renderer mẫu chỉ gọi từ copy/export.
-- Lint/typecheck/build và187files1074tests đạt. Edge local cothy thẻ hiện/không canvas/nhập3giá trị draft/copy PNG1080×1920/popup/mobile390/0pageerror. Không lưu dữ liệu thử hoặc đổi DB/API. Next phát hành và kiểm production.

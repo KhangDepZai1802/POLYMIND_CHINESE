@@ -935,6 +935,8 @@ Bảng b2c_class_meetings, b2c_student_attendance, b2c_student_comments, b2c_cla
 
 ### B2C-PARENT-NPS-1 — Khảo sát hài lòng phụ huynh
 
+Forward fix `20261103000001`: `read_b2c_nps_admin` GROUP BY đầy đủ `p.id,p.full_name,p.zalo,p.email`, tránh lỗi 42803 khi PostgreSQL không suy ra phụ thuộc từ khóa chính. Giữ nguyên projection, quyền và dữ liệu.
+
 SQL20261017000006: b2c_nps_surveys/invitations/responses/history/requests đều RLS. Unique lớp/khảo sát, phụ huynh/khảo sát, invitation/response, request UUID. Không direct mutation; manager RPC có guard active role, khóa khảo sát rồi phiếu, stale updated_at, lịch sử actor thật và ledger transaction. Token ngẫu nhiên 256 bit chỉ lưu SHA256, không expose bảng invitation. Public RPC kiểm token/hash/đóng/hết hạn/thu hồi/liên kết; projection công khai không chứa tên phụ huynh, học viên, điểm hoặc ID. Retry đúng UUID/nội dung không lặp, response bất biến. Tổng NPS không phụ thuộc bộ tìm phụ huynh.
 
 

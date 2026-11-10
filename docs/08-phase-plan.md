@@ -1560,11 +1560,29 @@ Bốn quyết định chốt qua `AskUserQuestion` → `D-45`: (1) lưới buổ
 
 ## B2C-PARENT-NPS-1 — Khảo sát phụ huynh mỗi khóa
 
+### B2C-PARENT-NPS-ERROR-1 — 2026-11-03
+
+- [x] Tái hiện lỗi cloud 42803; forward migration `20261103000001` nhóm đủ các cột phụ huynh, không đổi quyền/dữ liệu.
+- [x] Áp riêng migration và xác minh exact-history; request mặc định dưới role authenticated đọc thành công; 59/59 pgTAP rollback đạt.
+- [ ] QA giao diện độc lập. Dry-run còn 16 gap lịch sử cũ; không replay/repair.
+
 - [x] Manager tạo/đóng/gia hạn khảo sát theo lớp; phụ huynh liên kết nhận link riêng, một phản hồi/khóa, dedup nhiều con.
 - [x] Public form 0–10/góp ý không đăng nhập, NPS đúng nhóm/denominator/null, dữ liệu manager-only, phân trang.
 - [x] Tokenhash/RLS/RPC/stale/retry/immutable responses; SQL test, dry-run/apply cloud/exact-history.
 - [x] Lint/typecheck/build exit0;177files998/998tests;59/59 DB cloud exact-history. HTTP admin307/publicinvalid200/noindex, dev restart.
 - [ ] QA browser độc lập/commit/push/deploy; dry-run còn16gaps cũ ngoài scope.
+
+
+## B2C-PRONUNCIATION-LESSON-1 — Tích hợp bài phát âm Hán ngữ Pinyin
+
+### 2026-11-10
+
+- [x] Trích xuất 13 slide từ PDF sang WebP chất lượng cao đặt tại `public/phat-am/`, 8 file audio MP3 đặt tại `public/audio/phat-am/`.
+- [x] Tạo `phat-am-data.ts`, routes `/nghe/phat-am` và `/nghe/phat-am/[page]` với `ListeningAudioPlayer` và thanh chuyển trang.
+- [x] Thêm thẻ bài phát âm vào `/nghe/hoc-vien-lanh-dao`, cập nhật route media công khai trong `src/lib/supabase/middleware.ts`.
+- [x] Tối ưu trải nghiệm mobile: co giãn header, nút chọn tốc độ cảm ứng, chạm phóng to ảnh, thanh nhảy nhanh 13 slide ngón cái.
+- [x] Sửa lỗi lint `react-hooks/purity` ở `teacher-today-classes.tsx` và mock geolocation/canvas trong `b2c-teaching-checkpoint.test.tsx`.
+- [x] Toàn bộ 198 test files (1.115 tests) pass, typecheck và lint đạt 100%.
 
 
 ## B2C-OVERVIEW-COLOR-1 — Màu sắc Tổng quan

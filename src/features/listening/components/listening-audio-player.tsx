@@ -25,12 +25,12 @@ export function ListeningAudioPlayer({ track }: { track: ListeningTrack }) {
   };
 
   return (
-    <article className="rounded-2xl border border-[#c3dbf4] bg-white p-4 shadow-[0_10px_30px_rgba(13,63,120,0.07)] sm:p-5">
-      <div className="flex items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#e6effa] text-[#1a5fa8]">
-          <Headphones className="size-5" aria-hidden />
+    <article className="rounded-2xl border border-[#c3dbf4] bg-white p-3.5 shadow-[0_10px_30px_rgba(13,63,120,0.07)] sm:p-5">
+      <div className="flex items-start gap-2.5 sm:gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#e6effa] text-[#1a5fa8] sm:size-10">
+          <Headphones className="size-4 sm:size-5" aria-hidden />
         </span>
-        <h2 className="pt-1.5 text-base leading-6 font-bold text-[#0d3f78] sm:text-lg">
+        <h2 className="pt-0.5 text-sm leading-snug font-bold text-[#0d3f78] sm:pt-1.5 sm:text-lg sm:leading-6">
           {track.title}
         </h2>
       </div>
@@ -38,7 +38,7 @@ export function ListeningAudioPlayer({ track }: { track: ListeningTrack }) {
       <audio
         ref={audioRef}
         data-listening-audio
-        className="mt-4 w-full"
+        className="mt-3 w-full sm:mt-4"
         controls
         preload="metadata"
         src={track.src}
@@ -58,12 +58,12 @@ export function ListeningAudioPlayer({ track }: { track: ListeningTrack }) {
       </audio>
 
       <div
-        className="mt-4 flex flex-wrap items-center gap-2"
+        className="mt-3 flex flex-wrap items-center gap-1.5 sm:mt-4 sm:gap-2"
         role="group"
         aria-label={`Tốc độ phát ${track.title}`}
       >
-        <span className="mr-1 inline-flex items-center gap-1.5 text-sm font-semibold text-[#43536b]">
-          <Gauge className="size-4" aria-hidden /> Tốc độ
+        <span className="mr-1 inline-flex items-center gap-1 text-xs font-semibold text-[#43536b] sm:text-sm">
+          <Gauge className="size-3.5 sm:size-4" aria-hidden /> Tốc độ
         </span>
         {PLAYBACK_RATES.map((candidate) => (
           <Button
@@ -74,7 +74,7 @@ export function ListeningAudioPlayer({ track }: { track: ListeningTrack }) {
             aria-pressed={candidate === rate}
             aria-label={`Tốc độ ${rateLabel(candidate)}`}
             className={cn(
-              "min-w-14 rounded-full tabular-nums",
+              "h-8 min-w-12 rounded-full px-2.5 text-xs tabular-nums sm:min-w-14 sm:text-sm",
               candidate === rate &&
                 "border-[#1a5fa8] bg-[#e6effa] font-bold text-[#134b86]",
             )}
@@ -86,17 +86,33 @@ export function ListeningAudioPlayer({ track }: { track: ListeningTrack }) {
       </div>
 
       {track.image ? (
-        <figure className="mt-5 overflow-hidden rounded-xl border border-[#dde5ee] bg-[#f6f8fb]">
-          <Image
-            src={track.image.src}
-            width={track.image.width}
-            height={track.image.height}
-            sizes="(max-width: 768px) calc(100vw - 3rem), 44rem"
-            alt={`Nội dung minh họa cho ${track.title}`}
-            className="h-auto w-full"
-          />
-          <figcaption className="border-t border-[#dde5ee] bg-white px-3 py-2 text-sm leading-5 font-medium text-[#43536b]">
-            Hình minh họa – {track.title}
+        <figure className="mt-4 overflow-hidden rounded-xl border border-[#dde5ee] bg-[#f6f8fb] sm:mt-5">
+          <a
+            href={track.image.src}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Nhấn để phóng to ảnh"
+            className="block cursor-zoom-in"
+          >
+            <Image
+              src={track.image.src}
+              width={track.image.width}
+              height={track.image.height}
+              sizes="(max-width: 768px) calc(100vw - 2.5rem), 44rem"
+              alt={`Nội dung minh họa cho ${track.title}`}
+              className="h-auto w-full transition hover:opacity-95"
+            />
+          </a>
+          <figcaption className="flex items-center justify-between gap-2 border-t border-[#dde5ee] bg-white px-3 py-2 text-xs font-medium text-[#43536b] sm:text-sm">
+            <span className="truncate">Hình minh họa – {track.title}</span>
+            <a
+              href={track.image.src}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 font-semibold text-[#1a5fa8] hover:underline"
+            >
+              Phóng to ↗
+            </a>
           </figcaption>
         </figure>
       ) : null}

@@ -259,6 +259,7 @@ export function TeacherHomeDashboard(p: Props) {
               meetings={p.meetings}
               canMarkAttendance={p.canMarkB2CAttendance}
               canCheckTeaching={p.canCheckB2CTeaching}
+              now={new Date(p.now).getTime()}
             />
           </Panel>
           <Panel
