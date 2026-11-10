@@ -29,12 +29,13 @@ export const metadata: Metadata = { title: "Lớp của tôi" };
 export default async function TeacherClassesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string | string[] }>;
+  searchParams: Promise<{ q?: string | string[]; history?: string | string[] }>;
 }) {
   await requireTeaching();
   const search = await searchParams;
   const query =
     typeof search.q === "string" ? search.q.trim().slice(0, 200) : "";
+  const showHistory = search.history === "1";
   const [allClasses, allB2CClasses, permissions, canViewAllClasses] = await Promise.all([
     getClasses(),
     getMyB2CClasses(),
@@ -46,7 +47,11 @@ export default async function TeacherClassesPage({
       .toLocaleLowerCase("vi")
       .includes(query.toLocaleLowerCase("vi"));
   const classes = allClasses.filter((c) => matches(c.code, c.name));
-  const b2cClasses = allB2CClasses.filter((c) => matches(c.code, c.name));
+  const b2cClasses = allB2CClasses.filter(
+    (c) =>
+      matches(c.code, c.name) &&
+      (showHistory || !["completed", "cancelled"].includes(c.status)),
+  );
 
   return (
     <>
@@ -66,7 +71,7 @@ export default async function TeacherClassesPage({
       />
 
       <form
-        className="mb-5 flex gap-2"
+        className="mb-5 flex flex-wrap gap-2"
         role="search"
         aria-label={canViewAllClasses ? "Lọc tất cả lớp" : "Lọc lớp của tôi"}
       >
@@ -79,6 +84,21 @@ export default async function TeacherClassesPage({
           defaultValue={query}
         />
         <Button type="submit">Tìm</Button>
+        {showHistory && <input type="hidden" name="history" value="1" />}
+        <Button asChild type="button" variant="outline">
+          <Link
+            href={
+              showHistory
+                ? `/teacher/classes${query ? `?q=${encodeURIComponent(query)}` : ""}`
+                : `/teacher/classes?${new URLSearchParams({
+                    ...(query ? { q: query } : {}),
+                    history: "1",
+                  })}`
+            }
+          >
+            {showHistory ? "Ẩn lớp đã ngừng" : "Xem lớp đã ngừng"}
+          </Link>
+        </Button>
       </form>
 
       <TeacherB2CClassCards classes={b2cClasses} />
