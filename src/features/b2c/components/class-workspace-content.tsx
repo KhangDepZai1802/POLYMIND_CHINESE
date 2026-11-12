@@ -27,6 +27,7 @@ import {
   ClassMeetingDialog,
   ClassAttendanceDialog,
   ClassCommentDialog,
+  SessionSummaryAdjustmentDialog,
 } from "@/features/b2c/components/class-workspace-dialogs";
 import {
   TuitionPackageDialog,
@@ -36,6 +37,7 @@ import { StructuredScheduleDialog } from "@/features/b2c/components/structured-s
 import { WeeklyScheduleDialog } from "./weekly-schedule-dialog";
 import { WeeklyScheduleGrid } from "./weekly-schedule-grid";
 import { WEEKDAYS } from "@/features/b2c/domain/structured-schedule";
+import type { WeeklySlot } from "@/features/b2c/domain/weekly-schedule";
 import type { B2CPermission } from "../domain/teacher-permissions";
 import {
   TeacherClassManageDialog,
@@ -114,6 +116,13 @@ export function ClassWorkspaceContent({
   const studentRows = result.rows as ClassStudent[],
     scheduleRows = result.rows as ClassMeeting[],
     commentRows = result.rows as ClassComment[];
+  const structuredWeeklySlots: WeeklySlot[] = schedules.flatMap((schedule) =>
+    WEEKDAYS.filter(([value]) => schedule.weekdays.includes(value)).map(([, day]) => ({
+      day,
+      start_time: schedule.start_time.slice(0, 5),
+      end_time: schedule.end_time.slice(0, 5),
+    })),
+  );
   const href = (tab: string, page = 0, meetingId?: string) =>
     `${base}?${new URLSearchParams({ tab, page: String(page), ...(filters.q ? { q: filters.q } : {}), ...(meetingId ? { meeting: meetingId } : {}) })}`;
   const canAttend =
@@ -387,6 +396,7 @@ export function ClassWorkspaceContent({
               weekdays={cls.weekdays_text}
               time={cls.time_text}
               teacher={cls.teacher_name}
+              slots={structuredWeeklySlots}
             />
             <p className="text-muted-foreground mt-3 text-xs">
               Lịch lặp để tham khảo, không phải nút chọn buổi. Để điểm danh,
@@ -599,6 +609,7 @@ export function ClassWorkspaceContent({
                         ) : (
                           "—"
                         )}
+                        {can("edit_students") && <div className="mt-2"><SessionSummaryAdjustmentDialog classId={classId} student={s} /></div>}
                       </td>
                     </>
                   ) : filters.tab === "attendance" ? (

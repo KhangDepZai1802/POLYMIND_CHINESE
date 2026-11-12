@@ -3,6 +3,7 @@ import { revalidateB2CViews } from "./revalidate-views";
 import { requireTeaching } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { dbErrorToMessage } from "@/lib/action-state";
+import { z } from "zod";
 import {
   meetingSchema,
   attendanceSchema,
@@ -45,4 +46,18 @@ export async function addClassCommentAction(input: unknown) {
   return !p.success
     ? { error: "Nhận xét phải có nội dung và tối đa 4.000 ký tự." }
     : write("add_comment", p.data);
+}
+export async function saveSessionSummaryAdjustmentAction(input: unknown) {
+  await requireTeaching("super_admin");
+  const parsed = z.object({
+    class_id: z.uuid(), enrollment_id: z.uuid(), registered_sessions: z.coerce.number().int().min(1).max(9999),
+    attended: z.coerce.number().int().min(0).max(9999), absent: z.coerce.number().int().min(0).max(9999),
+    excused: z.coerce.number().int().min(0).max(9999), makeup: z.coerce.number().int().min(0).max(9999),
+    reason: z.string().trim().min(3).max(1000),
+  }).safeParse(input);
+  if (!parsed.success) return { error: "Kiểm tra các số buổi và nhập lý do điều chỉnh." };
+  const { error } = await (await createClient()).rpc("save_b2c_session_summary_adjustment" as never, { p_data: parsed.data } as never);
+  if (error) return { error: dbErrorToMessage(error) };
+  revalidateB2CViews();
+  return { success: true };
 }

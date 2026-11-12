@@ -53,7 +53,8 @@ type PermissionRpc =
   | "read_b2c_class_teacher_options"
   | "assign_b2c_class_teacher"
   | "read_teacher_b2c_student_edit"
-  | "save_teacher_b2c_student";
+  | "save_teacher_b2c_student"
+  | "read_b2c_session_summary_adjustments";
 export async function permissionRpc<T>(
   name: PermissionRpc,
   args: Record<string, Json | undefined> = {},

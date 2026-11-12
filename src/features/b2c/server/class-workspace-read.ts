@@ -61,6 +61,19 @@ export async function readClassWorkspaceAction(
     >,
     meeting = result.meeting ?? null,
     today = todayISO();
+  if (filters.tab === "students") {
+    const { data: adjustments, error: adjustmentsError } = await (client.rpc as Function)(
+      "read_b2c_session_summary_adjustments",
+      { p_class_id: classId },
+    );
+    if (adjustmentsError) throw new Error("Không tải được điều chỉnh số buổi.");
+    const values = (adjustments ?? {}) as Record<string, { attended: number; absent: number; excused: number; makeup: number }>;
+    result.rows = (result.rows as ClassStudent[]).map((row) => {
+      const adjustment = values[row.enrollment_id];
+      if (!adjustment || !row.session_summary) return row;
+      return { ...row, session_summary: { ...adjustment, remaining: row.registered_sessions === null ? null : row.registered_sessions - adjustment.attended } };
+    });
+  }
   return {
     cls,
     schedules: schedules?.data ?? [],

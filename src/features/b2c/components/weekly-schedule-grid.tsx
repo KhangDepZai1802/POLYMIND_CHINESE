@@ -1,16 +1,20 @@
 import { Clock3, GraduationCap, Repeat2 } from "lucide-react";
-import { WEEKLY_DAYS, readWeeklySlots } from "../domain/weekly-schedule";
+import { WEEKLY_DAYS, readWeeklySlots, type WeeklySlot } from "../domain/weekly-schedule";
 
 export function WeeklyScheduleGrid({
   weekdays,
   time,
   teacher,
+  slots: structuredSlots,
 }: {
   weekdays: string | null;
   time: string | null;
   teacher: string | null;
+  slots?: WeeklySlot[];
 }) {
-  const slots = readWeeklySlots(weekdays, time);
+  const slots = structuredSlots?.length
+    ? structuredSlots
+    : readWeeklySlots(weekdays, time);
   const selected = new Set(slots.map((s) => s.day));
   return (
     <div className="mt-4 min-w-0 overflow-hidden rounded-xl border">

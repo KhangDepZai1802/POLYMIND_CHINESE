@@ -22,7 +22,26 @@ import {
   saveClassMeetingAction,
   saveClassAttendanceAction,
   addClassCommentAction,
+  saveSessionSummaryAdjustmentAction,
 } from "../server/class-workspace-actions";
+
+export function SessionSummaryAdjustmentDialog({ classId, student }: { classId: string; student: ClassStudent }) {
+  const refresh = useClassWorkspaceRefresh();
+  const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const summary = student.session_summary;
+  if (!summary) return null;
+  return <Dialog open={open} onOpenChange={(value) => !busy && setOpen(value)}>
+    <DialogTrigger asChild><Button type="button" variant="outline" size="sm">Điều chỉnh buổi</Button></DialogTrigger>
+    <DialogContent><DialogHeader><DialogTitle>Điều chỉnh số buổi</DialogTitle><DialogDescription>Số gốc từ điểm danh được giữ nguyên; điều chỉnh này có lưu lý do và lịch sử.</DialogDescription></DialogHeader>
+      <form className="grid gap-3" onSubmit={async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); setBusy(true); setError(""); const result = await saveSessionSummaryAdjustmentAction({ class_id: classId, enrollment_id: student.enrollment_id, registered_sessions: form.get("registered_sessions"), attended: form.get("attended"), absent: form.get("absent"), excused: form.get("excused"), makeup: form.get("makeup"), reason: form.get("reason") }); setBusy(false); if (result.error) setError(result.error); else { setOpen(false); refresh(); } }}>
+        {[['registered_sessions','Đăng ký',student.registered_sessions ?? 1],['attended','Đã học',summary.attended],['excused','Nghỉ có phép',summary.excused],['absent','Nghỉ không phép',summary.absent],['makeup','Học bù',summary.makeup]].map(([name,label,value]) => <label key={name} className="grid gap-1 text-sm">{label}<Input name={name} type="number" min="0" required defaultValue={value as number} /></label>)}
+        <label className="grid gap-1 text-sm">Lý do<Input name="reason" minLength={3} maxLength={1000} required /></label>
+        {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+        <Button disabled={busy}>{busy ? "Đang lưu…" : "Lưu điều chỉnh"}</Button>
+      </form>
+    </DialogContent>
+  </Dialog>;
+}
 export function ClassMeetingDialog({
   classId,
   teacherName,
