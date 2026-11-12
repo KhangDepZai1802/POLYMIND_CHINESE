@@ -51,7 +51,8 @@ export async function readTeacherWorkspaceAction(
   });
   if (filters.tab === "students") {
     const values = await permissionRpc<Record<string, { attended: number; absent: number; excused: number; makeup: number }>>("read_b2c_session_summary_adjustments", { p_class_id: id });
-    result.rows = result.rows.map((row) => {
+    const rows = result.rows as import("../domain/class-workspace").ClassStudent[];
+    result.rows = rows.map((row) => {
       const adjustment = values[row.enrollment_id];
       if (!adjustment || !row.session_summary) return row;
       return { ...row, session_summary: { ...adjustment, remaining: row.registered_sessions === null ? null : row.registered_sessions - adjustment.attended } };
