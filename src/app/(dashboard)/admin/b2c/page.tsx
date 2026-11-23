@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { B2C_PROGRAMS } from "@/features/b2c/domain/programs";
 import { getB2CStudentCounts } from "@/features/b2c/server/queries";
@@ -17,6 +18,7 @@ export default async function B2CDashboardPage() {
     <>
       <PageHeader
         title="Lớp trung tâm"
+        action={<Button asChild variant="outline"><Link href="/admin/b2c/bao-bai">Điểm danh + Báo bài · Bản thử</Link></Button>}
         description="Không gian quản lý riêng cho học viên lẻ và các lớp mở trực tiếp tại trung tâm."
       />
 

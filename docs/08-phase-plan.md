@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-CLASS-JOURNAL-PREVIEW-1 — Bản thử báo bài theo lớp hiện có
+
+- [x] Hai mục Điểm danh các lớp/Báo bài các lớp; nhóm môn và lớp lấy từ dữ liệu hiện có, không tạo lớp mẫu.
+- [x] Mở đúng buổi thật, giữ quyền đọc hiện hành; nhánh điểm danh dẫn về màn điểm danh hiện có.
+- [x] Cô Lê/Cô Thy thử soạn, đính kèm file, lưu nháp, gửi và xem thông báo trong bộ nhớ; ghi rõ là bản thử, không ghi DB hoặc gửi thật. Super admin được thử để review.
+- [ ] Cổng toàn repo:7/7tests riêng, typecheck, lint file task và build Webpack đạt; full1125/1128tests còn3lỗi mock điểm danh, full lint31lỗi ngoài task. Chưa QA UI bằng tài khoản thật. User đã được báo các lỗi và yêu cầu đẩy bản thử lên GitHub ngày2026-11-23; hai route /teacher/bao-bai và /admin/b2c/bao-bai, chưa xác minh deployment online.
+
 ## B2C-TEACHER-ACCOUNT-CREATORS-1 — 2026-11-03
 
 - [x] Cô Lê/Cô Thy có menu Giáo viên riêng và biểu mẫu một bước để tạo tài khoản vai trò Giáo viên.

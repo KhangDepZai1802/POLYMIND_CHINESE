@@ -64,6 +64,9 @@ export default async function TeacherClassesPage({
         }
         action={
           <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/teacher/bao-bai">Điểm danh + Báo bài · Bản thử</Link>
+            </Button>
             <TeacherAddStudent />
             {permissions.includes("create_classes") && <TeacherClassManageDialog />}
           </div>

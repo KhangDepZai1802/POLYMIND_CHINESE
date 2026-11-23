@@ -1,5 +1,11 @@
 # 04 — Kiến trúc hệ thống
 
+## Bản thử Báo bài theo lớp hiện có (2026-11-23)
+
+`/teacher/bao-bai` và `/admin/b2c/bao-bai` dùng chung `ClassJournalPreview`. Hai nhánh Báo bài/Điểm danh nhóm theo `program_slug` của các lớp được quyền đọc, giữ ID và tên lớp hiện có. Teacher dùng `read_my_b2c_classes`; manager đọc `b2c_classes` bằng session client/RLS. Buổi học dùng lại workspace RPC theo role, phân trang 25; nhánh điểm danh liên kết về màn điểm danh thật của cùng lớp/buổi.
+
+Báo bài, file và thông báo trong bản thử chỉ nằm trong bộ nhớ trình duyệt, mất khi tải lại trang. Không upload Storage, không ghi bảng, không gửi thông báo thật. Quyền thử soạn dùng allowlist vận hành hiện có của Cô Lê/Cô Thy; super admin được thử để review. Góc nhìn người nhận chỉ là mô phỏng trong trang của người soạn, chưa tạo chức năng cho tài khoản học viên. Bản triển khai chính thức cần quyền/RPC báo bài riêng, lưu trữ tài liệu và thông báo theo người nhận.
+
 ## B2C save visibility (2026-10-21)
 
 `revalidateB2CViews()` invalidates hai layout `/admin/b2c` và `/teacher` sau RPC ghi thành công. Dùng chung cho workspace, hồ sơ/lớp, sinh lịch, chấm công, học phí/phiếu thu, điểm kiểm tra và nhận xét tháng; lỗi validate/DB không invalidation hoặc báo thành công. Nhờ đó các trang tổng hợp/lớp/lịch sử của admin và giáo viên được đọc mới khi truy cập, tránh chỉ invalidation một trang giáo viên. Không thêm bảng/kho dữ liệu riêng/trạng thái gửi hay service-role user flow; không tự refresh browser admin đang mở trên máy khác.

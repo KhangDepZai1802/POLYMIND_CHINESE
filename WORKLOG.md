@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-CLASS-JOURNAL-PREVIEW-1 — code xong, user yêu cầu đẩy GitHub sau khi được báo cổng toàn repo chưa xanh — Codex — 2026-11-23. Hai route /teacher/bao-bai và /admin/b2c/bao-bai đọc lớp/buổi thật theo quyền hiện có; mô phỏng nháp/file/gửi/chuông trong bộ nhớ. Typecheck, lint file thay đổi, 7/7 test riêng và build Webpack đạt. Full1125/1128tests,3lỗi mock điểm danh ngoài task; full lint31lỗi ngoài task. HTTPchưa login chuyển đúng/login; chưa QA bằng tài khoản thật vì Browser iab không khả dụng. Phạm vi commit/push chỉ bản thử và docs/tests liên quan; giữ ba file dirty có sẵn. Không DB/migration; chưa xác minh deployment online.
+
 > B2C-PRONUNCIATION-LESSON-1 — hoàn thành tích hợp bài phát âm và giải quyết cổng kiểm tra — 2026-11-10. Tích hợp bài phát âm Hán ngữ Pinyin vào /nghe/hoc-vien-lanh-dao, tạo route /nghe/phat-am và /nghe/phat-am/[page] với 8 audio MP3 và 13 slide WebP; tối ưu responsive mobile, pinch-to-zoom và thanh điều hướng slide; xử lý dứt điểm 2 lỗi cổng kiểm tra cũ (Date.now trong render teacher-today-classes.tsx và test chấm công thiếu geolocation). Full 198 test files, 1.115/1.115 unit tests passed, typecheck và lint đạt 100%. Sẵn sàng đẩy code theo yêu cầu user.
 
 > B2C-TEACHER-OPERATIONS-1 — code xong, user yêu cầu phát hành — Codex — 2026-11-04. Cô Lê/Cô Thy có danh sách account sau khi tạo, xem username/đặt mật khẩu mới (không lưu plaintext) và Tất cả lớp B2C; server/DB allowlist fail-closed. User báo đã chạy SQL production; CLI dry-run vẫn lỗi Supabase tenant ENOTFOUND nên chưa xác minh migration history. Typecheck, target lint, 23/23 target tests và production build đạt; Docker local không chạy nên pgTAP chưa chạy.
@@ -954,6 +956,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-CLASS-JOURNAL-PREVIEW-1-REVIEW: sau push theo yêu cầu user, kiểm deployment và xem bản thử bằng tài khoản cô Lê/cô Thy tại /teacher/bao-bai hoặc admin tại /admin/b2c/bao-bai. Chốt cách trình bày với lớp hiện có trước khi làm lưu trữ báo bài/file và thông báo thật. Bản thử chưa có trang học viên thật.
+
 <<<<<<< HEAD
 **B2C-TEACHER-OPERATIONS-1-RELEASE-QA:** sau push theo dõi Vercel project `thongdat`; Cô Lê/Cô Thy đăng xuất/đăng nhập lại, kiểm Giáo viên → danh sách/username/đặt mật khẩu mới và Tất cả lớp. Không reset mật khẩu thật chỉ để smoke test.
 
@@ -1412,6 +1416,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-CLASS-JOURNAL-PREVIEW-1 (2026-11-23):** full lint có31lỗi/2warning:30lỗi trong .tmp/release-5cd9 và1lỗi Function tại class-workspace-read.ts:65; full Vitest1125/1128 với3lỗi b2c-attendance-mobile.test.tsx thiếu SessionSummaryAdjustmentDialog trong mock. Các file lỗi không thuộc thay đổi task. Typecheck/lint file task/7tests riêng/build Webpack đạt. Không kiểm trực tiếp UI đã đăng nhập vì Browser iab không khả dụng; chỉ HTTPredirect/login được xác nhận. User đã được báo lỗi và yêu cầu rõ đẩy GitHub; giữ các lỗi ngoài task, chỉ đưa bản thử vào commit/push.
+
 <<<<<<< HEAD
 - **B2C-TEACHER-ACCOUNT-CREATORS-1 (2026-11-03):** user báo đã chạy SQL production, nhưng `supabase migration list` không kết nối được remote Postgres nên chưa xác minh history/exact migration hoặc chạy DB integration test. Full lint còn lỗi `teacher-today-classes.tsx:29` gọi `Date.now()` trong render; full Vitest 196/198 files,1109/1113tests với4 lỗi geolocation/checkpoint có sẵn ngoài task. Targeted lint, typecheck, build và7/7 test account creator đạt. Chưa commit/push/deploy.
 =======
@@ -1571,6 +1577,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-11-23] Codex — B2C-CLASS-JOURNAL-PREVIEW-1
+- Bản thử cục bộ: Điểm danh/Báo bài → môn lấy từ lớp được quyền xem → lớp hiện có → buổi thật. ID/mã/tên/lịch lấy từ nguồn hệ thống; không dựng lớp hoặc buổi mẫu. Điểm danh mở đúng màn có sẵn.
+- Hai route mới, component/domain/server preview và nút mở từ Lớp trung tâm/Tất cả lớp. Cô Lê/Cô Thy theo allowlist hiện có và super admin thử soạn; các tài khoản khác chỉ đọc. File, nháp, gửi và thông báo chỉ trong bộ nhớ trình duyệt, giao diện ghi rõ; chưa làm lưu trữ hoặc thông báo thật.
+- Xác minh:7/7tests riêng, typecheck, lint file task, build --webpack đạt; full1125/1128tests và full lint còn lỗi ngoài task như BLOCKERS. HTTP /teacher/bao-bai trả200 sau redirect/login đúng; chưa QAđăng nhập/iab không khả dụng.
+- User tiếp tục yêu cầu rõ “đẩy lên đi” sau khi được báo cổng toàn repo còn lỗi: chuẩn bị commit/push bản thử trên main. Không DB/migration; chưa xác minh deployment online. Không đưa ba file dirty có trước vào commit: src/app/layout.tsx, src/features/b2c/server/queries.ts, src/features/teachers/server/actions.ts.
+- Next: user xem bản thử; triển khai lưu trữ và gửi thật sau khi chốt giao diện/phạm vi.
 
 ### [2026-11-10] B2C-PRONUNCIATION-LESSON-1
 - Tích hợp tài liệu ngữ âm từ file Phát_âm.zip: trích xuất và chuyển đổi 13 slide PDF sang WebP chất lượng cao đặt tại `public/phat-am/`, sao chép 8 audio MP3 tương ứng với các trang 2, 3, 4, 9, 10, 11, 12, 13 đặt tại `public/audio/phat-am/`.
