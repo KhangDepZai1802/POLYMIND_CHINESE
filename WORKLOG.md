@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TUITION-INACTIVE-VISIBILITY-1 — đối chiếu đạt, phát hành theo yêu cầu user — Codex — 2026-11-24. Ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành; không nhắc tái phí hồ sơ cũ, giữ tiền/lịch sử. 29/29 tests tập trung, typecheck, lint file task và build Webpack đạt. SQL20261123000001 đã áp cloud và xác minh. Full1134/1137tests,3lỗi mock điểm danh có sẵn; full lint31lỗi ngoài scope đã báo user. User yêu cầu kiểm tra rồi đẩy GitHub; chỉ commit/push phần học phí, giữ3file dirty có trước. Chưa QA giao diện online.
+
 > B2C-CLASS-JOURNAL-PREVIEW-1 — code xong, user yêu cầu đẩy GitHub sau khi được báo cổng toàn repo chưa xanh — Codex — 2026-11-23. Hai route /teacher/bao-bai và /admin/b2c/bao-bai đọc lớp/buổi thật theo quyền hiện có; mô phỏng nháp/file/gửi/chuông trong bộ nhớ. Typecheck, lint file thay đổi, 7/7 test riêng và build Webpack đạt. Full1125/1128tests,3lỗi mock điểm danh ngoài task; full lint31lỗi ngoài task. HTTPchưa login chuyển đúng/login; chưa QA bằng tài khoản thật vì Browser iab không khả dụng. Phạm vi commit/push chỉ bản thử và docs/tests liên quan; giữ ba file dirty có sẵn. Không DB/migration; chưa xác minh deployment online.
 
 > B2C-PRONUNCIATION-LESSON-1 — hoàn thành tích hợp bài phát âm và giải quyết cổng kiểm tra — 2026-11-10. Tích hợp bài phát âm Hán ngữ Pinyin vào /nghe/hoc-vien-lanh-dao, tạo route /nghe/phat-am và /nghe/phat-am/[page] với 8 audio MP3 và 13 slide WebP; tối ưu responsive mobile, pinch-to-zoom và thanh điều hướng slide; xử lý dứt điểm 2 lỗi cổng kiểm tra cũ (Date.now trong render teacher-today-classes.tsx và test chấm công thiếu geolocation). Full 198 test files, 1.115/1.115 unit tests passed, typecheck và lint đạt 100%. Sẵn sàng đẩy code theo yêu cầu user.
@@ -956,6 +958,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-TUITION-INACTIVE-VISIBILITY-1-RELEASE-QA: user đã yêu cầu đẩy GitHub ngày24/11 sau khi biết lỗi cổng ngoài task. QA giao diện online: Học phí admin/giáo viên mặc định ẩn hồ sơ lưu trữ/nghỉ; Hồ sơ cũ/Tất cả vẫn tra cứu tiền; bộ đếm cùng bộ lọc. SQL đã áp cloud, không cần chạy lại. Cổng toàn repo còn3test/31lint ngoài task, chi tiết BLOCKERS.
+
 - B2C-CLASS-JOURNAL-PREVIEW-1-REVIEW: sau push theo yêu cầu user, kiểm deployment và xem bản thử bằng tài khoản cô Lê/cô Thy tại /teacher/bao-bai hoặc admin tại /admin/b2c/bao-bai. Chốt cách trình bày với lớp hiện có trước khi làm lưu trữ báo bài/file và thông báo thật. Bản thử chưa có trang học viên thật.
 
 <<<<<<< HEAD
@@ -1416,6 +1420,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-TUITION-INACTIVE-VISIBILITY-1 (2026-11-24):** full lint31lỗi có sẵn (30 trong .tmp/release-5cd9 và1 Function type tại class-workspace-read.ts); full201files:200đạt/1lỗi,1134testsđạt/3lỗi b2c-attendance-mobile.test.tsx thiếu SessionSummaryAdjustmentDialog trong mock, cùng lỗi đã ghi ở task trước. DB regression center tuition/center delete cũ lỗi quyền fixture; tái hiện nguyên lỗi khi bỏ metadata mới trong transaction rollback, không phải khác biệt do migration. Repo dry-run chặn20migration thiếu history cũ; đã dùng release snapshot từ151version remote + đúng SQL mới để CLI dry-run/push, sau đó scoped dry-run up to date. Không sửa history hoặc replay migration cũ. User đã yêu cầu phát hành sau khi được báo lỗi ngoài task; chưa QA browser online.
+
 - **B2C-CLASS-JOURNAL-PREVIEW-1 (2026-11-23):** full lint có31lỗi/2warning:30lỗi trong .tmp/release-5cd9 và1lỗi Function tại class-workspace-read.ts:65; full Vitest1125/1128 với3lỗi b2c-attendance-mobile.test.tsx thiếu SessionSummaryAdjustmentDialog trong mock. Các file lỗi không thuộc thay đổi task. Typecheck/lint file task/7tests riêng/build Webpack đạt. Không kiểm trực tiếp UI đã đăng nhập vì Browser iab không khả dụng; chỉ HTTPredirect/login được xác nhận. User đã được báo lỗi và yêu cầu rõ đẩy GitHub; giữ các lỗi ngoài task, chỉ đưa bản thử vào commit/push.
 
 <<<<<<< HEAD
@@ -1578,6 +1584,14 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-11-24] Codex — B2C-TUITION-INACTIVE-VISIBILITY-1
+- User xác nhận hồ sơ đã xóa/nghỉ vẫn hiện ở Học phí admin. Đối chiếu read-only cùng snapshot/quyền cả ba tài khoản: cùng dữ liệu; nguyên nhân là danh sách toàn lịch sử không phân biệt archive/nghỉ. Không ghi tên/mã/dữ liệu tiền học viên thật vào repo.
+- Thêm metadata `student_archived_at` cả hai RPC, server kiểm payload; dùng chung scope hiện hành/hồ sơ cũ/tất cả, lọc trước phân trang, tổng/popup/missing count cùng phạm vi, bỏ nhắc tái phí lịch sử. Giữ trạng thái/gói/phiếu thu/quyền thật và3file dirty có trước; không sửa migration12/11.
+- SQL20261123000001 integration rollback trước/sau đạt, anonymous/revoked deny và projection admin/teacher/receivables giữ nguyên. CLI repo dry-run phát hiện20gap cũ; release snapshot151version đã áp + SQL mới có dry-run chỉ1file, push thành công, history/projection và dry-run up to date xác minh. Không replay/repair các gap.
+- 29/29tests tập trung, typecheck, lint file task và build --webpack đạt. Full201files:200đạt/1lỗi,1134/1137tests;3lỗi mock điểm danh cũ ngoài task. Full lint31lỗi ngoài task. Hai DB regression cũ lỗi quyền fixture giống cả trước/sau migration; giữ nguyên test và quyền. Đọc thật sau migration dưới ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành, không lệch số tiền.
+- Ngày24/11 user gửi ảnh xác nhận và yêu cầu kiểm tra rồi đẩy GitHub. Đối chiếu lại chỉ đọc: ba tài khoản không có dòng lệch, sĩ số không lệch; trạng thái nghỉ/lưu trữ, hồ sơ hiện hành, gói chưa thanh toán và lịch có cấu trúc khớp nội dung đối chiếu. Một chênh lệch làm tròn số tiền đã báo riêng cho user, không tự điều chỉnh dữ liệu tài chính. Fetch xác nhận HEAD và origin/main cùng commit trước phát hành.
+- Phát hành theo yêu cầu rõ của user sau khi đã báo cổng toàn repo còn lỗi ngoài task; chỉ stage phần học phí và docs/tests liên quan, giữ ba file dirty có trước. Next: QA giao diện online sau push; chưa xác minh deployment hoặc đăng nhập browser bằng tài khoản thật.
+
 ### [2026-11-23] Codex — B2C-CLASS-JOURNAL-PREVIEW-1
 - Bản thử cục bộ: Điểm danh/Báo bài → môn lấy từ lớp được quyền xem → lớp hiện có → buổi thật. ID/mã/tên/lịch lấy từ nguồn hệ thống; không dựng lớp hoặc buổi mẫu. Điểm danh mở đúng màn có sẵn.
 - Hai route mới, component/domain/server preview và nút mở từ Lớp trung tâm/Tất cả lớp. Cô Lê/Cô Thy theo allowlist hiện có và super admin thử soạn; các tài khoản khác chỉ đọc. File, nháp, gửi và thông báo chỉ trong bộ nhớ trình duyệt, giao diện ghi rõ; chưa làm lưu trữ hoặc thông báo thật.
@@ -1612,26 +1626,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - Thumbnail check-in/out bằng private signed URL300giây, bấm xem popup lớn; URL lỗi có hướng dẫn tải lại. 7UI/page tests mới đạt (admin/teacher/giáo vụ, ảnh/popup/lỗi URL/xác nhận/server error).
 - SQL20261026000002 cloud đã áp/exact-history/rollback tests đạt (quyền, giờ/lương/pending-price, ảnh/meeting/audit, retry/checkpoint deny). Typecheck/build/lint file task đạt. Full197files:195đạt/2lỗi,1106tests đạt/4lỗi cũ tại checkpoint/schema; full lint lỗi Date.now render có sẵn. Không sửa buổi/ảnh thật, không repair/replay16gap CLI cũ.
 - Tiếp tục đẩy GitHub theo yêu cầu trước đó; báo SHA/Vercel trong chat, chưa QA browser độc lập. Không stage scripts/inspect-cole-meetings.mjs có trước.
-
-### [2026-10-26] Codex — B2C-CENTER-DELETE-1
-- User xác nhận ba mục Phụ huynh/Học viên/Học phí và admin datathongdat@gmail.com. Bổ sung quyền opt-in delete_center_records, nút/dialog xác nhận+lý do; archive hồ sơ/gói, mở xử lý hủy/hoàn thu phí cho hai cô. Giữ lịch sử/actor thật; gói còn tiền không xóa, tạo lại dùng ID mới. Học viên archive vẫn giữ công nợ.
-- Đồng bộ main từ47ddcae đến675a0f1, giữ cột PH và học viên chưa xếp lớp; giải quyết conflict đúng trang học viên. Không sửa script inspect có trước. SQL20261026000001 áp cloud, exact-history/test rollback và student/parent regression rollback đạt. Grant đúng hai cô giữ quyền cũ; read-only account-check quyền xóa=true,33PH99HV63ghi danh học phí. Không xóa dữ liệu thật.
-- Typecheck/build/lint file task đạt; full lint lỗi có sẵn ở teacher-today-classes. Full195files:193đạt/2lỗi;1099tests đạt/4lỗi tại checkpoint(3) và teaching-schema(1), đều ngoài scope/không thay đổi. Các test xóa/dashboard/hủy học phí đạt. CLI bị16gap history cũ, không replay/repair hoặc khẳng định remote up-to-date.
-- Next: B2C-CENTER-DELETE-1-RELEASE-QA; chưa commit/push/deploy hoặc QA browser độc lập.
-
-### [2026-10-23] Codex — RELEASE-20261023-B2C
-- User yêu cầu đẩy GitHub. Fetch phát hiện13commit mới (9150779→f668889); stash dự phòng local, fast-forward main, apply lại và ghép5conflict docs/tuition. Giữ shared revalidateB2CViews từ upstream và toàn bộ SaleWork/chấm công mới. Không force-push.
-- Bundle59file: quyền/menu Tuyển sinh/Học viên/Học phí/Phụ huynh, thêm học viên GV B2C/tạo lớp hai cô, lưu trữ khách,6migration/tests/scripts và cải thiện chọn buổi điểm danh đã có local. Không stage script inspect-cole-meetings ngoài scope.
-- Sau ghép: lint/typecheck/build exit0;194files1099/1099tests đạt; staged secret-literal scan0, diff-check đạt. Chỉ docs thay sau cổng. Dry-run còn16gap history cũ, không còn4remote-only20261021, không replay/repair/DB mutation.
-- Commit/push theo yêu cầu user; SHA/remote xác minh báo trong chat. Chưa xác minh deployment hoặc QA browser production. Next: RELEASE-20261023-B2C-QA.
-
-### [2026-10-23] Codex — B2C-CENTER-STUDENT-DATA-1
-- User yêu cầu hai cô nhập đủ7nhóm thông tin. Bổ sung quyền opt-in manage_center_student_data và trang/menu Học viên, tìm mã/tên/SĐT/lớp/GV,50ghi danh/trang, tổng/distinctHV thật; dialog nguồn/referrer/phone/người chốt/ngày nhập học/bắt đầu/hạn phí. Cho giữ thông tin chưa biết trống, không ép số/ngày giả; kiểm10chữsố/referral/date/stale student+enrollment timestamps; không đổi trạng thái/tiền/lớp bằng RPC này.
-- SQL20261023000006 cloud exact-history/integration rollback đạt. Cấp đúng cô Lê/cô Thy manage_center_student_data và create_classes (view_classes), giữ quyền cũ và audit admin user đã xác nhận. Cả hai read-only có admissions/data/tuition/parents/add_student/create_class=true,58HV60ghi danh. Không sửa hồ sơ thật, số điện thoại dùng chung/thiếu0 chờ xác nhận.
-- Lint/typecheck/build đạt,190files1056/1056tests. Typecheck đầu lỗi nonnull assertion trong test mới, đã sửa và typecheck/lint chạy lại đạt; build app đạt. Local/login HTTP200. Chưa QA browser thực tế/commit/push/deploy online. Dry-run4remote-only20261021 cũ, không repair/replay.
-- Next: B2C-CENTER-STUDENT-DATA-1-QA, hai cô F5 và nhập thông tin đã xác nhận qua Học viên/Tuyển sinh/Học phí/Phụ huynh/Tạo lớp.
-
-### [2026-10-21] Codex — SALEWORK-NOTES-6
-- Ô ghi chú tùy chọn500ký tự, tải/lưu theo người/ngày và quyền báo cáo cũ. Ảnh bỏ tai nghe, khung ghi chú dùng nội dung nhập; trạng thái lưu riêng, auto-wrap/fit giữ9:16. Không đưa canvas trở lại UI.
-- SQL20261021000004 áp production và exact-history đã xác minh. CLI dry-run bị16gaps lịch sử cũ nên không include-all; áp đúng SQL mới. Test SQL rollback own read/write/default/length/cross-read/update deny đạt, fixture0.
-- Edge local ô ghi chú/copyPNG1080×1920/popup/mobile390/0pageerror đạt; đã xem ảnh thực tế không tai nghe và có ghi chú. Full test lượt đầu3case nhãn Ghi chú lỗi; đã sửa aria-label, targeted3/3 đạt. Full rerun187files1074tests và build đạt; user yêu cầu đẩy GitHub, không test thêm.

@@ -1,5 +1,13 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TUITION-INACTIVE-VISIBILITY-1 — Học phí theo trạng thái hồ sơ
+
+- [x] Mặc định ẩn học viên đã lưu trữ và ghi danh đã nghỉ/hoàn thành/chuyển lớp ở cả admin và giáo viên; giữ bảo lưu trong nhóm hiện hành, không suy diễn trạng thái ghi danh từ trạng thái lớp.
+- [x] Cho tra cứu hồ sơ cũ và tất cả ghi danh, giữ nguyên gói/phiếu thu/số dư; không nhắc tái phí hồ sơ cũ. Tổng, popup, phân trang và số chưa có gói cùng phạm vi lọc.
+- [x] Migration metadata đã dry-run/push bằng CLI trong release snapshot chỉ chứa lịch sử remote và SQL mới; history/projection xác minh, scoped dry-run báo up to date. 29/29 unit/UI/server tests, typecheck, lint file task và build Webpack đạt; DB test mới rollback đạt trước/sau migration, đọc thật dưới ba tài khoản cho cùng phạm vi hiện hành/lịch sử.
+- [x] Đối chiếu lại ngày24/11 theo ảnh user: ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành; các trường hợp nghỉ/lưu trữ, gói hiện hành/chưa thanh toán và lịch học khớp. User yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task; phạm vi phát hành chỉ bản sửa học phí.
+- [ ] QA giao diện online; full lint còn 31 lỗi ngoài task, full1134/1137tests với3lỗi mock điểm danh đã có từ trước. Hai DB regression cũ lỗi quyền fixture cả trước và sau thay đổi; không sửa test/quyền để che lỗi. Repo gốc có 20 migration thiếu history cũ, không replay/repair. Chưa xác minh deployment online.
+
 ## B2C-CLASS-JOURNAL-PREVIEW-1 — Bản thử báo bài theo lớp hiện có
 
 - [x] Hai mục Điểm danh các lớp/Báo bài các lớp; nhóm môn và lớp lấy từ dữ liệu hiện có, không tạo lớp mẫu.

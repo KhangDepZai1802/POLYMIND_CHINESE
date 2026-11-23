@@ -6,7 +6,7 @@ vi.mock("@/features/b2c/components/tuition-dialogs", () => ({ TuitionPackageDial
 vi.mock("@/features/b2c/components/tuition-corrections-dialog", () => ({ TuitionCorrectionsDialog: () => <button>Xử lý học phí</button> }));
 import { TuitionDashboard } from "@/features/b2c/components/tuition-dashboard";
 import type { TuitionDashboardRow } from "@/features/b2c/domain/tuition-dashboard";
-const row: TuitionDashboardRow = { enrollment_id: "e1", student_code: "HV1", full_name: "An", class_name: "Movers", class_id: "c1", enrollment_date: "2026-10-01", tuition_end_date: "2026-10-17", status: "studying", package_id: "p1", sessions: 10, unit_price: 100000, discount: 0, discount_reason: null, total_due: 1000000, paid_amount: 400000, balance: 600000 };
+const row: TuitionDashboardRow = { enrollment_id: "e1", student_code: "HV1", full_name: "An", class_name: "Movers", class_id: "c1", enrollment_date: "2026-10-01", tuition_end_date: "2026-10-17", status: "studying", student_archived_at: null, package_id: "p1", sessions: 10, unit_price: 100000, discount: 0, discount_reason: null, total_due: 1000000, paid_amount: 400000, balance: 600000 };
 const other: TuitionDashboardRow = { ...row, enrollment_id: "e2", student_code: "HV2", full_name: "Bình", class_id: "c2", class_name: "Flyers", package_id: null, sessions: null, total_due: null, unit_price: null, discount: null, paid_amount: 0, balance: 0, tuition_end_date: null, enrollment_date: "2026-09-01" };
 afterEach(cleanup);
 it("only offers deletion for an existing package with explicit delete permission", () => {
@@ -24,6 +24,46 @@ it("lets tuition teachers enter packages and receipts without manager correction
   expect(screen.queryByRole("link", { name: "Nhật ký" })).not.toBeInTheDocument();
 });
 function mount(rows = [row, other]) { render(<TuitionDashboard rows={rows} collector="Quản lý" canReadHistory today="2026-10-17" />); }
+it.each(["Quản lý", "Cô Lê", "Cô Thy"])("hides archived and ended enrollments by default for %s while keeping history accessible", (collector) => {
+  const archived = { ...other, enrollment_id: "old", student_code: "HV-OLD", student_archived_at: "2026-11-10T00:00:00Z" };
+  const withdrawn = { ...other, enrollment_id: "left", student_code: "HV-LEFT", status: "withdrawn" };
+  render(<TuitionDashboard rows={[row, other, archived, withdrawn]} collector={collector} canReadHistory={collector === "Quản lý"} today="2026-11-23" />);
+  const table = within(screen.getByRole("table"));
+  expect(table.queryByText("HV-OLD")).not.toBeInTheDocument();
+  expect(table.queryByText("HV-LEFT")).not.toBeInTheDocument();
+  expect(screen.getByText(/2 ghi danh · 1 chưa có gói/)).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc tình trạng theo học" }), { target: { value: "history" } });
+  expect(table.getByText("HV-OLD")).toBeInTheDocument();
+  expect(table.getByText("Đã lưu trữ")).toBeInTheDocument();
+  expect(table.getByText("HV-LEFT")).toBeInTheDocument();
+  expect(table.getByText("Nghỉ")).toBeInTheDocument();
+  expect(table.queryByText("HV1")).not.toBeInTheDocument();
+  expect(screen.getByText(/2 ghi danh · 2 chưa có gói/)).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc tình trạng theo học" }), { target: { value: "all" } });
+  expect(table.getAllByRole("row")).toHaveLength(5);
+  expect(screen.getByText(/4 ghi danh · 3 chưa có gói/)).toBeInTheDocument();
+});
+it("keeps archived debt in historical totals and receipts without renewal reminders", () => {
+  mount([other, { ...row, student_archived_at: "2026-11-10T00:00:00Z" }]);
+  expect(screen.getByRole("button", { name: /^Còn phải thu\s*0/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc tình trạng theo học" }), { target: { value: "history" } });
+  expect(screen.getByRole("button", { name: /^Còn phải thu\s*600.000/ })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Phiếu thu" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Chọn tất cả trên trang" }));
+  fireEvent.click(screen.getByRole("button", { name: /Học viên cần xử lý\s*1 học viên/ }));
+  expect(within(screen.getByRole("dialog")).queryByText("Cần tái phí")).not.toBeInTheDocument();
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc tình trạng theo học" }), { target: { value: "current" } });
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+it("filters before pagination and updates a profile that is archived after loading", () => {
+  const archivedRows = Array.from({ length: 30 }, (_, i) => ({ ...other, enrollment_id: `old${i}`, student_code: `OLD${i}`, student_archived_at: "2026-11-10T00:00:00Z" }));
+  const view = render(<TuitionDashboard rows={[...archivedRows, row]} collector="Quản lý" canReadHistory today="2026-11-23" />);
+  expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+  expect(screen.getByText("Trang 1/1 · 1 ghi danh")).toBeInTheDocument();
+  view.rerender(<TuitionDashboard rows={[...archivedRows, { ...row, student_archived_at: "2026-11-23T00:00:00Z" }]} collector="Quản lý" canReadHistory today="2026-11-23" />);
+  expect(screen.getByText("Chưa có ghi danh phù hợp với bộ lọc.")).toBeInTheDocument();
+});
 it.each(["Tổng phải thu", "Đã thu", "Còn phải thu"])("opens a matching financial list for the %s card", (label) => {
   mount([row, other, { ...row, enrollment_id: "e3", student_code: "HV3", full_name: "Chi", paid_amount: 1000000, balance: 0 }]);
   fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${label}\\s*\\d`) }));

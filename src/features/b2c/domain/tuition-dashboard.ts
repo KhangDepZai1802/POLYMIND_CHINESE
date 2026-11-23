@@ -1,8 +1,26 @@
 import type { B2CTuitionRow } from "../tuition-schema";
-export type TuitionDashboardRow = B2CTuitionRow & { class_id: string; enrollment_date: string | null; tuition_end_date: string | null; status: string };
+import { B2C_STUDENT_STATUS_LABELS, type B2CStudentStatus } from "./student-status";
+export type TuitionArchiveMetadata = { student_archived_at: string | null };
+export type TuitionDashboardRow = B2CTuitionRow & TuitionArchiveMetadata & { class_id: string; enrollment_date: string | null; tuition_end_date: string | null; status: string };
 export type TuitionStatusFilter = "all" | "debt" | "renewal" | "unconfigured" | "paid";
+export type TuitionEnrollmentScope = "current" | "history" | "all";
+
+export function isCurrentTuitionEnrollment(row: TuitionDashboardRow) {
+  return row.student_archived_at === null && ["studying", "on_hold", "awaiting_renewal", "overdue"].includes(row.status);
+}
+export function tuitionScopeMatches(row: TuitionDashboardRow, scope: TuitionEnrollmentScope) {
+  return scope === "all" || (scope === "current" ? isCurrentTuitionEnrollment(row) : !isCurrentTuitionEnrollment(row));
+}
+export function tuitionEnrollmentLabel(row: TuitionDashboardRow) {
+  return row.student_archived_at !== null ? "Đã lưu trữ" : B2C_STUDENT_STATUS_LABELS[row.status as B2CStudentStatus] ?? "Không còn theo học";
+}
+export function assertTuitionArchiveMetadata(rows: B2CTuitionRow[]): asserts rows is (B2CTuitionRow & TuitionArchiveMetadata)[] {
+  if (rows.some(row => !("student_archived_at" in row) || (row.student_archived_at !== null && typeof row.student_archived_at !== "string"))) {
+    throw new Error("Chưa tải được trạng thái lưu trữ học viên. Vui lòng thử lại.");
+  }
+}
 export function needsRenewal(row: TuitionDashboardRow, today: string) {
-  return !["on_hold", "withdrawn", "completed", "transferred"].includes(row.status) && (row.status === "awaiting_renewal" || !!row.tuition_end_date && row.tuition_end_date <= today);
+  return isCurrentTuitionEnrollment(row) && row.status !== "on_hold" && (row.status === "awaiting_renewal" || !!row.tuition_end_date && row.tuition_end_date <= today);
 }
 export function needsTuitionAttention(row: TuitionDashboardRow, today: string) {
   return row.balance > 0 || needsRenewal(row, today);

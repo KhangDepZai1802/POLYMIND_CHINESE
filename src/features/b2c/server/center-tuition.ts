@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { homePathForRole } from "@/lib/permissions/routes";
-import type { TuitionDashboardRow } from "../domain/tuition-dashboard";
+import { assertTuitionArchiveMetadata, type TuitionDashboardRow } from "../domain/tuition-dashboard";
 import { permissionRpc } from "./permission-rpc";
 
 export async function requireCenterTuitionAccess() {
@@ -26,5 +26,6 @@ export async function readCenterTuitionDashboard() {
     if (!batch.rows.length) throw new Error("Chưa tải đủ danh sách học phí. Vui lòng thử lại.");
   }
   if (new Set(rows.map(r => r.enrollment_id)).size !== rows.length) throw new Error("Danh sách vừa thay đổi. Vui lòng tải lại.");
+  assertTuitionArchiveMetadata(rows);
   return rows;
 }

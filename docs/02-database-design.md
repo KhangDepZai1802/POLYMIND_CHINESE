@@ -942,6 +942,8 @@ SQL20261017000006: b2c_nps_surveys/invitations/responses/history/requests đều
 
 ### B2C-TUITION-DESIGN-1
 
+`B2C-TUITION-INACTIVE-VISIBILITY-1` (2026-11-23): migration `20261123000001_b2c_tuition_archive_metadata.sql` bổ sung `student_archived_at` vào cả `get_b2c_tuition_page` và `read_center_b2c_tuition_page`. Giữ chữ ký, guards/RLS, toàn bộ dòng và số dư hiệu lực; client tải đủ trang rồi lọc phạm vi hiện hành/lịch sử trước phân trang giao diện. Trạng thái ghi danh vẫn lấy từ enrollment; server từ chối payload thiếu metadata archive, không tự coi hồ sơ cũ là đang học. Không chỉnh các migration đã áp, hồ sơ thật hoặc tiền.
+
 Không migration. Giữ RPC get_b2c_tuition_page hiện có làm nguồn số dư hiệu lực đã tính hủy/hoàn/điều chỉnh; đọc hết trang50 qua session manager/RLS, không service-role. Bổ sung đọc id/class_id/enrollment_date/tuition_end_date/status cùng quyền. Lỗi/mất trang/ghi danh thay đổi dừng hiển thị, không trả tổng tiền thiếu.
 
 

@@ -2,7 +2,7 @@ import "server-only";
 import { requireManager } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { B2CTuitionRow } from "../tuition-schema";
-import type { TuitionDashboardRow } from "../domain/tuition-dashboard";
+import { assertTuitionArchiveMetadata, type TuitionDashboardRow } from "../domain/tuition-dashboard";
 
 export async function readTuitionDashboard(): Promise<TuitionDashboardRow[]> {
   await requireManager();
@@ -22,6 +22,7 @@ export async function readTuitionDashboard(): Promise<TuitionDashboardRow[]> {
     if (!batch.rows.length) throw new Error("Chưa tải đủ danh sách học phí. Vui lòng thử lại.");
   }
   if (new Set(rows.map(r => r.enrollment_id)).size !== rows.length) throw new Error("Danh sách vừa thay đổi. Vui lòng tải lại.");
+  assertTuitionArchiveMetadata(rows);
   const details = new Map<string, { class_id: string; enrollment_date: string | null; tuition_end_date: string | null; status: string }>();
   for (let i = 0; i < rows.length; i += 200) {
     const { data, error } = await client.from("b2c_enrollments").select("id,class_id,enrollment_date,tuition_end_date,status").in("id", rows.slice(i, i + 200).map(r => r.enrollment_id));

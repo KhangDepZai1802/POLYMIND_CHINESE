@@ -1,5 +1,13 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-TUITION-INACTIVE-VISIBILITY-1 — 2026-11-23
+
+- **Codex Status:** Fixed; **Verification:** Not Started. Đọc cùng snapshot dưới quyền admin và hai giáo viên chứng minh projection học phí giống nhau; lỗi là danh sách mặc định lẫn hồ sơ lưu trữ/ghi danh đã nghỉ và nhắc tái phí hồ sơ cũ.
+- **Fix:** metadata lưu trữ trên cả hai RPC; bộ lọc Đang theo học/Hồ sơ cũ/Tất cả hồ sơ dùng chung. Tổng tiền, popup, số chưa có gói và phân trang cùng phạm vi; vẫn tra cứu được toàn bộ lịch sử/thu tiền, không sửa số tiền hoặc trạng thái thật.
+- **Đã chạy:** 29/29 tests tập trung và typecheck đạt; DB integration mới rollback đạt trước/sau migration, gồm projection admin/teacher, giữ khoản phải thu và deny revoked/anon. CLI release dry-run chỉ đúng SQL mới, push thành công, history/projection xác minh; scoped dry-run sau áp báo up to date. Repo gốc còn 20 migration thiếu history cũ, không replay/repair.
+- **Cổng cuối:** typecheck/lint file task/build --webpack đạt; full201files:200đạt/1lỗi,1134/1137tests. Ba lỗi có sẵn tại `b2c-attendance-mobile.test.tsx` thiếu `SessionSummaryAdjustmentDialog` trong mock; full lint31lỗi ngoài task. Đọc thật sau migration và đối chiếu lại ngày24/11 dưới ba tài khoản cho cùng57ghi danh hiện hành/21lịch sử và1chưa có gói hiện hành, không lệch số tiền giữa tài khoản. User yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task; chưa QA browser hoặc xác minh deployment online.
+- **Hồi quy cũ:** hai script `b2c_center_tuition_teachers.test.sql` và `b2c_center_delete.test.sql` lỗi quyền trên fixture; tái hiện giống nhau khi tạm khôi phục định nghĩa trước migration trong rollback. Không đổi tests/quyền để che lỗi.
+
 ## B2C-TEACHING-ADMIN-DELETE-PREVIEW-1 — 2026-10-26
 
 - User ảnh thật admin thiếu nút xóa và thumbnail ở Giờ dạy & Lương. Codex bổ sung Xóa chỉ super_admin, xác nhận/lý do, lưu trữ và loại tổng công; giữ ảnh/meeting/lịch sử. Thumbnail check-in/out + popup ảnh lớn, lỗi URL có nhắc tải lại.

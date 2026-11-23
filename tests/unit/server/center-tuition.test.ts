@@ -20,10 +20,14 @@ describe("center tuition teacher access", () => {
   });
   it("collects all pages for sixty enrollments", async () => {
     mocks.rpc.mockResolvedValueOnce(true)
-      .mockResolvedValueOnce({ total: 60, rows: Array.from({ length: 50 }, (_, i) => ({ enrollment_id: `e${i}` })) })
-      .mockResolvedValueOnce({ total: 60, rows: Array.from({ length: 10 }, (_, i) => ({ enrollment_id: `e${i+50}` })) });
+      .mockResolvedValueOnce({ total: 60, rows: Array.from({ length: 50 }, (_, i) => ({ enrollment_id: `e${i}`, student_archived_at: null })) })
+      .mockResolvedValueOnce({ total: 60, rows: Array.from({ length: 10 }, (_, i) => ({ enrollment_id: `e${i+50}`, student_archived_at: "2026-11-10T00:00:00Z" })) });
     expect(await readCenterTuitionDashboard()).toHaveLength(60);
     expect(mocks.rpc).toHaveBeenLastCalledWith("read_center_b2c_tuition_page", { p_query: "", p_page: 1 });
+  });
+  it("rejects missing archive metadata for the teacher projection too", async () => {
+    mocks.rpc.mockResolvedValueOnce(true).mockResolvedValueOnce({ total: 1, rows: [{ enrollment_id: "e1" }] });
+    await expect(readCenterTuitionDashboard()).rejects.toThrow("trạng thái lưu trữ");
   });
   it("only shows the tuition link with explicit global permission", () => {
     const links = (granted: boolean) => getNavigationGroups("teacher", { canManageCenterTuition: granted }).flatMap(g => g.items.map(i => i.href));
