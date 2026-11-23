@@ -38,7 +38,7 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
-> B2C-TUITION-INACTIVE-VISIBILITY-1 — đã commit ae8b09a, push chờ đăng nhập GitHub — Codex — 2026-11-24. Ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành; không nhắc tái phí hồ sơ cũ, giữ tiền/lịch sử. 29/29 tests tập trung, typecheck, lint file task và build Webpack đạt. SQL20261123000001 đã áp cloud và xác minh. Full1134/1137tests,3lỗi mock điểm danh có sẵn; full lint31lỗi ngoài scope đã báo user. User đã yêu cầu phát hành; thiếu credential GitHub để push, giữ3file dirty có trước. Chưa QA giao diện online.
+> B2C-TUITION-INACTIVE-VISIBILITY-1 — commit sửa ae8b09a đã đẩy lên GitHub main — Codex — 2026-11-24. Ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành; không nhắc tái phí hồ sơ cũ, giữ tiền/lịch sử. 29/29 tests tập trung, typecheck, lint file task và build Webpack đạt. SQL20261123000001 đã áp cloud và xác minh. Full1134/1137tests,3lỗi mock điểm danh có sẵn; full lint31lỗi ngoài scope đã báo user. Push thành công theo yêu cầu sau xác thực GitHub, giữ3file dirty có trước. Chưa QA giao diện online.
 
 > B2C-CLASS-JOURNAL-PREVIEW-1 — code xong, user yêu cầu đẩy GitHub sau khi được báo cổng toàn repo chưa xanh — Codex — 2026-11-23. Hai route /teacher/bao-bai và /admin/b2c/bao-bai đọc lớp/buổi thật theo quyền hiện có; mô phỏng nháp/file/gửi/chuông trong bộ nhớ. Typecheck, lint file thay đổi, 7/7 test riêng và build Webpack đạt. Full1125/1128tests,3lỗi mock điểm danh ngoài task; full lint31lỗi ngoài task. HTTPchưa login chuyển đúng/login; chưa QA bằng tài khoản thật vì Browser iab không khả dụng. Phạm vi commit/push chỉ bản thử và docs/tests liên quan; giữ ba file dirty có sẵn. Không DB/migration; chưa xác minh deployment online.
 
@@ -958,7 +958,7 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
-- B2C-TUITION-INACTIVE-VISIBILITY-1-RELEASE-QA: user đã yêu cầu đẩy GitHub ngày24/11 sau khi biết lỗi cổng ngoài task. Tiếp tục push sau khi user đăng nhập GitHub; không cần xin lại quyền phát hành. Sau đó QA giao diện online: Học phí admin/giáo viên mặc định ẩn hồ sơ lưu trữ/nghỉ; Hồ sơ cũ/Tất cả vẫn tra cứu tiền; bộ đếm cùng bộ lọc. SQL đã áp cloud, không cần chạy lại. Cổng toàn repo còn3test/31lint ngoài task, chi tiết BLOCKERS.
+- B2C-TUITION-INACTIVE-VISIBILITY-1-RELEASE-QA: code đã push GitHub ngày24/11 theo yêu cầu user sau khi biết lỗi cổng ngoài task. QA giao diện online: Học phí admin/giáo viên mặc định ẩn hồ sơ lưu trữ/nghỉ; Hồ sơ cũ/Tất cả vẫn tra cứu tiền; bộ đếm cùng bộ lọc. SQL đã áp cloud, không cần chạy lại. Cổng toàn repo còn3test/31lint ngoài task, chi tiết BLOCKERS.
 
 - B2C-CLASS-JOURNAL-PREVIEW-1-REVIEW: sau push theo yêu cầu user, kiểm deployment và xem bản thử bằng tài khoản cô Lê/cô Thy tại /teacher/bao-bai hoặc admin tại /admin/b2c/bao-bai. Chốt cách trình bày với lớp hiện có trước khi làm lưu trữ báo bài/file và thông báo thật. Bản thử chưa có trang học viên thật.
 
@@ -1420,8 +1420,6 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
-- **B2C-TUITION-INACTIVE-VISIBILITY-1-PUSH (2026-11-24):** commit ae8b09a chứa đúng16file task; staged diff/credential scan đạt. Push chờ Git Credential Manager, thử không tương tác trả `could not read Username for 'https://github.com': terminal prompts disabled`; máy không có GitHub CLI hoặc token môi trường. Remote main vẫn c168186. Đã yêu cầu user đăng nhập GitHub qua Terminal, không yêu cầu gửi mật khẩu/token. Chưa push thành công; không phải thiếu quyền phát hành từ user.
-
 - **B2C-TUITION-INACTIVE-VISIBILITY-1 (2026-11-24):** full lint31lỗi có sẵn (30 trong .tmp/release-5cd9 và1 Function type tại class-workspace-read.ts); full201files:200đạt/1lỗi,1134testsđạt/3lỗi b2c-attendance-mobile.test.tsx thiếu SessionSummaryAdjustmentDialog trong mock, cùng lỗi đã ghi ở task trước. DB regression center tuition/center delete cũ lỗi quyền fixture; tái hiện nguyên lỗi khi bỏ metadata mới trong transaction rollback, không phải khác biệt do migration. Repo dry-run chặn20migration thiếu history cũ; đã dùng release snapshot từ151version remote + đúng SQL mới để CLI dry-run/push, sau đó scoped dry-run up to date. Không sửa history hoặc replay migration cũ. User đã yêu cầu phát hành sau khi được báo lỗi ngoài task; chưa QA browser online.
 
 - **B2C-CLASS-JOURNAL-PREVIEW-1 (2026-11-23):** full lint có31lỗi/2warning:30lỗi trong .tmp/release-5cd9 và1lỗi Function tại class-workspace-read.ts:65; full Vitest1125/1128 với3lỗi b2c-attendance-mobile.test.tsx thiếu SessionSummaryAdjustmentDialog trong mock. Các file lỗi không thuộc thay đổi task. Typecheck/lint file task/7tests riêng/build Webpack đạt. Không kiểm trực tiếp UI đã đăng nhập vì Browser iab không khả dụng; chỉ HTTPredirect/login được xác nhận. User đã được báo lỗi và yêu cầu rõ đẩy GitHub; giữ các lỗi ngoài task, chỉ đưa bản thử vào commit/push.
@@ -1593,7 +1591,7 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - 29/29tests tập trung, typecheck, lint file task và build --webpack đạt. Full201files:200đạt/1lỗi,1134/1137tests;3lỗi mock điểm danh cũ ngoài task. Full lint31lỗi ngoài task. Hai DB regression cũ lỗi quyền fixture giống cả trước/sau migration; giữ nguyên test và quyền. Đọc thật sau migration dưới ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành, không lệch số tiền.
 - Ngày24/11 user gửi ảnh xác nhận và yêu cầu kiểm tra rồi đẩy GitHub. Đối chiếu lại chỉ đọc: ba tài khoản không có dòng lệch, sĩ số không lệch; trạng thái nghỉ/lưu trữ, hồ sơ hiện hành, gói chưa thanh toán và lịch có cấu trúc khớp nội dung đối chiếu. Một chênh lệch làm tròn số tiền đã báo riêng cho user, không tự điều chỉnh dữ liệu tài chính. Fetch xác nhận HEAD và origin/main cùng commit trước phát hành.
 - Phát hành theo yêu cầu rõ của user sau khi đã báo cổng toàn repo còn lỗi ngoài task; chỉ stage phần học phí và docs/tests liên quan, giữ ba file dirty có trước. Next: QA giao diện online sau push; chưa xác minh deployment hoặc đăng nhập browser bằng tài khoản thật.
-- Commit ae8b09a đã tạo; push bị chặn vì thiếu credential GitHub. Đã xác minh remote main còn c168186 và yêu cầu user đăng nhập qua Terminal. Tiếp tục push sau xác thực, không báo đã phát hành khi remote chưa nhận commit.
+- Commit ae8b09a chứa đúng16file task, staged diff/credential scan đạt. Ban đầu push không chọn được credential; sau user xác nhận đăng nhập, chọn rõ tài khoản hiện có quyền ghi repo và push thành công c168186→7e1f32c (gồm code và nhật ký). Không thay credential mặc định, không đưa token hoặc dữ liệu học viên thật vào commit. Giao diện online chưa được xác minh.
 
 ### [2026-11-23] Codex — B2C-CLASS-JOURNAL-PREVIEW-1
 - Bản thử cục bộ: Điểm danh/Báo bài → môn lấy từ lớp được quyền xem → lớp hiện có → buổi thật. ID/mã/tên/lịch lấy từ nguồn hệ thống; không dựng lớp hoặc buổi mẫu. Điểm danh mở đúng màn có sẵn.
