@@ -1,5 +1,9 @@
 # 03 — Workflow nghiệp vụ
 
+## Thứ tự danh sách lớp B2C (2026-11-26)
+
+Trong Danh sách lớp của cả năm chương trình (Tiếng Anh, Tiếng Trung, Tiếng Việt, Lớp Vẽ, Kèm 1-1), lớp Đã hoàn thành và Đã hủy nằm sau các trạng thái còn lại. Quy tắc áp dụng cả khi tìm kiếm, giữ thứ tự ngày bắt đầu/mã lớp hiện có trong mỗi nhóm; các lớp cũ vẫn mở xem chi tiết được.
+
 ## Cô Lê/Cô Thy tạo giáo viên B2C (2026-11-03)
 
 Đăng nhập Cô Lê hoặc Cô Thy → menu Giáo viên → Thêm giáo viên → nhập tên đăng nhập, mật khẩu ban đầu, họ tên và thông tin giảng dạy → Lưu. Hệ thống chỉ tạo vai trò Giáo viên, đồng thời tạo/liên kết hồ sơ B2C; không cần mở Phân quyền để ghép tài khoản thủ công. Sau đó mở lớp → Sửa thông tin lớp → chọn giáo viên mới trong Giáo viên đứng lớp. Nếu bất kỳ bước tạo hồ sơ nào lỗi, giao diện báo lỗi và không giữ tài khoản tạo dở.

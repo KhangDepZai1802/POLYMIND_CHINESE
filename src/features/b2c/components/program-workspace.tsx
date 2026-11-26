@@ -389,6 +389,12 @@ function ClassList({
   onQueryChange: (value: string) => void;
   onSelectClass: (value: ClassRow) => void;
 }) {
+  const sortedClasses = [...classes].sort(
+    (a, b) =>
+      Number(["completed", "cancelled"].includes(a.status)) -
+      Number(["completed", "cancelled"].includes(b.status)),
+  );
+
   return (
     <>
       <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(16rem,1fr)_repeat(3,minmax(9rem,12rem))]">
@@ -460,7 +466,7 @@ function ClassList({
                 </td>
               </tr>
             ) : (
-              classes.map((item, index) => {
+              sortedClasses.map((item, index) => {
                 return (
                   <tr
                     key={item.id}

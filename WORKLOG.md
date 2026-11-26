@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-CLASS-STATUS-ORDER-1 — user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Lớp completed/cancelled ở cuối cả năm chương trình B2C và kết quả tìm kiếm; giữ thứ tự trong mỗi nhóm. Smoke thứ tự, 8 tests lớp, typecheck/lint file sửa/build Webpack đạt trong workspace. Full 1171/1175 tests còn 3 lỗi mock điểm danh và 1 lỗi ôn câu sai; full lint 31 lỗi/2 warning ngoài task. Phạm vi phát hành 4 file task; giữ ba file dirty có trước. Kết quả push/SHA báo trong chat, chưa QA browser/deployment.
+
 > B2C-ADMIN-CLASS-EDIT-1 — user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Ba guard đọc/lưu/chọn giáo viên nhận super_admin, giữ RPC/quyền DB.64/64tests liên quan, typecheck/lint file task/build Webpack đạt; full1172/1175tests còn3lỗi mock điểm danh, full lint31lỗi/2warning có sẵn ngoài task. Phạm vi6file sửa lớp/test/docs; giữ ba file dirty có trước. Không DB; kết quả push/SHA báo trong chat, chưa QA browser hoặc xác minh deployment online.
 
 > B2C-TUITION-PACKAGE-OVERPAYMENT-1 — code xong, user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Giá tùy từng đợt: bỏ thông báo “Đã thu dư”, giữ giá nhập linh hoạt và lưu gói thấp hơn số đã thu; giữ phiếu/lý do/audit/quyền. Sau chỉnh UI:38/38tests liên quan, typecheck/lint file sửa/build Webpack đạt. DB không đổi thêm;80/80pgTAP và migration20261126000001 đã xác minh ở lượt trước. Full lượt trước1138/1141tests,3lỗi mock điểm danh và31lint cũ ngoài task. Phạm vi phát hành11file học phí/docs/tests; giữ ba file dirty có trước. Kết quả push/SHA báo trong chat; chưa QA browser hoặc xác minh deployment online.
@@ -962,6 +964,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-CLASS-STATUS-ORDER-1-QA: sau push theo yêu cầu user, kiểm deployment và thứ tự lớp tại cả năm chương trình/khi tìm kiếm. Cổng toàn repo còn lỗi điểm danh/ôn câu sai và lint ngoài task đã báo user; chi tiết BLOCKERS. Giữ ba file dirty có trước.
+
 - B2C-ADMIN-CLASS-EDIT-1-QA: sau push theo yêu cầu user, kiểm deployment và QA mở/lưu form lớp bằng admin.64tests liên quan/typecheck/lint file task/build đạt; cổng toàn repo còn3test/31lint có sẵn đã báo user. Không cần tạo lại tài khoản hoặc chạy SQL; giữ ba file dirty có trước.
 
 - B2C-TUITION-PACKAGE-OVERPAYMENT-1-QA: sau push theo yêu cầu user, kiểm deployment và QA popup Gói học phí cho nhập giá tùy từng đợt, lưu phải thu thấp hơn đã thu và không kết luận thu dư. SQL20261126000001 đã áp cloud; không chạy lại hoặc sửa migration sĩ số12/11. Giữ ba file dirty có trước.
@@ -1428,6 +1432,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-CLASS-STATUS-ORDER-1 (2026-11-26):** full Vitest 201/203 files đạt, 1171/1175 tests đạt: 3 lỗi mock thiếu SessionSummaryAdjustmentDialog ở b2c-attendance-mobile đã biết và 1 lỗi wrong-answer-review.test.tsx:82 không tìm thấy “Bạn đã ôn xong”; chạy riêng bài ôn câu sai vẫn lỗi 1/5. Các file đó không thuộc bản sửa sắp xếp lớp. Full lint vẫn 31 lỗi/2 warning ở .tmp/release-5cd9 và class-workspace-read.ts. Smoke thứ tự, 8 tests lớp, typecheck/lint file sửa/build Webpack đạt trong workspace; cổng toàn repo chưa xanh. User đã được báo lỗi và yêu cầu đẩy GitHub; chỉ phát hành 4 file task, giữ ba file dirty có trước. Chưa QA browser/deployment.
+
 - **B2C-ADMIN-CLASS-EDIT-1 (2026-11-26):** code sửa và64tests liên quan/typecheck/lint file task/build Webpack đạt. Full203files:202đạt/1lỗi,1172/1175tests;3lỗi b2c-attendance-mobile thiếu SessionSummaryAdjustmentDialog trong mock. Full lint31lỗi/2warning tại .tmp/release-5cd9 và Function ở class-workspace-read.ts, trùng lỗi đã ghi task trước. User đã được báo các lỗi và yêu cầu rõ đẩy GitHub; chỉ phát hành6file task, không sửa ngoài phạm vi hoặc ba file dirty có trước. Chưa QA browser/deployment online; không có SQL mới.
 
 - **B2C-TUITION-PACKAGE-OVERPAYMENT-1 (2026-11-26):** cổng toàn repo chưa xanh: full Vitest202files,201đạt/1lỗi,1138/1141tests;3lỗi có sẵn ở b2c-attendance-mobile.test.tsx do mock thiếu SessionSummaryAdjustmentDialog. Full lint31lỗi/2warning:30lỗi .tmp/release-5cd9 và1 Function type tại class-workspace-read.ts. Typecheck/lint file task/build --webpack,38tests tập trung và80pgTAP đạt. SQL cloud đã áp/xác minh, repo dry-run vẫn20gap history cũ nên dùng release snapshot đúng SQL mới; scoped dry-run đã up to date. User đã được báo lỗi ngoài task và yêu cầu rõ đẩy GitHub; phát hành trong phạm vi học phí, không sửa lỗi ngoài task hoặc ba file dirty có trước.
@@ -1596,6 +1602,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-11-26] Codex — B2C-CLASS-STATUS-ORDER-1
+- **Yêu cầu/fix:** đưa lớp Đã hoàn thành/Đã hủy xuống cuối danh sách ở cả năm chương trình B2C. ClassList sao chép mảng trước khi stable sort theo nhóm trạng thái; giữ thứ tự ngày/mã lớp trong nhóm, áp dụng sau tìm kiếm và giữ mở chi tiết/số thứ tự đúng.
+- **File:** program-workspace.tsx, docs workflow/phase và WORKLOG; không sửa migration. Hash ba file dirty có trước (app/layout, b2c/server/queries, teachers/server/actions) giữ nguyên.
+- **Kiểm tra:** smoke trực tiếp biểu thức sort với trạng thái hỗn hợp, kết quả lọc, danh sách rỗng, chỉ lớp đã kết thúc và input đóng băng đạt. 8 tests class-detail/class-end-date, typecheck, lint file sửa và build Webpack đạt; không thêm test lâu dài cho thay đổi UI nhỏ. Full 201/203 files, 1171/1175 tests đạt; 3 lỗi mock điểm danh và 1 lỗi ôn câu sai, chạy riêng ôn câu sai vẫn 4/5 đạt. Full lint 31 lỗi/2 warning ngoài task. git diff --check đạt.
+- **Next:** user review; chưa commit/push hoặc QA browser/deployment. Cổng toàn repo chưa xanh, lỗi cụ thể ở BLOCKERS; không sửa module ngoài phạm vi để làm xanh cổng.
+- **Phát hành theo yêu cầu:** user nói “đẩy lên github giúp tôi” sau khi được báo 4 lỗi test/31 lỗi lint ngoài task. Fetch xác nhận main/origin/main cùng 2fc71fa trước phát hành. Phạm vi commit/push chỉ 4 file task, kiểm staged diff và giữ ba file dirty có trước. Không chạy lại tests vì source không đổi sau lượt kiểm; kết quả kiểm thuộc workspace có các thay đổi có trước. Kết quả push/SHA báo trong chat, chưa xác minh deployment online.
+
 ### [2026-11-26] Codex — B2C-ADMIN-CLASS-EDIT-1
 - **Nguyên nhân/fix:** popup lớp admin dùng chung form giáo viên; ba guard đọc lớp/chọn giáo viên/lưu lớp thiếu super_admin. Chỉ thêm extra role vào ba lời gọi requireTeaching, không đổi helper toàn cục, RPC hoặc dữ liệu thật.
 - **File:** teacher-management-actions.ts, test server b2c-class-edit-access, docs kiến trúc/phase/QA và WORKLOG. Giữ nguyên ba file dirty có trước (app/layout, b2c/server/queries, teachers/server/actions).
@@ -1638,14 +1651,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
   + Cập nhật test `b2c-teaching-schema.test.ts` và mock geolocation/canvas context `fillText` trong `b2c-teaching-checkpoint.test.tsx`.
 - Dọn dẹp cache Turbopack giải phóng hơn 11 GB dung lượng ổ đĩa.
 - Kết quả kiểm thử: `npm run lint` đạt 0 lỗi 0 cảnh báo, `npm run typecheck` đạt, 198/198 test files (1.115/1.115 tests) pass.
-
-### [2026-11-03] Codex — B2C-TEACHER-ACCOUNT-CREATORS-1
-- Cô Lê/Cô Thy có menu Giáo viên riêng và form một bước; server chỉ nhận role teacher, tạo Auth + teachers + b2c_teachers liên kết và xóa bù nếu bước B2C lỗi. Giáo viên mới xuất hiện trong lựa chọn đứng lớp, không cần ghép thủ công.
-- Migration04 thêm allowlist RLS riêng và RPC capability fail-closed; user báo đã chạy SQL production. CLI migration list không kết nối được remote nên history/DB integration chưa xác minh.
-- Targeted lint sạch, typecheck/build đạt,7/7 test action/menu đạt. Full lint lỗi1 chấm công; full test196/198files,1109/1113tests,4 lỗi geolocation/chấm công ngoài scope. Không sửa module/test ngoài task.
-- Chưa commit/push/deploy. Next: xác minh DB history khi kết nối được, phát hành khi user yêu cầu rồi QA hai tài khoản bằng dữ liệu giáo viên thật được duyệt.
-
-### [2026-11-03] Codex — B2C-PARENT-NPS-ERROR-1
-- Tái hiện read-only cloud: read_b2c_nps_admin lỗi42803 tại SELECT phụ huynh GROUP BY p.id. Forward migration nhóm đủ id/full_name/zalo/email, giữ quyền và projection.
-- SQL20261103000001 áp riêng/exact-history; authenticated default read thành công1khảo sát;59/59DB rollback trước/sau đạt. Không sửa dữ liệu thật. Dry-run vẫn16gap cũ.
-- Build/typecheck đạt; full lint/test vướng lỗi chấm công đã ghi từ26/10, không sửa ngoài scope. Next: QA giao diện độc lập; không commit/push.

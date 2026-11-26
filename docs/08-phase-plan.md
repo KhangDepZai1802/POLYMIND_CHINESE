@@ -1,5 +1,11 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-CLASS-STATUS-ORDER-1 — Lớp đã kết thúc ở cuối danh sách
+
+- [x] DoD: cả năm trang chương trình B2C đưa lớp Đã hoàn thành/Đã hủy xuống sau các trạng thái còn lại, áp dụng cả khi tìm kiếm; giữ thứ tự ngày/mã lớp trong mỗi nhóm và không sửa dữ liệu.
+- [x] Smoke thứ tự, 8 tests class-detail/class-end-date, lint file sửa, typecheck và build Webpack đạt. Full 1171/1175 tests đạt: 3 lỗi mock điểm danh và 1 lỗi ôn câu sai (chạy riêng vẫn lỗi); full lint 31 lỗi/2 warning ngoài task. Không thay đổi migration hoặc ba file dirty có trước.
+- [ ] QA giao diện/deployment sau push. User yêu cầu đẩy GitHub ngày 26/11 sau khi được báo 4 lỗi test/31 lỗi lint ngoài task; chỉ phát hành 4 file task, giữ ba file dirty có trước. Kết quả kiểm thuộc workspace; source không đổi sau kiểm tra. Kết quả push/SHA báo trong chat; lỗi chi tiết đã ghi ở WORKLOG.
+
 ## B2C-ADMIN-CLASS-EDIT-1 — Admin mở và lưu form sửa lớp
 
 - [x] Sửa guard ba action đọc lớp/chọn giáo viên/lưu lớp để nhận super_admin, giữ teacher/academic_manager và RPC hiện có; không đổi mặc định guard giáo viên hoặc role/DB.
