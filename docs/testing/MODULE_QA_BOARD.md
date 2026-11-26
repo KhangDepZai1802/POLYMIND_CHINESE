@@ -1,5 +1,38 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## Phát hành các bản sửa đang chờ — 2026-11-26
+
+User yêu cầu đẩy GitHub sau khi đã được báo kết quả kiểm tra và lỗi baseline. Phạm vi B2C-TUITION-PERIODS-1, B2C-TEACHER-TUITION-RECEIPT-MONTH-1 và B2C-CHECKIN-MOBILE-1; giữ ba file dirty ngoài phạm vi. Kết quả kiểm ở các mục dưới là trước phát hành, source không đổi trong lượt push. Kết quả push/SHA xác minh và báo trong chat; QA browser/deployment độc lập vẫn chờ. Không đổi thêm DB hoặc dữ liệu thật.
+
+## B2C-TUITION-PERIODS-1 — 2026-11-26
+
+- **Codex Status:** Fixed local + migration/data cloud; **Verification:** chờ QA browser/deployment độc lập. Chưa commit/push giao diện.
+- **Nguyên nhân:** nhập giá đợt tiếp theo vào chính gói đã có phiếu thu làm số dư âm. User xác nhận là đợt mới; khôi phục gói cũ từ audit và tách đợt mới trong một transaction, actor quản trị đã xác định, khóa/so snapshot và so nguyên bản phiếu trước/sau. Không tạo/đổi/hoàn/hủy phiếu. Đọc lại bằng kết nối mới và quyền giáo viên thấy hai đợt đúng; legacy UI hiện đợt hiện tại.
+- **Fix:** package ID riêng từng đợt, metadata current/number, quyền/stale/idempotency/audit DB. Dialog tách sửa/tạo mới, giá/số buổi mới không tự điền; table/selection/dedupe theo package. Các đợt và phiếu cũ còn trong báo cáo tháng; roster/điểm danh không nhân đôi.
+- **DB:** 68 assertions mới + 24 overpayment + 37 corrections = 129/129 trước/sau migration, toàn bộ fixture rollback. Kiểm 53 đợt qua trang 50/25, distinct/thu tự/tổng; fallback chưa có gói, archived student, scoped teacher/revoked/anon, retry/stale, thu cũ giữ nguyên và không archive current gây mất luồng. Digest xác nhận DDL không sửa trường cũ/timestamps. Cloud đã áp 20261126000002/3 qua scoped CLI, history đúng và dry-run up to date; 20 gaps cũ không replay/repair.
+- **App:** 134/134 tests tập trung của hai nhánh UI/read/action; full 1240/1243 tests (204/205 files), 3 lỗi mock SessionSummaryAdjustmentDialog có trước ở b2c-attendance-mobile. Typecheck/lint phần mới/build Webpack exit0 đạt; full lint vẫn 31 lỗi/2 warning cũ (.tmp release scripts và unsafe Function trong class-workspace-read). Build lần đầu Next hoàn tất nhưng PowerShell coi warning stderr là lỗi; chạy lại truyền exit code native xác minh0. Chưa QA browser/deployment.
+
+## B2C-CHECKIN-MOBILE-1 — 2026-11-26
+
+- **Codex Status:** Fixed local; **Verification:** chờ QA độc lập trên iPhone thật/deployment.
+- **Tái hiện:** HTML từ component thực trước sửa, dữ liệu giả, màn 390px: document rộng 1146px trên Chromium/1169px trên WebKit. Bảng min-width 950px và phần tử absolute dành cho accessibility thoát khung cuộn; đặt khung relative giải quyết phần tràn này. Hai form ảnh cùng buổi trước sửa còn trùng ID.
+- **Fix:** cùng một DOM bảng đổi thành thẻ dưới 1024px, giữ roles/header cho trình đọc màn hình và các guard/cột/thao tác theo quyền. Khung cuộn relative, tháng grid minmax(0,1fr), ảnh object-contain, nút chụp/checkpoint 44px, useId cho từng input. Không che tràn toàn trang, không thay DB/quyền/cửa sổ giờ.
+- **Đo layout:** 98/98 ca (Chromium + WebKit, 320/375/390/430/768/1024/1440px × trước check-in/check-out/hoàn tất/chờ giá/rỗng/admin/không quyền xem lương), không tràn document hoặc thẻ mobile; đủ vùng chạm và ID duy nhất. Đã xem ảnh mobile trước/sau check-in và desktop. Browser tích hợp lỗi khởi tạo kernel; dùng Playwright local, HTML render từ source và CSS Tailwind thật với shell mô phỏng, không gọi DB/camera/GPS thật. Đây là kiểm layout, không thay cho E2E có đăng nhập/VoiceOver/iPhone thật.
+- **Kiểm tra:** 20/20 tests liên quan đạt, gồm chọn ảnh đúng form khi cùng buổi hiện hai lần; typecheck, lint file sửa và build Webpack đạt. Full 202/203 files, 1205/1208 tests đạt, 3 lỗi mock cũ thiếu SessionSummaryAdjustmentDialog ở b2c-attendance-mobile. Full lint còn 31 lỗi/2 warning ngoài task tại .tmp/release-5cd9 và class-workspace-read.ts. Chưa commit/push.
+
+## B2C-TEST-CHECKIN-OPEN-1 — 2026-11-26
+
+- **Codex Status:** Configured cloud; **Verification:** chờ user thử browser.
+- Theo yêu cầu user, tạo lớp TEST riêng B2C-000276 và buổi16:00–18:00 giờ VN ngày26/11 cho test.giaovien.checkin. Rate riêng buổi0đ; lớp cũ có ghi danh, lịch sử/rate mặc định/quyền/mật khẩu giữ nguyên.
+- RPC authenticated của đúng tài khoản sau commit thấy buổi/can_start và can_check; cửa sổ check-in mở, chưa ghi check-in/out. Không sửa code/migration; session ID tra cứu trong WORKLOG. User vào /teacher/b2c-teaching thử trước18:00, chưa archive khi user đang thử.
+
+## B2C-TEACHER-TUITION-RECEIPT-MONTH-1 — 2026-11-26
+
+- **Codex Status:** Implemented local; **Verification:** Not Started cho QA browser/deployment độc lập.
+- **Yêu cầu/fix:** cô Lê/Cô Thy có Tháng thu tiền/Tất cả tháng trên /teacher/tuition giống admin, dùng chung bảng/thẻ/popup/sort và giữ số toàn gói khi thao tác. Guard manage_center_tuition trước/sau khi đọc, phiếu qua RPC có kiểm quyền hiện có; không cấp quyền, migration hoặc ghi dữ liệu.
+- **Đã kiểm:** 61/61 tests liên quan đạt (16 bổ sung), gồm route giáo viên, thu nhiều đợt qua trang 20 phiếu, hoàn/hủy, tháng rỗng, thiếu/trùng/count đổi, lỗi RPC và thu hồi quyền. Typecheck/lint file task/build Webpack đạt. Full 202/203 files, 1204/1207 tests đạt; 3 lỗi mock thiếu SessionSummaryAdjustmentDialog ở b2c-attendance-mobile. Full lint còn 31 lỗi/2 warning ngoài task như lượt trước. Các cổng chạy trong workspace có ba file dirty có trước, không sửa chúng.
+- **Cloud chỉ đọc:** transaction REPEATABLE READ READ ONLY, set local role authenticated/JWT của đúng hai account active; kiểm guard, toàn bộ trang dashboard/phiếu, định dạng ngày/số và tổng thu ròng. Cả hai cô khớp dữ liệu; không sửa tài khoản, tiền hoặc lưu thông tin học viên thật. Chưa kiểm browser/deployment, chưa commit/push.
+
 ## B2C-TUITION-RECEIPT-MONTH-1 — 2026-11-26
 
 - **Codex Status:** Fixed local; **Verification:** Not Started cho QA browser/deployment.

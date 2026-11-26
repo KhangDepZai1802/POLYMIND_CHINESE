@@ -1,4 +1,6 @@
 <!-- B2C-ADMISSIONS-TEACHERS-1: 2026-10-23 -->
+Mở rộng tháng thu tiền cho cô Lê/Cô Thy (2026-11-26): trang Học phí giáo viên `/teacher/tuition` có cùng bộ lọc Tháng thu tiền/Tất cả tháng và quy tắc thu ròng bên dưới. Quyền `manage_center_tuition` hiện có quyết định truy cập; không cấp quyền mới hoặc mở cho giáo viên chưa được cấp quyền. Giữ các quyền thao tác gói/phiếu thu và nhật ký như trước.
+
 Lọc tháng thu tiền B2C (2026-11-26): trang Học phí admin có bộ lọc Tháng thu tiền theo Ngày thu trên phiếu (`paid_date`), mặc định Tất cả tháng. Tháng được chọn chỉ gồm ghi danh có phiếu thu trong tháng, kể cả phiếu đã hủy/hoàn hết với thu ròng bằng 0; bảng, tổng và popup dùng số thu ròng của phiếu thuộc tháng đó sau các khoản hủy/hoàn hiện tại. Đây không phải phân bổ học phí theo tháng học hay báo cáo dòng tiền hoàn trả theo ngày hoàn. Phải thu và công nợ vẫn là số toàn gói của những ghi danh trong kết quả lọc và được ghi nhãn rõ. Các bộ lọc tìm kiếm/lớp/kỳ ghi danh/tình trạng theo học vẫn kết hợp như trước; chọn Hồ sơ cũ/Tất cả hồ sơ để tra cứu khoản thu của học viên không còn theo học. Thao tác sửa gói/thu tiền/xử lý học phí luôn dùng số dư toàn gói, không lấy số thu tháng làm giá trị kiểm tra.
 
 Học phí theo tình trạng theo học (2026-11-23): trang Học phí của quản trị và giáo viên mặc định chỉ hiện hồ sơ chưa lưu trữ với ghi danh đang học/bảo lưu/chờ tái phí/nợ phí. Ghi danh nghỉ/hoàn thành/chuyển lớp và học viên đã lưu trữ được tra cứu qua bộ lọc Hồ sơ cũ hoặc Tất cả hồ sơ; không xóa gói, phiếu thu hoặc khoản phải thu. Tổng tiền, popup, phân trang và số chưa có gói theo cùng bộ lọc. Hồ sơ cũ có thể còn khoản phải thu nhưng không được nhắc tái phí. Không suy diễn trạng thái ghi danh từ tên, hạn phí hoặc trạng thái lớp.
@@ -22,6 +24,12 @@ Tuyển sinh có nút **X** trên Pipeline và Danh sách cho người có quy�
 Giáo viên được cấp quyền riêng manage_admissions có menu Tuyển sinh và được nhập/sửa khách hỏi, tiềm năng chưa học, cập nhật Lead → Đã tư vấn → Học thử → Đặt cọc → Ghi danh, ghi nhật ký chăm sóc. Dùng chung danh sách với quản lý; quyền này độc lập lớp được phân công, không cấp quyền học phí. Mặc định tắt; đã cấp cho cô Lê và cô Thy theo yêu cầu. Ghi danh trong pipeline chỉ là giai đoạn khách, giữ quy trình tạo hồ sơ học viên hiện có.
 
 # 01 — Phân tích nghiệp vụ (Business Analysis)
+
+## Học phí theo đợt học (2026-11-26)
+
+Một ghi danh có nhiều đợt học phí. Mỗi đợt lưu số buổi, đơn giá, chiết khấu và phiếu thu riêng. “Sửa đợt này” điều chỉnh chính đợt đang chọn; “Thêm đợt học phí mới” lập khoản phải thu mới, bắt đầu đã thu 0, giữ giá và phiếu của đợt trước. Không lấy tiền đã thu đợt cũ trừ vào học phí đợt mới hoặc tự tạo/chuyển/hoàn phiếu. Người dùng đã xác nhận tình huống giá mới thuộc đợt mới.
+
+Danh sách học phí của admin/giáo viên hiển thị nhãn số đợt và Hiện tại/Đợt trước; các tổng và bộ lọc tháng tính đúng các gói được lọc. Nhắc tái phí theo hạn ghi danh chỉ áp dụng đợt hiện tại; nợ của đợt trước vẫn có thể cần xử lý. Danh sách học viên và điểm danh vẫn một dòng theo ghi danh. Giá từng đợt có thể khác nhau, giữ nguyên quyền sửa/thu tiền hiện có.
 
 ## Giáo viên lưu dữ liệu, admin xem (2026-10-21)
 

@@ -1,5 +1,13 @@
 # 02 — Thiết kế Database
 
+## B2C-TUITION-PERIODS-1 (2026-11-26)
+
+Migration `20261126000002/3` thêm period_no, is_current và request UUID/payload vào b2c_tuition_packages; unique(enrollment_id,period_no), unique request và unique partial cho một gói hiện tại chưa archive. Trigger cấp số đợt khi giữ khóa ghi danh. Backfill giữ nguyên các trường cũ/timestamps, không archive gói đã thu. Thu hồi INSERT toàn bảng, chỉ cấp các cột nhập gói; lifecycle/request metadata không cho authenticated tự ghi.
+
+RPC save_b2c_tuition_period sửa theo package ID; start_b2c_tuition_period kiểm quyền edit_tuition, khóa ghi danh rồi gói, so due/paid và previous package, kiểm request/payload trước khi đóng đợt cũ và tạo đợt mới nguyên tử. Retry cùng request trả cùng ID, nội dung khác hoặc đợt/số dư đổi bị từ chối. Audit ghi số đợt/current/lý do với auth.uid. Phiếu thu vẫn gắn package ID. Chặn archive đợt hiện tại khi còn lịch sử chưa archive để không mất điểm tạo đợt tiếp theo.
+
+get_b2c_tuition_period_page (manager/RLS), read_center_b2c_tuition_period_page (manage_center_tuition), read_b2c_class_tuition_periods (view_classes + view_tuition theo lớp) phân trang theo gói, bao gồm lịch sử; ghi danh chưa có gói vẫn có một dòng. Legacy readers chỉ đọc gói hiện tại, tránh nhân đôi roster/điểm danh; legacy save từ chối sửa đợt sau bằng enrollment ID. Receipt/correction RPC và quyền không đổi. Hai migration đã áp cloud qua release snapshot đúng lịch sử remote; scoped dry-run up to date, không replay 20 history gaps cũ.
+
 ## B2C-TEACHER-ACCOUNT-CREATORS-1 (2026-11-03)
 
 Migration `20261103000004` tạo bảng RLS `b2c_teacher_account_creators` không cấp quyền đọc/ghi trực tiếp và allowlist đúng Cô Lê/Cô Thy qua chuỗi liên kết B2C teacher → teacher → profile active. RPC `can_create_b2c_teacher_accounts()` chỉ trả true cho Super Admin hoặc giáo viên active trong allowlist. Server vẫn kiểm lại quyền trước khi dùng admin client tạo Auth account; người được ủy quyền chỉ tạo role teacher. Sau khi tạo `teachers`, server tạo `b2c_teachers` với `source_teacher_id`; nếu bước B2C lỗi thì xóa bù hồ sơ teacher và Auth account mới để tránh dữ liệu nửa chừng.

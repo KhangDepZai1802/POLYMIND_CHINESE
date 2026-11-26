@@ -22,6 +22,7 @@ import {
   type ClassComment,
 } from "@/features/b2c/domain/class-workspace";
 import { B2C_STUDENT_STATUS_LABELS } from "@/features/b2c/domain/student-status";
+import { tuitionPeriodLabel, tuitionRowKey } from "../domain/tuition-dashboard";
 import { getB2CProgram } from "@/features/b2c/domain/programs";
 import {
   ClassMeetingDialog,
@@ -492,7 +493,7 @@ export function ClassWorkspaceContent({
           ))}
           <p className="text-muted-foreground text-xs sm:col-span-3">
             Theo bộ lọc hiện tại · {result.stats.unconfigured} học viên chưa lập
-            gói; không tính là miễn phí. Điểm danh không tự trừ học phí.
+            gói; không tính là miễn phí. Mỗi đợt học phí có phiếu thu riêng. Điểm danh không tự trừ học phí.
           </p>
         </div>
       )}
@@ -564,9 +565,9 @@ export function ClassWorkspaceContent({
             </thead>
             <tbody>
               {studentRows.map((s) => (
-                <tr key={s.enrollment_id} className="border-t align-top">
+                <tr key={filters.tab === "tuition" ? tuitionRowKey(s) : s.enrollment_id} className="border-t align-top">
                   <td className="p-3 font-mono text-xs">{s.student_code}</td>
-                  <td className="p-3 font-medium">{s.full_name}</td>
+                  <td className="p-3 font-medium">{s.full_name}{filters.tab === "tuition" && <p className="mt-1 text-xs font-normal text-muted-foreground">{tuitionPeriodLabel(s)}</p>}</td>
                   {filters.tab === "students" ? (
                     <>
                       <td className="p-3">

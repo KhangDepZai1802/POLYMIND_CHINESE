@@ -1,5 +1,39 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TUITION-PERIODS-1 — Tách học phí các đợt học
+
+- [x] Mỗi đợt có gói và phiếu thu riêng; thao tác Thêm đợt học phí mới không ghi đè đợt cũ. Sửa đợt hiện có yêu cầu lý do và đối chiếu số dư.
+- [x] Admin/giáo viên xem các đợt, lịch sử và thu theo tháng đúng package; danh sách học viên/điểm danh không nhân đôi. Kiểm quyền, idempotency và stale ở DB.
+- [x] Hai migration forward-fix đã kiểm 129/129 pgTAP trước/sau, áp cloud đúng release và scoped dry-run up to date; phục hồi đúng gói cũ từ audit, tách giá mới đã xác nhận thành đợt mới, không thay phiếu thu. Đọc lại dưới quyền giáo viên và kết nối mới khớp.
+- [x] 134/134 tests tập trung, typecheck/lint phần mới/build Webpack exit0; full1240/1243,3 lỗi mock cũ, lint31 lỗi/2 warning cũ đã ghi. Giữ ba file dirty có trước.
+- [x] User yêu cầu đẩy GitHub ngày26/11 sau khi được báo kết quả kiểm thử và lỗi baseline; phát hành cùng tháng thu giáo viên/check-in mobile đang chờ, giữ ba file ngoài phạm vi. Kết quả push/SHA báo trong chat; DB đã áp, không chạy lại migration.
+- [ ] QA browser/deployment độc lập sau phát hành giao diện mới.
+
+## B2C-TUITION-BALANCE-DIAG-1 — Đối chiếu số còn nợ âm
+
+- [x] Đã đối chiếu đúng gói, phiếu và audit: giá đợt mới từng ghi đè gói đã thanh toán; không thiếu phiếu. User xác nhận “Học phí đợt mới”.
+- [x] Trước xác nhận chỉ đọc; sau xác nhận chuyển B2C-TUITION-PERIODS-1 để phục hồi gói cũ theo audit và tạo riêng đợt mới, giữ phiếu thu nguyên vẹn.
+
+## B2C-CHECKIN-MOBILE-1 — Chấm công trên điện thoại
+
+- [x] Không tràn ngang ở 320/375/390/430/768/1024/1440px: 98/98 ca Chromium/WebKit với dữ liệu mẫu. Danh sách buổi dạng thẻ dưới 1024px có đủ giờ, ảnh, GPS và tiền công theo quyền; bảng desktop giữ chức năng. Khung cuộn relative giữ các phần tử absolute bên trong.
+- [x] Bộ chọn tháng, ảnh xem trước và nút chụp/check-in/out co theo khung; useId cho từng input, test chọn ảnh đúng form khi cùng buổi xuất hiện hai lần. Không đổi DB/quyền/cửa sổ giờ hoặc chấm công thay user.
+- [x] 20/20 tests liên quan, typecheck/lint file task/build Webpack đạt. Full lint còn 31 lỗi/2 warning ngoài task; kết quả full tests ghi WORKLOG/QA.
+- [ ] QA độc lập trên iPhone thật/deployment. Đưa vào bản phát hành ngày26/11 theo yêu cầu user, kết quả push/SHA báo trong chat. Browser đã kiểm layout từ component thực/CSS, shell mô phỏng; chưa E2E đăng nhập/camera thật.
+
+## B2C-TEST-CHECKIN-OPEN-1 — Mở lớp thử chấm công
+
+- [x] Tạo lớp TEST riêng B2C-000276 cho test.giaovien.checkin, buổi26/11/2026 16:00–18:00 giờ VN, rate riêng0đ. Lớp TEST cũ có ghi danh giữ nguyên; không đổi quyền/rate mặc định/lịch sử và không chấm công thay user.
+- [x] Xác minh sau commit qua quyền tài khoản thử: buổi hiện, cửa sổ mở, check-in/out null. Không thay code ứng dụng hoặc phát hành bộ lọc học phí đang chờ.
+- [ ] User thử check-in trên /teacher/b2c-teaching; archive buổi TEST sau khi user xác nhận thử xong.
+
+## B2C-TEACHER-TUITION-RECEIPT-MONTH-1 — Tháng thu tiền cho cô Lê/Cô Thy
+
+- [x] DoD: /teacher/tuition có Tháng thu tiền/Tất cả tháng giống admin; bảng, tổng, popup và sắp xếp dùng thu ròng theo paid_date, giữ công nợ/phải thu toàn gói.
+- [x] Dữ liệu qua session/RPC có kiểm quyền hiện có; không mở thêm quyền, không sửa tiền hoặc hồ sơ. Đọc đủ phiếu, kiểm tổng tháng và fail-closed khi thiếu/lỗi/thu hồi quyền. Đối chiếu cloud chỉ đọc dưới quyền đúng hai cô: guard/phiếu/tổng khớp.
+- [x] 61/61 tests liên quan, typecheck/lint file task/build Webpack đạt; giữ ba file dirty có trước. Full 1204/1207 tests đạt, 3 lỗi mock điểm danh và 31 lỗi lint/2 warning ngoài task đã ghi WORKLOG/QA.
+- [ ] QA browser/deployment sau phát hành ngày26/11 theo yêu cầu user; kết quả push/SHA báo trong chat. Bộ lọc tháng không thêm SQL/quyền.
+
 ## B2C-TUITION-RECEIPT-MONTH-1 — Lọc học phí theo tháng thu tiền
 
 - [x] DoD: admin chọn tháng thu theo paid_date, thấy đúng các ghi danh có phiếu thu trong tháng và số thu ròng của tháng sau hủy/hoàn; không lấy tổng thu toàn gói làm số tháng. Có Tất cả tháng và trạng thái không có kết quả.

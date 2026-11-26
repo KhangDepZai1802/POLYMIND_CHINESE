@@ -74,6 +74,32 @@ beforeEach(() => {
 });
 
 describe("ảnh chấm công B2C", () => {
+  it("gắn nút chụp ảnh đúng form khi cùng buổi xuất hiện ở hôm nay và danh sách tháng", async () => {
+    render(
+      <>
+        <TeachingCheckpoint id="session" kind="in" />
+        <TeachingCheckpoint id="session" kind="in" />
+      </>,
+    );
+    const inputs = screen.getAllByLabelText(
+      "Ảnh check-in",
+    ) as HTMLInputElement[];
+    expect(inputs[0]!.id).not.toBe(inputs[1]!.id);
+    const cameraLabels = screen.getAllByText("Chụp ảnh") as HTMLLabelElement[];
+    expect(cameraLabels.map((label) => label.control)).toEqual(inputs);
+
+    fireEvent.change(inputs[1]!, {
+      target: {
+        files: [new File(["photo"], "photo.jpg", { type: "image/jpeg" })],
+      },
+    });
+    const buttons = screen.getAllByRole("button", { name: "Check-in" });
+    await waitFor(() => expect(buttons[1]).not.toBeDisabled());
+    expect(buttons[0]).toBeDisabled();
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.record).not.toHaveBeenCalled();
+  });
+
   it("yêu cầu ảnh trước khi check-in và gọi ghi nhận sau upload", async () => {
     render(<TeachingCheckpoint id="session" kind="in" />);
     expect(screen.getByRole("button", { name: "Check-in" })).toBeDisabled();
@@ -85,7 +111,9 @@ describe("ảnh chấm công B2C", () => {
       },
     });
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Check-in" })).not.toBeDisabled(),
+      expect(
+        screen.getByRole("button", { name: "Check-in" }),
+      ).not.toBeDisabled(),
     );
     fireEvent.click(screen.getByRole("button", { name: "Check-in" }));
     await waitFor(() => expect(mocks.refresh).toHaveBeenCalled());
@@ -109,7 +137,9 @@ describe("ảnh chấm công B2C", () => {
       },
     });
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Check-out" })).not.toBeDisabled(),
+      expect(
+        screen.getByRole("button", { name: "Check-out" }),
+      ).not.toBeDisabled(),
     );
     fireEvent.click(screen.getByRole("button", { name: "Check-out" }));
     await waitFor(() =>
@@ -129,7 +159,9 @@ describe("ảnh chấm công B2C", () => {
       },
     });
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Check-in" })).not.toBeDisabled(),
+      expect(
+        screen.getByRole("button", { name: "Check-in" }),
+      ).not.toBeDisabled(),
     );
     fireEvent.click(screen.getByRole("button", { name: "Check-in" }));
     await waitFor(() =>

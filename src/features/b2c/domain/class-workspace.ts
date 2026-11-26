@@ -59,6 +59,8 @@ export type ClassStudent = {
   attendance_note: string | null;
   attendance_updated_at: string | null;
   package_id: string | null;
+  period_no?: number;
+  is_current?: boolean;
   sessions: number | null;
   unit_price: number | null;
   discount: number | null;

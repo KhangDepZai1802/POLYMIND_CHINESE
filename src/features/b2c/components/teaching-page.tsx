@@ -109,7 +109,7 @@ export async function B2CTeachingPage({
   const href = (next: number) =>
     `${base}?${new URLSearchParams({ month, page: String(next) })}`;
   return (
-    <>
+    <div className="w-full max-w-full min-w-0" data-teaching-page>
       <PageHeader
         title={mine ? "Chấm công" : "Giờ dạy & Lương"}
         description="Đủ ảnh check-in và check-out sẽ ghi nhận giờ dạy theo lịch. Chưa có đơn giá vẫn chấm công được; tiền công chờ quản lý cập nhật đơn giá cho buổi."
@@ -134,9 +134,9 @@ export async function B2CTeachingPage({
                 ? urls.get(session.check_out_photo)
                 : undefined;
               return (
-                <Card key={m.id}>
-                  <CardContent className="space-y-3 pt-5">
-                    <p className="font-semibold">
+                <Card key={m.id} className="min-w-0 py-4 sm:py-6">
+                  <CardContent className="min-w-0 space-y-3 px-4 sm:px-6">
+                    <p className="font-semibold break-words">
                       {m.class_name} · {formatTime(m.starts_at)}–
                       {formatTime(m.ends_at)}
                     </p>
@@ -225,15 +225,18 @@ export async function B2CTeachingPage({
           )}
         </section>
       )}
-      <form method="get" className="mb-4 flex items-center gap-2">
+      <form
+        method="get"
+        className="mb-4 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex"
+      >
         <Input
           type="month"
           name="month"
           aria-label="Tháng chấm công"
           defaultValue={month}
-          className="max-w-48"
+          className="min-h-11 w-full max-w-full min-w-0 sm:w-48"
         />
-        <Button type="submit" variant="outline">
+        <Button type="submit" variant="outline" className="min-h-11 shrink-0">
           Xem tháng
         </Button>
       </form>
@@ -243,7 +246,7 @@ export async function B2CTeachingPage({
           nhật đơn giá. Tổng tiền công bên dưới chưa bao gồm các buổi này.
         </p>
       )}
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           ["Buổi trong lịch", String(result.total)],
           [
@@ -256,10 +259,15 @@ export async function B2CTeachingPage({
         ]
           .filter(([label]) => canPay || label === "Buổi trong lịch")
           .map(([label, value]) => (
-            <Card key={label}>
-              <CardContent className="pt-5">
+            <Card
+              key={label}
+              className="min-w-0 py-4 last:col-span-full sm:py-6 sm:last:col-span-1"
+            >
+              <CardContent className="px-4 sm:px-6">
                 <p className="text-muted-foreground text-sm">{label}</p>
-                <p className="mt-1 text-xl font-semibold">{value}</p>
+                <p className="mt-1 text-xl font-semibold break-words">
+                  {value}
+                </p>
               </CardContent>
             </Card>
           ))}
@@ -271,13 +279,24 @@ export async function B2CTeachingPage({
           trong hai bước chưa được tính giờ và tiền công.
         </p>
       )}
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[950px] text-left text-sm">
+      <div
+        className="relative w-full max-w-full min-w-0 overflow-x-auto lg:rounded-lg lg:border"
+        tabIndex={0}
+        role="region"
+        aria-label="Danh sách buổi dạy trong tháng"
+      >
+        <table
+          role="table"
+          className="block w-full text-left text-sm lg:table lg:min-w-[950px]"
+        >
           <caption className="sr-only">
             {mine ? "Buổi dạy và chấm công" : "Buổi dạy và chấm công"}
           </caption>
-          <thead className="bg-muted">
-            <tr>
+          <thead
+            role="rowgroup"
+            className="bg-muted sr-only lg:not-sr-only lg:table-header-group"
+          >
+            <tr role="row">
               {[
                 "Buổi dạy",
                 "Giảng viên",
@@ -287,24 +306,47 @@ export async function B2CTeachingPage({
                 ...(mine && canCheck ? ["Chấm công"] : []),
                 ...(canDelete ? ["Thao tác"] : []),
               ].map((h) => (
-                <th key={h} className="px-4 py-3">
+                <th
+                  key={h}
+                  scope="col"
+                  role="columnheader"
+                  className="px-4 py-3"
+                >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup" className="grid gap-3 lg:table-row-group">
             {result.rows.length ? (
               result.rows.map((s) => (
-                <tr key={s.id} className="border-t align-top">
-                  <td className="px-4 py-3">
-                    <p className="font-medium">{s.class_name}</p>
+                <tr
+                  key={s.id}
+                  role="row"
+                  className="bg-card grid min-w-0 grid-cols-2 rounded-lg border p-4 align-top lg:table-row lg:rounded-none lg:border-0 lg:border-t lg:bg-transparent lg:p-0"
+                >
+                  <td
+                    role="cell"
+                    className="col-span-2 min-w-0 pb-2 break-words lg:table-cell lg:px-4 lg:py-3"
+                  >
+                    <p className="font-semibold">{s.class_name}</p>
                     <p>
                       {formatDate(s.starts_at)} · {formatTime(s.starts_at)}–
                       {formatTime(s.ends_at)}
                     </p>
                   </td>
-                  <td className="px-4 py-3">{s.teacher_name}</td>
+                  <td
+                    role="cell"
+                    className="col-span-2 min-w-0 pb-3 break-words lg:table-cell lg:px-4 lg:py-3"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="text-muted-foreground lg:hidden"
+                    >
+                      Giảng viên:{" "}
+                    </span>
+                    {s.teacher_name}
+                  </td>
                   {[s.check_in_at, s.check_out_at].map((time, i) => {
                     const photo =
                       i === 0 ? s.check_in_photo : s.check_out_photo;
@@ -316,7 +358,17 @@ export async function B2CTeachingPage({
                       i === 0 ? s.check_in_accuracy : s.check_out_accuracy;
                     const url = photo ? urls.get(photo) : null;
                     return (
-                      <td key={i} className="px-4 py-3">
+                      <td
+                        key={i}
+                        role="cell"
+                        className="min-w-0 border-t py-3 pr-2 break-words lg:table-cell lg:border-0 lg:px-4"
+                      >
+                        <p
+                          aria-hidden="true"
+                          className="mb-1 font-medium lg:hidden"
+                        >
+                          {i === 0 ? "Check-in" : "Check-out"}
+                        </p>
                         <p>
                           {time
                             ? `${formatDate(time)} · ${formatTime(time)}`
@@ -341,15 +393,31 @@ export async function B2CTeachingPage({
                           </p>
                         ) : null}
                         {url && (
-                          <TeachingPhotoPreview url={url} label={`Ảnh ${i === 0 ? "check-in" : "check-out"} · ${s.teacher_name} · ${s.class_name}`} />
+                          <TeachingPhotoPreview
+                            url={url}
+                            label={`Ảnh ${i === 0 ? "check-in" : "check-out"} · ${s.teacher_name} · ${s.class_name}`}
+                          />
                         )}
-                        {photo && !url && <p className="text-destructive mt-2 text-xs">Không tải được ảnh. Tải lại trang để thử lại.</p>}
+                        {photo && !url && (
+                          <p className="text-destructive mt-2 text-xs">
+                            Không tải được ảnh. Tải lại trang để thử lại.
+                          </p>
+                        )}
                       </td>
                     );
                   })}
                   {canPay && (
                     <>
-                      <td className="px-4 py-3">
+                      <td
+                        role="cell"
+                        className="min-w-0 border-t py-3 pr-2 break-words lg:table-cell lg:border-0 lg:px-4"
+                      >
+                        <p
+                          aria-hidden="true"
+                          className="text-muted-foreground mb-1 lg:hidden"
+                        >
+                          Đơn giá / giờ
+                        </p>
                         {s.hourly_rate == null
                           ? "Chờ cập nhật đơn giá"
                           : formatCurrency(Number(s.hourly_rate))}
@@ -357,7 +425,16 @@ export async function B2CTeachingPage({
                           <TeachingSetup sessionId={s.id} />
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td
+                        role="cell"
+                        className="min-w-0 border-t py-3 break-words lg:table-cell lg:border-0 lg:px-4"
+                      >
+                        <p
+                          aria-hidden="true"
+                          className="text-muted-foreground mb-1 lg:hidden"
+                        >
+                          Giờ / Tiền công
+                        </p>
                         {s.check_out_at ? (
                           <>
                             <p>
@@ -382,7 +459,10 @@ export async function B2CTeachingPage({
                     </>
                   )}
                   {mine && canCheck && (
-                    <td className="px-4 py-3">
+                    <td
+                      role="cell"
+                      className="col-span-2 min-w-0 border-t pt-3 break-words lg:table-cell lg:border-0 lg:px-4 lg:py-3"
+                    >
                       {s.check_out_at ? (
                         "Đã hoàn tất"
                       ) : formatInTimeZone(
@@ -410,14 +490,30 @@ export async function B2CTeachingPage({
                       )}
                     </td>
                   )}
-                  {canDelete && <td className="px-4 py-3"><DeleteTeachingSession id={s.id} label={`${s.class_name} · ${s.teacher_name} · ${formatDate(s.starts_at)} ${formatTime(s.starts_at)}`} /></td>}
+                  {canDelete && (
+                    <td
+                      role="cell"
+                      className="col-span-2 min-w-0 border-t pt-3 lg:table-cell lg:border-0 lg:px-4 lg:py-3"
+                    >
+                      <DeleteTeachingSession
+                        id={s.id}
+                        label={`${s.class_name} · ${s.teacher_name} · ${formatDate(s.starts_at)} ${formatTime(s.starts_at)}`}
+                      />
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
-              <tr>
+              <tr role="row" className="block lg:table-row">
                 <td
-                  colSpan={4 + (canPay ? 2 : 0) + (mine && canCheck ? 1 : 0) + (canDelete ? 1 : 0)}
-                  className="text-muted-foreground py-10 text-center"
+                  role="cell"
+                  colSpan={
+                    4 +
+                    (canPay ? 2 : 0) +
+                    (mine && canCheck ? 1 : 0) +
+                    (canDelete ? 1 : 0)
+                  }
+                  className="text-muted-foreground block rounded-lg border p-4 text-center lg:table-cell lg:rounded-none lg:border-0 lg:py-10"
                 >
                   Chưa có buổi dạy trong tháng này.
                   {mine
@@ -440,6 +536,6 @@ export async function B2CTeachingPage({
           <span />
         )}
       </div>
-    </>
+    </div>
   );
 }

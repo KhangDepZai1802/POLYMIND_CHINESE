@@ -1,5 +1,11 @@
 # 04 — Kiến trúc hệ thống
 
+## Học phí nhiều đợt (2026-11-26)
+
+Admin/teacher dashboard đọc RPC period-page mới; class loaders chọn read_b2c_class_tuition_periods riêng cho tab tuition. Dedupe, React key và selection dùng package_id (fallback enrollment_id khi chưa lập gói). Renewal chỉ dùng đợt hiện tại; thu theo tháng vẫn nhóm theo package/paid_date và đối chiếu tổng receipt.
+
+TuitionPackageDialog tách form sửa đợt này/thêm đợt mới, reset giá và số buổi khi tạo mới, giữ request UUID khi retry. Server action kiểm requireTeaching(super_admin), Zod và RPC có guard DB, không service role. Form sửa gửi package ID; form tạo gửi enrollment/previous package/request UUID cùng số dư kỳ vọng. Sau lưu revalidate B2C/teacher views. Luồng lập gói đầu tiên giữ action cũ; RPC cũ từ chối ghi đè đợt sau để bảo vệ client chưa cập nhật.
+
 ## Quyền form sửa lớp B2C dùng chung (2026-11-26)
 
 Form sửa lớp trong trang admin và giáo viên dùng chung các action đọc lớp, đọc danh sách giáo viên và lưu lớp ở `teacher-management-actions.ts`. Ba action này gọi `requireTeaching("super_admin")` để nhận cả admin, giáo vụ và giáo viên đang hoạt động. RPC tiếp tục kiểm quyền sửa/phân công theo lớp bằng session người dùng; admin sửa lớp hiện có không cần hồ sơ giáo viên cá nhân. Không mở rộng mặc định `requireTeaching()` hoặc quyền các action riêng của giáo viên.

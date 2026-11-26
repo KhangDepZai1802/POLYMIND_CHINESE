@@ -46,6 +46,8 @@ export type B2CTuitionRow = {
   full_name: string;
   class_name: string;
   package_id: string | null;
+  period_no?: number;
+  is_current?: boolean;
   sessions: number | null;
   unit_price: number | null;
   discount: number | null;

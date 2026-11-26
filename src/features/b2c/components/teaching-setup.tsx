@@ -54,7 +54,11 @@ export function TeachingSetup({
         required
         placeholder="Đơn giá / giờ"
       />
-      <Button size="sm" disabled={pending}>
+      <Button
+        size="sm"
+        disabled={pending}
+        className="h-auto min-h-11 max-w-full whitespace-normal"
+      >
         Lưu đơn giá buổi này
       </Button>
     </form>

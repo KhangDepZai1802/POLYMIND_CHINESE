@@ -5,6 +5,13 @@ export type TuitionDashboardRow = B2CTuitionRow & TuitionArchiveMetadata & { cla
 export type TuitionStatusFilter = "all" | "debt" | "renewal" | "unconfigured" | "paid";
 export type TuitionEnrollmentScope = "current" | "history" | "all";
 
+export function tuitionRowKey(row: Pick<B2CTuitionRow, "package_id" | "enrollment_id">) {
+  return row.package_id ?? row.enrollment_id;
+}
+export function tuitionPeriodLabel(row: Pick<B2CTuitionRow, "package_id" | "period_no" | "is_current">) {
+  return row.package_id ? `Đợt ${row.period_no ?? 1} · ${row.is_current === false ? "Đợt trước" : "Hiện tại"}` : "Chưa lập gói";
+}
+
 export function isCurrentTuitionEnrollment(row: TuitionDashboardRow) {
   return row.student_archived_at === null && ["studying", "on_hold", "awaiting_renewal", "overdue"].includes(row.status);
 }
@@ -20,7 +27,7 @@ export function assertTuitionArchiveMetadata(rows: B2CTuitionRow[]): asserts row
   }
 }
 export function needsRenewal(row: TuitionDashboardRow, today: string) {
-  return isCurrentTuitionEnrollment(row) && row.status !== "on_hold" && (row.status === "awaiting_renewal" || !!row.tuition_end_date && row.tuition_end_date <= today);
+  return row.is_current !== false && isCurrentTuitionEnrollment(row) && row.status !== "on_hold" && (row.status === "awaiting_renewal" || !!row.tuition_end_date && row.tuition_end_date <= today);
 }
 export function needsTuitionAttention(row: TuitionDashboardRow, today: string) {
   return row.balance > 0 || needsRenewal(row, today);

@@ -23,6 +23,12 @@ import {
   recordB2CReceiptAction,
   getB2CReceiptsAction,
 } from "@/features/b2c/server/tuition-actions";
+import {
+  saveB2CTuitionPeriodAction,
+  startB2CTuitionPeriodAction,
+} from "@/features/b2c/server/tuition-period-actions";
+
+type TuitionPackageMode = "edit" | "new";
 
 export function TuitionPackageDialog({
   row,
@@ -33,33 +39,13 @@ export function TuitionPackageDialog({
 }) {
   const refresh = useClassWorkspaceRefresh();
   const [open, setOpen] = useState(false);
-  const [sessions, setSessions] = useState(row.sessions ?? 1);
-  const [price, setPrice] = useState(row.unit_price ?? 0);
-  const [discount, setDiscount] = useState(row.discount ?? 0);
-  const [discountReason, setDiscountReason] = useState(
-    row.discount_reason ?? "",
-  );
-  const [adjustmentReason, setAdjustmentReason] = useState("");
-  const totalDue = sessions * price - discount;
-  const { state, formAction } = useFormAction(saveB2CTuitionPackageAction, {
-    onSuccess: () => {
-      setOpen(false);
-      refresh();
-    },
-  });
-  const key = row.enrollment_id;
+  const [mode, setMode] = useState<TuitionPackageMode>("edit");
   return (
     <Dialog
       open={open}
       onOpenChange={(value) => {
         setOpen(value);
-        if (value) {
-          setSessions(row.sessions ?? 1);
-          setPrice(row.unit_price ?? 0);
-          setDiscount(row.discount ?? 0);
-          setDiscountReason(row.discount_reason ?? "");
-          setAdjustmentReason("");
-        }
+        if (value) setMode("edit");
       }}
     >
       <DialogTrigger asChild>
@@ -75,112 +61,210 @@ export function TuitionPackageDialog({
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Gói học phí</DialogTitle>
           <DialogDescription>
             {row.full_name} · {row.class_name}
+            {row.package_id &&
+              (mode === "new"
+                ? ` · Đợt mới sau đợt ${row.period_no ?? 1}`
+                : ` · Đợt ${row.period_no ?? 1}`)}
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} className="space-y-4">
-          <input type="hidden" name="enrollment_id" value={key} />
-          <input
-            type="hidden"
-            name="expected_due"
-            value={row.total_due ?? ""}
-          />
-          <input type="hidden" name="expected_paid" value={row.paid_amount} />
-          {row.package_id && (
-            <div className="space-y-2">
-              <Label htmlFor={`adjustment-${key}`}>Lý do điều chỉnh *</Label>
-              <Input
-                id={`adjustment-${key}`}
-                name="adjustment_reason"
-                required
-                maxLength={1000}
-                value={adjustmentReason}
-                onChange={(e) => setAdjustmentReason(e.target.value)}
-              />
+        {row.package_id && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2" aria-label="Thao tác học phí">
+              <Button
+                type="button"
+                variant={mode === "edit" ? "default" : "outline"}
+                aria-pressed={mode === "edit"}
+                onClick={() => setMode("edit")}
+              >
+                Sửa đợt này
+              </Button>
+              {row.is_current !== false && (
+                <Button
+                  type="button"
+                  variant={mode === "new" ? "default" : "outline"}
+                  aria-pressed={mode === "new"}
+                  onClick={() => setMode("new")}
+                >
+                  Thêm đợt học phí mới
+                </Button>
+              )}
             </div>
-          )}
-          {classId && <input type="hidden" name="class_id" value={classId} />}
-          <div className="space-y-2">
-            <Label htmlFor={`sessions-${key}`}>Số buổi *</Label>
-            <Input
-              id={`sessions-${key}`}
-              name="sessions"
-              type="number"
-              min={1}
-              max={100000}
-              step={1}
-              required
-              value={sessions}
-              onChange={(e) => setSessions(Number(e.target.value))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`price-${key}`}>Đơn giá / buổi (VNĐ) *</Label>
-            <Input
-              id={`price-${key}`}
-              name="unit_price"
-              type="number"
-              min={0}
-              max={999999999999}
-              step={1}
-              required
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`discount-${key}`}>Chiết khấu (VNĐ)</Label>
-            <Input
-              id={`discount-${key}`}
-              name="discount"
-              type="number"
-              min={0}
-              max={sessions * price}
-              step={1}
-              required
-              value={discount}
-              onChange={(e) => setDiscount(Number(e.target.value))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`reason-${key}`}>
-              Lý do chiết khấu{discount > 0 ? " *" : ""}
-            </Label>
-            <Input
-              id={`reason-${key}`}
-              name="discount_reason"
-              required={discount > 0}
-              maxLength={1000}
-              value={discountReason}
-              onChange={(e) => setDiscountReason(e.target.value)}
-            />
-          </div>
-          <p className="font-semibold">
-            Tổng phải thu: {formatCurrency(totalDue)}
-          </p>
-          <p className="text-muted-foreground text-sm">
-            Đã thu {formatCurrency(row.paid_amount)}.
-          </p>
-          {state.error && (
-            <p role="alert" className="text-destructive text-sm">
-              {state.error}
+            <p className="text-muted-foreground text-sm">
+              {mode === "new"
+                ? "Nhập học phí cho đợt học tiếp theo. Phiếu thu và số dư của đợt cũ được giữ riêng."
+                : row.is_current === false
+                  ? "Sửa giá của đợt đang chọn. Tạo đợt học phí mới từ đợt hiện tại của học viên."
+                  : "Sửa giá của đợt đang chọn. Nếu học viên học đợt tiếp theo, hãy thêm đợt học phí mới."}
             </p>
-          )}
-          {state.fieldErrors && (
-            <p role="alert" className="text-destructive text-sm">
-              {Object.values(state.fieldErrors).flat().join(" ")}
-            </p>
-          )}
-          <DialogFooter>
-            <SubmitButton>Lưu gói học phí</SubmitButton>
-          </DialogFooter>
-        </form>
+          </div>
+        )}
+        <TuitionPackageForm
+          key={`${row.package_id ?? row.enrollment_id}-${mode}`}
+          row={row}
+          classId={classId}
+          mode={mode}
+          onSuccess={() => {
+            setOpen(false);
+            refresh();
+          }}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TuitionPackageForm({
+  row,
+  classId,
+  mode,
+  onSuccess,
+}: {
+  row: B2CTuitionRow;
+  classId?: string;
+  mode: TuitionPackageMode;
+  onSuccess: () => void;
+}) {
+  const isNewPeriod = Boolean(row.package_id) && mode === "new";
+  const [sessions, setSessions] = useState<string | number>(
+    isNewPeriod ? "" : (row.sessions ?? 1),
+  );
+  const [price, setPrice] = useState<string | number>(
+    isNewPeriod ? "" : (row.unit_price ?? 0),
+  );
+  const [discount, setDiscount] = useState<string | number>(
+    isNewPeriod ? 0 : (row.discount ?? 0),
+  );
+  const [discountReason, setDiscountReason] = useState(
+    isNewPeriod ? "" : (row.discount_reason ?? ""),
+  );
+  const [adjustmentReason, setAdjustmentReason] = useState(
+    isNewPeriod ? "Tạo đợt học phí mới" : "",
+  );
+  const [requestId] = useState(() => (isNewPeriod ? crypto.randomUUID() : ""));
+  const totalDue = Number(sessions) * Number(price) - Number(discount);
+  const action = isNewPeriod
+    ? startB2CTuitionPeriodAction
+    : row.package_id
+      ? saveB2CTuitionPeriodAction
+      : saveB2CTuitionPackageAction;
+  const { state, formAction } = useFormAction(action, { onSuccess });
+  const key = row.package_id ?? row.enrollment_id;
+  return (
+    <form action={formAction} className="space-y-4">
+      <input type="hidden" name="enrollment_id" value={row.enrollment_id} />
+      {row.package_id && (
+        <input
+          type="hidden"
+          name={isNewPeriod ? "previous_package_id" : "package_id"}
+          value={row.package_id}
+        />
+      )}
+      {isNewPeriod && (
+        <input type="hidden" name="request_id" value={requestId} />
+      )}
+      <input type="hidden" name="expected_due" value={row.total_due ?? ""} />
+      <input type="hidden" name="expected_paid" value={row.paid_amount} />
+      {row.package_id && (
+        <div className="space-y-2">
+          <Label htmlFor={`adjustment-${key}`}>
+            {isNewPeriod ? "Lý do tạo đợt mới *" : "Lý do điều chỉnh *"}
+          </Label>
+          <Input
+            id={`adjustment-${key}`}
+            name="adjustment_reason"
+            required
+            maxLength={1000}
+            value={adjustmentReason}
+            onChange={(e) => setAdjustmentReason(e.target.value)}
+          />
+        </div>
+      )}
+      {classId && <input type="hidden" name="class_id" value={classId} />}
+      <div className="space-y-2">
+        <Label htmlFor={`sessions-${key}`}>Số buổi *</Label>
+        <Input
+          id={`sessions-${key}`}
+          name="sessions"
+          type="number"
+          min={1}
+          max={100000}
+          step={1}
+          required
+          value={sessions}
+          onChange={(e) => setSessions(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`price-${key}`}>Đơn giá / buổi (VNĐ) *</Label>
+        <Input
+          id={`price-${key}`}
+          name="unit_price"
+          type="number"
+          min={0}
+          max={999999999999}
+          step={1}
+          required
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`discount-${key}`}>Chiết khấu (VNĐ)</Label>
+        <Input
+          id={`discount-${key}`}
+          name="discount"
+          type="number"
+          min={0}
+          max={Number(sessions) * Number(price)}
+          step={1}
+          required
+          value={discount}
+          onChange={(e) => setDiscount(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`reason-${key}`}>
+          Lý do chiết khấu{Number(discount) > 0 ? " *" : ""}
+        </Label>
+        <Input
+          id={`reason-${key}`}
+          name="discount_reason"
+          required={Number(discount) > 0}
+          maxLength={1000}
+          value={discountReason}
+          onChange={(e) => setDiscountReason(e.target.value)}
+        />
+      </div>
+      <p className="font-semibold">
+        Tổng phải thu:{" "}
+        {sessions === "" || price === "" ? "—" : formatCurrency(totalDue)}
+      </p>
+      <p className="text-muted-foreground text-sm">
+        {isNewPeriod
+          ? `Đợt mới đã thu ${formatCurrency(0)}. Đợt ${row.period_no ?? 1} đã thu ${formatCurrency(row.paid_amount)}.`
+          : `Đã thu ${formatCurrency(row.paid_amount)}.`}
+      </p>
+      {state.error && (
+        <p role="alert" className="text-destructive text-sm">
+          {state.error}
+        </p>
+      )}
+      {state.fieldErrors && (
+        <p role="alert" className="text-destructive text-sm">
+          {Object.values(state.fieldErrors).flat().join(" ")}
+        </p>
+      )}
+      <DialogFooter>
+        <SubmitButton>
+          {isNewPeriod ? "Lưu đợt học phí mới" : "Lưu gói học phí"}
+        </SubmitButton>
+      </DialogFooter>
+    </form>
   );
 }
 
@@ -228,7 +312,7 @@ export function TuitionReceiptsDialog({
       setLoading(false);
     }
   }
-  const key = row.enrollment_id;
+  const key = row.package_id ?? row.enrollment_id;
   return (
     <Dialog
       open={open}
@@ -250,8 +334,8 @@ export function TuitionReceiptsDialog({
         <DialogHeader>
           <DialogTitle>Phiếu thu</DialogTitle>
           <DialogDescription>
-            {row.full_name} · {row.class_name} · Còn phải thu{" "}
-            {formatCurrency(row.balance)}
+            {row.full_name} · {row.class_name} · Đợt {row.period_no ?? 1} · Còn
+            phải thu {formatCurrency(row.balance)}
           </DialogDescription>
         </DialogHeader>
         {canCollect && row.balance > 0 && (

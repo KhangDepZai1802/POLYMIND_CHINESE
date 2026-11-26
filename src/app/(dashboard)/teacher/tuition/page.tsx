@@ -13,6 +13,6 @@ export default async function TeacherTuitionPage() {
   const rows = await readCenterTuitionDashboard();
   return <>
     <PageHeader title="Học phí" description="Nhập số buổi và đơn giá trong gói học phí, sau đó lập phiếu thu với số tiền và ngày bé đóng." />
-    <TuitionDashboard rows={rows} collector={actor.fullName} today={todayISO()} canReadHistory={false} canCorrect={canDelete} canDelete={canDelete} />
+    <TuitionDashboard rows={rows} collector={actor.fullName} today={todayISO()} canReadHistory={false} canCorrect={canDelete} canDelete={canDelete} enableReceiptMonthFilter />
   </>;
 }

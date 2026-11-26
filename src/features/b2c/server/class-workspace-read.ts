@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireManager } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/dates";
+import { permissionRpc } from "./permission-rpc";
 import {
   CLASS_WORKSPACE_PATH,
   classFiltersSchema,
@@ -45,7 +46,14 @@ export async function readClassWorkspaceAction(
           .limit(100)
       : null;
   if (schedules?.error) throw new Error("Không tải được lịch lặp.");
-  const { data, error } = ["assessments", "monthly_comments"].includes(filters.tab) ? { data: { rows: [], total: 0, stats: null }, error: null } : await client.rpc("read_b2c_class_workspace", {
+  const { data, error } = ["assessments", "monthly_comments"].includes(filters.tab) ? { data: { rows: [], total: 0, stats: null }, error: null } : filters.tab === "tuition" ? {
+    data: await permissionRpc<ClassWorkspaceResult<ClassStudent>>("read_b2c_class_tuition_periods", {
+      p_class_id: classId,
+      p_page: filters.page,
+      p_query: filters.q,
+    }),
+    error: null,
+  } : await client.rpc("read_b2c_class_workspace", {
     p_class_id: classId,
     p_tab: filters.tab,
     p_page: filters.page,

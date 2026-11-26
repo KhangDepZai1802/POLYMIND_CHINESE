@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Camera } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -107,6 +107,8 @@ export function TeachingCheckpoint({
   kind: "in" | "out";
   previousPhotoUrl?: string;
 }) {
+  // A session can appear in both today's section and the monthly list.
+  const photoInputId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -201,8 +203,8 @@ export function TeachingCheckpoint({
     }
   }
   return (
-    <div className="max-w-xs space-y-2">
-      <Label htmlFor={`camera-photo-${id}`}>
+    <div className="w-full max-w-sm min-w-0 space-y-2 break-words">
+      <Label htmlFor={photoInputId}>
         Ảnh {kind === "in" ? "check-in" : "check-out"}
       </Label>
       {previousPhotoUrl && (
@@ -222,7 +224,7 @@ export function TeachingCheckpoint({
               width={320}
               height={180}
               unoptimized
-              className="aspect-video w-full object-cover"
+              className="h-auto max-h-80 w-full object-contain"
             />
           </a>
         </div>
@@ -234,20 +236,20 @@ export function TeachingCheckpoint({
           width={320}
           height={180}
           unoptimized
-          className="aspect-video w-full rounded-lg border object-cover"
+          className="h-auto max-h-80 w-full rounded-lg border object-contain"
         />
       )}
-      <div className="flex items-center gap-2">
+      <div className="relative flex flex-wrap items-center gap-2">
         <Label
-          htmlFor={`camera-photo-${id}`}
+          htmlFor={photoInputId}
           aria-disabled={busy || preparing}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-3 text-sm font-medium aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md px-3 text-sm font-medium aria-disabled:pointer-events-none aria-disabled:opacity-50 max-sm:flex-1"
         >
           <Camera className="size-4" aria-hidden />
           Chụp ảnh
         </Label>
         <Input
-          id={`camera-photo-${id}`}
+          id={photoInputId}
           className="sr-only"
           type="file"
           accept="image/*"
@@ -261,6 +263,7 @@ export function TeachingCheckpoint({
         />
         <Button
           size="sm"
+          className="min-h-11 max-sm:flex-1"
           disabled={busy || preparing || !file}
           onClick={() => void submit()}
         >

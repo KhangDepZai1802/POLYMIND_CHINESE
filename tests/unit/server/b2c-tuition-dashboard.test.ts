@@ -17,7 +17,7 @@ it("loads every RPC page, retaining effective balances and requiring manager acc
   api.rpc.mockResolvedValueOnce({ data: { rows: rows.slice(0, 50), total: 51 }, error: null }).mockResolvedValueOnce({ data: { rows: rows.slice(50), total: 51 }, error: null });
   api.inside.mockResolvedValue({ data: rows.map(r => ({ id: r.enrollment_id, class_id: "c", status: "studying", enrollment_date: null, tuition_end_date: null })), error: null });
   const result = await readTuitionDashboard();
-  expect(api.require).toHaveBeenCalledOnce(); expect(api.rpc).toHaveBeenLastCalledWith("get_b2c_tuition_page", { p_query: "", p_page: 1 });
+  expect(api.require).toHaveBeenCalledOnce(); expect(api.rpc).toHaveBeenLastCalledWith("get_b2c_tuition_period_page", { p_query: "", p_page: 1 });
   expect(result).toHaveLength(51); expect(result[50]?.balance).toBe(123);
   expect(result[50]?.student_archived_at).toBe("2026-11-10T00:00:00Z");
   expect(result[50]?.paid_by_month).toEqual({});
@@ -97,4 +97,26 @@ it("rejects duplicate receipts rather than double-counting collections", async (
   const receipt = { id: "r", package_id: "p1", paid_date: "2026-11-01", effective_amount: 250 };
   api.range.mockResolvedValue({ data: [receipt, receipt], count: 2, error: null });
   await expect(readTuitionDashboard()).rejects.toThrow("Dữ liệu phiếu thu vừa thay đổi");
+});
+
+it("keeps separate periods of the same enrollment and attributes old receipts only to their package", async () => {
+  const rows = [
+    { enrollment_id: "e1", package_id: "new", period_no: 2, is_current: true, total_due: 2780000, paid_amount: 0, balance: 2780000, student_archived_at: null },
+    { enrollment_id: "e1", package_id: "old", period_no: 1, is_current: false, total_due: 3695000, paid_amount: 3695000, balance: 0, student_archived_at: null },
+  ];
+  api.rpc.mockResolvedValue({ data: { rows, total: 2 }, error: null });
+  api.inside.mockResolvedValue({ data: [{ id: "e1", class_id: "c1", status: "studying", enrollment_date: null, tuition_end_date: null }], error: null });
+  api.range.mockResolvedValue({ data: [{ id: "r1", package_id: "old", paid_date: "2026-05-20", effective_amount: 3695000 }], count: 1, error: null });
+  const result = await readTuitionDashboard();
+  expect(result).toHaveLength(2);
+  expect(result[0]).toMatchObject({ package_id: "new", balance: 2780000, paid_by_month: {} });
+  expect(result[1]).toMatchObject({ package_id: "old", balance: 0, paid_by_month: { "2026-05": 3695000 } });
+  expect(api.inside).toHaveBeenCalledExactlyOnceWith("id", ["e1"]);
+});
+
+it("rejects duplicate period rows before summing any money", async () => {
+  const row = { enrollment_id: "e1", package_id: "p1", student_archived_at: null };
+  api.rpc.mockResolvedValue({ data: { rows: [row, row], total: 2 }, error: null });
+  await expect(readTuitionDashboard()).rejects.toThrow("Danh sách vừa thay đổi");
+  expect(api.inside).not.toHaveBeenCalled();
 });

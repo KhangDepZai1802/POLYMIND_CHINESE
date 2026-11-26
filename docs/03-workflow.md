@@ -1,10 +1,20 @@
 # 03 — Workflow nghiệp vụ
 
-## Học phí admin → tháng thu tiền (2026-11-26)
+## Học phí đợt mới (2026-11-26)
+
+Mở Học phí trong lớp hoặc trang Học phí → mở gói ở dòng đợt hiện tại → chọn **Thêm đợt học phí mới** → nhập số buổi, đơn giá, chiết khấu/lý do → lưu. Giá/số buổi mới để trống để người nhập xác định; không sao chép phiếu. Danh sách hiển thị cả hai đợt; bấm Phiếu thu ở đúng đợt để xem/thu tiền. Nếu chỉ sửa nhầm giá của cùng đợt, chọn **Sửa đợt này** và nhập lý do. Đợt trước không có nút tạo đợt mới.
+
+Lỗi dữ liệu vừa thay đổi yêu cầu tải lại; retry cùng UUID không tạo thêm gói. Thu tiền, hoàn/hủy và sửa gói luôn theo package ID. Tháng thu tiền giữ ngày thu thực tế của phiếu đợt cũ; không chuyển doanh thu sang tháng tạo gói mới. Không tự đánh dấu đã thanh toán khi tạo đợt.
+
+## Chấm công trên điện thoại (2026-11-26)
+
+Mở Chấm công → Buổi dạy hôm nay → Chụp ảnh → Check-in/Check-out theo cửa sổ giờ hiện có. Màn nhỏ hơn 1024px hiển thị từng buổi trong tháng thành thẻ, đủ giờ vào/ra, ảnh, GPS và tiền công theo quyền; màn lớn giữ bảng cuộn trong khung. Bộ chọn tháng co theo màn hình, thẻ tổng gọn, nút chụp/check-in/out có vùng chạm ít nhất 44px. Ảnh vừa chụp và ảnh check-in trước đó giữ trọn khung, không cắt dấu thời gian/địa điểm. Cùng buổi xuất hiện ở Hôm nay và danh sách tháng dùng ô ảnh riêng, bấm Chụp ảnh đúng form đang thao tác. Không đổi quy tắc chấm công, tính tiền hoặc quyền.
+
+## Học phí admin và cô Lê/Cô Thy → tháng thu tiền (2026-11-26)
 
 Mở Học phí → chọn Tháng thu tiền → xem số Thu ròng trong tháng ở bảng và thẻ tổng; bấm thẻ để xem cùng các ghi danh và số tiền của tháng đó. Ngày thu trên phiếu quyết định tháng, không dùng ngày ghi danh hoặc ngày nhập phiếu. Số thu đã trừ các khoản hủy/hoàn hiện tại, còn phải thu/công nợ là số toàn gói trong kết quả lọc. Hồ sơ cũ/Tất cả hồ sơ cho tra cứu khoản thu của học viên đã nghỉ/lưu trữ. Tất cả tháng trả về số thu toàn gói; đổi tháng đưa về trang đầu và bỏ lựa chọn dòng. Tháng không có phiếu thu hiện danh sách rỗng và số thu 0.
 
-Dữ liệu lấy qua session manager và RLS hiện có, đọc đủ các trang phiếu thu của những gói trong dashboard; cộng `effective_amount` theo `paid_date`. Tổng các tháng phải khớp số thu ròng từ RPC; đọc lỗi/thiếu/trùng hoặc dữ liệu vừa thay đổi thì yêu cầu tải lại thay vì hiện tổng thiếu. Không có migration, không sửa phiếu thu, không đổi màn giáo viên.
+Dữ liệu admin lấy qua session manager và RLS hiện có. Trang giáo viên kiểm `manage_center_tuition`, đọc các đợt qua `read_center_b2c_tuition_period_page` và phiếu qua `read_b2c_permitted_receipts` có kiểm quyền; kiểm lại quyền toàn trung tâm sau khi đọc. Hai màn đọc đủ các trang phiếu thu của những gói trong dashboard, cộng `effective_amount` theo `paid_date`. Tổng các tháng phải khớp số thu ròng từ RPC; đọc lỗi/thiếu/trùng hoặc dữ liệu vừa thay đổi thì yêu cầu tải lại thay vì hiện tổng thiếu. Bộ lọc tháng không sửa phiếu thu hoặc quyền hiện có; migration tách đợt được mô tả riêng phía trên.
 
 ## Thứ tự danh sách lớp B2C (2026-11-26)
 

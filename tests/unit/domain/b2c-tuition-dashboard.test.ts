@@ -58,3 +58,13 @@ it("does not substitute a zero total when monthly data has not been loaded", () 
   expect(() => tuitionPaidAmount(tuitionRow, "2026-11")).toThrow("Chưa tải được");
   expect(() => tuitionReceiptMonthMatches(tuitionRow, "2026-11")).toThrow("Chưa tải được");
 });
+
+it("retains unpaid older periods but only reminds renewal for the current period", () => {
+  const prior = { ...tuitionRow, period_no: 1, is_current: false };
+  const current = { ...tuitionRow, package_id: "p2", period_no: 2, is_current: true, total_due: 2780000, paid_amount: 0, balance: 2780000 };
+  expect(needsRenewal(prior, "2026-11-26")).toBe(false);
+  expect(needsTuitionAttention(prior, "2026-11-26")).toBe(true);
+  expect(needsTuitionAttention({ ...prior, balance: 0 }, "2026-11-26")).toBe(false);
+  expect(needsRenewal(current, "2026-11-26")).toBe(true);
+  expect(tuitionSummary([prior, current], "2026-11-26")).toEqual({ due: 3680000, paid: 400000, balance: 3280000, attention: 1 });
+});
