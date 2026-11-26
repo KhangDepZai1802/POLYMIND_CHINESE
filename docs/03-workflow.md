@@ -1,5 +1,11 @@
 # 03 — Workflow nghiệp vụ
 
+## Học phí admin → tháng thu tiền (2026-11-26)
+
+Mở Học phí → chọn Tháng thu tiền → xem số Thu ròng trong tháng ở bảng và thẻ tổng; bấm thẻ để xem cùng các ghi danh và số tiền của tháng đó. Ngày thu trên phiếu quyết định tháng, không dùng ngày ghi danh hoặc ngày nhập phiếu. Số thu đã trừ các khoản hủy/hoàn hiện tại, còn phải thu/công nợ là số toàn gói trong kết quả lọc. Hồ sơ cũ/Tất cả hồ sơ cho tra cứu khoản thu của học viên đã nghỉ/lưu trữ. Tất cả tháng trả về số thu toàn gói; đổi tháng đưa về trang đầu và bỏ lựa chọn dòng. Tháng không có phiếu thu hiện danh sách rỗng và số thu 0.
+
+Dữ liệu lấy qua session manager và RLS hiện có, đọc đủ các trang phiếu thu của những gói trong dashboard; cộng `effective_amount` theo `paid_date`. Tổng các tháng phải khớp số thu ròng từ RPC; đọc lỗi/thiếu/trùng hoặc dữ liệu vừa thay đổi thì yêu cầu tải lại thay vì hiện tổng thiếu. Không có migration, không sửa phiếu thu, không đổi màn giáo viên.
+
 ## Thứ tự danh sách lớp B2C (2026-11-26)
 
 Trong Danh sách lớp của cả năm chương trình (Tiếng Anh, Tiếng Trung, Tiếng Việt, Lớp Vẽ, Kèm 1-1), lớp Đã hoàn thành và Đã hủy nằm sau các trạng thái còn lại. Quy tắc áp dụng cả khi tìm kiếm, giữ thứ tự ngày bắt đầu/mã lớp hiện có trong mỗi nhóm; các lớp cũ vẫn mở xem chi tiết được.

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, expect, it, vi } from "vitest";
 vi.mock("@/features/b2c/server/archive-actions", () => ({ archiveCenterRecordAction: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/features/b2c/components/tuition-dialogs", () => ({ TuitionPackageDialog: () => <button>Tạo/sửa gói</button>, TuitionReceiptsDialog: () => <button>Phiếu thu</button> }));
+vi.mock("@/features/b2c/components/tuition-dialogs", () => ({ TuitionPackageDialog: () => <button>Tạo/sửa gói</button>, TuitionReceiptsDialog: ({ row }: { row: { paid_amount: number } }) => <button data-paid-amount={row.paid_amount}>Phiếu thu</button> }));
 vi.mock("@/features/b2c/components/tuition-corrections-dialog", () => ({ TuitionCorrectionsDialog: () => <button>Xử lý học phí</button> }));
 import { TuitionDashboard } from "@/features/b2c/components/tuition-dashboard";
 import type { TuitionDashboardRow } from "@/features/b2c/domain/tuition-dashboard";
@@ -117,4 +117,68 @@ it("paginates table and treats anonymous account history as a separate permissio
   expect(screen.queryByRole("link", { name: "Nhật ký" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Sau" }));
   expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+});
+
+it("filters receipts by month and keeps table, cards, popup and monthly sorting consistent", () => {
+  const an = { ...row, paid_by_month: { "2026-10": 100000, "2026-11": 300000 } };
+  const binh = { ...row, enrollment_id: "e2", student_code: "HV2", full_name: "Bình", class_id: "c2", class_name: "Flyers", enrollment_date: "2026-09-01", package_id: "p2", paid_amount: 900000, balance: 100000, paid_by_month: { "2026-09": 700000, "2026-11": 200000 } };
+  const chi = { ...row, enrollment_id: "e3", student_code: "HV3", full_name: "Chi", package_id: "p3", paid_by_month: { "2026-10": 400000 } };
+  const noPackage = { ...other, enrollment_id: "e4", student_code: "HV4", full_name: "Dũng", paid_by_month: {} };
+  render(<TuitionDashboard rows={[an, binh, chi, noPackage]} collector="Quản lý" today="2026-11-26" canReadHistory enableReceiptMonthFilter />);
+  fireEvent.change(screen.getByLabelText("Lọc tháng thu tiền"), { target: { value: "2026-11" } });
+  const table = within(screen.getByRole("table"));
+  expect(table.getByText("An")).toBeInTheDocument();
+  expect(table.getByText("Bình")).toBeInTheDocument();
+  expect(table.queryByText("Chi")).not.toBeInTheDocument();
+  expect(table.queryByText("Dũng")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*500.000/ })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Phải thu toàn gói\s*2.000.000/ })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Còn nợ toàn gói\s*700.000/ })).toBeInTheDocument();
+  const anRow = within(table.getAllByRole("row").find(r => r.textContent?.includes("HV1"))!);
+  expect(anRow.getByRole("button", { name: "Phiếu thu" })).toHaveAttribute("data-paid-amount", "400000");
+  expect(anRow.getByText(/Toàn gói: 400.000/)).toBeInTheDocument();
+  fireEvent.click(table.getByRole("button", { name: "Thu ròng trong tháng" }));
+  expect(table.getAllByRole("row")[1]).toHaveTextContent("Bình");
+  fireEvent.click(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*500.000/ }));
+  const popup = within(screen.getByRole("dialog"));
+  expect(popup.getByText(/2 ghi danh · 500.000/)).toHaveTextContent("Phiếu thu tháng 11/2026");
+  expect(popup.queryByText("Chi")).not.toBeInTheDocument();
+  expect(popup.getByText(/Toàn gói: 400.000/)).toBeInTheDocument();
+  fireEvent.click(popup.getByRole("button", { name: "Close" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc lớp" }), { target: { value: "c2" } });
+  expect(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*200.000/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc lớp" }), { target: { value: "all" } });
+  fireEvent.change(screen.getByLabelText("Lọc tháng thu tiền"), { target: { value: "2026-12" } });
+  expect(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*0/ })).toBeInTheDocument();
+  expect(screen.getByText("Chưa có ghi danh phù hợp với bộ lọc.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Tất cả tháng" }));
+  expect(screen.getByLabelText("Lọc tháng thu tiền")).toHaveValue("");
+  expect(screen.getByRole("button", { name: /^Đã thu\s*1.700.000/ })).toBeInTheDocument();
+  expect(table.getByText("Dũng")).toBeInTheDocument();
+});
+
+it("resets page and selection on month change and keeps historical receipts accessible", () => {
+  const earlier = Array.from({ length: 26 }, (_, i) => ({ ...row, enrollment_id: `e${i}`, student_code: `HV${i}`, full_name: `Học viên ${i}`, paid_by_month: { "2026-10": 400000 } }));
+  const current = { ...row, enrollment_id: "nov", student_code: "NOV", full_name: "Tháng mười một", paid_by_month: { "2026-11": 400000 } };
+  const archived = { ...row, enrollment_id: "old", student_code: "OLD", full_name: "Hồ sơ cũ", student_archived_at: "2026-11-25T00:00:00Z", paid_by_month: { "2026-10": 300000, "2026-11": 100000 } };
+  render(<TuitionDashboard rows={[...earlier, current, archived]} collector="Quản lý" today="2026-11-26" canReadHistory enableReceiptMonthFilter />);
+  fireEvent.click(screen.getByRole("button", { name: "Sau" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Chọn tất cả trên trang" }));
+  expect(screen.getByRole("status")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Lọc tháng thu tiền"), { target: { value: "2026-11" } });
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  expect(screen.getByText("Trang 1/1 · 1 ghi danh")).toBeInTheDocument();
+  expect(within(screen.getByRole("table")).getByText("NOV")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*400.000/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc tình trạng theo học" }), { target: { value: "history" } });
+  expect(within(screen.getByRole("table")).getByText("OLD")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*100.000/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("combobox", { name: "Lọc tình trạng theo học" }), { target: { value: "all" } });
+  expect(screen.getByRole("button", { name: /^Thu ròng trong tháng\s*500.000/ })).toBeInTheDocument();
+});
+
+it("preserves the existing teacher view when monthly receipt data is not supplied", () => {
+  mount();
+  expect(screen.queryByLabelText("Lọc tháng thu tiền")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Đã thu\s*400.000/ })).toBeInTheDocument();
 });

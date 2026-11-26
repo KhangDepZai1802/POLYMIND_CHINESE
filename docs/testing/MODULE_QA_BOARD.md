@@ -1,5 +1,13 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-TUITION-RECEIPT-MONTH-1 — 2026-11-26
+
+- **Codex Status:** Fixed local; **Verification:** Not Started cho QA browser/deployment.
+- **Yêu cầu/fix:** user chốt xem tiền đã thu theo tháng. Admin lọc theo paid_date; số thu ròng tháng đồng bộ bảng/thẻ/popup/sort, giữ số phải thu/công nợ toàn gói có nhãn rõ. Đổi tháng reset trang và lựa chọn; Tất cả tháng giữ hành vi cũ. Quyền/DB/màn giáo viên không đổi.
+- **Đã chạy:** 41/41 tests domain/server/UI liên quan, typecheck và lint file task đạt. Kiểm thu nhiều đợt, hủy/hoàn hiện tại, tháng rỗng, hồ sơ cũ, 1001 phiếu vượt giới hạn trang, dữ liệu thiếu/trùng/thay đổi và guard manager. UI xác minh số toàn gói vẫn truyền vào thao tác phiếu thu. Unit giả lập transport; chưa kiểm RLS trên DB thật hoặc browser.
+- **Cổng toàn repo:** build Webpack đạt; full 201/203 files, 1187/1191 tests đạt, còn 3 lỗi mock điểm danh và 1 lỗi ôn câu sai đã gặp ở lượt trước. Full lint còn 31 lỗi/2 warning tại .tmp/release-5cd9 và class-workspace-read.ts, ngoài task.
+- **Phát hành:** user yêu cầu đẩy GitHub sau khi được báo các lỗi ngoài task. Chỉ 13 file task, giữ ba file dirty có trước; kết quả push/SHA báo trong chat. Source không đổi sau kiểm tra; kết quả kiểm thuộc workspace có các thay đổi có trước. Chưa xác minh deployment/browser online.
+
 ## B2C-ADMIN-CLASS-EDIT-1 — 2026-11-26
 
 - **Codex Status:** Fixed local; **Verification:** Not Started cho QA giao diện online.

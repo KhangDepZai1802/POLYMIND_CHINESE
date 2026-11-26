@@ -1,5 +1,13 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TUITION-RECEIPT-MONTH-1 — Lọc học phí theo tháng thu tiền
+
+- [x] DoD: admin chọn tháng thu theo paid_date, thấy đúng các ghi danh có phiếu thu trong tháng và số thu ròng của tháng sau hủy/hoàn; không lấy tổng thu toàn gói làm số tháng. Có Tất cả tháng và trạng thái không có kết quả.
+- [x] Giữ số phải thu/công nợ toàn gói có nhãn rõ; bảng, thẻ tổng, popup, tìm kiếm/bộ lọc/phân trang/selection nhất quán; không thay đổi dữ liệu, quyền hoặc màn giáo viên.
+- [x] 41/41 tests domain/server/UI, typecheck/lint file task/build Webpack đạt; kiểm nhiều đợt thu khác tháng, hủy/hoàn, tháng rỗng, guard manager và đọc đủ/fail-closed. Full 1187/1191 tests, 4 lỗi test và 31 lỗi lint/2 warning ngoài task trùng lượt trước, đã ghi WORKLOG. Unit giả lập transport, chưa kiểm RLS trên DB thật.
+- [x] User yêu cầu đẩy GitHub sau khi được báo lỗi kiểm tra ngoài task; phạm vi 13 file task, giữ ba file dirty có trước. Kết quả push/SHA báo trong chat.
+- [ ] QA browser/deployment và user review. Không SQL.
+
 ## B2C-CLASS-STATUS-ORDER-1 — Lớp đã kết thúc ở cuối danh sách
 
 - [x] DoD: cả năm trang chương trình B2C đưa lớp Đã hoàn thành/Đã hủy xuống sau các trạng thái còn lại, áp dụng cả khi tìm kiếm; giữ thứ tự ngày/mã lớp trong mỗi nhóm và không sửa dữ liệu.

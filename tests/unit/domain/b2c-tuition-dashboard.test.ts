@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { isCurrentTuitionEnrollment, needsRenewal, needsTuitionAttention, tuitionScopeMatches, tuitionStatusMatches, tuitionSummary, type TuitionDashboardRow } from "@/features/b2c/domain/tuition-dashboard";
+import { isCurrentTuitionEnrollment, needsRenewal, needsTuitionAttention, tuitionScopeMatches, tuitionStatusMatches, tuitionSummary, tuitionPaidAmount, tuitionReceiptMonthMatches, type TuitionDashboardRow } from "@/features/b2c/domain/tuition-dashboard";
 export const tuitionRow: TuitionDashboardRow = { enrollment_id: "e1", student_code: "HV1", full_name: "An", class_name: "Movers", class_id: "c1", enrollment_date: "2026-10-01", tuition_end_date: "2026-10-17", status: "studying", student_archived_at: null, package_id: "p1", sessions: 10, unit_price: 100000, discount: 100000, discount_reason: "Ưu đãi", total_due: 900000, paid_amount: 400000, balance: 500000 };
 it("counts students once across courses while summing each enrollment balance", () => {
   expect(tuitionSummary([tuitionRow, { ...tuitionRow, enrollment_id: "e2" }], "2026-10-17")).toEqual({ due: 1800000, paid: 800000, balance: 1000000, attention: 1 });
@@ -36,4 +36,25 @@ it("retains historical receivables without asking archived students to renew", (
   expect(needsTuitionAttention(archived, "2026-11-23")).toBe(true);
   expect(needsTuitionAttention({ ...archived, balance: 0 }, "2026-11-23")).toBe(false);
   expect(tuitionSummary([archived], "2026-11-23")).toEqual({ due: 900000, paid: 400000, balance: 500000, attention: 1 });
+});
+
+it("summarizes only the selected receipt month without changing whole-package due or debt", () => {
+  const row = { ...tuitionRow, paid_by_month: { "2026-10": 300000, "2026-11": 100000 } };
+  expect(tuitionSummary([row], "2026-11-26", "2026-11")).toEqual({ due: 900000, paid: 100000, balance: 500000, attention: 1 });
+  expect(tuitionPaidAmount(row)).toBe(400000);
+  expect(tuitionPaidAmount(row, "2026-12")).toBe(0);
+  expect(row.paid_amount).toBe(400000);
+});
+
+it("distinguishes months with cancelled receipts from months without any receipts", () => {
+  const row = { ...tuitionRow, paid_by_month: { "2026-11": 0 } };
+  expect(tuitionReceiptMonthMatches(row, "2026-11")).toBe(true);
+  expect(tuitionReceiptMonthMatches(row, "2026-12")).toBe(false);
+  expect(tuitionReceiptMonthMatches({ ...row, paid_by_month: {} }, "2026-11")).toBe(false);
+  expect(tuitionReceiptMonthMatches(tuitionRow, "")).toBe(true);
+});
+
+it("does not substitute a zero total when monthly data has not been loaded", () => {
+  expect(() => tuitionPaidAmount(tuitionRow, "2026-11")).toThrow("Chưa tải được");
+  expect(() => tuitionReceiptMonthMatches(tuitionRow, "2026-11")).toThrow("Chưa tải được");
 });

@@ -16,6 +16,6 @@ export default async function B2CTuitionPage({ searchParams }: { searchParams: P
   const query = typeof params.q === "string" ? params.q.trim().slice(0, 200) : "";
   return <>
     <PageHeader title="Học phí – công nợ" description="Gói học phí theo ghi danh và phiếu thu nhiều đợt." action={actor.role === "super_admin" ? <Button asChild variant="outline" className="border-blue-200 text-blue-700 dark:border-blue-900 dark:text-blue-300"><Link href="/admin/b2c/history"><History className="size-4" aria-hidden />Nhật ký thay đổi</Link></Button> : undefined} />
-    <TuitionDashboard key={query} rows={rows} collector={actor.fullName} today={todayISO()} canReadHistory={actor.role === "super_admin"} initialQuery={query} />
+    <TuitionDashboard key={query} rows={rows} collector={actor.fullName} today={todayISO()} canReadHistory={actor.role === "super_admin"} initialQuery={query} enableReceiptMonthFilter />
   </>;
 }

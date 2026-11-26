@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TUITION-RECEIPT-MONTH-1 — code xong, user yêu cầu đẩy GitHub — Codex — 2026-11-26. Admin lọc thu ròng theo paid_date; bảng/thẻ/popup đồng bộ, ghi rõ phải thu/công nợ toàn gói và hủy/hoàn hiện tại. 41/41 tests liên quan, typecheck/lint file task/build Webpack đạt. Full 1187/1191 tests đạt; 4 lỗi test và 31 lỗi lint/2 warning ngoài task trùng lượt trước, đã báo user trước yêu cầu push. Không SQL, không đổi quyền hoặc màn giáo viên; giữ ba file dirty có trước. Kết quả push/SHA báo trong chat; chưa QA browser/DB thật hoặc deployment.
+
 > B2C-CLASS-STATUS-ORDER-1 — user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Lớp completed/cancelled ở cuối cả năm chương trình B2C và kết quả tìm kiếm; giữ thứ tự trong mỗi nhóm. Smoke thứ tự, 8 tests lớp, typecheck/lint file sửa/build Webpack đạt trong workspace. Full 1171/1175 tests còn 3 lỗi mock điểm danh và 1 lỗi ôn câu sai; full lint 31 lỗi/2 warning ngoài task. Phạm vi phát hành 4 file task; giữ ba file dirty có trước. Kết quả push/SHA báo trong chat, chưa QA browser/deployment.
 
 > B2C-ADMIN-CLASS-EDIT-1 — user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Ba guard đọc/lưu/chọn giáo viên nhận super_admin, giữ RPC/quyền DB.64/64tests liên quan, typecheck/lint file task/build Webpack đạt; full1172/1175tests còn3lỗi mock điểm danh, full lint31lỗi/2warning có sẵn ngoài task. Phạm vi6file sửa lớp/test/docs; giữ ba file dirty có trước. Không DB; kết quả push/SHA báo trong chat, chưa QA browser hoặc xác minh deployment online.
@@ -964,6 +966,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-TUITION-RECEIPT-MONTH-1-REVIEW: review bộ lọc Tháng thu tiền trên học phí admin, số thu tháng khớp bảng/thẻ/popup và thu nhiều đợt; chọn Hồ sơ cũ/Tất cả hồ sơ cho khoản thu lịch sử. User yêu cầu đẩy GitHub, kết quả push/SHA báo trong chat; giữ ba file dirty có trước, chưa xác minh deployment.
+
 - B2C-CLASS-STATUS-ORDER-1-QA: sau push theo yêu cầu user, kiểm deployment và thứ tự lớp tại cả năm chương trình/khi tìm kiếm. Cổng toàn repo còn lỗi điểm danh/ôn câu sai và lint ngoài task đã báo user; chi tiết BLOCKERS. Giữ ba file dirty có trước.
 
 - B2C-ADMIN-CLASS-EDIT-1-QA: sau push theo yêu cầu user, kiểm deployment và QA mở/lưu form lớp bằng admin.64tests liên quan/typecheck/lint file task/build đạt; cổng toàn repo còn3test/31lint có sẵn đã báo user. Không cần tạo lại tài khoản hoặc chạy SQL; giữ ba file dirty có trước.
@@ -1432,6 +1436,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-TUITION-RECEIPT-MONTH-1 (2026-11-26):** cổng toàn repo chưa xanh: full 201/203 files, 1187/1191 tests đạt; 3 lỗi mock SessionSummaryAdjustmentDialog ở b2c-attendance-mobile và 1 lỗi wrong-answer-review.test.tsx:82, trùng 4 lỗi lượt sửa thứ tự lớp. Full lint 31 lỗi/2 warning trong .tmp/release-5cd9 và Function ở class-workspace-read.ts. 41 tests liên quan, typecheck/lint file task/build Webpack đạt trong workspace. User yêu cầu push sau khi được báo các lỗi ngoài task; kết quả push/SHA báo trong chat. Chưa kiểm DB/RLS thật, browser hoặc deployment. Không sửa module ngoài task hoặc ba file dirty có trước.
+
 - **B2C-CLASS-STATUS-ORDER-1 (2026-11-26):** full Vitest 201/203 files đạt, 1171/1175 tests đạt: 3 lỗi mock thiếu SessionSummaryAdjustmentDialog ở b2c-attendance-mobile đã biết và 1 lỗi wrong-answer-review.test.tsx:82 không tìm thấy “Bạn đã ôn xong”; chạy riêng bài ôn câu sai vẫn lỗi 1/5. Các file đó không thuộc bản sửa sắp xếp lớp. Full lint vẫn 31 lỗi/2 warning ở .tmp/release-5cd9 và class-workspace-read.ts. Smoke thứ tự, 8 tests lớp, typecheck/lint file sửa/build Webpack đạt trong workspace; cổng toàn repo chưa xanh. User đã được báo lỗi và yêu cầu đẩy GitHub; chỉ phát hành 4 file task, giữ ba file dirty có trước. Chưa QA browser/deployment.
 
 - **B2C-ADMIN-CLASS-EDIT-1 (2026-11-26):** code sửa và64tests liên quan/typecheck/lint file task/build Webpack đạt. Full203files:202đạt/1lỗi,1172/1175tests;3lỗi b2c-attendance-mobile thiếu SessionSummaryAdjustmentDialog trong mock. Full lint31lỗi/2warning tại .tmp/release-5cd9 và Function ở class-workspace-read.ts, trùng lỗi đã ghi task trước. User đã được báo các lỗi và yêu cầu rõ đẩy GitHub; chỉ phát hành6file task, không sửa ngoài phạm vi hoặc ba file dirty có trước. Chưa QA browser/deployment online; không có SQL mới.
@@ -1602,6 +1608,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-11-26] Codex — B2C-TUITION-RECEIPT-MONTH-1
+- **User chốt:** xem tiền đã thu theo tháng, khác Kỳ ghi danh hiện có. Admin có Tháng thu tiền/Tất cả tháng; theo paid_date và effective_amount đã trừ hủy/hoàn hiện tại, giữ phải thu/công nợ toàn gói có nhãn rõ. Không phải phân bổ phí tháng học hoặc dòng tiền hoàn trả theo ngày hoàn.
+- **Implementation:** cùng session manager/RLS đọc phiếu theo package IDs của dashboard, chia 200 gói/500 phiếu, exact count/thứ tự id, kiểm thiếu/trùng/count đổi và đối chiếu tổng với RPC thu ròng. Bảng/thẻ/popup/sort dùng số tháng; payload sửa gói/thu tiền/điều chỉnh vẫn dùng số toàn gói. Giữ các bộ lọc; đổi tháng reset page/selection/attention page. Không migration hoặc đổi màn giáo viên.
+- **Kiểm tra:** 41/41 unit domain/server/UI đạt (16 bổ sung), typecheck/lint file task/build Webpack đạt. Có 1001 phiếu, hủy/hoàn, ranh giới tháng, dữ liệu lỗi/stale, giữ số toàn gói ở thao tác và truy cập lịch sử. Full 201/203 files, 1187/1191 tests đạt; 4 lỗi điểm danh/ôn câu sai và 31 lỗi lint/2 warning ngoài task trùng lượt trước. Unit giả lập transport, chưa kiểm RLS trên DB thật hoặc browser. Cổng toàn repo chưa xanh; git diff --check đạt.
+- **Next:** user review; chưa commit/push/deploy. Docs nghiệp vụ/workflow/phase/QA đồng bộ; giữ hash ba file dirty có trước. Không lưu tài khoản/mật khẩu, không sửa SQL đang mở trong IDE.
+- **Phát hành theo yêu cầu:** user nói “đẩy lên github đi” sau khi được báo 4 lỗi test/31 lỗi lint ngoài task. Fetch xác nhận main/origin/main cùng d66c128 trước phát hành. Phạm vi commit/push chỉ 13 file task, kiểm staged diff và giữ hash ba file dirty có trước. Không chạy lại tests vì source không đổi sau lượt kiểm; kết quả kiểm thuộc workspace có các thay đổi có trước. Kết quả push/SHA báo trong chat, chưa xác minh deployment online.
+
 ### [2026-11-26] Codex — B2C-CLASS-STATUS-ORDER-1
 - **Yêu cầu/fix:** đưa lớp Đã hoàn thành/Đã hủy xuống cuối danh sách ở cả năm chương trình B2C. ClassList sao chép mảng trước khi stable sort theo nhóm trạng thái; giữ thứ tự ngày/mã lớp trong nhóm, áp dụng sau tìm kiếm và giữ mở chi tiết/số thứ tự đúng.
 - **File:** program-workspace.tsx, docs workflow/phase và WORKLOG; không sửa migration. Hash ba file dirty có trước (app/layout, b2c/server/queries, teachers/server/actions) giữ nguyên.
@@ -1640,14 +1653,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - Xác minh:7/7tests riêng, typecheck, lint file task, build --webpack đạt; full1125/1128tests và full lint còn lỗi ngoài task như BLOCKERS. HTTP /teacher/bao-bai trả200 sau redirect/login đúng; chưa QAđăng nhập/iab không khả dụng.
 - User tiếp tục yêu cầu rõ “đẩy lên đi” sau khi được báo cổng toàn repo còn lỗi: chuẩn bị commit/push bản thử trên main. Không DB/migration; chưa xác minh deployment online. Không đưa ba file dirty có trước vào commit: src/app/layout.tsx, src/features/b2c/server/queries.ts, src/features/teachers/server/actions.ts.
 - Next: user xem bản thử; triển khai lưu trữ và gửi thật sau khi chốt giao diện/phạm vi.
-
-### [2026-11-10] B2C-PRONUNCIATION-LESSON-1
-- Tích hợp tài liệu ngữ âm từ file Phát_âm.zip: trích xuất và chuyển đổi 13 slide PDF sang WebP chất lượng cao đặt tại `public/phat-am/`, sao chép 8 audio MP3 tương ứng với các trang 2, 3, 4, 9, 10, 11, 12, 13 đặt tại `public/audio/phat-am/`.
-- Tạo `src/features/listening/phat-am-data.ts`, `src/app/nghe/phat-am/page.tsx` và `src/app/nghe/phat-am/[page]/page.tsx`.
-- Cập nhật thẻ bài nghe trên `/nghe/hoc-vien-lanh-dao`, bổ sung cấu hình đường dẫn audio công khai trong `src/lib/supabase/middleware.ts` và test `tests/unit/auth/middleware.test.ts`.
-- Tối ưu toàn diện mobile: logo/header co giãn chống rớt dòng, trình phát audio native HTML5, nút chọn tốc độ cảm ứng, liên kết phóng to ảnh sắc nét và thanh nhảy nhanh 13 slide ngón cái.
-- Sửa triệt để 2 lỗi cổng kiểm tra còn tồn đọng từ các phiên trước:
-  + Chuyển `Date.now()` trong render của `TeacherB2CTodayClasses` thành prop truyền vào để đạt quy tắc react-hooks/purity (0 lỗi lint).
-  + Cập nhật test `b2c-teaching-schema.test.ts` và mock geolocation/canvas context `fillText` trong `b2c-teaching-checkpoint.test.tsx`.
-- Dọn dẹp cache Turbopack giải phóng hơn 11 GB dung lượng ổ đĩa.
-- Kết quả kiểm thử: `npm run lint` đạt 0 lỗi 0 cảnh báo, `npm run typecheck` đạt, 198/198 test files (1.115/1.115 tests) pass.
