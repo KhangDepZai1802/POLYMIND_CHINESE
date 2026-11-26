@@ -1,5 +1,9 @@
 # 04 — Kiến trúc hệ thống
 
+## Quyền form sửa lớp B2C dùng chung (2026-11-26)
+
+Form sửa lớp trong trang admin và giáo viên dùng chung các action đọc lớp, đọc danh sách giáo viên và lưu lớp ở `teacher-management-actions.ts`. Ba action này gọi `requireTeaching("super_admin")` để nhận cả admin, giáo vụ và giáo viên đang hoạt động. RPC tiếp tục kiểm quyền sửa/phân công theo lớp bằng session người dùng; admin sửa lớp hiện có không cần hồ sơ giáo viên cá nhân. Không mở rộng mặc định `requireTeaching()` hoặc quyền các action riêng của giáo viên.
+
 ## Bản thử Báo bài theo lớp hiện có (2026-11-23)
 
 `/teacher/bao-bai` và `/admin/b2c/bao-bai` dùng chung `ClassJournalPreview`. Hai nhánh Báo bài/Điểm danh nhóm theo `program_slug` của các lớp được quyền đọc, giữ ID và tên lớp hiện có. Teacher dùng `read_my_b2c_classes`; manager đọc `b2c_classes` bằng session client/RLS. Buổi học dùng lại workspace RPC theo role, phân trang 25; nhánh điểm danh liên kết về màn điểm danh thật của cùng lớp/buổi.

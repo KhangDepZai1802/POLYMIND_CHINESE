@@ -71,7 +71,8 @@ export async function readTeacherWorkspaceAction(
   } satisfies Model;
 }
 export async function readTeacherClassEditAction(id: string) {
-  await requireTeaching();
+  // The class editor is shared by the admin and teacher workspaces.
+  await requireTeaching("super_admin");
   const data = await permissionRpc<Omit<TeacherClassEdit, "teachers">>("read_teacher_b2c_class_edit", {
     p_id: z.uuid().parse(id),
   });
@@ -79,7 +80,7 @@ export async function readTeacherClassEditAction(id: string) {
   return { ...data, teachers };
 }
 export async function readTeacherClassTeacherOptionsAction() {
-  await requireTeaching();
+  await requireTeaching("super_admin");
   return permissionRpc<TeacherClassEdit["teachers"]>("read_b2c_class_teacher_options");
 }
 export async function readTeacherStudentEditAction(
@@ -118,7 +119,7 @@ const classSchema = z
     message: "Ngày kết thúc khóa học không được trước ngày khai giảng.",
   });
 export async function saveTeacherClassAction(input: unknown) {
-  await requireTeaching();
+  await requireTeaching("super_admin");
   const parsed = z
     .object({
       id: z.uuid().nullable(),

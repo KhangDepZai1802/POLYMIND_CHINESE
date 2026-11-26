@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-ADMIN-CLASS-EDIT-1 — user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Ba guard đọc/lưu/chọn giáo viên nhận super_admin, giữ RPC/quyền DB.64/64tests liên quan, typecheck/lint file task/build Webpack đạt; full1172/1175tests còn3lỗi mock điểm danh, full lint31lỗi/2warning có sẵn ngoài task. Phạm vi6file sửa lớp/test/docs; giữ ba file dirty có trước. Không DB; kết quả push/SHA báo trong chat, chưa QA browser hoặc xác minh deployment online.
+
 > B2C-TUITION-PACKAGE-OVERPAYMENT-1 — code xong, user yêu cầu đẩy GitHub sau khi được báo lỗi cổng ngoài task — Codex — 2026-11-26. Giá tùy từng đợt: bỏ thông báo “Đã thu dư”, giữ giá nhập linh hoạt và lưu gói thấp hơn số đã thu; giữ phiếu/lý do/audit/quyền. Sau chỉnh UI:38/38tests liên quan, typecheck/lint file sửa/build Webpack đạt. DB không đổi thêm;80/80pgTAP và migration20261126000001 đã xác minh ở lượt trước. Full lượt trước1138/1141tests,3lỗi mock điểm danh và31lint cũ ngoài task. Phạm vi phát hành11file học phí/docs/tests; giữ ba file dirty có trước. Kết quả push/SHA báo trong chat; chưa QA browser hoặc xác minh deployment online.
 
 > B2C-TUITION-INACTIVE-VISIBILITY-1 — commit sửa ae8b09a đã đẩy lên GitHub main — Codex — 2026-11-24. Ba tài khoản cùng57ghi danh hiện hành/21lịch sử,1chưa có gói hiện hành; không nhắc tái phí hồ sơ cũ, giữ tiền/lịch sử. 29/29 tests tập trung, typecheck, lint file task và build Webpack đạt. SQL20261123000001 đã áp cloud và xác minh. Full1134/1137tests,3lỗi mock điểm danh có sẵn; full lint31lỗi ngoài scope đã báo user. Push thành công theo yêu cầu sau xác thực GitHub, giữ3file dirty có trước. Chưa QA giao diện online.
@@ -960,6 +962,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-ADMIN-CLASS-EDIT-1-QA: sau push theo yêu cầu user, kiểm deployment và QA mở/lưu form lớp bằng admin.64tests liên quan/typecheck/lint file task/build đạt; cổng toàn repo còn3test/31lint có sẵn đã báo user. Không cần tạo lại tài khoản hoặc chạy SQL; giữ ba file dirty có trước.
+
 - B2C-TUITION-PACKAGE-OVERPAYMENT-1-QA: sau push theo yêu cầu user, kiểm deployment và QA popup Gói học phí cho nhập giá tùy từng đợt, lưu phải thu thấp hơn đã thu và không kết luận thu dư. SQL20261126000001 đã áp cloud; không chạy lại hoặc sửa migration sĩ số12/11. Giữ ba file dirty có trước.
 
 - B2C-TUITION-INACTIVE-VISIBILITY-1-RELEASE-QA: code đã push GitHub ngày24/11 theo yêu cầu user sau khi biết lỗi cổng ngoài task. QA giao diện online: Học phí admin/giáo viên mặc định ẩn hồ sơ lưu trữ/nghỉ; Hồ sơ cũ/Tất cả vẫn tra cứu tiền; bộ đếm cùng bộ lọc. SQL đã áp cloud, không cần chạy lại. Cổng toàn repo còn3test/31lint ngoài task, chi tiết BLOCKERS.
@@ -1424,6 +1428,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- **B2C-ADMIN-CLASS-EDIT-1 (2026-11-26):** code sửa và64tests liên quan/typecheck/lint file task/build Webpack đạt. Full203files:202đạt/1lỗi,1172/1175tests;3lỗi b2c-attendance-mobile thiếu SessionSummaryAdjustmentDialog trong mock. Full lint31lỗi/2warning tại .tmp/release-5cd9 và Function ở class-workspace-read.ts, trùng lỗi đã ghi task trước. User đã được báo các lỗi và yêu cầu rõ đẩy GitHub; chỉ phát hành6file task, không sửa ngoài phạm vi hoặc ba file dirty có trước. Chưa QA browser/deployment online; không có SQL mới.
+
 - **B2C-TUITION-PACKAGE-OVERPAYMENT-1 (2026-11-26):** cổng toàn repo chưa xanh: full Vitest202files,201đạt/1lỗi,1138/1141tests;3lỗi có sẵn ở b2c-attendance-mobile.test.tsx do mock thiếu SessionSummaryAdjustmentDialog. Full lint31lỗi/2warning:30lỗi .tmp/release-5cd9 và1 Function type tại class-workspace-read.ts. Typecheck/lint file task/build --webpack,38tests tập trung và80pgTAP đạt. SQL cloud đã áp/xác minh, repo dry-run vẫn20gap history cũ nên dùng release snapshot đúng SQL mới; scoped dry-run đã up to date. User đã được báo lỗi ngoài task và yêu cầu rõ đẩy GitHub; phát hành trong phạm vi học phí, không sửa lỗi ngoài task hoặc ba file dirty có trước.
 
 - **B2C-TUITION-INACTIVE-VISIBILITY-1 (2026-11-24):** full lint31lỗi có sẵn (30 trong .tmp/release-5cd9 và1 Function type tại class-workspace-read.ts); full201files:200đạt/1lỗi,1134testsđạt/3lỗi b2c-attendance-mobile.test.tsx thiếu SessionSummaryAdjustmentDialog trong mock, cùng lỗi đã ghi ở task trước. DB regression center tuition/center delete cũ lỗi quyền fixture; tái hiện nguyên lỗi khi bỏ metadata mới trong transaction rollback, không phải khác biệt do migration. Repo dry-run chặn20migration thiếu history cũ; đã dùng release snapshot từ151version remote + đúng SQL mới để CLI dry-run/push, sau đó scoped dry-run up to date. Không sửa history hoặc replay migration cũ. User đã yêu cầu phát hành sau khi được báo lỗi ngoài task; chưa QA browser online.
@@ -1589,6 +1595,13 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-11-26] Codex — B2C-ADMIN-CLASS-EDIT-1
+- **Nguyên nhân/fix:** popup lớp admin dùng chung form giáo viên; ba guard đọc lớp/chọn giáo viên/lưu lớp thiếu super_admin. Chỉ thêm extra role vào ba lời gọi requireTeaching, không đổi helper toàn cục, RPC hoặc dữ liệu thật.
+- **File:** teacher-management-actions.ts, test server b2c-class-edit-access, docs kiến trúc/phase/QA và WORKLOG. Giữ nguyên ba file dirty có trước (app/layout, b2c/server/queries, teachers/server/actions).
+- **Đã test:** bài mới dùng session guard và permissionRpc thật tái hiện4lỗi NEXT_REDIRECT trước sửa, sau sửa34/34đạt; tổng64/64tests liên quan và typecheck đạt. Lỗi quyền/stale DB được giả lập ở transport; chưa kiểm DB/browser online. Lượt đầu Vitest bị sandbox chặn esbuild đọc thư mục cha, chạy lại ngoài sandbox thành công.
+- **Cổng/next:** typecheck, lint hai file code/test và build --webpack đạt; full203files:202đạt/1lỗi,1172/1175tests. Ba lỗi mock SessionSummaryAdjustmentDialog ở b2c-attendance-mobile và31lint/2warning tại .tmp/release-5cd9/class-workspace-read.ts đã có trước. git diff --check đạt. Chưa commit/push/deploy, chờ user review/phát hành và QA browser. Không có migration, không đổi tài khoản hoặc dữ liệu lớp.
+- **Phát hành theo yêu cầu:** user nói “đẩy lên github đi” sau khi được báo kết quả cổng. Fetch xác nhận main/origin/main cùng d5812d9 trước phát hành. Chỉ commit/push6file task, kiểm staged diff/secret và giữ nguyên ba file dirty có trước; không chạy lại tests vì code không đổi sau lượt kiểm. Kết quả push/SHA xác minh và báo trong chat; chưa xác minh deployment hoặc browser online.
 
 ### [2026-11-26] Codex — B2C-TUITION-PACKAGE-OVERPAYMENT-1
 - User gửi ảnh Gói học phí bị chặn khi phải thu thấp hơn đã thu. Bỏ trigger/hàm chỉ thực thi giới hạn đó qua migration mới20261126000001; giữ CHECK tiền không âm, quyền, khóa/stale, lý do/audit và giới hạn thu tiền. Không sửa migration sĩ số đang mở hoặc dữ liệu tiền thật.

@@ -1,5 +1,14 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-ADMIN-CLASS-EDIT-1 — 2026-11-26
+
+- **Codex Status:** Fixed local; **Verification:** Not Started cho QA giao diện online.
+- **Nguyên nhân:** admin mở TeacherClassManageDialog từ popup lớp, nhưng ba action đọc/lưu/chọn giáo viên gọi requireTeaching() không có super_admin, dẫn đến NEXT_REDIRECT trước RPC. Lỗi áp dụng cho vai trò admin, không riêng tài khoản mới.
+- **Fix:** ba action gọi requireTeaching("super_admin"); helper và action giáo viên khác giữ nguyên. DB đã cho manager sửa lớp không cần hồ sơ giáo viên, không có migration hoặc thay đổi dữ liệu/quyền tài khoản.
+- **Đã chạy:** tests mới tái hiện4/34lỗi admin trước sửa; sau sửa34/34tests mới và64/64tests liên quan đạt, typecheck đạt. Guard/session và permissionRpc thật với transport giả: chặn role khác/anonymous/inactive trước RPC, truyền lỗi quyền/stale và không phân công/refresh khi lưu lỗi. Chưa kiểm trên DB hoặc browser online.
+- **Cổng toàn repo:** typecheck/lint hai file code-test/build Webpack đạt. Full203files:202đạt/1lỗi,1172/1175tests;3lỗi mock SessionSummaryAdjustmentDialog tại b2c-attendance-mobile và31lint/2warning tại .tmp/release-5cd9/class-workspace-read.ts trùng lỗi đã ghi trước. Chưa commit/push/deploy; giữ ba file dirty có trước.
+- **Phát hành:** user yêu cầu rõ đẩy GitHub sau khi biết lỗi cổng ngoài task. Chỉ6file task, không DB; giữ nguyên ba file dirty có trước. Verification vẫn Not Started cho browser/deployment; kết quả push/SHA báo trong chat sau xác minh.
+
 ## B2C-TUITION-PACKAGE-OVERPAYMENT-1 — 2026-11-26
 
 - **Codex Status:** Fixed; **Verification:** Not Started. User yêu cầu lưu Gói học phí khi phải thu thấp hơn đã thu. Nguyên nhân là trigger `b2c_package_edit`, không phải validation phía giao diện.

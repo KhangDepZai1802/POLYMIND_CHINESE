@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-ADMIN-CLASS-EDIT-1 — Admin mở và lưu form sửa lớp
+
+- [x] Sửa guard ba action đọc lớp/chọn giáo viên/lưu lớp để nhận super_admin, giữ teacher/academic_manager và RPC hiện có; không đổi mặc định guard giáo viên hoặc role/DB.
+- [x] 34 tests mới dùng guard thật: tái hiện4lỗi admin trước sửa, đạt34/34 sau sửa; tổng64/64tests liên quan và typecheck đạt. Kiểm role khác, chưa login, inactive, lỗi quyền/stale từ RPC; không giả lập kiểm quyền DB thật.
+- [x] Đã chạy cổng toàn repo: typecheck/lint file task/build Webpack đạt; full1172/1175tests,3lỗi mock điểm danh có sẵn; full lint31lỗi/2warning ngoài task. Đã ghi blocker, cổng toàn repo chưa xanh; giữ ba file dirty có trước.
+- [ ] QA giao diện/deployment online sau push. User đã yêu cầu đẩy GitHub ngày26/11 sau khi được báo3lỗi test/31lint ngoài task; phạm vi phát hành6file sửa lớp/test/docs, không SQL và giữ ba file dirty có trước. Kết quả push/SHA báo trong chat.
+
 ## B2C-TUITION-PACKAGE-OVERPAYMENT-1 — Cho sửa gói thấp hơn số đã thu
 
 - [x] DoD: lưu gói học phí với phải thu thấp hơn thu ròng; giữ phiếu thu gốc, lý do/audit, quyền và stale check; không cho thu thêm khi không còn số dư phải thu. Giữ nội dung lý do khi form lưu lỗi. User làm rõ giá tùy từng đợt: popup không gắn nhãn “Đã thu dư”, cho nhập đơn giá linh hoạt và chỉ hiển thị tổng theo giá đang nhập.
