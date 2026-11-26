@@ -1,5 +1,14 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-TUITION-PACKAGE-OVERPAYMENT-1 — 2026-11-26
+
+- **Codex Status:** Fixed; **Verification:** Not Started. User yêu cầu lưu Gói học phí khi phải thu thấp hơn đã thu. Nguyên nhân là trigger `b2c_package_edit`, không phải validation phía giao diện.
+- **Fix:** migration forward bỏ đúng trigger/hàm chặn; giữ CHECK số tiền, quyền/RLS, lý do, audit, khóa/stale và chặn phiếu thu vượt. Popup giữ lý do đã nhập khi lưu lỗi. User làm rõ giá tùy từng đợt: bỏ thông báo “Đã thu dư”; số đã thu trong lịch sử không phải căn cứ kết luận thu dư theo đơn giá đang nhập. Cho nhập giá linh hoạt, giữ phiếu thu thật; thao tác Điều chỉnh trong popup Xử lý học phí vẫn có giới hạn riêng.
+- **DB:** 24/24 pgTAP mới + 19/19 học phí + 37/37 xử lý học phí đạt trước/sau migration; fixture và quyền thử đều rollback. CLI release snapshot từ152migration remote, dry-run chỉ SQL20261126000001; push thành công, history/trigger xác minh, dry-run sau áp báo Remote database is up to date. Không replay20gap cũ. Docker không chạy chỉ ảnh hưởng cache catalog CLI, không ảnh hưởng push/history/kiểm thử cloud.
+- **Ứng dụng:** 38/38 tests tập trung, typecheck, lint file sửa và build --webpack đạt. Full202files:201đạt/1lỗi,1138/1141tests;3lỗi mock điểm danh thiếu SessionSummaryAdjustmentDialog đã có từ task trước. Full lint31lỗi/2warning có sẵn (.tmp/release-5cd9 và Function tại class-workspace-read.ts). Chưa QA browser, chưa commit/push giao diện; backend đã cho lưu trường hợp user yêu cầu.
+- **Làm rõ giá linh hoạt:** sau khi bỏ thông báo thu dư, chạy lại38/38tests tập trung, typecheck/lint file sửa/build --webpack đạt. Kết quả full suite/lint toàn repo phía trên là lượt trước; không thay DB hoặc lặp lại80pgTAP ở lần sửa nội dung popup này.
+- **Phát hành:** user yêu cầu rõ đẩy GitHub sau khi đã được báo lỗi cổng ngoài task. Chỉ phát hành bản sửa học phí, SQL đã áp cloud; không đưa ba file dirty có trước vào commit. Verification vẫn Not Started cho QA browser/deployment; kết quả push và SHA được báo trong chat sau xác minh.
+
 ## B2C-TUITION-INACTIVE-VISIBILITY-1 — 2026-11-23
 
 - **Codex Status:** Fixed; **Verification:** Not Started. Đọc cùng snapshot dưới quyền admin và hai giáo viên chứng minh projection học phí giống nhau; lỗi là danh sách mặc định lẫn hồ sơ lưu trữ/ghi danh đã nghỉ và nhắc tái phí hồ sơ cũ.

@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
-select ok(not has_function_privilege('anon','public.check_b2c_package_edit()','EXECUTE'),'Package trigger not anonymous RPC');
+select plan(19);
+select hasnt_function('public','check_b2c_package_edit',array[]::text[],'Obsolete paid-floor trigger function removed');
 select ok(not has_function_privilege('anon','public.check_b2c_receipt_balance()','EXECUTE'),'Receipt trigger not anonymous RPC');
 insert into public.b2c_students(id,source_key,full_name) values ('46000000-0000-4000-8000-000000000001','test-b2c-tuition','TEST-TUITION');
 insert into public.b2c_classes(id,program_slug,name) values ('46000000-0000-4000-8000-000000000002','tieng-anh','TEST-TUITION');
@@ -19,7 +19,9 @@ select throws_ok($$select public.record_b2c_tuition_receipt((select id from publ
 select lives_ok($$select public.record_b2c_tuition_receipt((select id from public.b2c_tuition_packages where enrollment_id='46000000-0000-4000-8000-000000000003'),'46000000-0000-4000-8000-000000000005','2026-10-14',600000,'bank_transfer','Collector')$$,'Second installment');
 select is((public.get_b2c_tuition_page('TEST-TUITION',0)->>'paid_amount')::numeric,1000000::numeric,'Summary includes both installments');
 select throws_ok($$select public.record_b2c_tuition_receipt((select id from public.b2c_tuition_packages where enrollment_id='46000000-0000-4000-8000-000000000003'),'46000000-0000-4000-8000-000000000006','2026-10-14',1,'cash','Collector')$$,'22023',null,'Overpayment blocked');
-select throws_ok($$select public.save_b2c_tuition_package('46000000-0000-4000-8000-000000000003',1,100000,0,'')$$,'22023',null,'Cannot reduce total below paid');
+select lives_ok($$select public.save_b2c_tuition_package_with_reason('46000000-0000-4000-8000-000000000003',1,100000,0,'','Correct package',1000000,1000000)$$,'Can reduce total below paid with reason');
+select is((public.get_b2c_tuition_page('TEST-TUITION',0)->>'total_due')::numeric,100000::numeric,'Reduced package fee saved');
+select is((public.get_b2c_tuition_page('TEST-TUITION',0)->>'paid_amount')::numeric,1000000::numeric,'Receipts remain unchanged after package reduction');
 select throws_ok($$delete from public.b2c_tuition_receipts where request_id='46000000-0000-4000-8000-000000000004'$$,'42501',null,'Receipts cannot be deleted');
 select throws_ok($$select public.record_b2c_tuition_receipt((select id from public.b2c_tuition_packages where enrollment_id='46000000-0000-4000-8000-000000000003'),'46000000-0000-4000-8000-000000000007','2026-10-14',1.5,'cash','Collector')$$,'22023',null,'Fractional VND blocked');
 select set_config('request.jwt.claims','{"role":"authenticated"}',true);

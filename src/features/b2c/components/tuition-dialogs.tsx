@@ -36,6 +36,11 @@ export function TuitionPackageDialog({
   const [sessions, setSessions] = useState(row.sessions ?? 1);
   const [price, setPrice] = useState(row.unit_price ?? 0);
   const [discount, setDiscount] = useState(row.discount ?? 0);
+  const [discountReason, setDiscountReason] = useState(
+    row.discount_reason ?? "",
+  );
+  const [adjustmentReason, setAdjustmentReason] = useState("");
+  const totalDue = sessions * price - discount;
   const { state, formAction } = useFormAction(saveB2CTuitionPackageAction, {
     onSuccess: () => {
       setOpen(false);
@@ -52,6 +57,8 @@ export function TuitionPackageDialog({
           setSessions(row.sessions ?? 1);
           setPrice(row.unit_price ?? 0);
           setDiscount(row.discount ?? 0);
+          setDiscountReason(row.discount_reason ?? "");
+          setAdjustmentReason("");
         }
       }}
     >
@@ -91,6 +98,8 @@ export function TuitionPackageDialog({
                 name="adjustment_reason"
                 required
                 maxLength={1000}
+                value={adjustmentReason}
+                onChange={(e) => setAdjustmentReason(e.target.value)}
               />
             </div>
           )}
@@ -146,15 +155,15 @@ export function TuitionPackageDialog({
               name="discount_reason"
               required={discount > 0}
               maxLength={1000}
-              defaultValue={row.discount_reason ?? ""}
+              value={discountReason}
+              onChange={(e) => setDiscountReason(e.target.value)}
             />
           </div>
           <p className="font-semibold">
-            Tổng phải thu: {formatCurrency(sessions * price - discount)}
+            Tổng phải thu: {formatCurrency(totalDue)}
           </p>
           <p className="text-muted-foreground text-sm">
-            Đã thu {formatCurrency(row.paid_amount)}. Tổng phải thu không được
-            thấp hơn số đã thu.
+            Đã thu {formatCurrency(row.paid_amount)}.
           </p>
           {state.error && (
             <p role="alert" className="text-destructive text-sm">

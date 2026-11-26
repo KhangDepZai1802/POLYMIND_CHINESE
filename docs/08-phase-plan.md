@@ -1,5 +1,12 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TUITION-PACKAGE-OVERPAYMENT-1 — Cho sửa gói thấp hơn số đã thu
+
+- [x] DoD: lưu gói học phí với phải thu thấp hơn thu ròng; giữ phiếu thu gốc, lý do/audit, quyền và stale check; không cho thu thêm khi không còn số dư phải thu. Giữ nội dung lý do khi form lưu lỗi. User làm rõ giá tùy từng đợt: popup không gắn nhãn “Đã thu dư”, cho nhập đơn giá linh hoạt và chỉ hiển thị tổng theo giá đang nhập.
+- [x] Migration forward-fix đã áp cloud qua CLI release snapshot chỉ có SQL mới; history/trigger xác minh và scoped dry-run up to date. 80/80pgTAP hồi quy và38/38tests tập trung đạt; typecheck/lint file task/build --webpack đạt.
+- [x] Sau giải thích giá tùy từng đợt: bỏ thông báo thu dư, cập nhật tests/docs; chạy lại38/38tests tập trung, typecheck/lint file sửa/build --webpack đạt. Không đổi DB thêm.
+- [ ] QA browser và deployment online sau push. User đã yêu cầu đẩy GitHub ngày26/11 sau khi được báo cổng toàn repo còn3lỗi mock điểm danh (1138/1141tests đạt) và31lint/2warning có sẵn ngoài task. Phạm vi phát hành11file học phí/docs/tests; giữ ba file dirty có trước. Backend đã có hiệu lực, không cần chạy lại migration; kết quả push/SHA báo trong chat.
+
 ## B2C-TUITION-INACTIVE-VISIBILITY-1 — Học phí theo trạng thái hồ sơ
 
 - [x] Mặc định ẩn học viên đã lưu trữ và ghi danh đã nghỉ/hoàn thành/chuyển lớp ở cả admin và giáo viên; giữ bảo lưu trong nhóm hiện hành, không suy diễn trạng thái ghi danh từ trạng thái lớp.

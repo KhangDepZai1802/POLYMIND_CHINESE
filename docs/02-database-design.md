@@ -28,6 +28,8 @@ Quyền opt-in `manage_center_student_data` cho projection RPC `read_center_b2c_
 
 ## B2C-CENTER-TUITION-TEACHERS-1 (2026-10-23)
 
+`B2C-TUITION-PACKAGE-OVERPAYMENT-1` (2026-11-26): migration `20261126000001_b2c_tuition_package_overpayment.sql` bỏ trigger `b2c_package_edit` và hàm trigger `public.check_b2c_package_edit()` chỉ dùng để chặn phải thu thấp hơn thu ròng. Giữ CHECK tổng không âm/chiết khấu, trigger lý do/audit, khóa gói và kiểm expected_due/expected_paid trong RPC; giữ trigger chặn thu vượt. Không cập nhật gói/phiếu có sẵn, không mở quyền/RLS, không đổi projection số dư có dấu hoặc giới hạn RPC điều chỉnh riêng. pgTAP kiểm lưu qua giáo viên có quyền, thu dư/hoàn/thu lại, stale/reason/audit và quyền bị thu hồi/anonymous.
+
 `manage_center_tuition` là quyền opt-in phụ thuộc `view_tuition/edit_tuition/collect_tuition`. `app.has_b2c_permission` cho phép ba quyền này hoạt động ngoài lớp phân công khi scope toàn trung tâm được bật; các quyền khác vẫn giữ giới hạn lớp. RPC security definer `read_center_b2c_tuition_page(text,integer)` kiểm scope, chỉ trả projection học phí/ghi danh,50hàng/trang, dùng thu ròng effective_amount. Không mở RLS/raw-table cho hồ sơ học viên hoặc ghi danh. Ghi gói/thu dùng RPC hiện có với attribution/auth.uid và guard số dư/retry. Thu hồi scope lập tức chặn page và thao tác ngoài lớp. SQL20261023000003 có integration rollback test.
 
 ## B2C-ADMISSIONS-DELETE-1 (2026-10-23)
