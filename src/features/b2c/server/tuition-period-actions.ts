@@ -22,6 +22,7 @@ const valuesSchema = z
     unit_price: z.string().trim().min(1, "Vui lòng nhập đơn giá."),
     discount: z.string().trim().min(1, "Vui lòng nhập chiết khấu."),
     discount_reason: z.string(),
+    total_due_override: z.unknown().optional(),
   })
   .transform((value, ctx) => {
     const parsed = b2cTuitionPackageSchema.safeParse(value);
@@ -63,12 +64,13 @@ export async function saveB2CTuitionPeriodAction(
   if (!parsed.success) return zodToActionState(parsed.error);
   const v = parsed.data;
   try {
-    await permissionRpc<string>("save_b2c_tuition_period", {
+    await permissionRpc<string>("save_b2c_tuition_period_amounts", {
       p_package_id: v.package_id,
       p_sessions: v.sessions,
       p_unit_price: v.unit_price,
       p_discount: v.discount,
       p_discount_reason: v.discount_reason,
+      p_total_due: v.total_due_override ?? null,
       p_reason: v.adjustment_reason,
       p_expected_due: v.expected_due,
       p_expected_paid: v.expected_paid,
@@ -91,7 +93,7 @@ export async function startB2CTuitionPeriodAction(
   if (!parsed.success) return zodToActionState(parsed.error);
   const v = parsed.data;
   try {
-    await permissionRpc<string>("start_b2c_tuition_period", {
+    await permissionRpc<string>("start_b2c_tuition_period_amounts", {
       p_enrollment_id: v.enrollment_id,
       p_previous_package_id: v.previous_package_id,
       p_request_id: v.request_id,
@@ -99,6 +101,7 @@ export async function startB2CTuitionPeriodAction(
       p_unit_price: v.unit_price,
       p_discount: v.discount,
       p_discount_reason: v.discount_reason,
+      p_total_due: v.total_due_override ?? null,
       p_reason: v.adjustment_reason,
       p_expected_due: v.expected_due,
       p_expected_paid: v.expected_paid,

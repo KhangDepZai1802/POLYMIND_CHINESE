@@ -66,6 +66,7 @@ export type ClassStudent = {
   discount: number | null;
   discount_reason: string | null;
   total_due: number | null;
+  total_due_override?: number | null;
   paid_amount: number | null;
   balance: number | null;
 };

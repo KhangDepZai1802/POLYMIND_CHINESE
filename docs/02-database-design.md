@@ -1,5 +1,13 @@
 # 02 — Thiết kế Database
 
+## B2C-TUITION-EDITABLE-TOTAL-1 (2026-11-26)
+
+Migration 20261126000004 thêm total_due_override nullable numeric, kiểm VNĐ nguyên0..1e12. PostgreSQL17 đổi biểu thức generated total_due thành coalesce(override,sessions*unit_price-discount), giữ nguyên trường cũ/timestamps/phiếu khi override null. Không cấp direct INSERT/UPDATE cột mới; reason trigger và audit có cả override để sửa riêng tổng cũng có lý do/lịch sử.
+
+Ba RPC save_b2c_tuition_package_amounts, save_b2c_tuition_period_amounts, start_b2c_tuition_period_amounts nhận p_total_due nullable; giữ quyền/lớp, khóa, expected due/paid, request payload gồm override. Reader mới/cũ trả override cho tuition, projection teacher students/attendance bỏ trường tiền này như các trường học phí khác. Legacy editor từ chối sửa gói có tổng nhập tay. Correction giữ đúng quyền và giới hạn cũ: ở gói manual, hoàn có giảm phí/điều chỉnh tổng cập nhật override; gói auto giữ cách cập nhật chiết khấu. Số thu, giới hạn thu và dư nợ dùng effective total_due.
+
+Đã áp cloud migration 20261126000004 qua scoped CLI sau dry-run chỉ có một migration mới; history đúng tên/version với 15 statements, dry-run sau áp trả Remote database is up to date. Repository gốc vẫn có 20 history gaps cũ, không replay hoặc repair. Digest khi thử DDL trong rollback xác nhận trường cũ/timestamps của gói và toàn bộ phiếu thu không đổi. CLI chỉ cảnh báo không cache được catalog Docker local; migration cloud và history đã thành công.
+
 ## B2C-TUITION-PERIODS-1 (2026-11-26)
 
 Migration `20261126000002/3` thêm period_no, is_current và request UUID/payload vào b2c_tuition_packages; unique(enrollment_id,period_no), unique request và unique partial cho một gói hiện tại chưa archive. Trigger cấp số đợt khi giữ khóa ghi danh. Backfill giữ nguyên các trường cũ/timestamps, không archive gói đã thu. Thu hồi INSERT toàn bảng, chỉ cấp các cột nhập gói; lifecycle/request metadata không cho authenticated tự ghi.

@@ -4,6 +4,17 @@ import {
   tuitionPaymentSchema,
 } from "@/features/tuition/schema";
 
+const tuitionWholeAmount = z.number().int().min(0).max(1000000000000);
+// Empty means calculate from the package; an explicit zero is a saved amount.
+export const b2cTuitionTotalOverrideSchema = z.preprocess(
+  (value) => value === "" ? null : value,
+  z.union([
+    tuitionWholeAmount,
+    z.string().trim().min(1).transform(Number).pipe(tuitionWholeAmount),
+    z.null(),
+  ]),
+).optional();
+
 export const b2cTuitionPackageSchema = z
   .object({
     enrollment_id: z.uuid(),
@@ -11,6 +22,7 @@ export const b2cTuitionPackageSchema = z
     unit_price: tuitionInvoiceItemSchema.shape.unit_amount.int(),
     discount: z.coerce.number().int().min(0).max(1000000000000),
     discount_reason: z.string().trim().max(1000),
+    total_due_override: b2cTuitionTotalOverrideSchema,
   })
   .superRefine((v, ctx) => {
     if (v.sessions * v.unit_price > 1000000000000)
@@ -53,6 +65,7 @@ export type B2CTuitionRow = {
   discount: number | null;
   discount_reason: string | null;
   total_due: number | null;
+  total_due_override?: number | null;
   paid_amount: number;
   balance: number;
 };

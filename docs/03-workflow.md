@@ -2,7 +2,9 @@
 
 ## Học phí đợt mới (2026-11-26)
 
-Mở Học phí trong lớp hoặc trang Học phí → mở gói ở dòng đợt hiện tại → chọn **Thêm đợt học phí mới** → nhập số buổi, đơn giá, chiết khấu/lý do → lưu. Giá/số buổi mới để trống để người nhập xác định; không sao chép phiếu. Danh sách hiển thị cả hai đợt; bấm Phiếu thu ở đúng đợt để xem/thu tiền. Nếu chỉ sửa nhầm giá của cùng đợt, chọn **Sửa đợt này** và nhập lý do. Đợt trước không có nút tạo đợt mới.
+Mở Học phí trong lớp hoặc trang Học phí → mở gói ở dòng đợt hiện tại → chọn **Thêm đợt học phí mới** → kiểm tra/sửa số buổi, đơn giá, chiết khấu/lý do và tổng phải thu → lưu. Các số được điền gợi ý từ đợt đang chọn, sửa được trước khi lưu; không sao chép phiếu. Danh sách hiển thị cả hai đợt; bấm Phiếu thu ở đúng đợt để xem/thu tiền. Nếu chỉ sửa nhầm giá của cùng đợt, chọn **Sửa đợt này** và nhập lý do. Đợt trước không có nút tạo đợt mới.
+
+Ô Tổng phải thu ban đầu tự tính từ ba ô phía trên. Người dùng có thể nhập trực tiếp tổng; nhãn Tổng đã chỉnh và số theo công thức giúp đối chiếu. Khi đã nhập tay, sửa ba thành phần vẫn giữ tổng đã chỉnh; bấm **Tính lại** mới dùng công thức trở lại. Lưu rồi mở lại phải giữ đúng tổng đã chọn, kể cả 0; không tự thay số đã thu hoặc phiếu thu.
 
 Lỗi dữ liệu vừa thay đổi yêu cầu tải lại; retry cùng UUID không tạo thêm gói. Thu tiền, hoàn/hủy và sửa gói luôn theo package ID. Tháng thu tiền giữ ngày thu thực tế của phiếu đợt cũ; không chuyển doanh thu sang tháng tạo gói mới. Không tự đánh dấu đã thanh toán khi tạo đợt.
 

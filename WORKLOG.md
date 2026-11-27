@@ -38,6 +38,8 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-TUITION-EDITABLE-TOTAL-1 — user yêu cầu đẩy GitHub, đang phát hành — Codex — 2026-11-27. Bốn ô sửa được, số điền sẵn/tự tính; tổng nhập tay độc lập và Tính lại về công thức. 126/126 tests tập trung, 215/215 pgTAP sau áp, typecheck/lint phần sửa/build Webpack đạt ở lượt sửa; source không đổi. User đã được báo full1307/1310 tests và lint31 lỗi/2 warning cũ trước yêu cầu push. DB đã áp; phát hành19file task, giữ ba file dirty ngoài scope. Kết quả push/SHA xác minh và báo trong chat; QA deployment độc lập chưa làm.
+
 > B2C-PENDING-RELEASE-20261126 — user yêu cầu đẩy GitHub, đang phát hành — Codex — 2026-11-26. Phạm vi ba bản sửa đã hoàn thành: học phí nhiều đợt, tháng thu tiền cho giáo viên và check-in mobile. Fetch xác nhận main/origin/main cùng 5a4f19a; giữ ba file dirty ngoài phạm vi. Kiểm thử/build từ lượt trước vẫn áp dụng vì source không đổi; user đã được báo lỗi baseline. Kết quả push/SHA xác minh và báo trong chat; chưa QA deployment online.
 
 > B2C-TUITION-PERIODS-1 — code xong, DB đã áp, chưa commit/push — Codex — 2026-11-26. User xác nhận giá mới thuộc đợt mới. Tách gói theo đợt, giữ phiếu cũ; đúng hồ sơ đã phục hồi đợt cũ theo audit và tạo riêng đợt mới trong transaction có kiểm snapshot/actor. 134/134 tests tập trung, 129/129 pgTAP trước/sau, typecheck/build và lint phần mới đạt. Full 1240/1243 tests, 3 lỗi mock cũ; lint 31 lỗi/2 warning cũ. Scoped cloud dry-run up to date; chưa QA browser/deployment giao diện.
@@ -978,6 +980,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-TUITION-EDITABLE-TOTAL-1-REVIEW: sau phát hành theo yêu cầu user, QA độc lập cả admin/teacher: sửa bốn số, mở lại tổng nhập tay, Tính lại và tạo đợt mới từ số điền sẵn. DB đã áp, không chạy lại migration hoặc sửa dữ liệu thật để thử. Cổng toàn repo còn lỗi baseline ghi dưới.
+
 - B2C-PENDING-RELEASE-20261126-QA: sau phát hành theo yêu cầu user, kiểm deployment ba bản sửa (học phí nhiều đợt, tháng thu của giáo viên, check-in mobile). Không chạy lại migration đã áp hoặc thao tác lại dữ liệu học phí/check-in.
 
 - B2C-TUITION-PERIODS-1-REVIEW: review/phát hành giao diện tách đợt, QA độc lập trên admin/teacher: gói hiện tại, lịch sử, tạo đợt mới, phiếu và tháng thu tiền. DB và đúng hồ sơ đã sửa có audit; source chưa commit/push. Cổng toàn repo còn baseline đã ghi; giữ các thay đổi check-in mobile/bộ lọc tháng trước đó.
@@ -1458,6 +1462,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- B2C-TUITION-EDITABLE-TOTAL-1 (2026-11-26): full Vitest 1307/1310 tests (205/206 files), đúng 3 lỗi mock SessionSummaryAdjustmentDialog trong b2c-attendance-mobile có trước; full lint 31 lỗi/2 warning cũ trong .tmp/release-5cd9 và unsafe Function tại class-workspace-read.ts. 126 tests tập trung, typecheck, lint phần sửa, build --webpack exit0 và 215 pgTAP sau áp đạt. Repository gốc vẫn 20 migration history gaps cũ; scoped release up to date, không replay/repair. Chưa QA browser/deployment; source chưa commit/push.
+
 - B2C-TUITION-PERIODS-1 (2026-11-26): full Vitest 1240/1243 (204/205 files), 3 lỗi mock thiếu SessionSummaryAdjustmentDialog có trước ở b2c-attendance-mobile; lint 31 lỗi/2 warning cũ (30 require-import ở .tmp/release-5cd9 skills, 1 unsafe Function ở class-workspace-read.ts). 134 tests tập trung, typecheck, lint phần mới và build --webpack exit0 đạt. Build lần đầu Next hoàn tất nhưng PowerShell đánh dấu stderr warning thành lỗi; đã chạy lại với exit $LASTEXITCODE và xác minh 0. Migration mới đã áp/cloud up to date trong scoped release; repository gốc vẫn 20 migration history gaps cũ, không replay. QA browser/deployment chưa làm.
 
 - **B2C-CHECKIN-MOBILE-1 (2026-11-26):** full 202/203 files, 1205/1208 tests đạt; 3 lỗi cũ b2c-attendance-mobile do mock thiếu SessionSummaryAdjustmentDialog. Full lint 31 lỗi/2 warning cũ trong .tmp/release-5cd9 và Function tại class-workspace-read.ts. 20 tests liên quan, typecheck/lint file task/build Webpack và 98 ca layout đạt. Browser tích hợp lỗi kernel, đã dùng Playwright Chromium/WebKit với fixture component/CSS thật; chưa QA iPhone thật/VoiceOver/deployment. Không sửa ngoài scope để làm xanh cổng.
@@ -1636,6 +1642,20 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 
 ## 📖 NHẬT KÝ SESSION
 
+### [2026-11-27] Codex — B2C-TUITION-EDITABLE-TOTAL-1-RELEASE
+- **Yêu cầu:** user yêu cầu rõ đẩy GitHub sau khi đã được báo kết quả kiểm thử/build và lỗi baseline ngoài task. Phát hành bản bốn ô học phí sửa được; không mở rộng phạm vi.
+- **Phạm vi/kiểm tra:**19file task gồm UI/schema/actions/types, migration/test và docs. Fetch origin; main/origin/main cùng a2bc91f. Source không đổi từ lượt sửa, giữ kết quả126 tests liên quan/215pgTAP/typecheck/lint phần sửa/build đạt; không chạy lại toàn bộ cổng chỉ để push. Full1307/1310 và31lint/2warning cũ đã báo. Kiểm diff/staged/secret và giữ đúng hash ba file ngoài phạm vi.
+- **Cloud/data:** migration đã áp và xác minh ở lượt trước; không chạy lại hoặc sửa gói/phiếu/tài khoản thật.
+- **Next:** kết quả commit/push và remote SHA xác minh trong chat; B2C-TUITION-EDITABLE-TOTAL-1-REVIEW kiểm deployment/browser độc lập. Không đồng nhất push GitHub với deployment thành công.
+
+### [2026-11-26] Codex — B2C-TUITION-EDITABLE-TOTAL-1
+- **User chốt:** số buổi, đơn giá, chiết khấu, tổng phải thu tự ra số như hiện tại và đều được nhập lại. Tổng nhập tay lưu độc lập; Tính lại quay về công thức, không tính ngược hoặc đổi ba số còn lại.
+- **Implementation:** nullable total_due_override, generated total_due coalesce, ba RPC amounts có quyền/khóa/snapshot/reason/idempotency và audit; bảy reader truyền chế độ tổng, roster teacher bỏ trường tiền. Correction hiểu tổng nhập tay, legacy editor từ chối sửa gói manual. Dialog thêm ô tổng/Tính lại, new period điền sẵn số đợt trước nhưng đã thu 0 và không sao chép phiếu. Validation VNĐ nguyên không âm, giữ manual zero và lỗi/retry của form.
+- **File thay đổi:** tuition dialog/schema/domain type/permission RPC/actions, unit tests, migration + pgTAP và docs nghiệp vụ/DB/workflow/architecture/phase/QA. Ba file dirty có trước giữ đúng hash, không stage/commit/push.
+- **Cloud/data:** dry-run scoped chỉ migration20261126000004, push thành công, history đúng tên/version/15 statements, scoped dry-run Remote database is up to date. Không replay 20 gaps cũ. Digest thử DDL giữ nguyên trường cũ/timestamps và toàn bộ phiếu; không chỉnh số liệu học viên thật. CLI cảnh báo cache Docker local nhưng cloud apply thành công.
+- **Đã kiểm:** 19 UI +107 schema/actions =126/126 tests tập trung; typecheck, ESLint phần sửa, build Webpack exit0. Full1307/1310 tests,205/206 files; đúng3 lỗi mock cũ và full lint31 lỗi/2 warning cũ. DB trước áp214/214; sau áp86 ca mới +129 regression =215/215, fixture rollback. Assertion cross-class từng dùng nhầm hợp đồng quyền cũ: đã đối chiếu migration03/11 + hàm live, kiểm riêng giáo viên thường bị chặn và fixture full-access được phép; không đổi quyền để làm xanh test. git diff --check đạt.
+- **Next/rủi ro:** B2C-TUITION-EDITABLE-TOTAL-1-REVIEW; chưa QA browser/deployment hoặc stress concurrency mới. Giữ khóa/unique đã có của tính năng đợt. Giao diện chưa phát hành, không tự commit/push trong lượt sửa.
+
 ### [2026-11-26] Codex — B2C-TUITION-PERIODS-1
 - **Phát hành theo yêu cầu:** user nói “dẩy lên github đi” sau khi được báo kiểm thử/build và lỗi baseline. Phạm vi gồm học phí nhiều đợt cùng hai bản sửa đã hoàn thành đang chờ (tháng thu tiền giáo viên, check-in mobile). Fetch main/origin/main cùng5a4f19a; kiểm diff/staged/secret và giữ ba hash ngoài phạm vi. Không chạy lại kiểm thử vì source không đổi. Kết quả push/SHA xác minh và báo trong chat; chưa xác minh deployment online.
 - **User chốt:** giá vừa nhập thuộc học phí đợt mới. Đối chiếu ban đầu chỉ đọc xác định phiếu cũ không mất; số âm do sửa chính gói đã thu. Không suy diễn một khoản thu mới.
@@ -1661,17 +1681,3 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 - **Implementation:** giáo viên đọc RPC read_b2c_permitted_receipts có guard view_tuition; mỗi gói đọc đủ trang 20 phiếu, tối đa 6 gói song song, validate projection/count/duplicate/amount/date và đối chiếu tổng với dashboard. Kiểm manage_center_tuition trước/sau; không dùng raw table hoặc service role. Không SQL/quyền mới.
 - **Kiểm tra:** 61/61 tests liên quan đạt (16 bổ sung); typecheck/lint file task/build --webpack đạt. Full 202/203 files, 1204/1207 tests đạt, còn 3 lỗi mock điểm danh cũ; full lint cùng 31 lỗi/2 warning ngoài task. Lượt test đầu bị sandbox chặn esbuild, chạy ngoài sandbox được; hai UI test mới có selector nhầm thẻ tổng với nút sort, đã sửa selector và chạy lại đạt. git diff --check đạt; kết quả kiểm thuộc workspace có ba file dirty có trước.
 - **Cloud:** chỉ đọc trong transaction REPEATABLE READ READ ONLY, authenticated/JWT của đúng hai cô; quyền/danh sách/phiếu đủ trang và tổng tiền khớp. Không ghi dữ liệu hoặc thông tin học viên vào repo. Giữ ba file dirty có trước; chưa commit/push/deploy hoặc QA browser.
-
-### [2026-11-26] Codex — B2C-TUITION-RECEIPT-MONTH-1
-- **User chốt:** xem tiền đã thu theo tháng, khác Kỳ ghi danh hiện có. Admin có Tháng thu tiền/Tất cả tháng; theo paid_date và effective_amount đã trừ hủy/hoàn hiện tại, giữ phải thu/công nợ toàn gói có nhãn rõ. Không phải phân bổ phí tháng học hoặc dòng tiền hoàn trả theo ngày hoàn.
-- **Implementation:** cùng session manager/RLS đọc phiếu theo package IDs của dashboard, chia 200 gói/500 phiếu, exact count/thứ tự id, kiểm thiếu/trùng/count đổi và đối chiếu tổng với RPC thu ròng. Bảng/thẻ/popup/sort dùng số tháng; payload sửa gói/thu tiền/điều chỉnh vẫn dùng số toàn gói. Giữ các bộ lọc; đổi tháng reset page/selection/attention page. Không migration hoặc đổi màn giáo viên.
-- **Kiểm tra:** 41/41 unit domain/server/UI đạt (16 bổ sung), typecheck/lint file task/build Webpack đạt. Có 1001 phiếu, hủy/hoàn, ranh giới tháng, dữ liệu lỗi/stale, giữ số toàn gói ở thao tác và truy cập lịch sử. Full 201/203 files, 1187/1191 tests đạt; 4 lỗi điểm danh/ôn câu sai và 31 lỗi lint/2 warning ngoài task trùng lượt trước. Unit giả lập transport, chưa kiểm RLS trên DB thật hoặc browser. Cổng toàn repo chưa xanh; git diff --check đạt.
-- **Next:** user review; chưa commit/push/deploy. Docs nghiệp vụ/workflow/phase/QA đồng bộ; giữ hash ba file dirty có trước. Không lưu tài khoản/mật khẩu, không sửa SQL đang mở trong IDE.
-- **Phát hành theo yêu cầu:** user nói “đẩy lên github đi” sau khi được báo 4 lỗi test/31 lỗi lint ngoài task. Fetch xác nhận main/origin/main cùng d66c128 trước phát hành. Phạm vi commit/push chỉ 13 file task, kiểm staged diff và giữ hash ba file dirty có trước. Không chạy lại tests vì source không đổi sau lượt kiểm; kết quả kiểm thuộc workspace có các thay đổi có trước. Kết quả push/SHA báo trong chat, chưa xác minh deployment online.
-
-### [2026-11-26] Codex — B2C-CLASS-STATUS-ORDER-1
-- **Yêu cầu/fix:** đưa lớp Đã hoàn thành/Đã hủy xuống cuối danh sách ở cả năm chương trình B2C. ClassList sao chép mảng trước khi stable sort theo nhóm trạng thái; giữ thứ tự ngày/mã lớp trong nhóm, áp dụng sau tìm kiếm và giữ mở chi tiết/số thứ tự đúng.
-- **File:** program-workspace.tsx, docs workflow/phase và WORKLOG; không sửa migration. Hash ba file dirty có trước (app/layout, b2c/server/queries, teachers/server/actions) giữ nguyên.
-- **Kiểm tra:** smoke trực tiếp biểu thức sort với trạng thái hỗn hợp, kết quả lọc, danh sách rỗng, chỉ lớp đã kết thúc và input đóng băng đạt. 8 tests class-detail/class-end-date, typecheck, lint file sửa và build Webpack đạt; không thêm test lâu dài cho thay đổi UI nhỏ. Full 201/203 files, 1171/1175 tests đạt; 3 lỗi mock điểm danh và 1 lỗi ôn câu sai, chạy riêng ôn câu sai vẫn 4/5 đạt. Full lint 31 lỗi/2 warning ngoài task. git diff --check đạt.
-- **Next:** user review; chưa commit/push hoặc QA browser/deployment. Cổng toàn repo chưa xanh, lỗi cụ thể ở BLOCKERS; không sửa module ngoài phạm vi để làm xanh cổng.
-- **Phát hành theo yêu cầu:** user nói “đẩy lên github giúp tôi” sau khi được báo 4 lỗi test/31 lỗi lint ngoài task. Fetch xác nhận main/origin/main cùng 2fc71fa trước phát hành. Phạm vi commit/push chỉ 4 file task, kiểm staged diff và giữ ba file dirty có trước. Không chạy lại tests vì source không đổi sau lượt kiểm; kết quả kiểm thuộc workspace có các thay đổi có trước. Kết quả push/SHA báo trong chat, chưa xác minh deployment online.

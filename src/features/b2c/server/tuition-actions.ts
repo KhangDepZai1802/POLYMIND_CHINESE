@@ -43,12 +43,13 @@ export async function saveB2CTuitionPackageAction(
   )
     return { error: "Dữ liệu điều chỉnh không hợp lệ." };
   try {
-    await permissionRpc<string>("save_b2c_tuition_package_with_reason", {
+    await permissionRpc<string>("save_b2c_tuition_package_amounts", {
       p_enrollment_id: v.enrollment_id,
       p_sessions: v.sessions,
       p_unit_price: v.unit_price,
       p_discount: v.discount,
       p_discount_reason: v.discount_reason,
+      p_total_due: v.total_due_override ?? null,
       p_reason: typeof reason === "string" ? reason : "",
       p_expected_due: due?.success ? due.data : null,
       p_expected_paid: paid.data,

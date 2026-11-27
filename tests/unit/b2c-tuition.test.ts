@@ -24,6 +24,41 @@ describe("B2C tuition validation", () => {
     const p = b2cTuitionPackageSchema.parse(pack);
     expect(p.sessions * p.unit_price - p.discount).toBe(1000000);
   });
+  it.each([undefined, null, ""])(
+    "uses automatic calculation for an empty total override %j",
+    (override) => {
+      expect(
+        b2cTuitionPackageSchema.parse({
+          ...pack,
+          total_due_override: override,
+        }).total_due_override ?? null,
+      ).toBeNull();
+    },
+  );
+  it.each([0, "0", 950000, "950000", 1000000000000])(
+    "accepts explicit whole-currency total %j independently of the formula",
+    (override) => {
+      const parsed = b2cTuitionPackageSchema.parse({
+        ...pack,
+        total_due_override: override,
+      });
+      expect(parsed.total_due_override).toBe(Number(override));
+      expect(parsed.sessions).toBe(12);
+      expect(parsed.unit_price).toBe(100000);
+      expect(parsed.discount).toBe(200000);
+    },
+  );
+  it.each([-1, "-1", 1.5, "1.5", NaN, "NaN", Infinity, "Infinity", 1000000000001, "abc", " ", false, {}, []])(
+    "rejects invalid manual total %j",
+    (override) => {
+      expect(
+        b2cTuitionPackageSchema.safeParse({
+          ...pack,
+          total_due_override: override,
+        }).success,
+      ).toBe(false);
+    },
+  );
   it("requires discount reason", () =>
     expect(
       b2cTuitionPackageSchema.safeParse({ ...pack, discount_reason: " " })

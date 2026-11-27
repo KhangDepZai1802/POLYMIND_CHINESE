@@ -96,7 +96,7 @@ export function TuitionPackageDialog({
             </div>
             <p className="text-muted-foreground text-sm">
               {mode === "new"
-                ? "Nhập học phí cho đợt học tiếp theo. Phiếu thu và số dư của đợt cũ được giữ riêng."
+                ? "Các số được điền sẵn theo đợt trước; hãy sửa cho phù hợp với đợt mới. Phiếu thu và số dư của đợt cũ được giữ riêng."
                 : row.is_current === false
                   ? "Sửa giá của đợt đang chọn. Tạo đợt học phí mới từ đợt hiện tại của học viên."
                   : "Sửa giá của đợt đang chọn. Nếu học viên học đợt tiếp theo, hãy thêm đợt học phí mới."}
@@ -130,23 +130,24 @@ function TuitionPackageForm({
   onSuccess: () => void;
 }) {
   const isNewPeriod = Boolean(row.package_id) && mode === "new";
-  const [sessions, setSessions] = useState<string | number>(
-    isNewPeriod ? "" : (row.sessions ?? 1),
-  );
-  const [price, setPrice] = useState<string | number>(
-    isNewPeriod ? "" : (row.unit_price ?? 0),
-  );
-  const [discount, setDiscount] = useState<string | number>(
-    isNewPeriod ? 0 : (row.discount ?? 0),
-  );
+  const [sessions, setSessions] = useState<string | number>(row.sessions ?? 1);
+  const [price, setPrice] = useState<string | number>(row.unit_price ?? 0);
+  const [discount, setDiscount] = useState<string | number>(row.discount ?? 0);
   const [discountReason, setDiscountReason] = useState(
-    isNewPeriod ? "" : (row.discount_reason ?? ""),
+    row.discount_reason ?? "",
+  );
+  const [totalDueOverride, setTotalDueOverride] = useState<string | null>(
+    row.total_due_override == null ? null : String(row.total_due_override),
   );
   const [adjustmentReason, setAdjustmentReason] = useState(
     isNewPeriod ? "Tạo đợt học phí mới" : "",
   );
   const [requestId] = useState(() => (isNewPeriod ? crypto.randomUUID() : ""));
-  const totalDue = Number(sessions) * Number(price) - Number(discount);
+  const calculatedTotal =
+    sessions === "" || price === "" || discount === ""
+      ? ""
+      : Number(sessions) * Number(price) - Number(discount);
+  const totalDue = totalDueOverride ?? calculatedTotal;
   const action = isNewPeriod
     ? startB2CTuitionPeriodAction
     : row.package_id
@@ -169,6 +170,11 @@ function TuitionPackageForm({
       )}
       <input type="hidden" name="expected_due" value={row.total_due ?? ""} />
       <input type="hidden" name="expected_paid" value={row.paid_amount} />
+      <input
+        type="hidden"
+        name="total_due_override"
+        value={totalDueOverride ?? ""}
+      />
       {row.package_id && (
         <div className="space-y-2">
           <Label htmlFor={`adjustment-${key}`}>
@@ -240,10 +246,42 @@ function TuitionPackageForm({
           onChange={(e) => setDiscountReason(e.target.value)}
         />
       </div>
-      <p className="font-semibold">
-        Tổng phải thu:{" "}
-        {sessions === "" || price === "" ? "—" : formatCurrency(totalDue)}
-      </p>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Label htmlFor={`total-${key}`}>Tổng phải thu (VNĐ) *</Label>
+          {totalDueOverride !== null && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setTotalDueOverride(null)}
+            >
+              Tính lại
+            </Button>
+          )}
+        </div>
+        <Input
+          id={`total-${key}`}
+          name="total_due"
+          type="number"
+          min={0}
+          max={1000000000000}
+          step={1}
+          required
+          value={totalDue}
+          onChange={(e) => setTotalDueOverride(e.target.value)}
+          aria-describedby={
+            totalDueOverride === null ? undefined : `total-hint-${key}`
+          }
+        />
+        {totalDueOverride !== null && (
+          <p id={`total-hint-${key}`} className="text-muted-foreground text-sm">
+            Tổng đã chỉnh. Số tự tính:{" "}
+            {calculatedTotal === "" ? "—" : formatCurrency(calculatedTotal)}.{" "}
+            Bấm “Tính lại” để dùng số tự tính.
+          </p>
+        )}
+      </div>
       <p className="text-muted-foreground text-sm">
         {isNewPeriod
           ? `Đợt mới đã thu ${formatCurrency(0)}. Đợt ${row.period_no ?? 1} đã thu ${formatCurrency(row.paid_amount)}.`

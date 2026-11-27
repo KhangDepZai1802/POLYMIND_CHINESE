@@ -1,5 +1,13 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-TUITION-EDITABLE-TOTAL-1 — 2026-11-26
+
+- **Codex Status:** Fixed + migration cloud, user yêu cầu phát hành ngày27/11; **Verification:** chờ QA browser/deployment độc lập. Source không đổi từ lượt kiểm tra; kết quả push/SHA xác minh trong chat, giữ ba file ngoài scope.
+- **Yêu cầu/fix:** bốn ô số buổi/đơn giá/chiết khấu/tổng phải thu sửa được. Mặc định điền sẵn và tính theo công thức; tổng nhập tay giữ độc lập, Tính lại trở về tự tính. Tạo đợt mới gợi ý số đợt trước, không sao chép phiếu/tiền đã thu. Cùng dialog cho admin và giáo viên có quyền.
+- **DB:** nullable total_due_override + generated effective total; reason/audit cho cả thay đổi riêng tổng/chế độ; RPC giữ quyền, expected due/paid, khóa và request payload. Correction/receipt guards dùng đúng tổng đã lưu, legacy editor chặn sửa gói manual. Bảy reader có override; roster không lộ trường tiền. Migration20261126000004 đã áp, history15 statements và scoped dry-run up to date. Không replay20 gaps, không sửa học phí/phiếu thật; digest DDL giữ trường cũ/timestamps.
+- **Kiểm thử:** 126/126 UI/schema/action tests; typecheck, ESLint phần sửa và build Webpack exit0. DB214/214 trước áp;215/215 sau áp gồm86 ca mới và129 hồi quy. Fixture rollback kiểm manual0, invalid/nonfinite/fraction, nhập cao/thấp hơn công thức, dưới đã thu, quay về tự tính, audit mode-only, stale/retry, đợt riêng, corrections/receipts, quyền thường/full-access/revoked/anon và nguyên dữ liệu có trước. Một assertion quyền từng nhầm hợp đồng cũ đã đối chiếu hàm live và sửa đúng, không mở quyền.
+- **Giới hạn:** full1307/1310 tests (205/206 files),3 lỗi mock SessionSummaryAdjustmentDialog cũ trong b2c-attendance-mobile; full lint31 lỗi/2 warning cũ ở .tmp/release-5cd9 và class-workspace-read.ts. Không sửa ngoài phạm vi để làm xanh cổng. Chưa QA browser/thiết bị thật/deployment hoặc stress concurrency mới.
+
 ## Phát hành các bản sửa đang chờ — 2026-11-26
 
 User yêu cầu đẩy GitHub sau khi đã được báo kết quả kiểm tra và lỗi baseline. Phạm vi B2C-TUITION-PERIODS-1, B2C-TEACHER-TUITION-RECEIPT-MONTH-1 và B2C-CHECKIN-MOBILE-1; giữ ba file dirty ngoài phạm vi. Kết quả kiểm ở các mục dưới là trước phát hành, source không đổi trong lượt push. Kết quả push/SHA xác minh và báo trong chat; QA browser/deployment độc lập vẫn chờ. Không đổi thêm DB hoặc dữ liệu thật.

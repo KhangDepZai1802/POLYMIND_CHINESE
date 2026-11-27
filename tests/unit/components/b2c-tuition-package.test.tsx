@@ -97,6 +97,8 @@ describe("B2C flexible package pricing", () => {
       expected_paid: "3695000",
       adjustment_reason: "Điều chỉnh gói",
       package_id: "package",
+      total_due: "2780000",
+      total_due_override: "",
     });
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -110,16 +112,12 @@ describe("B2C flexible package pricing", () => {
     fireEvent.change(screen.getByLabelText("Đơn giá / buổi (VNĐ) *"), {
       target: { value: "100000" },
     });
-    expect(screen.getByText(/Tổng phải thu:/).textContent).toContain(
-      formatCurrency(3055000),
-    );
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(3055000);
     expect(screen.queryByText(/Đã thu dư/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Đơn giá / buổi (VNĐ) *"), {
       target: { value: "130000" },
     });
-    expect(screen.getByText(/Tổng phải thu:/).textContent).toContain(
-      formatCurrency(4015000),
-    );
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(4015000);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
@@ -142,16 +140,106 @@ describe("B2C flexible package pricing", () => {
     fireEvent.change(screen.getByLabelText("Số buổi *"), {
       target: { value: "24" },
     });
+    fireEvent.change(screen.getByLabelText("Tổng phải thu (VNĐ) *"), {
+      target: { value: "2780000" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Lưu gói học phí" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Số dư đã thay đổi",
     );
     expect(screen.getByLabelText("Số buổi *")).toHaveValue(24);
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(2780000);
+    expect(screen.getByText(/Tổng đã chỉnh/)).toBeInTheDocument();
     expect(screen.getByLabelText("Lý do điều chỉnh *")).toHaveValue(
       "Điều chỉnh gói",
     );
     expect(mocks.refresh).not.toHaveBeenCalled();
   });
+
+  it("saves an entered total without changing sessions, price or discount", async () => {
+    open();
+    fireEvent.change(screen.getByLabelText("Tổng phải thu (VNĐ) *"), {
+      target: { value: "3500000" },
+    });
+    expect(screen.getByLabelText("Số buổi *")).toHaveValue(32);
+    expect(screen.getByLabelText("Đơn giá / buổi (VNĐ) *")).toHaveValue(120000);
+    expect(screen.getByLabelText("Chiết khấu (VNĐ)")).toHaveValue(145000);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu gói học phí" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+    expect(
+      Object.fromEntries((mocks.save.mock.calls[0]?.[1] as FormData).entries()),
+    ).toMatchObject({
+      sessions: "32",
+      unit_price: "120000",
+      discount: "145000",
+      total_due: "3500000",
+      total_due_override: "3500000",
+      expected_due: "3695000",
+      expected_paid: "3695000",
+    });
+  });
+
+  it("keeps the manual total after other edits until Tính lại restores calculation", async () => {
+    open();
+    fireEvent.change(screen.getByLabelText("Tổng phải thu (VNĐ) *"), {
+      target: { value: "3500000" },
+    });
+    fireEvent.change(screen.getByLabelText("Số buổi *"), {
+      target: { value: "24" },
+    });
+    fireEvent.change(screen.getByLabelText("Đơn giá / buổi (VNĐ) *"), {
+      target: { value: "125000" },
+    });
+    fireEvent.change(screen.getByLabelText("Chiết khấu (VNĐ)"), {
+      target: { value: "100000" },
+    });
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(3500000);
+    expect(screen.getByText(/Tổng đã chỉnh/).textContent).toContain(
+      formatCurrency(2900000),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tính lại" }));
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(2900000);
+    expect(screen.queryByText(/Tổng đã chỉnh/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu gói học phí" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+    expect(
+      (mocks.save.mock.calls[0]?.[1] as FormData).get("total_due_override"),
+    ).toBe("");
+  });
+
+  it("reopens a saved zero total as a manual total instead of falling back to the formula", async () => {
+    render(
+      <TuitionPackageDialog
+        row={{ ...row, total_due: 0, total_due_override: 0 }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sửa gói học phí Học viên thử" }),
+    );
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(0);
+    expect(screen.getByText(/Tổng đã chỉnh/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Lý do điều chỉnh *"), {
+      target: { value: "Xác nhận miễn học phí" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu gói học phí" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+    expect(
+      (mocks.save.mock.calls[0]?.[1] as FormData).get("total_due_override"),
+    ).toBe("0");
+  });
+
+  it.each(["", "-1", "10.5", "1000000000001"])(
+    "blocks an invalid manually entered total %s",
+    (value) => {
+      open();
+      fireEvent.change(screen.getByLabelText("Tổng phải thu (VNĐ) *"), {
+        target: { value },
+      });
+      expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toBeInvalid();
+      fireEvent.click(screen.getByRole("button", { name: "Lưu gói học phí" }));
+      expect(mocks.save).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("B2C separate tuition periods", () => {
@@ -177,22 +265,18 @@ describe("B2C separate tuition periods", () => {
     });
   }
 
-  it("requires new-period prices and keeps prior payments as separate context", async () => {
+  it("prefills editable new-period prices and keeps prior payments as separate context", async () => {
     enterNewPeriod();
-    expect(screen.getByLabelText("Số buổi *")).toHaveValue(null);
-    expect(screen.getByLabelText("Đơn giá / buổi (VNĐ) *")).toHaveValue(null);
-    expect(screen.getByLabelText("Chiết khấu (VNĐ)")).toHaveValue(0);
+    expect(screen.getByLabelText("Số buổi *")).toHaveValue(32);
+    expect(screen.getByLabelText("Đơn giá / buổi (VNĐ) *")).toHaveValue(120000);
+    expect(screen.getByLabelText("Chiết khấu (VNĐ)")).toHaveValue(145000);
+    expect(screen.getByLabelText("Lý do chiết khấu *")).toHaveValue("Ưu đãi");
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(3695000);
     expect(screen.getByText(/Đợt mới đã thu/).textContent).toBe(
       `Đợt mới đã thu ${formatCurrency(0)}. Đợt 1 đã thu ${formatCurrency(3695000)}.`,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Lưu đợt học phí mới" }),
-    );
-    expect(mocks.start).not.toHaveBeenCalled();
     fillNewPeriod();
-    expect(screen.getByText(/Tổng phải thu:/).textContent).toContain(
-      formatCurrency(2780000),
-    );
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(2780000);
     fireEvent.click(
       screen.getByRole("button", { name: "Lưu đợt học phí mới" }),
     );
@@ -207,6 +291,8 @@ describe("B2C separate tuition periods", () => {
       unit_price: "120000",
       discount: "100000",
       discount_reason: "Ưu đãi đợt mới",
+      total_due: "2780000",
+      total_due_override: "",
       adjustment_reason: "Tạo đợt học phí mới",
       expected_due: "3695000",
       expected_paid: "3695000",
@@ -222,6 +308,9 @@ describe("B2C separate tuition periods", () => {
     mocks.start.mockResolvedValue({ error: "Vui lòng thử lại." });
     enterNewPeriod();
     fillNewPeriod();
+    fireEvent.change(screen.getByLabelText("Tổng phải thu (VNĐ) *"), {
+      target: { value: "2700000" },
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "Lưu đợt học phí mới" }),
     );
@@ -230,14 +319,36 @@ describe("B2C separate tuition periods", () => {
     );
     expect(screen.getByLabelText("Số buổi *")).toHaveValue(24);
     expect(screen.getByLabelText("Đơn giá / buổi (VNĐ) *")).toHaveValue(120000);
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(2700000);
     fireEvent.click(
-      screen.getByRole("button", { name: "Lưu đợt học phí mới" }),
+      await screen.findByRole("button", { name: "Lưu đợt học phí mới" }),
     );
     await waitFor(() => expect(mocks.start).toHaveBeenCalledTimes(2));
     const first = mocks.start.mock.calls[0]?.[1] as FormData;
     const second = mocks.start.mock.calls[1]?.[1] as FormData;
     expect(second.get("request_id")).toBe(first.get("request_id"));
+    expect(second.get("total_due_override")).toBe("2700000");
     expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+
+  it("uses a previous manually adjusted total as an editable suggestion for a new period", () => {
+    render(
+      <TuitionPackageDialog
+        row={{ ...row, total_due: 3500000, total_due_override: 3500000 }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sửa gói học phí Học viên thử" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Thêm đợt học phí mới" }),
+    );
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(3500000);
+    expect(screen.getByText(/Đợt mới đã thu/).textContent).toBe(
+      `Đợt mới đã thu ${formatCurrency(0)}. Đợt 1 đã thu ${formatCurrency(3695000)}.`,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tính lại" }));
+    expect(screen.getByLabelText("Tổng phải thu (VNĐ) *")).toHaveValue(3695000);
   });
 
   it("switches back to the selected old period without copying the new price", async () => {
@@ -294,6 +405,32 @@ describe("B2C separate tuition periods", () => {
     await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
     expect(mocks.save).not.toHaveBeenCalled();
     expect(mocks.start).not.toHaveBeenCalled();
+  });
+
+  it("creates the first period with an independently entered total", async () => {
+    render(
+      <TuitionPackageDialog
+        row={{ ...row, package_id: null, total_due: null, paid_amount: 0 }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Thêm gói học phí Học viên thử" }),
+    );
+    fireEvent.change(screen.getByLabelText("Tổng phải thu (VNĐ) *"), {
+      target: { value: "3500000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu gói học phí" }));
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
+    expect(
+      Object.fromEntries(
+        (mocks.create.mock.calls[0]?.[1] as FormData).entries(),
+      ),
+    ).toMatchObject({
+      sessions: "32",
+      unit_price: "120000",
+      discount: "145000",
+      total_due_override: "3500000",
+    });
   });
 
   it("shows and loads only the selected period's receipts", async () => {

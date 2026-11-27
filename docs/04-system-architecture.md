@@ -4,7 +4,7 @@
 
 Admin/teacher dashboard đọc RPC period-page mới; class loaders chọn read_b2c_class_tuition_periods riêng cho tab tuition. Dedupe, React key và selection dùng package_id (fallback enrollment_id khi chưa lập gói). Renewal chỉ dùng đợt hiện tại; thu theo tháng vẫn nhóm theo package/paid_date và đối chiếu tổng receipt.
 
-TuitionPackageDialog tách form sửa đợt này/thêm đợt mới, reset giá và số buổi khi tạo mới, giữ request UUID khi retry. Server action kiểm requireTeaching(super_admin), Zod và RPC có guard DB, không service role. Form sửa gửi package ID; form tạo gửi enrollment/previous package/request UUID cùng số dư kỳ vọng. Sau lưu revalidate B2C/teacher views. Luồng lập gói đầu tiên giữ action cũ; RPC cũ từ chối ghi đè đợt sau để bảo vệ client chưa cập nhật.
+TuitionPackageDialog tách form sửa đợt này/thêm đợt mới, gợi ý giá/số buổi/chiết khấu/tổng từ đợt đang chọn khi tạo mới, giữ request UUID khi retry. Bốn ô đều sửa được; total_due_override rỗng/null nghĩa tự tính, số (kể cả0) nghĩa tổng nhập tay. Khi đổi ba thành phần giữ tổng nhập tay đến khi bấm Tính lại. Server action kiểm requireTeaching(super_admin), Zod và RPC *_amounts có guard DB, không service role. Form sửa gửi package ID; form tạo gửi enrollment/previous package/request UUID cùng số dư kỳ vọng. Sau lưu revalidate B2C/teacher views. Legacy RPC không cho sửa gói tổng nhập tay bằng client chưa hiểu trường này.
 
 ## Quyền form sửa lớp B2C dùng chung (2026-11-26)
 

@@ -1,5 +1,14 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-TUITION-EDITABLE-TOTAL-1 — Sửa số liệu và tổng phải thu
+
+- [x] Cả số buổi, đơn giá, chiết khấu, tổng phải thu là ô sửa được; giữ số điền sẵn/tự tính và cho dùng tổng nhập tay rõ ràng. Gói mới không sao chép phiếu thu.
+- [x] Tổng nhập tay lưu/đọc lại đúng, không tự đổi ba thành phần còn lại; các tổng, phiếu, công nợ và correction dùng số phải thu đã lưu. Giữ quyền/stale/idempotency/audit, validation VNĐ nguyên không âm.
+- [x] Migration có pgTAP/regression: 214/214 trước áp, 215/215 sau áp (thêm nhánh full-access); cloud history đúng 20261126000004 và scoped dry-run up to date. Không sửa số liệu học viên thật hoặc replay 20 gaps cũ.
+- [x] 126/126 tests tập trung, typecheck/lint phần sửa/build Webpack exit0; full1307/1310 tests,3 lỗi mock cũ, full lint31 lỗi/2 warning cũ đã ghi. Docs đồng bộ, chưa commit/push.
+- [x] User yêu cầu đẩy GitHub ngày27/11 sau khi được báo kết quả và lỗi baseline. Phát hành19file task, giữ ba file ngoài scope; source không đổi sau kiểm thử. Kết quả push/SHA xác minh trong chat; không chạy lại migration đã áp.
+- [ ] QA browser/deployment độc lập sau khi giao diện được phát hành.
+
 ## B2C-TUITION-PERIODS-1 — Tách học phí các đợt học
 
 - [x] Mỗi đợt có gói và phiếu thu riêng; thao tác Thêm đợt học phí mới không ghi đè đợt cũ. Sửa đợt hiện có yêu cầu lý do và đối chiếu số dư.

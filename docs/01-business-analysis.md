@@ -27,6 +27,8 @@ Giáo viên được cấp quyền riêng manage_admissions có menu Tuyển sin
 
 ## Học phí theo đợt học (2026-11-26)
 
+Cập nhật theo yêu cầu sửa số liệu: cả Số buổi, Đơn giá, Chiết khấu và Tổng phải thu đều là ô nhập sửa được. Mặc định tổng = số buổi × đơn giá − chiết khấu; khi người dùng nhập lại tổng thì lưu đúng tổng đó, không sửa ngược ba thành phần. Tổng đã chỉnh được giữ khi sửa thành phần, có nút Tính lại để quay về số tự tính. Tạo đợt mới gợi ý các số từ đợt đang chọn để sửa trước khi lưu, nhưng không sao chép phiếu hoặc số đã thu. Tổng nhập tay phải là VNĐ nguyên từ 0 đến 1.000.000.000.000; giá trị 0 khác với chưa nhập tổng.
+
 Một ghi danh có nhiều đợt học phí. Mỗi đợt lưu số buổi, đơn giá, chiết khấu và phiếu thu riêng. “Sửa đợt này” điều chỉnh chính đợt đang chọn; “Thêm đợt học phí mới” lập khoản phải thu mới, bắt đầu đã thu 0, giữ giá và phiếu của đợt trước. Không lấy tiền đã thu đợt cũ trừ vào học phí đợt mới hoặc tự tạo/chuyển/hoàn phiếu. Người dùng đã xác nhận tình huống giá mới thuộc đợt mới.
 
 Danh sách học phí của admin/giáo viên hiển thị nhãn số đợt và Hiện tại/Đợt trước; các tổng và bộ lọc tháng tính đúng các gói được lọc. Nhắc tái phí theo hạn ghi danh chỉ áp dụng đợt hiện tại; nợ của đợt trước vẫn có thể cần xử lý. Danh sách học viên và điểm danh vẫn một dòng theo ghi danh. Giá từng đợt có thể khác nhau, giữ nguyên quyền sửa/thu tiền hiện có.

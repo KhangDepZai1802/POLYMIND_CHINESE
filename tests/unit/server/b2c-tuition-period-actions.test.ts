@@ -54,12 +54,13 @@ describe("B2C tuition period actions", () => {
       "success",
     );
     expect(mocks.auth).toHaveBeenCalledWith("super_admin");
-    expect(mocks.rpc).toHaveBeenCalledWith("save_b2c_tuition_period", {
+    expect(mocks.rpc).toHaveBeenCalledWith("save_b2c_tuition_period_amounts", {
       p_package_id: packageId,
       p_sessions: 24,
       p_unit_price: 120000,
       p_discount: 100000,
       p_discount_reason: "Ưu đãi đợt mới",
+      p_total_due: null,
       p_reason: "Tạo đợt học phí mới",
       p_expected_due: 3695000,
       p_expected_paid: 3695000,
@@ -72,7 +73,7 @@ describe("B2C tuition period actions", () => {
       "success",
     );
     expect(mocks.auth).toHaveBeenCalledWith("super_admin");
-    expect(mocks.rpc).toHaveBeenCalledWith("start_b2c_tuition_period", {
+    expect(mocks.rpc).toHaveBeenCalledWith("start_b2c_tuition_period_amounts", {
       p_enrollment_id: enrollment,
       p_previous_package_id: packageId,
       p_request_id: requestId,
@@ -80,11 +81,58 @@ describe("B2C tuition period actions", () => {
       p_unit_price: 120000,
       p_discount: 100000,
       p_discount_reason: "Ưu đãi đợt mới",
+      p_total_due: null,
       p_reason: "Tạo đợt học phí mới",
       p_expected_due: 3695000,
       p_expected_paid: 3695000,
     });
     expect(mocks.revalidate).toHaveBeenCalledTimes(1);
+  });
+
+  describe.each([
+    ["edit", saveB2CTuitionPeriodAction, "save_b2c_tuition_period_amounts"],
+    ["start", startB2CTuitionPeriodAction, "start_b2c_tuition_period_amounts"],
+  ] as const)("%s with an editable total", (_label, action, rpcName) => {
+    it.each(["0", "2500000", "1000000000000"])(
+      "saves total %s without deriving or changing the component amounts",
+      async (total) => {
+        expect(
+          await action({}, form({ total_due_override: total })),
+        ).toHaveProperty("success");
+        expect(mocks.rpc).toHaveBeenCalledWith(
+          rpcName,
+          expect.objectContaining({
+            p_sessions: 24,
+            p_unit_price: 120000,
+            p_discount: 100000,
+            p_total_due: Number(total),
+            p_expected_due: 3695000,
+            p_expected_paid: 3695000,
+          }),
+        );
+      },
+    );
+
+    it("returns to formula mode when the total override is cleared", async () => {
+      expect(
+        await action({}, form({ total_due_override: "" })),
+      ).toHaveProperty("success");
+      expect(mocks.rpc).toHaveBeenCalledWith(
+        rpcName,
+        expect.objectContaining({ p_total_due: null }),
+      );
+    });
+
+    it.each(["-1", "1.5", "NaN", "Infinity", "1000000000001", "abc", " "])(
+      "rejects invalid total %s before making a mutation",
+      async (total) => {
+        expect(
+          await action({}, form({ total_due_override: total })),
+        ).toHaveProperty("fieldErrors.total_due_override");
+        expect(mocks.rpc).not.toHaveBeenCalled();
+        expect(mocks.revalidate).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it.each<Record<string, string>>([
