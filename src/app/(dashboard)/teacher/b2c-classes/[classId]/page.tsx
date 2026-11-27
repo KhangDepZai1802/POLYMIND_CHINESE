@@ -34,6 +34,7 @@ export default async function TeacherB2CClassPage({
     tuition: "view_tuition",
     comments: "view_comments",
     assessments: "view_assessments",
+    homework: "view_assessments",
     monthly_comments: "view_comments",
   } as const;
   const allowed = Object.keys(tabs).filter((tab) =>

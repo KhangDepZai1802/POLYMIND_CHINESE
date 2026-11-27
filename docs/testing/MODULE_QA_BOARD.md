@@ -1,5 +1,14 @@
 # MODULE QA BOARD — POLYMIND CHINESE
 
+## B2C-HOMEWORK-PDF-1 — 2026-11-27
+
+- **Codex Status:** Implemented local + migration cloud; **Verification:** chờ QA deployment độc lập. Chưa commit/push, không tự tạo tài khoản/bài tập thật.
+- **Phạm vi:** tab Bài tập trong lớp admin/teacher, PDF20MB và hạn giờ VN; học viên đăng nhập xem đúng lớp/nộp PDF hoặc ảnh/nộp lại trước hạn/xem mọi revision. Super_admin-only cấp hoặc liên kết exact login student từ danh sách Học viên; student B2C-only landing vào portal, legacy dashboard giữ nguyên. Không grading/notification ngoài scope.
+- **Security/data:** RLS4bảng, bucket private, upload server path/owner/size/MIME, session client+signature check; finalizer DB checks object/deadline/current permissions. Unique request/payload/stale/audit/locks, không overwrite hay sửa bài nộp cũ. Không tự match identity hoặc xóa account khi link response chưa rõ. Cloud20261127000001 đúng51statements/scoped up to date; không replay20gaps, fixture rollback giữ dữ liệu thật.
+- **Kiểm thử:**124/124 tập trung;224/224pgTAP trước/sau; typecheck/build Webpack/lint phần mới đạt. Full1426/1429,211/212files,3mock SessionSummaryAdjustmentDialog cũ; full lint31lỗi/2warning cũ.90responsive combinations actualcomponents/mockdata ở Chromium+WebKit,320/375/390/768/1440,9states; không horizontal overflow, buttons≥44px; đã xem mobile screenshots. Đã phát hiện/sửa class_id upload null, import dialog class và tên file dài làm tràn grid.
+- **QA tiếp:** tài khoản được cấp rõ ràng → đăng nhập học viên; giao PDF → tải đề → nộp/nộp lại → giáo viên tải đúng bản/lịch sử; thử deadline vượt trong lúc upload, revoked permissions, network retry và hidden archived assignment. Chưa test real browser authenticated upload trên production, mobile device thật hoặc stress concurrency. Pending upload thất bại có thể còn file private cần vận hành dọn; không có cơ chế antivirus.
+
+
 ## B2C-TUITION-EDITABLE-TOTAL-1 — 2026-11-26
 
 - **Codex Status:** Fixed + migration cloud, user yêu cầu phát hành ngày27/11; **Verification:** chờ QA browser/deployment độc lập. Source không đổi từ lượt kiểm tra; kết quả push/SHA xác minh trong chat, giữ ba file ngoài scope.

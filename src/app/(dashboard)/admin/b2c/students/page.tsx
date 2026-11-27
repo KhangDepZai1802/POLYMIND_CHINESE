@@ -10,6 +10,7 @@ export default async function B2CStudentsPage() {
     <StudentDashboard
       data={await getStudentDashboard()}
       canViewHistory={actor.role === "super_admin"}
+      canManageAccounts={actor.role === "super_admin"}
     />
   );
 }

@@ -46,7 +46,7 @@ export async function readClassWorkspaceAction(
           .limit(100)
       : null;
   if (schedules?.error) throw new Error("Không tải được lịch lặp.");
-  const { data, error } = ["assessments", "monthly_comments"].includes(filters.tab) ? { data: { rows: [], total: 0, stats: null }, error: null } : filters.tab === "tuition" ? {
+  const { data, error } = ["assessments", "homework", "monthly_comments"].includes(filters.tab) ? { data: { rows: [], total: 0, stats: null }, error: null } : filters.tab === "tuition" ? {
     data: await permissionRpc<ClassWorkspaceResult<ClassStudent>>("read_b2c_class_tuition_periods", {
       p_class_id: classId,
       p_page: filters.page,

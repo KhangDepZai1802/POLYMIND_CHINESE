@@ -4,6 +4,19 @@ import type { Json } from "@/types/database";
 
 // Forward migration RPCs, typed here until the next full database type generation.
 type PermissionRpc =
+  | "read_my_b2c_tuition"
+  | "read_b2c_student_account"
+  | "find_b2c_student_login"
+  | "link_b2c_student_account"
+  | "prepare_b2c_homework_upload"
+  | "create_b2c_homework"
+  | "update_b2c_homework"
+  | "archive_b2c_homework"
+  | "submit_b2c_homework"
+  | "read_b2c_homework_page"
+  | "read_b2c_homework_submissions"
+  | "read_b2c_homework_submission_history"
+  | "read_b2c_homework_file"
   | "archive_b2c_teaching_session"
   | "archive_b2c_center_record"
   | "read_center_b2c_student_data"

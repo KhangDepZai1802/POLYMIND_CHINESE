@@ -13,6 +13,9 @@ import {
   getMySchedule,
 } from "@/features/student/server/queries";
 import { requireRole } from "@/lib/auth/session";
+import { readB2CHomeworkAction } from "@/features/b2c/server/homework-actions";
+
+vi.mock("@/features/b2c/server/homework-actions", () => ({ readB2CHomeworkAction: vi.fn() }));
 
 vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));
 vi.mock("@/features/assessment-results/server/overview", () => ({
@@ -36,6 +39,7 @@ vi.mock("@/features/student/components/material-list", () => ({
 describe("StudentClassPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(readB2CHomeworkAction).mockResolvedValue({ linked_student: null } as never);
     vi.mocked(requireRole).mockResolvedValue(undefined as never);
     vi.mocked(getMyEnrollment).mockResolvedValue({
       id: "enrollment-1",
@@ -154,5 +158,33 @@ describe("StudentClassPage", () => {
     expect(
       screen.getByRole("heading", { name: "Tài liệu", level: 2 }),
     ).toBeInTheDocument();
+  });
+
+  it("hiển thị lớp trung tâm thay vì chuyển học viên B2C sang trang khác", async () => {
+    vi.mocked(getMyEnrollment).mockResolvedValue(null);
+    vi.mocked(readB2CHomeworkAction).mockResolvedValue({
+      rows: [],
+      total: 0,
+      class: null,
+      schedules: [],
+      linked_student: { id: "student-b2c-1", full_name: "Lê Huỳnh Gia Hân" },
+      classes: [
+        {
+          id: "class-b2c-1",
+          code: "LMU-01",
+          name: "Let's Move Up",
+        },
+      ],
+      server_now: "2026-11-27T10:00:00.000Z",
+    });
+
+    render(await StudentClassPage());
+
+    expect(screen.getByRole("heading", { name: "Let's Move Up" })).toBeInTheDocument();
+    expect(screen.getByText("LMU-01 · Let's Move Up")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /xem bài tập của lớp/i }),
+    ).toHaveAttribute("href", "/student/b2c-homework");
+    expect(getMyClassOverview).not.toHaveBeenCalled();
   });
 });

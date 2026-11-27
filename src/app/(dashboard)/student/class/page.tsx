@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowRight,
   BookOpen,
   CalendarDays,
   ClipboardList,
@@ -24,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { getStudentAssessmentOverview } from "@/features/assessment-results/server/overview";
+import type { B2CHomeworkPage } from "@/features/b2c/domain/homework";
+import { readB2CHomeworkAction } from "@/features/b2c/server/homework-actions";
 import { SessionCalendar } from "@/features/schedules/components/schedule-manager";
 import { MaterialList } from "@/features/student/components/material-list";
 import {
@@ -59,6 +62,10 @@ export default async function StudentClassPage() {
   const enrollment = await getMyEnrollment();
 
   if (!enrollment?.class) {
+    const b2c = await readB2CHomeworkAction(null);
+    if (b2c.linked_student && b2c.classes.length > 0) {
+      return <B2CStudentClassView page={b2c} />;
+    }
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader
@@ -674,6 +681,60 @@ export default async function StudentClassPage() {
           </StudentSectionCard>
         </TabsContent>
       </ResponsiveTabs>
+    </div>
+  );
+}
+
+function B2CStudentClassView({ page }: { page: B2CHomeworkPage }) {
+  const onlyClass = page.classes.length === 1 ? page.classes[0] : null;
+
+  return (
+    <div className="mx-auto max-w-7xl">
+      <PageHeader
+        title="Lớp của tôi"
+        description={
+          onlyClass
+            ? `${onlyClass.code} · ${onlyClass.name}`
+            : `${page.classes.length} lớp trung tâm đang theo học`
+        }
+      />
+
+      <div className="grid gap-5 md:grid-cols-2">
+        {page.classes.map((classroom) => (
+          <Card
+            key={classroom.id}
+            className="border-student-sky-border overflow-hidden py-0 shadow-sm"
+          >
+            <CardContent className="p-0">
+              <div className="bg-student-sky-surface flex items-start gap-4 border-b p-5 sm:p-6">
+                <span className="bg-primary text-primary-foreground flex size-12 shrink-0 items-center justify-center rounded-2xl">
+                  <School className="size-6" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-student-sky-ink text-sm font-semibold">
+                    Lớp trung tâm · {classroom.code}
+                  </p>
+                  <h2 className="mt-1 text-xl font-bold break-words">
+                    {classroom.name}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="space-y-4 p-5 sm:p-6">
+                <p className="text-text-secondary text-sm leading-6">
+                  Xem đề bài, hạn nộp và các bài bạn đã gửi cho lớp này.
+                </p>
+                <Button asChild className="min-h-11 w-full sm:w-auto">
+                  <Link href="/student/b2c-homework">
+                    Xem bài tập của lớp
+                    <ArrowRight className="size-4" aria-hidden />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

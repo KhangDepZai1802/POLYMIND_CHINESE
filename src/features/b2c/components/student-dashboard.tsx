@@ -79,9 +79,11 @@ const groupTitles = {
 export function StudentDashboard({
   data,
   canViewHistory = false,
+  canManageAccounts = false,
 }: {
   data: StudentDashboardData;
   canViewHistory?: boolean;
+  canManageAccounts?: boolean;
 }) {
   const allRows = studentDashboardRows(data);
   const byStudent = new Map(
@@ -676,6 +678,7 @@ export function StudentDashboard({
         </div>
         <StudentDashboardTable
           canViewHistory={canViewHistory}
+          canManageAccounts={canManageAccounts}
           rows={visible}
           offset={current * pageSize}
           selected={selected}

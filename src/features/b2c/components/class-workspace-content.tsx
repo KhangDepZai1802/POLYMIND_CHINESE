@@ -4,6 +4,7 @@ import { ClassOccupancyProgress } from "./class-occupancy-progress";
 import { createContext, useContext, type ComponentProps } from "react";
 import type { readClassWorkspaceAction } from "../server/class-workspace-read";
 import { AssessmentsPanel } from "./assessments-panel";
+import { HomeworkPanel } from "./homework-panel";
 import { MonthlyCommentsPanel } from "./monthly-comments-panel";
 import { formatInTimeZone } from "date-fns-tz";
 import { vi } from "date-fns/locale";
@@ -101,6 +102,7 @@ export function ClassWorkspaceContent({
     tuition: "view_tuition",
     comments: "view_comments",
     assessments: "view_assessments",
+    homework: "view_assessments",
     monthly_comments: "view_comments",
   } as const;
   const {
@@ -755,6 +757,9 @@ export function ClassWorkspaceContent({
           canGrade={can("grade_assessments")}
         />
       )}
+      {filters.tab === "homework" && can("view_assessments") && (
+        <HomeworkPanel key={classId} classId={classId} canManage={can("grade_assessments")} />
+      )}
       {filters.tab === "monthly_comments" && can("view_comments") && (
         <MonthlyCommentsPanel
           key={classId}
@@ -765,7 +770,7 @@ export function ClassWorkspaceContent({
         />
       )}
       {!result.rows.length &&
-        !["schedule", "assessments", "monthly_comments"].includes(
+        !["schedule", "assessments", "homework", "monthly_comments"].includes(
           filters.tab,
         ) && (
           <p className="text-muted-foreground py-8 text-center">
@@ -773,7 +778,7 @@ export function ClassWorkspaceContent({
             {CLASS_TABS[filters.tab].toLowerCase()}.
           </p>
         )}
-      {!["schedule", "assessments", "monthly_comments"].includes(
+      {!["schedule", "assessments", "homework", "monthly_comments"].includes(
         filters.tab,
       ) && (
         <div className="mt-4 flex flex-wrap justify-between gap-3 text-sm">

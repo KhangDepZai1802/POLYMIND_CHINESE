@@ -1,5 +1,6 @@
 import { render, screen, within, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/features/b2c/components/homework-panel", () => ({ HomeworkPanel: () => null }));
 vi.mock("@/features/b2c/server/monthly-comment-actions", () => ({
   readMonthlyCommentsAction: vi.fn(),
   readMonthlyCommentDetailAction: vi.fn(),

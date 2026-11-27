@@ -1,5 +1,25 @@
 # 08 — Phase Plan & Task Ledger
 
+## B2C-STUDENT-TUITION-1 — Học viên xem học phí lớp trung tâm
+
+- [x] `/student/tuition` nhận diện tài khoản học viên đã liên kết B2C và đọc đúng các đợt học phí của chính học viên đó; tài khoản thuộc lớp khác chỉ thấy lớp/gói/phiếu của mình. Luồng hóa đơn legacy giữ nguyên khi không có liên kết B2C.
+- [x] Hiển thị tổng phải thu, đã thu, còn nợ, trạng thái; từng lớp/đợt có số buổi, đơn giá, chiết khấu, hạn đóng và lịch sử phiếu thu. Trường hợp Gia Hân/Let's Move Up thể hiện 2.613.000đ đã thu và 0đ còn nợ theo dữ liệu quản lý.
+- [x] RPC security-definer không nhận `student_id`, tự suy ra hồ sơ từ `auth.uid()` và chỉ đọc ghi danh/gói/phiếu không lưu trữ của tài khoản hiện tại; revoke public/anon, chỉ grant authenticated.
+- [x] 15/15 tests trang/domain/server/UI (gồm hồi quy học phí legacy), typecheck, ESLint phần sửa, `git diff --check` và build Webpack đạt.
+- [ ] Áp migration `20261127000002_b2c_student_tuition.sql` lên Supabase sau khi user cho phép; sau đó QA bằng tài khoản Gia Hân và một học viên lớp khác. Hiện chưa có quyền kết nối/thay đổi remote nên trang local chưa nhận được RPC mới.
+
+## B2C-HOMEWORK-PDF-1 — Bài tập PDF và hạn nộp cho lớp trung tâm
+
+- [x] Giáo viên/quản trị giao PDF, tiêu đề/hướng dẫn và hạn nộp giờ VN trong tab Bài tập của lớp B2C; đọc/sửa theo quyền lớp hiện có.
+- [x] Học viên đăng nhập xem đúng bài lớp mình, tải đề và nộp file PDF/ảnh; xem trạng thái/thời điểm nộp, nộp lại trước hạn giữ lịch sử; DB cưỡng chế deadline, quyền và idempotency.
+- [x] Liên kết tài khoản B2C riêng, super_admin cấp mới hoặc chọn chính xác tài khoản student có sẵn; không suy đoán theo tên/email hoặc tạo học viên VCB giả; không tự cấp account thật trong task.
+- [x] File private, signed upload/download qua user client, xác minh metadata/file thực, không đọc bài nộp người khác. Migration có224pgTAP trước/sau, đã áp cloud20261127000001/51statements và scoped dry-run up to date.
+- [x]124/124 tests tập trung; typecheck/build Webpack đạt, lint phần mới sạch;90trường hợp responsive Chromium/WebKit với fixture component thật. Docs/QA ghi baseline toàn repo; ba file dirty ngoài scope giữ nguyên, chưa commit/push.
+- [x] Trường hạn nộp hiển thị cố định `dd/MM/yyyy HH:mm`, nhãn gọn `Hạn nộp`; vẫn gửi wall-clock giờ Việt Nam như trước.
+- [x] `/student/class` nhận diện ghi danh B2C và hiển thị đúng lớp trung tâm (ví dụ `Let's Move Up`) ngay trong “Lớp của tôi”; không chuyển nhầm học viên sang trang bài tập hoặc để nội dung trắng. Tài khoản có nhiều lớp thấy đầy đủ từng lớp, còn luồng lớp legacy giữ nguyên.
+- [x] Portal bài tập học viên được thiết kế lại theo bố cục Classroom: đề/hướng dẫn/tệp ở cột nội dung, khối “Bài tập của bạn” ở cột thao tác; responsive một cột trên mobile, trạng thái luôn có màu kèm chữ/icon. Giữ nguyên quyền, upload, deadline, nộp lại và lịch sử. 21/21 test module, typecheck/lint phần sửa và build Webpack đạt.
+- [ ] QA độc lập trên deployment với tài khoản được cấp rõ ràng: giao đề, xem/nộp/tải file thật và deadline; chưa chạy trên production hoặc điện thoại thật.
+
 ## B2C-TUITION-EDITABLE-TOTAL-1 — Sửa số liệu và tổng phải thu
 
 - [x] Cả số buổi, đơn giá, chiết khấu, tổng phải thu là ô sửa được; giữ số điền sẵn/tự tính và cho dùng tổng nhập tay rõ ràng. Gói mới không sao chép phiếu thu.

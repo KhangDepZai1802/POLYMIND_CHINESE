@@ -41,7 +41,10 @@ export async function readTeacherWorkspaceAction(
     filters = classFiltersSchema.parse(input);
   type Model = Awaited<ReturnType<typeof readClassWorkspaceAction>>;
   type WorkspaceResult = Model["result"] & { class: Model["cls"]; schedules: Model["schedules"] };
-  const result = filters.tab === "tuition" ? await permissionRpc<WorkspaceResult>("read_b2c_class_tuition_periods", {
+  const result = filters.tab === "homework" ? {
+    ...await permissionRpc<Pick<WorkspaceResult, "class" | "schedules">>("read_b2c_homework_page", { p_class_id: id, p_page: 0 }),
+    rows: [], total: 0, stats: null,
+  } as WorkspaceResult : filters.tab === "tuition" ? await permissionRpc<WorkspaceResult>("read_b2c_class_tuition_periods", {
     p_class_id: id,
     p_page: filters.page,
     p_query: filters.q,

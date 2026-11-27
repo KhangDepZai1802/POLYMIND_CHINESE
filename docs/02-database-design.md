@@ -1,5 +1,18 @@
 # 02 — Thiết kế Database
 
+## B2C-HOMEWORK-PDF-1 (2026-11-27)
+
+Migration `20261127000001_b2c_homework_pdf.sql`: `b2c_student_accounts` tách liên kết tài khoản khỏi học viên legacy; student_id PK, user_id unique, actor/time thật. Super_admin-only read/find/link RPC kiểm hồ sơ chưa lưu trữ, profile active/student và khóa tránh liên kết trùng; không backfill theo tên/email hoặc sửa Auth hàng loạt.
+
+`b2c_homework` lưu lớp, tiêu đề/hướng dẫn, due_at UTC, đề PDF qua upload_id, actor/timestamps/stale token/archive. `b2c_homework_uploads` lưu lượt chờ30phút, metadata20MB, đường dẫn class/actor/upload UUID và request payload. `b2c_homework_submissions` append-only theo homework/enrollment/revision, deadline snapshot, upload và actor thật. Các bảng đều RLS, authenticated chỉ SELECT theo phạm vi; mutation qua security-definer RPC search_path rỗng, deny public/anon, unique request UUID và kiểm payload đảm bảo retry. Helpers trả dữ liệu nội bộ không cấp execute cho authenticated.
+
+Bucket `b2c-homework-files` private, chỉ PDF/JPEG/PNG,20MB. Storage INSERT đúng pending của actor với quyền hiện tại; SELECT đúng đề được xem hoặc bài nộp của mình/giáo viên đúng lớp; không UPDATE/overwrite. DELETE chỉ pending chưa attached, khóa cùng upload để không tranh chấp finalize. Server dùng session client cấp vé/upload URL và ký URL đọc120giây từ record ID, không nhận đường dẫn tùy ý; info + download bounded kiểm size/MIME/signature, DB kiểm object tồn tại/metadata trước gắn. Deadline DB dùng clock_timestamp sau các khóa; đã commit retry chỉ trả bản cũ sau khi kiểm lại quyền. File/link và bài nộp bị chặn khi profile mất active, hồ sơ lưu trữ hoặc ghi danh không còn đủ điều kiện.
+
+RPC page/submissions/history phân trang20, danh sách học viên chỉ cho staff có quyền lớp; học viên không đọc roster người khác. Dùng view_classes+view_assessments để đọc và thêm grade_assessments để quản lý, không cấp quyền mới cho tài khoản hiện có. Submission history giữ mọi lần, archive đề không xóa lịch sử. Không đụng học phí, lịch học hoặc chấm công.
+
+Đã áp Supabase cloud ngày27/11/2026: dry-run scoped chỉ migration mới, history đúng version/name với51statements, sau áp dry-run up to date.134pgTAP mới +90hồi quy quyền/kiểm tra/workspace đạt trước và sau áp, fixtures rollback. Repository gốc vẫn20history gaps cũ; không replay hoặc repair. CLI cảnh báo cache Docker local nhưng migration/history cloud thành công. Không tạo tài khoản/liên kết/bài tập thật.
+
+
 ## B2C-TUITION-EDITABLE-TOTAL-1 (2026-11-26)
 
 Migration 20261126000004 thêm total_due_override nullable numeric, kiểm VNĐ nguyên0..1e12. PostgreSQL17 đổi biểu thức generated total_due thành coalesce(override,sessions*unit_price-discount), giữ nguyên trường cũ/timestamps/phiếu khi override null. Không cấp direct INSERT/UPDATE cột mới; reason trigger và audit có cả override để sửa riêng tổng cũng có lý do/lịch sử.

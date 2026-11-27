@@ -7,6 +7,7 @@ export const CLASS_TABS = {
   tuition: "Học phí",
   comments: "Nhận xét",
   assessments: "Kiểm tra",
+  homework: "Bài tập",
   monthly_comments: "Nhận xét tháng",
 } as const;
 export const MEETING_STATUSES = {
@@ -125,7 +126,7 @@ export const commentSchema = z.object({
 });
 export const classFiltersSchema = z.object({
   tab: z
-    .enum(["students", "schedule", "attendance", "tuition", "comments", "assessments", "monthly_comments"])
+    .enum(["students", "schedule", "attendance", "tuition", "comments", "assessments", "homework", "monthly_comments"])
     .default("students"),
   page: z.coerce.number().int().min(0).max(1000000).default(0),
   q: z.string().trim().max(200).default(""),

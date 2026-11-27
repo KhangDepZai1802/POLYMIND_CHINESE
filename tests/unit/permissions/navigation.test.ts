@@ -35,6 +35,12 @@ describe("navigation", () => {
       expect(new Set(hrefs).size).toBe(hrefs.length);
     }
   });
+
+  it("dùng nhãn Bài tập ngắn gọn cho cổng bài tập B2C", () => {
+    expect(
+      getNavigation("student").find((item) => item.href === "/student/b2c-homework")?.label,
+    ).toBe("Bài tập");
+  });
 });
 
 describe("menu 2 nhánh của giáo vụ", () => {

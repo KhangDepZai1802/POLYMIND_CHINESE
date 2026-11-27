@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { B2CStudentStatusDialog } from "@/features/b2c/components/student-status-dialog";
 import { EnrollmentLifecycleDialog } from "./enrollment-lifecycle-dialog";
+import { B2CStudentAccountDialog } from "./student-account-dialog";
 import {
   B2C_STUDENT_STATUS_COLORS,
   B2C_STUDENT_STATUS_LABELS,
@@ -37,6 +38,7 @@ export function StudentDashboardTable({
   offset = 0,
   compact = false,
   canViewHistory = false,
+  canManageAccounts = false,
   selected,
   onSelect,
   onSelectAll,
@@ -45,6 +47,7 @@ export function StudentDashboardTable({
   offset?: number;
   compact?: boolean;
   canViewHistory?: boolean;
+  canManageAccounts?: boolean;
   selected?: Set<string>;
   onSelect?: (id: string) => void;
   onSelectAll?: () => void;
@@ -185,6 +188,7 @@ export function StudentDashboardTable({
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center">
+                        {canManageAccounts && <B2CStudentAccountDialog studentId={r.student.id} fullName={r.student.full_name} />}
                         <Link href={`/admin/b2c/certificates?student=${r.student.id}`} aria-label={`Kết quả chứng chỉ ${r.student.full_name}`} title="Kết quả chứng chỉ" className="rounded p-2 text-emerald-600 hover:bg-emerald-50"><Award className="size-4" aria-hidden /></Link>
                         <button
                           type="button"

@@ -1,5 +1,14 @@
 # 03 — Workflow nghiệp vụ
 
+## Bài tập PDF lớp B2C (2026-11-27)
+
+Quản trị → Học viên → nút chìa khóa **Tài khoản**: tạo tên đăng nhập/mật khẩu hoặc tìm chính xác tên đăng nhập/email rồi xác nhận liên kết tài khoản student có sẵn. Tạo tài khoản lỗi liên kết giữ danh tính để tìm lại bằng tên đăng nhập; không xóa/reset tài khoản khi chưa chắc trạng thái. Không tự gửi mật khẩu. Học viên chỉ học B2C được chuyển từ Tổng quan/Lớp của tôi sang Bài tập lớp trung tâm; tài khoản chưa liên kết được hướng dẫn liên hệ trung tâm.
+
+Mở lớp B2C → **Bài tập** → giao bài: tiêu đề, hướng dẫn, PDF tối đa20MB và ngày/giờ hết hạn theo giờ Việt Nam. Tệp upload thẳng private Storage bằng vé ký, server kiểm metadata và chữ ký định dạng trước khi DB gắn đề. Giáo viên sửa tiêu đề/hướng dẫn/hạn, xem danh sách đã/chưa nộp và mở bài/lịch sử; lưu trữ ẩn đề khỏi học viên, giữ dữ liệu lịch sử. Tệp đề giữ nguyên sau khi giao; giao đề thay thế bằng bài mới nếu cần.
+
+Học viên → **Bài tập lớp trung tâm** → mở đề PDF → chọn PDF/JPG/PNG tối đa20MB → **Nộp bài**. Có thể nộp lại trước hạn; mỗi lần là bản mới, không ghi đè bản cũ. Thời điểm nộp và deadline tại lúc nộp được lưu. Tải lên trước hạn nhưng hoàn tất sau hạn bị từ chối; giáo viên có thể gia hạn. Lỗi mạng giữ tệp/UUID để thử lại, kết quả đã ghi nhận không tạo trùng. File private, URL đọc ngắn hạn chỉ được ký sau kiểm quyền; popup bị chặn có liên kết mở thủ công. Pending chưa hoàn tất có thể còn trong Storage, không hiện thành bài đã giao/nộp; dọn riêng nếu cần vận hành.
+
+
 ## Học phí đợt mới (2026-11-26)
 
 Mở Học phí trong lớp hoặc trang Học phí → mở gói ở dòng đợt hiện tại → chọn **Thêm đợt học phí mới** → kiểm tra/sửa số buổi, đơn giá, chiết khấu/lý do và tổng phải thu → lưu. Các số được điền gợi ý từ đợt đang chọn, sửa được trước khi lưu; không sao chép phiếu. Danh sách hiển thị cả hai đợt; bấm Phiếu thu ở đúng đợt để xem/thu tiền. Nếu chỉ sửa nhầm giá của cùng đợt, chọn **Sửa đợt này** và nhập lý do. Đợt trước không có nút tạo đợt mới.

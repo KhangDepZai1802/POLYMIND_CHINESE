@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import StudentDashboardPage from "@/app/(dashboard)/student/page";
 import { getStudentDashboard } from "@/features/dashboard/server/student-queries";
 import { requireRole } from "@/lib/auth/session";
+import { readB2CHomeworkAction } from "@/features/b2c/server/homework-actions";
+
+vi.mock("@/features/b2c/server/homework-actions", () => ({ readB2CHomeworkAction: vi.fn() }));
 
 vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));
 vi.mock("@/features/dashboard/server/student-queries", () => ({
@@ -13,6 +16,7 @@ vi.mock("@/features/dashboard/server/student-queries", () => ({
 describe("StudentDashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(readB2CHomeworkAction).mockResolvedValue({ linked_student: null } as never);
     vi.mocked(requireRole).mockResolvedValue({
       fullName: "Học viên Demo",
     } as never);
@@ -120,5 +124,12 @@ describe("StudentDashboardPage", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText("Bài chưa nộp")).not.toBeInTheDocument();
+  });
+
+  it("opens the B2C portal for a linked B2C-only student", async () => {
+    vi.mocked(getStudentDashboard).mockResolvedValue({ enrollment: null } as never);
+    vi.mocked(readB2CHomeworkAction).mockResolvedValue({ linked_student: { id: "b2c-student" } } as never);
+    await expect(StudentDashboardPage()).rejects.toThrow("NEXT_REDIRECT");
+    expect(readB2CHomeworkAction).toHaveBeenCalledWith(null);
   });
 });

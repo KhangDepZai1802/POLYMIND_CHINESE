@@ -109,6 +109,7 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: "Tổng quan", href: "/student", icon: LayoutDashboard },
     { label: "Lớp của tôi", href: "/student/class", icon: School },
     { label: "Bài tập", href: "/student/exercises", icon: FileText },
+    { label: "Bài tập", href: "/student/b2c-homework", icon: FileText },
     { label: "Kiểm tra / Thi", href: "/student/exams", icon: GraduationCap },
     { label: "Ôn tập", href: "/student/review", icon: Repeat },
     { label: "Kết quả", href: "/student/results", icon: BarChart3 },

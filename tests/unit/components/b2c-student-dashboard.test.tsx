@@ -5,6 +5,9 @@ vi.mock("@/features/b2c/server/enrollment-lifecycle-actions", () => ({
   readEnrollmentLifecycleAction: vi.fn(), saveEnrollmentLifecycleAction: vi.fn(),
 }));
 import { StudentDashboard } from "@/features/b2c/components/student-dashboard";
+vi.mock("@/features/b2c/server/student-account-actions", () => ({
+  readB2CStudentAccountAction: vi.fn(), findB2CStudentLoginAction: vi.fn(), saveB2CStudentAccountAction: vi.fn(),
+}));
 vi.mock("@/features/b2c/components/class-student-add-dialog", () => ({
   ClassStudentAddDialog: () => <button>Thêm học viên</button>,
 }));

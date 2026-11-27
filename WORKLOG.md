@@ -38,6 +38,12 @@
 
 ## 🚦 TRẠNG THÁI HIỆN TẠI
 
+> B2C-HOMEWORK-CLASSROOM-UI-1 — user yêu cầu đẩy GitHub, đang phát hành — Codex — 2026-11-27. Portal học viên đổi sang bố cục Classroom: nội dung đề và tệp ở cột chính, “Bài tập của bạn” ở cột phải/sticky desktop và xếp dưới trên mobile; trạng thái có chữ/icon/vạch màu, form upload và lịch sử gọn hơn. Menu và tiêu đề dùng “Bài tập”. Giữ nguyên server/action/quyền/dữ liệu. 21/21 tests module, typecheck, lint phần sửa, diff-check và build Webpack đạt; công cụ browser trong app không khả dụng nên chưa chụp QA phiên đăng nhập thật.
+
+> B2C-STUDENT-TUITION-1 — code xong, chờ phép áp DB — Codex — 2026-11-27. `/student/tuition` nay đọc các đợt/gói/phiếu B2C của chính tài khoản, vẫn giữ hóa đơn legacy khi không liên kết B2C. UI thể hiện phải thu/đã thu/còn nợ và lịch sử; fixture Gia Hân/Let's Move Up là 2.613.000đ đã thu, 0đ còn nợ. 15/15 tests liên quan, typecheck, lint phần sửa, diff-check và build Webpack đạt. Migration20261127000002 đã tạo nhưng chưa kiểm/apply remote vì chưa có ủy quyền rõ; chưa QA browser bằng tài khoản thật.
+
+> B2C-HOMEWORK-PDF-1 — user yêu cầu đẩy GitHub, đang phát hành — Codex — 2026-11-27. Có tab Bài tập PDF/deadline, portal học viên nộp/lịch sử và cấp/liên kết tài khoản B2C do super_admin quản lý. Trường hạn nộp dùng bộ chọn Việt Nam, hiện `dd/MM/yyyy HH:mm` và bỏ chữ “giờ Việt Nam”; vẫn gửi wall-clock VN như cũ. `/student/class` nay hiển thị đúng các lớp B2C như Let's Move Up thay vì redirect sang bài tập. 20/20 test trang lớp/workspace, typecheck, lint phần sửa và build Webpack đạt. Bộ kiểm tra đầy đủ trước đó:124/124 tests tập trung,224/224 pgTAP,90ca responsive; full1426/1429 tests còn3lỗi mock điểm danh cũ và full lint31lỗi/2warning cũ. Migration20261127000001 đã áp; chưa QA deployment/upload bằng tài khoản thật.
+
 > B2C-TUITION-EDITABLE-TOTAL-1 — user yêu cầu đẩy GitHub, đang phát hành — Codex — 2026-11-27. Bốn ô sửa được, số điền sẵn/tự tính; tổng nhập tay độc lập và Tính lại về công thức. 126/126 tests tập trung, 215/215 pgTAP sau áp, typecheck/lint phần sửa/build Webpack đạt ở lượt sửa; source không đổi. User đã được báo full1307/1310 tests và lint31 lỗi/2 warning cũ trước yêu cầu push. DB đã áp; phát hành19file task, giữ ba file dirty ngoài scope. Kết quả push/SHA xác minh và báo trong chat; QA deployment độc lập chưa làm.
 
 > B2C-PENDING-RELEASE-20261126 — user yêu cầu đẩy GitHub, đang phát hành — Codex — 2026-11-26. Phạm vi ba bản sửa đã hoàn thành: học phí nhiều đợt, tháng thu tiền cho giáo viên và check-in mobile. Fetch xác nhận main/origin/main cùng 5a4f19a; giữ ba file dirty ngoài phạm vi. Kiểm thử/build từ lượt trước vẫn áp dụng vì source không đổi; user đã được báo lỗi baseline. Kết quả push/SHA xác minh và báo trong chat; chưa QA deployment online.
@@ -980,6 +986,8 @@
 
 ## ➡️ VIỆC TIẾP THEO
 
+- B2C-HOMEWORK-PDF-1-REVIEW: review/phát hành khi user yêu cầu; sau deployment QA độc lập admin tạo/liên kết tài khoản, giáo viên giao PDF/deadline, học viên xem/nộp/nộp lại/tải lịch sử và bị chặn quá hạn. DB đã áp, không chạy lại migration hoặc tự cấp tài khoản thật để thử; giữ ba file dirty ngoài scope và ghi baseline toàn repo dưới đây.
+
 - B2C-TUITION-EDITABLE-TOTAL-1-REVIEW: sau phát hành theo yêu cầu user, QA độc lập cả admin/teacher: sửa bốn số, mở lại tổng nhập tay, Tính lại và tạo đợt mới từ số điền sẵn. DB đã áp, không chạy lại migration hoặc sửa dữ liệu thật để thử. Cổng toàn repo còn lỗi baseline ghi dưới.
 
 - B2C-PENDING-RELEASE-20261126-QA: sau phát hành theo yêu cầu user, kiểm deployment ba bản sửa (học phí nhiều đợt, tháng thu của giáo viên, check-in mobile). Không chạy lại migration đã áp hoặc thao tác lại dữ liệu học phí/check-in.
@@ -1462,6 +1470,8 @@ Chạy: `npx supabase start` → `npx supabase db reset` → nạp `supabase/see
 
 ## ⛔ BLOCKERS
 
+- B2C-HOMEWORK-PDF-1 (2026-11-27): toàn repo1426/1429 tests,211/212files đạt; đúng3lỗi mock thiếu SessionSummaryAdjustmentDialog có trước ở b2c-attendance-mobile. Full lint31lỗi/2warning cũ (.tmp/release-5cd9 + unsafe Function tại class-workspace-read.ts); không sửa ngoài scope để làm xanh.124tests tập trung/typecheck/lint phần mới/build Webpack đạt.224pgTAP và90responsive fixtures đạt. In-app browser lỗi kernel assets trước khởi tạo, dùng Playwright Chromium/WebKit fixture thay thế; chưa thử upload production/thiết bị thật.20history gaps cũ giữ nguyên, scoped release cloud up to date.
+
 - B2C-TUITION-EDITABLE-TOTAL-1 (2026-11-26): full Vitest 1307/1310 tests (205/206 files), đúng 3 lỗi mock SessionSummaryAdjustmentDialog trong b2c-attendance-mobile có trước; full lint 31 lỗi/2 warning cũ trong .tmp/release-5cd9 và unsafe Function tại class-workspace-read.ts. 126 tests tập trung, typecheck, lint phần sửa, build --webpack exit0 và 215 pgTAP sau áp đạt. Repository gốc vẫn 20 migration history gaps cũ; scoped release up to date, không replay/repair. Chưa QA browser/deployment; source chưa commit/push.
 
 - B2C-TUITION-PERIODS-1 (2026-11-26): full Vitest 1240/1243 (204/205 files), 3 lỗi mock thiếu SessionSummaryAdjustmentDialog có trước ở b2c-attendance-mobile; lint 31 lỗi/2 warning cũ (30 require-import ở .tmp/release-5cd9 skills, 1 unsafe Function ở class-workspace-read.ts). 134 tests tập trung, typecheck, lint phần mới và build --webpack exit0 đạt. Build lần đầu Next hoàn tất nhưng PowerShell đánh dấu stderr warning thành lỗi; đã chạy lại với exit $LASTEXITCODE và xác minh 0. Migration mới đã áp/cloud up to date trong scoped release; repository gốc vẫn 20 migration history gaps cũ, không replay. QA browser/deployment chưa làm.
@@ -1641,6 +1651,34 @@ Nguồn gốc: [`POLYMIND_CHINESE_BUILD_PROMPT.md`](POLYMIND_CHINESE_BUILD_PROMP
 ---
 
 ## 📖 NHẬT KÝ SESSION
+
+### [2026-11-27] Codex — B2C-HOMEWORK-CLASSROOM-UI-1
+- **Yêu cầu/hướng:** user đưa ảnh Google Classroom và yêu cầu dùng skill unslop. Chốt giao diện học thuật, rõ ràng, thân thiện; nền/chrome yên, màu PolyMind dùng cho trạng thái và hành động chính.
+- **Thay đổi:** portal học viên là một thẻ bài tập rộng, cột trái có lớp/tiêu đề/hạn/hướng dẫn/tệp đề; cột phải là “Bài tập của bạn” với trạng thái, bài gần nhất, lịch sử, chọn tệp và nộp/nộp lại. Desktop sticky, mobile tự xếp một cột. Rút gọn menu/tiêu đề thành “Bài tập”. Không đổi API, RPC, upload hoặc dữ liệu.
+- **Đã test:** 21/21 Vitest module B2C homework, typecheck, ESLint phần sửa, diff-check và production build Webpack exit0. Browser trong app báo không khả dụng; chưa QA ảnh từ phiên Gia Hân thật.
+- **Next:** user Ctrl+F5 xem local; QA 375px/desktop bằng tài khoản học viên sau khi browser khả dụng, rồi phát hành khi user yêu cầu.
+
+### [2026-11-27] Codex — B2C-STUDENT-TUITION-1
+- **Làm được:** nối trang Học phí học viên với dữ liệu B2C thật thay vì chỉ đọc `tuition_invoices` legacy. Học viên thấy tổng tiền và từng đợt/lớp của mình, bao gồm phiếu thu; tài khoản không liên kết B2C tiếp tục dùng màn legacy.
+- **Bảo mật/dữ liệu:** RPC mới tự lấy B2C student từ phiên đăng nhập, không nhận ID học viên từ client; chỉ trả ghi danh/gói/phiếu của chính tài khoản và chỉ cấp execute cho authenticated. Không sửa gói, phiếu hoặc số tiền thật.
+- **Đã test:** 15/15 Vitest trang/server/UI và hồi quy legacy đạt; typecheck, ESLint phần sửa, diff-check và production build Webpack exit0. Fixture tái hiện Gia Hân/Let's Move Up với phải thu=đã thu=2.613.000đ, còn nợ=0đ.
+- **Blocker/next:** migration `20261127000002_b2c_student_tuition.sql` chưa dry-run/apply Supabase vì thao tác remote chưa được user ủy quyền. Sau khi được phép: dry-run, apply, kiểm history/up-to-date rồi F5 tài khoản Gia Hân và kiểm một học viên lớp khác không thấy Let's Move Up.
+
+### [2026-11-27] Codex — B2C-STUDENT-CLASS-VISIBILITY-1
+- **Làm được:** sửa `/student/class` nhận đúng membership trong `b2c_enrollments`; học viên B2C thấy mã/tên từng lớp trung tâm và nút mở bài tập ngay tại “Lớp của tôi”, không còn bị chuyển hướng khỏi menu vừa chọn. Giữ nguyên toàn bộ trang 7 tab cho lớp legacy.
+- **File thay đổi:** trang lớp học viên, hai bộ test integration/component và phase plan/worklog; không migration hoặc đổi dữ liệu/quyền.
+- **Đã test:** 20/20 Vitest trang lớp/workspace đạt; typecheck exit0; ESLint ba file sửa exit0; build Webpack exit0. In-app browser không khả dụng nên chưa đối chiếu ảnh trực tiếp.
+- **Quyết định mới:** “Lớp của tôi” là nơi hiển thị membership B2C; “Bài tập lớp trung tâm” vẫn là màn thao tác đề/nộp bài riêng.
+- **Blocker/rủi ro:** chưa QA bằng tài khoản Gia Hân trên browser; cổng toàn repo giữ baseline đã ghi ở task B2C-HOMEWORK-PDF-1.
+- **Next action:** QA local/deployment bằng tài khoản được cấp; xác nhận Let's Move Up hiện đúng rồi kiểm bài tập/nộp file.
+
+### [2026-11-27] Codex — B2C-HOMEWORK-PDF-1
+- **User chốt:** lớp B2C có upload PDF và deadline, bao gồm học viên đăng nhập xem/nộp trên website. Trước đây Báo bài chỉ giữ file trong trình duyệt; không dùng nhầm engine classes/students legacy.
+- **Implementation:** thêm tab Bài tập cho admin/teacher theo view_classes/view_assessments/grade_assessments; PDF/hướng dẫn/hạn giờ VN, sửa/archive, danh sách bài nộp và lịch sử. Portal /student/b2c-homework có nộp PDF/JPG/PNG20MB, nộp lại trước hạn giữ revision; student B2C-only từ Tổng quan/Lớp của tôi tự chuyển vào portal. Super_admin có nút Tài khoản ở danh sách học viên để cấp mới hoặc exact lookup/link active student; không suy đoán/ghi đè liên kết/reset password hiện có. Lỗi liên kết giữ account để tra lại, tránh xóa nhầm khi race/lost response.
+- **DB/storage:**4bảng RLS mới, private bucket, pending30phút/path do DB cấp, owner/current permission, append-only revisions, unique payload UUID, stale token/audit auth.uid. Session client cấp upload/signed read120giây; actual metadata+size+signature trước finalize; DB metadata/deadline sau khóa. Helpers nội bộ không được execute; không direct write/overwrite, cleanup pending khóa upload chống race. Không tạo tài khoản/liên kết/bài tập thật hoặc đổi dữ liệu học phí/lớp.
+- **Cloud:** rollback syntax+134new/90regression pgTAP trước áp; scoped dry-run đúng một migration, push20261127000001 thành công, history51statements;224/224 sau áp và Remote database is up to date. Không replay20history gaps hoặc repair. CLI cảnh báo cache Docker local không ảnh hưởng áp cloud. Các lỗi fixture quyền dependency/archive/self-activation đã sửa theo guard hiện có, không nới quyền.
+- **Kiểm tra:**124/124focused tests (domain/server/accounts/UI/workspace/classdetail); full1426/1429,211/212files, chỉ3mock điểm danh cũ. Typecheck/lint phần mới/build Webpack cuối exit0; full lint31lỗi/2warning cũ đã ghi.90responsive states:9trạng thái×5width320–1440×Chromium/WebKit, không tràn ngang/nút44px; đã xem ảnh mobile. Fix thực tế class_id upload học viên, import dialog class và grid min-width filename dài. Browser tool lỗi kernel, fixturePlaywright không thay cho QA production.
+- **Files/next:** components/domain/server B2C, workspace/navigation/student routes, migration/pgTAP/unit tests, docs/QA. Ba file ngoài scope giữ hash:layout=e7aa42ef51faa9e365b3958296a3849b4cf54577,queries=ffcc6f19cf08ae834056cf6bfa05521db4e25dac,teachers/actions=577d27fca9cf25de5445ef81564a3c128158aa27. Không stage/commit/push. B2C-HOMEWORK-PDF-1-REVIEW sau khi user yêu cầu phát hành; chưa upload bằng tài khoản thật/deployment/thiết bị thật hoặc stress concurrency.
 
 ### [2026-11-27] Codex — B2C-TUITION-EDITABLE-TOTAL-1-RELEASE
 - **Yêu cầu:** user yêu cầu rõ đẩy GitHub sau khi đã được báo kết quả kiểm thử/build và lỗi baseline ngoài task. Phát hành bản bốn ô học phí sửa được; không mở rộng phạm vi.

@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getStudentDashboard } from "@/features/dashboard/server/student-queries";
 import { requireRole } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
+import { readB2CHomeworkAction } from "@/features/b2c/server/homework-actions";
 import {
   formatCurrency,
   formatDate,
@@ -36,6 +38,8 @@ export default async function StudentDashboardPage() {
   ]);
 
   if (!data.enrollment?.class) {
+    const b2c = await readB2CHomeworkAction(null);
+    if (b2c.linked_student) redirect("/student/b2c-homework");
     return (
       <div className="mx-auto max-w-7xl">
         <PageHeader
